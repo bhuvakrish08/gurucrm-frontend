@@ -1296,10 +1296,19 @@ export default function QuotationPage() {
       {showQuotationModal && selectedLead && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white w-[90vw] max-w-[1200px] h-[85vh] rounded-2xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col">
-            <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-blue-50 to-white border-b border-gray-100 shadow-sm z-10">
+            <div
+              className="flex justify-between items-center px-6 py-4 border-b border-gray-100 shadow-sm z-10"
+              style={{ background: "#f5e6d8" }}
+            >
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                  <i className="bi bi-activity text-blue-600 text-lg"></i>
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center"
+                  style={{ background: "#f5e0c6" }}
+                >
+                  <i
+                    className="bi bi-activity text-lg"
+                    style={{ color: "#f07400" }}
+                  ></i>
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
@@ -1332,7 +1341,7 @@ export default function QuotationPage() {
                         name="quotation_date"
                         value={form.quotation_date}
                         onChange={handleChange}
-                        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-300 outline-none bg-gray-50"
+                        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50"
                       />
                     </div>
                     <div>
@@ -1343,7 +1352,7 @@ export default function QuotationPage() {
                         name="activity_type"
                         value={form.activity_type}
                         onChange={handleChange}
-                        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-300 outline-none bg-gray-50"
+                        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50"
                       >
                         <option value="">-- Select --</option>
                         <option>Sent</option>
@@ -1362,7 +1371,7 @@ export default function QuotationPage() {
                         name="quotation_no"
                         value={form.quotation_no}
                         onChange={handleChange}
-                        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-300 outline-none bg-gray-50"
+                        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50"
                       />
                     </div>
                     <div>
@@ -1388,19 +1397,20 @@ export default function QuotationPage() {
                         unstyled
                         classNames={{
                           control: ({ isFocused }) =>
-                            `w-full mt-1 border rounded-lg px-3 py-2 text-sm bg-gray-50 outline-none ${isFocused ? "border-blue-300 ring-1 ring-blue-300" : "border-gray-200"}`,
+                            `w-full mt-1 border rounded-lg px-3 py-2 text-sm bg-gray-50 outline-none ${isFocused ? "border-orange-300 ring-1 ring-orange-300" : "border-gray-200"}`,
                           valueContainer: () => "p-0 gap-1",
                           placeholder: () => "text-black",
                           input: () => "text-sm text-gray-700",
                           menu: () =>
                             "mt-1 border border-gray-200 rounded-lg bg-white shadow-md overflow-hidden",
+                          // REPLACE WITH:
                           option: ({ isFocused, isSelected }) =>
-                            `px-3 py-2 text-sm cursor-pointer ${isSelected ? "bg-blue-600 text-white" : isFocused ? "bg-blue-50" : "text-gray-700"}`,
+                            `px-3 py-2 text-sm cursor-pointer ${isSelected ? "bg-gray-600 text-white" : isFocused ? "bg-gray-100" : "text-gray-700"}`,
                           multiValue: () =>
-                            "bg-blue-600 text-white rounded-md px-1",
+                            "bg-gray-600 text-white rounded-md px-1",
                           multiValueLabel: () => "text-white text-xs",
                           multiValueRemove: () =>
-                            "text-white hover:bg-blue-700 rounded",
+                            "text-white hover:bg-gray-700 rounded",
                           indicatorsContainer: () => "text-gray-400",
                           dropdownIndicator: () => "text-black",
                           clearIndicator: () => "text-gray-400",
@@ -1418,7 +1428,7 @@ export default function QuotationPage() {
                         name="amount"
                         value={form.amount || ""}
                         onChange={handleChange}
-                        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-300 outline-none bg-gray-50"
+                        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50"
                       />
                     </div>
                   </div>
@@ -1432,7 +1442,7 @@ export default function QuotationPage() {
                         name="discount"
                         value={form.discount || ""}
                         onChange={handleChange}
-                        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-300 outline-none bg-gray-50"
+                        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50"
                       />
                     </div>
                     <div>
@@ -1443,7 +1453,7 @@ export default function QuotationPage() {
                         name="tax"
                         value={form.tax}
                         onChange={handleChange}
-                        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-300 outline-none bg-gray-50"
+                        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50"
                       >
                         <option value="0">0%</option>
                         <option value="5">5%</option>
@@ -1462,7 +1472,7 @@ export default function QuotationPage() {
                         name="grand_total"
                         value={form.grand_total || ""}
                         onChange={handleChange}
-                        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-300 outline-none bg-gray-50"
+                        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50"
                       />
                     </div>
                   </div>
@@ -1475,15 +1485,16 @@ export default function QuotationPage() {
                       value={form.description}
                       onChange={handleChange}
                       rows="2"
-                      className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-blue-300 outline-none bg-gray-50 resize-none"
+                      className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50 resize-none"
                     ></textarea>
                   </div>
-                  <div className="border border-dashed border-blue-200 rounded-xl p-4 bg-blue-50/30 text-center">
+                  <div className="border border-dashed border-orange-200 rounded-xl p-4 bg-orange-50/30 text-center">
                     {!editingId ? (
                       <>
                         <button
                           onClick={() => setShowFileModal(true)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 mx-auto transition-all shadow-md shadow-blue-200"
+                          className="text-white px-5 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 mx-auto transition-all"
+                          style={{ background: "#f07400" }}
                         >
                           <i className="bi bi-cloud-upload text-sm"></i> Upload
                           Files
@@ -1529,9 +1540,10 @@ export default function QuotationPage() {
                   <button
                     onClick={handleQuotationSubmit}
                     disabled={isSubmitting}
-                    className={`flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-3 text-sm font-semibold shadow-lg shadow-blue-200 transition-all flex justify-center items-center gap-2
-                      ${isSubmitting ? "opacity-70 cursor-not-allowed" : ""}
-                    `}
+                    className={`flex-1 text-white rounded-xl py-3 text-sm font-semibold transition-all flex justify-center items-center gap-2
+  ${isSubmitting ? "opacity-70 cursor-not-allowed" : ""}
+`}
+                    style={{ background: "#f07400" }}
                   >
                     {isSubmitting ? (
                       <>
@@ -1595,7 +1607,10 @@ export default function QuotationPage() {
               <div className="w-7/12 bg-slate-50 flex flex-col relative z-0">
                 <div className="px-6 py-4 flex justify-between items-center bg-white border-b border-gray-100 sticky top-0 z-20 shadow-sm">
                   <h3 className="text-sm font-bold text-gray-700 uppercase flex items-center gap-2">
-                    <i className="bi bi-clock-history text-blue-500"></i>{" "}
+                    <i
+                      className="bi bi-clock-history"
+                      style={{ color: "#f07400" }}
+                    ></i>{" "}
                     Quotation History Data
                   </h3>
                 </div>
@@ -1969,10 +1984,19 @@ export default function QuotationPage() {
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white w-[480px] rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
             {/* Header */}
-            <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-emerald-50 to-white border-b border-gray-100">
+            <div
+              className="flex justify-between items-center px-6 py-4"
+              style={{ background: "#f5e6d8" }}
+            >
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center">
-                  <i className="bi bi-file-earmark-arrow-up text-emerald-600 text-lg"></i>
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center"
+                  style={{ background: "#f5e0c6" }}
+                >
+                  <i
+                    className="bi bi-file-earmark-arrow-up text-lg"
+                    style={{ color: "#f07400" }}
+                  ></i>
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
@@ -2198,7 +2222,7 @@ export default function QuotationPage() {
                   Number(piPercentage) <= 0 ||
                   Number(piPercentage) > 100
                 }
-                className={`flex-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl py-2.5 text-sm font-semibold shadow-md shadow-emerald-200 transition-all flex justify-center items-center gap-2 ${
+                className={`flex-1 text-white rounded-xl py-2.5 text-sm font-semibold transition-all flex justify-center items-center gap-2 ${
                   isCreatingPI ||
                   !piPercentage ||
                   Number(piPercentage) <= 0 ||
@@ -2206,6 +2230,7 @@ export default function QuotationPage() {
                     ? "opacity-60 cursor-not-allowed"
                     : ""
                 }`}
+                style={{ background: "#f07400" }}
               >
                 {isCreatingPI ? (
                   <>
