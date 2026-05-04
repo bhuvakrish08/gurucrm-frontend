@@ -1929,6 +1929,7 @@ export default function Page() {
                 ${updateLoading ? "bg-orange-400 cursor-not-allowed" : "bg-orange-500 hover:bg-orange-600"}`}
               >
                 {updateLoading ? (
+                  <>
                   <svg
                     className="animate-spin h-4 w-4"
                     viewBox="0 0 24 24"
@@ -1947,10 +1948,12 @@ export default function Page() {
                       d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                     />
                   </svg>
+                  Add Follow-Up
+                  </>
                 ) : (
                   "Add Follow-Up"
                 )}
-                {updateLoading ? "Adding..." : "Add Follow-Up"}
+               
               </button>
             </div>
           </div>
