@@ -72,21 +72,25 @@ export default function EditContract() {
             <Header />
             <div className="bg-gray-100">
                 <div className="bg-white w-full rounded-2xl shadow-lg p-3 mt-1 mb-5 flex justify-between items-center">
-                    <p className="text-gray-700">
-                        <Link href="/dashboard" className="mx-3 text-xl text-gray-400 hover:text-indigo-600">
-                            <i className="bi bi-house"></i>
-                        </Link>
-                        <i className="bi bi-chevron-right"></i> Contract
-                        <i className="bi bi-chevron-right"></i>
-                        <button onClick={() => { localStorage.removeItem("view_user_id"); router.push("/contracts"); }} className="mx-3 hover:text-indigo-600">
-                            Contract List
-                        </button>
-                        <i className="bi bi-chevron-right"></i> View Contract
-                    </p>
+                    <div className="hidden sm:flex items-center text-gray-700 w-full sm:w-auto">
+                        <p className="flex items-center flex-wrap">
+                            <Link href="/dashboard" className="mx-3 text-xl text-gray-400 hover:text-indigo-600">
+                                <i className="bi bi-house"></i>
+                            </Link>
+                            <i className="bi bi-chevron-right text-[10px]"></i>
+                            <span className="mx-3 font-semibold">Contract</span>
+                            <i className="bi bi-chevron-right text-[10px]"></i>
+                            <button onClick={() => { localStorage.removeItem("view_user_id"); router.push("/contracts"); }} className="mx-3 hover:text-indigo-600 font-semibold">
+                                Contract List
+                            </button>
+                            <i className="bi bi-chevron-right text-[10px]"></i>
+                            <span className="mx-3 font-semibold">View Contract</span>
+                        </p>
+                    </div>
                 </div>
 
-                <form className="p-1 mx-50">
-                    <div className="bg-white rounded-xl border p-4 mt-2 w-6xl">
+                <form className="p-1 w-full max-w-6xl mx-auto">
+                    <div className="bg-white rounded-xl border p-4 md:p-6 mt-2">
                         {/* Tabs */}
                         <div className="flex gap-8 border-b pb-2 mb-4 text-gray-700">
                             <p className="font-medium pb-1 text-xl">
@@ -96,7 +100,7 @@ export default function EditContract() {
                         </div>
 
                         {/* 3 Column Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-y-6 gap-x-10 mx-10 mb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-y-6 gap-x-10 px-4 md:mx-10 mb-8">
 
                             {/* Column 1 */}
                             <div>

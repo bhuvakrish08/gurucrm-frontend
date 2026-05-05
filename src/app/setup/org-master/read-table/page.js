@@ -98,31 +98,31 @@ export default function Page() {
     <>
       <Header />
       <div className="bg-gray-100">
-        <div className="bg-white w-full rounded-2xl shadow-lg p-3 mt-1 mb-5">
-          <div className="flex justify-between items-center">
-            <p>
-              <Link href="/dashboard" className="mx-3 text-xl text-gray-400 hover:text-indigo-600"><i className="bi bi-house"></i></Link>
-              <i className="bi bi-chevron-right"></i>
-              <Link href="/setup" className="mx-3 text-md text-gray-700 hover:text-indigo-600">Set up</Link>
-              <i className="bi bi-chevron-right"></i>
-              <Link href="#" className="mx-3 text-md text-gray-700 hover:text-indigo-600">ORG-Master</Link>
-              <i className="bi bi-chevron-right"></i>
-              <Link href="#" className="mx-3 text-md text-gray-700 hover:text-indigo-600"> Organization-Profile</Link>
+        <div className="bg-white w-full shadow-lg p-3 mt-1 mb-5 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
+          <div className="hidden sm:flex items-center text-gray-700 w-full sm:w-auto">
+            <p className="flex items-center flex-wrap">
+              <Link href="/dashboard" className="mx-2 text-xl text-gray-400 hover:text-indigo-600"><i className="bi bi-house"></i></Link>
+              <i className="bi bi-chevron-right text-[10px]"></i>
+              <Link href="/setup" className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold">Set up</Link>
+              <i className="bi bi-chevron-right text-[10px]"></i>
+              <Link href="#" className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold">ORG-Master</Link>
+              <i className="bi bi-chevron-right text-[10px]"></i>
+              <Link href="#" className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"> Organization-Profile</Link>
             </p>
+          </div>
 
-            <div>
-              <Link href="/setup/org-master/add-table" className="bg-blue-800 hover:bg-blue-900 text-white px-3 py-2 rounded-lg ml-2">
-                + ADD ORGANIZATION
-              </Link>
-            </div>
+          <div className="w-full sm:w-auto">
+            <Link href="/setup/org-master/add-table" className="block text-center bg-blue-800 hover:bg-blue-900 text-white px-5 py-2 rounded-sm font-bold text-sm w-full sm:w-auto">
+              + ADD ORGANIZATION
+            </Link>
           </div>
         </div>
 
         {/* Table Section */}
-        <form className="p-2 w-8xl mx-3">
-          <div className="bg-white shadow rounded-2xl p-6">
+        <form className="p-2 w-full">
+          <div className="bg-white shadow rounded-2xl p-4 md:p-6">
             <div className="overflow-x-auto">
-              <table className="min-w-full w-8xl border border-gray-200 text-sm text-left">
+              <table className="min-w-full border border-gray-200 text-sm text-left">
                 <thead className="bg-gray-50 text-gray-700 border-b border-gray-200">
                   <tr>
                     <th className="px-3 py-2 text-center">#</th>
@@ -171,7 +171,7 @@ export default function Page() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex justify-between mt-20">
+              <div className="flex justify-between mt-10">
                 <button onClick={(e) => {e.preventDefault(); if (page > 1) setPage(page - 1); }}
                   disabled={page === 1} className={`px-3 py-1 rounded-md ${
                     page === 1 ? "bg-gray-300" : "bg-blue-800 text-white"}`}> Previous </button>
@@ -181,7 +181,7 @@ export default function Page() {
                 </p>
 
                 <button onClick={(e) => {e.preventDefault(); if (page < totalPages) setPage(page + 1);}}
-                  disabled={page === totalPages} className={`px-3 py-1 rounded ${
+                  disabled={page === totalPages} className={`px-3 py-1 rounded-md ${
                     page === totalPages ? "bg-gray-300" : "bg-blue-800 text-white"}`}> Next </button>
               </div>
             )}

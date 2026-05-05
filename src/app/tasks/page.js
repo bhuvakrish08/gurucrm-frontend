@@ -39,6 +39,7 @@ export default function Page() {
   const [token, setToken] = useState("");
   const [task, setTask] = useState([]);
   const [filters, setFilters] = useState({});
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showTaskDeleteModal, setShowTaskDeleteModal] = useState(false);
   const [taskDeleteId, setTaskDeleteId] = useState(null);
 
@@ -647,106 +648,113 @@ const exportToPDF = async () => {
     <div className="bg-gray-100">
       <Header />
       {/* Breadcrumb */}
-      <div className="bg-white w-full  shadow-lg p-3 mt-1 mb-5 flex justify-between items-center">
-        <div className="flex items-center text-gray-700">
-          <p>
+      <div className="bg-white w-full shadow-lg p-3 mt-1 mb-5 flex flex-col lg:flex-row justify-between items-center gap-4 lg:gap-0">
+        <div className="hidden sm:flex items-center text-gray-700 w-full lg:w-auto">
+          <p className="flex items-center flex-wrap">
             <Link
               href="/dashboard"
-              className="mx-3 text-xl text-gray-400 hover:text-indigo-600"
+              className="mx-2 text-xl text-gray-400 hover:text-indigo-600"
             >
               <i className="bi bi-house"></i>
             </Link>
-            <i className="bi bi-chevron-right"></i>
+            <i className="bi bi-chevron-right text-[10px]"></i>
             <Link
               href="#"
-              className="mx-3 text-md text-gray-700 hover:text-orange-500"
+              className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
             >
               Tasks
             </Link>
-            <i className="bi bi-chevron-right"></i>
+            <i className="bi bi-chevron-right text-[10px]"></i>
             <Link
               href="#"
-              className="mx-3 text-md text-gray-700 hover:text-orange-500"
+              className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
             >
               Tasks List
             </Link>
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
           <input
             type="text"
             placeholder="🔍 Search..."
             value={filters.search || ""}
             onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-            className="border w-64 p-2 px-3 border-gray-300 text-gray-700 placeholder-gray-400 rounded-sm focus:ring-1 outline-none focus:ring-orange-200 transition-all text-sm"
+            className="border w-full sm:w-64 p-2 px-3 border-gray-300 text-gray-700 placeholder-gray-400 rounded-sm focus:ring-1 outline-none focus:ring-orange-200 transition-all text-sm"
           />
 
-          {/* Export Button */}
-          <div className="relative" ref={exportRef}>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            {/* Export Button */}
+            <div className="relative flex-1 sm:flex-none" ref={exportRef}>
+              <button
+                onClick={() => setShowExportMenu((prev) => !prev)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-sm bg-orange-50 text-orange-500 text-sm font-bold tracking-wide transition-all shadow-sm border border-orange-100"
+              >
+                <i className="bi bi-download text-base"></i>
+                Export
+                <i
+                  className={`bi bi-chevron-down text-xs transition-transform duration-200 ${
+                    showExportMenu ? "rotate-180" : ""
+                  }`}
+                ></i>
+              </button>
+
+              {showExportMenu && (
+                <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-sm shadow-xl border border-gray-100 overflow-hidden z-50">
+                  <button
+                    onClick={exportToExcel}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-all text-left"
+                  >
+                    <i className="bi bi-file-earmark-excel text-green-600 text-base"></i>
+                    Export Excel
+                  </button>
+
+                  <div className="h-px bg-gray-100"></div>
+
+                  <button
+                    onClick={exportToPDF}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-all text-left"
+                  >
+                    <i className="bi bi-file-earmark-pdf text-red-600 text-base"></i>
+                    Export PDF
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Add Task Button */}
             <button
-              onClick={() => setShowExportMenu((prev) => !prev)}
-              className="flex items-center gap-2  px-4 py-2 rounded-sm bg-orange-50 text-orange-500  text-sm font-semibold tracking-wide transition-all shadow-sm"
+              type="button"
+              onClick={() => setShowForm(true)}
+              className="flex-1 sm:flex-none bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-sm text-sm font-bold shadow-md transition-all text-center"
             >
-              <i className="bi bi-download text-base"></i>
-              Export
-              <i
-                className={`bi bi-chevron-down text-xs transition-transform duration-200 ${
-                  showExportMenu ? "rotate-180" : ""
-                }`}
-              ></i>
+              + ADD TASK
             </button>
-
-            {showExportMenu && (
-              <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-sm shadow-xl border border-gray-100 overflow-hidden z-50">
-                <button
-                  onClick={exportToExcel}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-all"
-                >
-                  <div className="w-7 h-7 rounded-sm  flex items-center justify-center">
-                    <i className="bi bi-file-earmark-excel text-green-600 text-sm"></i>
-                  </div>
-                  Export Excel
-                </button>
-
-                <div className="h-px bg-gray-100 mx-3"></div>
-
-                <button
-                  onClick={exportToPDF}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-all"
-                >
-                  <div className="w-7 h-7 rounded-sm flex items-center justify-center">
-                    <i className="bi bi-file-earmark-pdf text-red-600 text-sm"></i>
-                  </div>
-                  Export PDF
-                </button>
-              </div>
-            )}
           </div>
-
-          {/* Add Task Button */}
-          <button
-            type="button"
-            onClick={() => setShowForm(true)}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-lg text-sm font-semibold shadow-md transition-all"
-          >
-            + ADD TASK
-          </button>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="mx-6 flex flex-wrap items-center gap-x-5 gap-y-2 mt-3 mb-5">
-        {/* Task Name */}
+      <div className="mx-6 md:hidden mt-3 relative z-40">
+        <button onClick={() => setShowMobileFilters(!showMobileFilters)} className="w-full flex items-center justify-between text-orange-500 font-semibold bg-orange-50 px-4 py-2 rounded-sm border border-orange-200 shadow-sm transition-all">
+           <span className="flex items-center gap-2"><i className="bi bi-funnel"></i> Filters</span>
+           <i className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}></i>
+        </button>
+      </div>
+
+      <div className={`
+        ${showMobileFilters ? "absolute left-6 right-6 top-50 bg-white p-5 shadow-2xl border border-gray-100 z-50 rounded-lg grid grid-cols-2 gap-3 mt-1" : "hidden"} 
+        md:mx-6 md:flex md:flex-wrap md:items-center md:gap-x-5 md:gap-y-2 md:mt-3 md:mb-5 md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
+      `}>
         <input
           type="text"
           name="task_name"
-          placeholder="Enter Task Name"
+          placeholder="Task Name"
           value={filters.task_name || ""}
           onChange={(e) =>
             setFilters({ ...filters, task_name: e.target.value })
           }
-          className="p-2 w-52 border text-gray-600 bg-white rounded-sm focus:ring-1  focus:ring-orange-200 transition-all focus:outline-none border-none"
+          className="p-2 w-full md:w-52 border border-gray-200 md:border-none text-gray-600 bg-white rounded-sm focus:ring-1  focus:ring-orange-200 transition-all focus:outline-none text-sm"
         />
 
         {/* Status */}
@@ -754,9 +762,9 @@ const exportToPDF = async () => {
           name="status"
           value={filters.status || ""}
           onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-          className="p-2 w-52 border text-gray-400 bg-white rounded-sm focus:ring-1 focus:ring-orange-200 transition-all focus:outline-none border-none"
+          className="p-2 w-full md:w-52 border border-gray-200 md:border-none text-gray-400 bg-white rounded-sm focus:ring-1 focus:ring-orange-200 transition-all focus:outline-none text-sm"
         >
-          <option value="">Select Status</option>
+          <option value="">Status</option>
 
           {status.map((item) => (
             <option key={item.id} value={item.id}>
@@ -770,12 +778,12 @@ const exportToPDF = async () => {
           name="priority"
           value={filters.priority || ""}
           onChange={(e) => setFilters({ ...filters, priority: e.target.value })}
-          className="p-2 w-52 border text-gray-400 bg-white rounded-sm focus:ring-1 outline-none focus:ring-orange-200 transition-all focus:outline-none border-none"
+          className="p-2 w-full md:w-52 border border-gray-200 md:border-none text-gray-400 bg-white rounded-sm focus:ring-1 outline-none focus:ring-orange-200 transition-all focus:outline-none text-sm"
         >
-          <option value="">Select Priority</option>
-          <option>High</option>
-          <option>Medium</option>
-          <option>Low</option>
+          <option value="">Priority</option>
+          <option value="High">High</option>
+          <option value="Medium">Medium</option>
+          <option value="Low">Low</option>
         </select>
 
         {/* Assignee - dynamic API */}
@@ -783,51 +791,79 @@ const exportToPDF = async () => {
           name="assignee"
           value={filters.assignee || "-"}
           onChange={(e) => setFilters({ ...filters, assignee: e.target.value })}
-          className="p-2 w-52 border text-gray-400 bg-white rounded-sm focus:ring-1 outline-none focus:ring-orange-200 transition-all focus:outline-none border-none"
+          className="p-2 w-full md:w-52 border border-gray-200 md:border-none text-gray-400 bg-white rounded-sm focus:ring-1 focus:ring-orange-200 transition-all focus:outline-none text-sm"
         >
-          <option value="">Select Assignee</option>
+          <option value="">Assignee</option>
 
           {asignee.map((item) => (
-            <option key={item.id} value={item.name}>
+            <option key={item.id} value={item.id}>
               {item.name}
             </option>
           ))}
         </select>
 
         {/* Start Date Range */}
-        <div className="flex items-center border bg-white rounded-sm px-2 border-gray-300  focus:outline-none border-none">
-          <span className="mx-1 text-gray-400">Start Date</span>
+        <div className="flex flex-col border border-gray-200 md:border-none bg-white rounded-sm focus-within:ring-1 focus-within:ring-orange-200 transition-all px-2 w-full md:w-auto">
+          <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">Start Date</span>
           <input
             type="date"
-            value={filters.start_from || ""}
+            value={filters.start_date || ""}
             onChange={(e) =>
-              setFilters({ ...filters, start_from: e.target.value })
+              setFilters({ ...filters, start_date: e.target.value })
             }
-            className="p-2 w-34 border-gray-300 focus:outline-none text-gray-400  "
+            className="p-1 w-full md:w-32 outline-none text-sm"
+          />
+        </div>
+           {/* Due Date Range */}
+        <div className="flex flex-col border border-gray-200 md:border-none bg-white rounded-sm focus-within:ring-1 focus-within:ring-orange-200 transition-all px-2 w-full md:w-auto">
+          <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">Due Date</span>
+          <input
+            type="date"
+            value={filters.end_date || ""}
+            onChange={(e) =>
+              setFilters({ ...filters, end_date: e.target.value })
+            }
+            className="p-1 w-full md:w-32 outline-none text-sm"
           />
         </div>
 
-        {/* Due Date Range */}
-        <div className="flex items-center border bg-white rounded-md px-2 border-gray-300 focus:outline-none border-none">
-          <span className="mx-1 text-gray-400">Due Date</span>
-          <input
-            type="date"
-            value={filters.due_from || ""}
-            onChange={(e) =>
-              setFilters({ ...filters, due_from: e.target.value })
-            }
-            className="p-2 w-34 border-gray-300 focus:outline-none text-gray-400  "
-          />
+        <div className="flex gap-2 col-span-2">
+            <button
+              type="button"
+              onClick={() => {
+                setFilters({
+                  task_name: "",
+                  status: "",
+                  priority: "",
+                  assignee: "",
+                  start_date: "",
+                  end_date: "",
+                  created_by: ""
+                });
+                setShowMobileFilters(false);
+              }}
+              className="border border-gray-300 w-full md:w-auto cursor-pointer rounded-sm p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm text-center font-semibold"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowMobileFilters(false)}
+              className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-2 bg-orange-100 text-orange-700 hover:bg-orange-200 text-sm text-center font-semibold"
+            >
+              Apply
+            </button>
         </div>
+      </div>
 
-        {/* Assignee - dynamic API */}
+        {/* Created By - dynamic API */}
         <select
           name="created_by_name"
           value={filters.created_by_name || ""}
           onChange={(e) =>
             setFilters({ ...filters, created_by_name: e.target.value })
           }
-          className="p-2 w-52 border text-gray-400 bg-white rounded-sm focus:ring-1 focus:outline-none focus:ring-orange-200 transition-all border-gray-300 border-none"
+          className="p-2 w-full md:w-52 border border-gray-200 md:border-none text-gray-400 bg-white rounded-sm focus:ring-1 focus:ring-orange-200 transition-all focus:outline-none"
         >
           <option value="">Select Created By</option>
 
@@ -839,26 +875,45 @@ const exportToPDF = async () => {
         </select>
 
         {/* created Date Range */}
-        <div className="flex items-center border bg-white rounded-sm px-2 border-gray-300 focus:outline-none border-none">
-          <span className="mx-1 text-gray-400">Created Date</span>
+        <div className="flex items-center border border-gray-200 md:border-none bg-white rounded-sm focus-within:ring-1 focus-within:ring-orange-200 transition-all px-2 w-full md:w-auto">
+          <span className="mx-1 text-gray-400 whitespace-nowrap">Created Date</span>
           <input
             type="date"
             value={filters.created_at || ""}
             onChange={(e) =>
               setFilters({ ...filters, created_at: e.target.value })
             }
-            className="p-2 w-34 border-gray-300 focus:outline-none text-gray-400  "
+            className="p-2 w-full md:w-32 outline-none"
           />
         </div>
 
         {/* CLEAR BUTTON */}
-        <button
-          type="button"
-          className=" rounded-sm p-0.5 bg-gray-200 text-gray-700 hover:bg-gray-300 text-md text-center px-3"
-          onClick={() => setFilters({})}
-        >
-          Clear
-        </button>
+        <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setFilters({
+                  task_name: "",
+                  status: "",
+                  priority: "",
+                  start_date: "",
+                  end_date: "",
+                  assignee: "",
+                  created_by_name: "",
+                  created_at: "",
+                });
+                setShowMobileFilters(false);
+              }}
+              className="border border-gray-300 w-full md:w-auto cursor-pointer rounded-sm p-1.5 bg-gray-200 text-gray-700 hover:bg-gray-300 text-md text-center px-6"
+            >
+              Clear
+            </button>
+            <button
+              onClick={() => setShowMobileFilters(false)}
+              className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-1.5 bg-orange-100 text-orange-700 hover:bg-orange-200 text-md text-center px-6"
+            >
+              Apply
+            </button>
+        </div>
       </div>
 
       {/* Table */}
@@ -870,7 +925,7 @@ const exportToPDF = async () => {
           className="overflow-x-auto overflow-y-scroll max-h-[500px] custom-scroll p-1 bg-white"
           style={{ overflowX: "scroll" }}
         >
-          <table className="w-full text-sm  text-left text-gray-700 border-collapse mt-2 mb-2">
+          <table className="w-full text-sm  text-left text-gray-700 border-collapse mt-2 mb-2 whitespace-nowrap">
             <thead className="uppercase font-semibold text-xs tracking-wider bg-gray-50 border-b border-gray-100 text-gray-400">
               <tr>
                 <th className="py-3 px-5 w-10">#</th>
@@ -1005,7 +1060,7 @@ const exportToPDF = async () => {
           </table>
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-6 py-3 border-gray-200 bg-white rounded-b-lg">
+            <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-3 border-gray-200 bg-white rounded-b-lg gap-3">
               {/* Previous Button */}
               <button
                 type="button"

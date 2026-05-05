@@ -71,7 +71,8 @@ export default function Page() {
                 {/* Table */}
                 <form className="p-1 mx-4">
                     <div className="bg-white shadow-md rounded-2xl p-1 border border-gray-200">
-                        <table className=" w-full text-sm text-left text-gray-700 border-collapse mt-2 mb-2">
+                        <div className="overflow-x-auto overflow-y-auto max-h-[500px] custom-scroll">
+                            <table className=" w-full text-sm text-left text-gray-700 border-collapse mt-2 mb-2 whitespace-nowrap">
                             <thead className="bg-gray-50 text-gray-900  text-xs">
                                 <tr>
                                     <th className="py-3 px-4 text-start">
@@ -111,6 +112,7 @@ export default function Page() {
                                 ))}
                             </tbody>
                         </table>
+                        </div>
 
                     </div>
                 </form>

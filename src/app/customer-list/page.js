@@ -23,6 +23,7 @@ export default function CustomerList() {
   const [viewModal, setViewModal] = useState({ open: false, data: null });
   const [deleteModal, setDeleteModal] = useState({ open: false, id: null, name: "" });
 
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [filters, setFilters] = useState({
     customer_name: "",
     // BUG FIX #4: renamed contact_number to mobile to match backend param
@@ -146,27 +147,27 @@ export default function CustomerList() {
       <div className="bg-gray-100">
         {/* Header bar */}
         <div className="bg-white w-full rounded-sm shadow-lg p-3 mt-1 mb-5">
-          <div className="flex justify-between items-center">
-            <p>
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
+            <p className="hidden sm:flex items-center flex-wrap">
               <Link href="/dashboard" className="mx-3 text-xl text-gray-400 hover:text-indigo-600">
                 <i className="bi bi-house"></i>
               </Link>
-              <i className="bi bi-chevron-right"></i>
-              <Link href="/customer-list" className="mx-3 text-md text-gray-700 hover:text-orange-500">
+              <i className="bi bi-chevron-right text-[10px]"></i>
+              <Link href="/customer-list" className="mx-3 text-md text-gray-700 hover:text-orange-500 font-semibold">
                 Customer List
               </Link>
             </p>
-            <div>
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
               <input
                 type="text"
                 placeholder="🔍 Search..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="border w-sm border-gray-300 text-gray-700 placeholder-gray-400 p-1 px-2 mx-5 rounded-sm focus:ring-1 outline-none focus:ring-orange-200 transition-all text-md"
+                className="border w-full sm:w-64 border-gray-300 text-gray-700 placeholder-gray-400 p-2 sm:p-1 px-3 rounded-sm focus:ring-1 outline-none focus:ring-orange-200 transition-all text-sm"
               />
               <Link
                 href="/customer"
-                className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-sm ml-2"
+                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-sm w-full sm:w-auto text-center font-bold text-sm"
               >
                 + ADD CUSTOMER
               </Link>
@@ -175,22 +176,31 @@ export default function CustomerList() {
         </div>
 
         {/* Filters */}
-        <div className="mx-4 mb-2">
+        <div className="mx-4 mb-2 md:hidden mt-3 relative z-40">
+          <button onClick={() => setShowMobileFilters(!showMobileFilters)} className="w-full flex items-center justify-between text-orange-500 font-semibold bg-orange-50 px-4 py-2 rounded-sm border border-orange-200 shadow-sm transition-all">
+             <span className="flex items-center gap-2"><i className="bi bi-funnel"></i> Filters</span>
+             <i className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}></i>
+          </button>
+        </div>
+
+        <div className={`
+          ${showMobileFilters ? "absolute left-4 right-4 top-50 bg-white p-5 shadow-2xl border border-gray-100 z-50 rounded-lg grid grid-cols-2 gap-3 mt-1" : "hidden"} 
+          md:mx-4 md:mb-2 md:flex md:flex-wrap md:gap-2 md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
+        `}>
           <input
             type="text"
             name="customer_name"
             value={filters.customer_name}
             onChange={handleChange}
-            placeholder="Enter Customer Name"
-            className="border bg-white border-gray-300 rounded-sm px-3 py-2 w-56 mx-2 focus:ring-orange-200 outline-none focus:ring-1"
+            placeholder="Enter Name"
+            className="border bg-white border-gray-300 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 focus:ring-orange-200 outline-none focus:ring-1 text-sm"
           />
 
-          {/* BUG FIX #4: name is now "mobile" to match backend, state key also "mobile" */}
           <input
             type="text"
             name="mobile"
-            placeholder="Enter Contact Number"
-            className="border bg-white border-gray-300 rounded-sm px-3 py-2 w-56 mx-2 focus:ring-orange-200 outline-none focus:ring-1"
+            placeholder="Contact No."
+            className="border bg-white border-gray-300 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 focus:ring-orange-200 outline-none focus:ring-1 text-sm"
             value={filters.mobile || ""}
             onChange={(e) => {
               const val = e.target.value;
@@ -208,18 +218,16 @@ export default function CustomerList() {
             value={filters.email}
             onChange={handleChange}
             placeholder="Enter Email"
-            className="border bg-white border-gray-300 rounded-sm px-3 py-2 w-56 mx-2 focus:ring-orange-200 outline-none focus:ring-1"
+            className="border bg-white border-gray-300 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 focus:ring-orange-200 outline-none focus:ring-1 text-sm"
           />
 
-          {/* BUG FIX #2 & #3: value is now item.id (number) not item.name (string)
-              This matches the backend SQL: AND c.industry = ? which stores industry id */}
           <select
             name="industry"
             value={filters.industry}
             onChange={handleChange}
-            className="border bg-white border-gray-300 rounded-sm px-3 py-2 w-56 mx-2 focus:ring-orange-200 outline-none focus:ring-1 text-gray-500"
+            className="border bg-white border-gray-300 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 focus:ring-orange-200 outline-none focus:ring-1 text-gray-500 text-sm"
           >
-            <option value="">Select Industry</option>
+            <option value="">Industry</option>
             {industries.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.name}
@@ -227,27 +235,37 @@ export default function CustomerList() {
             ))}
           </select>
 
-          <button
-            type="button"
-            onClick={() => {
-              setFilters({
-                customer_name: "",
-                mobile: "",
-                email: "",
-                industry: "",
-              });
-            }}
-            className="border cursor-pointer rounded-sm p-0.5 border-gray-200 transition-all text-md mx-5 px-3 bg-gray-200 text-gray-700 hover:bg-gray-300 text-center"
-          >
-            Clear
-          </button>
+          <div className="flex gap-2 col-span-2">
+            <button
+              type="button"
+              onClick={() => {
+                setFilters({
+                  customer_name: "",
+                  mobile: "",
+                  email: "",
+                  industry: "",
+                });
+                setShowMobileFilters(false);
+              }}
+              className="border border-gray-300 w-full md:w-auto cursor-pointer rounded-sm p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm text-center font-semibold"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowMobileFilters(false)}
+              className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-2 bg-orange-100 text-orange-700 hover:bg-orange-200 text-sm text-center font-semibold"
+            >
+              Apply
+            </button>
+          </div>
         </div>
 
         {/* Table */}
         <form className="p-2 w-8xl mx-3">
           <div className="bg-white shadow rounded-sm p-6">
             <div className="overflow-x-auto overflow-y-scroll max-h-[500px] custom-scroll" style={{ overflowX: "scroll" }}>
-              <table className="w-full text-sm border border-gray-200 text-left">
+              <table className="w-full text-sm border border-gray-200 text-left whitespace-nowrap">
                 <thead className="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                   <tr>
                     <th className="px-3 py-2 text-center">#</th>
@@ -314,7 +332,7 @@ export default function CustomerList() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-6 py-3 border-gray-200 bg-white rounded-b-lg">
+              <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-3 border-gray-200 bg-white rounded-b-lg gap-3">
                 <button
                   type="button"
                   onClick={() => handlePageChange(currentPage - 1)}

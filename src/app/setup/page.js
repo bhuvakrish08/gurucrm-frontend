@@ -13,13 +13,13 @@ export default function setupPage() {
             <CheckPermission allowedRoles={["Super Admin", "Admin"]} >
                 <div className="bg-gray-100">
                     <div className="bg-white w-full shadow-lg p-3 mt-1 mb-5">
-                        <div className="flex justify-between items-center">
-                            <p>
-                                <Link href="/dashboard" className="mx-3 text-xl text-gray-400 hover:text-indigo-600">
+                        <div className="hidden sm:flex items-center text-gray-700">
+                            <p className="flex items-center flex-wrap">
+                                <Link href="/dashboard" className="mx-2 text-xl text-gray-400 hover:text-indigo-600">
                                     <i className="bi bi-house"></i>
                                 </Link>
-                                <i className="bi bi-chevron-right"></i>
-                                <Link href="/setup" className="mx-3 text-md text-gray-700 hover:text-orange-500">
+                                <i className="bi bi-chevron-right text-[10px]"></i>
+                                <Link href="/setup" className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold">
                                     Settings
                                 </Link>
                             </p>
