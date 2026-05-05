@@ -17,6 +17,7 @@ export default function Page() {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("Pending");
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -547,7 +548,6 @@ export default function Page() {
 
   // ================= FILTER LOGIC =================
 
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const debounceRef = useRef(null);
 
   const [filters, setFilters] = useState({
@@ -774,7 +774,7 @@ export default function Page() {
       <div className="bg-gray-100 ">
         {/* breadcrumb */}
 
-        <div className="bg-white w-full border-gray-100 p-3 mt-1 mb-5 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
+        <div className="bg-white w-full shadow-lg p-3 mt-1 mb-5 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
           <div className="hidden sm:flex items-center text-gray-700 w-full sm:w-auto">
             <p className="flex items-center flex-wrap">
               <Link
@@ -799,12 +799,12 @@ export default function Page() {
               </Link>
             </p>
           </div>
-          {/* Export & Add Buttons */}
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-            <div className="relative flex-1 sm:flex-none" ref={exportRef}>
+          {/* Export Button */}
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-end">
+            <div className="relative" ref={exportRef}>
               <button
                 onClick={() => setShowExportMenu((prev) => !prev)}
-                className="w-full flex items-center justify-center gap-2 bg-orange-50 text-orange-500 px-4 py-2 rounded-sm text-sm font-bold tracking-wide transition-all shadow-sm border border-orange-100"
+                className="flex items-center gap-2  bg-orange-50 text-orange-500 px-4 py-2 rounded-sm text-sm font-semibold tracking-wide transition-all shadow-sm"
               >
                 <i className="bi bi-download text-base"></i>
                 Export
@@ -819,26 +819,33 @@ export default function Page() {
                 <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-sm shadow-xl border border-gray-100 overflow-hidden z-50">
                   <button
                     onClick={exportToExcel}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-all text-left"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-all"
                   >
-                    <i className="bi bi-file-earmark-excel text-green-600 text-base"></i>
+                    <div className="w-7 h-7 rounded-sm  flex items-center justify-center">
+                      <i className="bi bi-file-earmark-excel text-green-600 text-sm"></i>
+                    </div>
                     Export Excel
                   </button>
-                  <div className="h-px bg-gray-100"></div>
+
+                  <div className="h-px bg-gray-100 mx-3"></div>
+
                   <button
                     onClick={exportToPDF}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-all text-left"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-all"
                   >
-                    <i className="bi bi-file-earmark-pdf text-red-600 text-base"></i>
+                    <div className="w-7 h-7 rounded-sm  flex items-center justify-center">
+                      <i className="bi bi-file-earmark-pdf text-red-600 text-sm"></i>
+                    </div>
                     Export PDF
                   </button>
                 </div>
               )}
             </div>
 
+            {/* Add Lead Button */}
             <Link
               href="/sales/lead/add-lead"
-              className="flex-1 sm:flex-none bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-sm text-sm font-bold shadow-md transition-all text-center"
+              className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-sm text-sm font-semibold shadow-md transition-all"
             >
               + ADD LEAD
             </Link>
@@ -847,49 +854,49 @@ export default function Page() {
 
         {/* FILTER SECTION */}
 
-        <div className="mx-6 md:hidden mt-3 relative z-40">
+        <div className="mx-6 mb-2 md:hidden mt-3 relative z-40">
           <button onClick={() => setShowMobileFilters(!showMobileFilters)} className="w-full flex items-center justify-between text-orange-500 font-semibold bg-orange-50 px-4 py-2 rounded-sm border border-orange-200 shadow-sm transition-all">
-             <span className="flex items-center gap-2"><i className="bi bi-funnel"></i> Filters</span>
-             <i className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}></i>
+            <span className="flex items-center gap-2"><i className="bi bi-funnel"></i> Filters</span>
+            <i className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}></i>
           </button>
         </div>
 
         <div className={`
           ${showMobileFilters ? "absolute left-6 right-6 top-50 bg-white p-5 shadow-2xl border border-gray-100 z-50 rounded-lg grid grid-cols-2 gap-3 mt-1" : "hidden"} 
-          md:mx-6 md:flex md:flex-wrap md:items-center md:gap-x-5 md:gap-y-2 md:mt-3 md:mb-5 md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
+          md:mx-6 md:mb-3 md:items-center md:gap-2 md:flex-wrap md:flex md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
         `}>
           <input
             name="company_name"
             value={filters.company_name}
             onChange={handleFilterChange}
             ref={companyRef}
-            placeholder="Company"
-            className="p-2 w-full md:w-45 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm"
+            placeholder="Company Name"
+            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-600 text-sm"
           />
 
           <input
             name="customer_name"
             value={filters.customer_name}
             onChange={handleFilterChange}
-            placeholder="Customer"
-            className="p-2 w-full md:w-45 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm"
+            placeholder="Customer Name"
+            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-600 text-sm"
           />
 
           <input
             name="lead_title"
             value={filters.lead_title}
             onChange={handleFilterChange}
-            placeholder="Lead Title"
-            className="p-2 w-full md:w-45 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm"
+            placeholder="Enter Lead Title"
+            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-600 text-sm"
           />
 
           <select
             name="product_category"
             value={filters.product_category}
             onChange={handleFilterChange}
-            className="p-2 w-full md:w-48 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm"
+            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-48 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm"
           >
-            <option value="">Category</option>
+            <option value="">Select Product Category</option>
             {category.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.name}
@@ -901,9 +908,9 @@ export default function Page() {
             name="source"
             value={filters.source}
             onChange={handleFilterChange}
-            className="p-2 w-full md:w-45 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm"
+            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm"
           >
-            <option value="">Source</option>
+            <option value="">Select Source</option>
             {leadSource.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.name}
@@ -915,9 +922,9 @@ export default function Page() {
             name="assignee"
             value={filters.assignee}
             onChange={handleFilterChange}
-            className="p-2 w-full md:w-45 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm"
+            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm"
           >
-            <option value="">Assignee</option>
+            <option value="">Select Assignee</option>
             {assignee.map((item) => (
               <option key={item.id} value={item.name}>
                 {item.name}
@@ -925,25 +932,25 @@ export default function Page() {
             ))}
           </select>
 
-          <div className="flex flex-col px-2 w-full md:w-58 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm">
-            <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">From Next</span>
+          <div className="flex items-center px-2 border bg-white border-gray-300 rounded-sm w-full md:w-58 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 text-gray-400 whitespace-nowrap">From Next</span>
             <input
               type="date"
               name="from_followup"
               value={filters.from_followup}
               onChange={handleFilterChange}
-              className="p-1 w-full md:w-35 outline-none text-sm"
+              className="p-1 w-full md:w-35 outline-none bg-transparent"
             />
           </div>
 
-          <div className="flex flex-col px-2 w-full md:w-53 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm">
-            <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">To Next</span>
+          <div className="flex items-center px-2 border bg-white border-gray-300 rounded-sm w-full md:w-53 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 text-gray-400 whitespace-nowrap">To Next</span>
             <input
               type="date"
               name="to_followup"
               value={filters.to_followup}
               onChange={handleFilterChange}
-              className="p-1 w-full md:w-35 outline-none text-sm"
+              className="p-1 w-full md:w-35 outline-none bg-transparent"
             />
           </div>
 
@@ -951,46 +958,46 @@ export default function Page() {
             name="status"
             value={filters.status}
             onChange={handleFilterChange}
-            className="p-2 w-full md:w-45 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm"
+            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm"
           >
-            <option value="">Status (Pending)</option>
+            <option value="">Pending</option>
             <option value="Won">Won</option>
             <option value="Lost">Lost</option>
           </select>
 
-          <div className="flex flex-col px-2 w-full md:w-60 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm">
-            <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">From Create</span>
+          <div className="flex items-center px-2 border bg-white border-gray-300 rounded-sm w-full md:w-60 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 text-gray-400 whitespace-nowrap">From Create</span>
             <input
               type="date"
               name="from_created"
               value={filters.from_created}
               onChange={handleFilterChange}
-              className="p-1 w-full md:w-35 outline-none text-sm"
+              className="p-1 w-full md:w-35 outline-none bg-transparent"
             />
           </div>
 
-          <div className="flex flex-col px-2 w-full md:w-58 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm">
-            <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">To Create</span>
+          <div className="flex items-center px-2 border bg-white border-gray-300 rounded-sm w-full md:w-58 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 text-gray-400 whitespace-nowrap">To Create</span>
             <input
               type="date"
               name="to_created"
               value={filters.to_created}
               onChange={handleFilterChange}
-              className="p-1 w-full md:w-35 outline-none text-sm"
+              className="p-1 w-full md:w-35 outline-none bg-transparent"
             />
           </div>
 
-          <div className="flex gap-2 col-span-2">
+          <div className="flex gap-2 col-span-2 md:col-span-1">
             <button
-              onClick={() => { resetFilters(); setShowMobileFilters(false); }}
+              onClick={() => {
+                resetFilters();
+                setShowMobileFilters(false);
+              }}
               className="border border-gray-300 w-full md:w-auto cursor-pointer rounded-sm p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm text-center font-semibold"
             >
               Clear
             </button>
-            <button
-              onClick={() => setShowMobileFilters(false)}
-              className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-2 bg-orange-100 text-orange-700 hover:bg-orange-200 text-sm text-center font-semibold"
-            >
+            <button onClick={() => setShowMobileFilters(false)} className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-2 bg-orange-100 text-orange-700 hover:bg-orange-200 text-sm text-center font-semibold">
               Apply
             </button>
           </div>
@@ -1054,8 +1061,11 @@ export default function Page() {
             {loading ? (
               <div className="text-center py-10 text-gray-400">Loading...</div>
             ) : (
-              <div className="overflow-x-auto overflow-y-auto max-h-[600px] custom-scroll">
-                <table className="w-full text-sm whitespace-nowrap">
+              <div
+                className="overflow-x-auto overflow-y-scroll max-h-[600px] custom-scroll "
+                style={{ overflowX: "scroll" }}
+              >
+                <table className="w-full text-sm ">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-100">
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
@@ -1283,12 +1293,15 @@ export default function Page() {
 
                 {/* ✅ UPDATED PAGINATION WITH ITEMS PER PAGE DROPDOWN */}
                 {filteredLeads.length > 0 && (
-                  <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-3 border-t border-gray-200 bg-white rounded-b-lg gap-3">
-
+                  <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-white rounded-b-lg">
                     {/* Left: Items per page dropdown */}
-                    <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-start">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-500">Show</span>
                       <select
                         value={itemsPerPage}
+                        onChange={handleItemsPerPageChange}
+                        className="border border-gray-200 rounded-md px-2 py-1.5 text-sm text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300 cursor-pointer"
+                      >
                         <option value={25}>25</option>
                         <option value={50}>50</option>
                         <option value={100}>100</option>
@@ -1304,7 +1317,7 @@ export default function Page() {
 
                     {/* Center: Page navigation (only show if more than 1 page) */}
                     {totalPages > 1 && (
-                      <div className="flex items-center gap-2 mt-3 sm:mt-0">
+                      <div className="flex items-center gap-2">
                         {/* Previous Button */}
                         <button
                           type="button"
