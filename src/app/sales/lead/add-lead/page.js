@@ -85,10 +85,16 @@ const [errors, setErrors] = useState({});
   }
 
   try {
-    const res = await axios.post(
-      `${API_BASE}/api/lead/insert`,
-      formData
-    );
+      const token = localStorage.getItem("token");
+      const res = await axios.post(
+        `${API_BASE}/api/lead/insert`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
     if (res.status === 200 || res.status === 201) {
       toast.success("Lead added successfully!");

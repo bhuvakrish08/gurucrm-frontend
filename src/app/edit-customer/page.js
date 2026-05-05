@@ -474,28 +474,38 @@ const router = useRouter(); // ← yeh add karo
       <Header />
       <div className="min-h-screen bg-gray-50">
         {/* Breadcrumb */}
-        <div className="bg-white border-b border-gray-200 px-6 py-3">
-          <div className="flex items-center gap-2 text-sm">
-            <Link
-              href="/dashboard"
-              className="text-gray-400 hover:text-orange-500 transition-colors"
-            >
-              <i className="bi bi-house text-base"></i>
-            </Link>
-            <i className="bi bi-chevron-right text-gray-300 text-xs"></i>
-            <Link
-              href="/customer-list"
-              className="text-gray-500 hover:text-orange-500 transition-colors"
-            >
-              Customer List
-            </Link>
-            <i className="bi bi-chevron-right text-gray-300 text-xs"></i>
-            <span className="text-gray-800 font-medium">Update Customer</span>
-            {formData.customer_name && (
-              <span className="text-orange-500 font-semibold">
-                — {formData.customer_name}
-              </span>
-            )}
+        <div className="bg-white shadow-lg p-3 mt-1 mb-5">
+          <div className="hidden sm:flex items-center text-gray-700 w-full sm:w-auto">
+            <p className="flex items-center flex-wrap">
+              <Link
+                href="/dashboard"
+                className="mx-2 text-xl text-gray-400 hover:text-indigo-600"
+              >
+                <i className="bi bi-house"></i>
+              </Link>
+              <i className="bi bi-chevron-right text-[10px]"></i>
+              <Link
+                href="/customer-list"
+                className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
+              >
+                Customer List
+              </Link>
+              <i className="bi bi-chevron-right text-[10px]"></i>
+              <Link
+                href="#"
+                className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
+              >
+                Update Customer
+              </Link>
+              {formData.customer_name && (
+                <>
+                  <i className="bi bi-chevron-right text-[10px]"></i>
+                  <span className="mx-2 text-md text-orange-500 font-bold">
+                    {formData.customer_name}
+                  </span>
+                </>
+              )}
+            </p>
           </div>
         </div>
 
@@ -567,7 +577,7 @@ const router = useRouter(); // ← yeh add karo
               </div>
 
               {/* Row 1 */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                     Company Name
@@ -621,7 +631,7 @@ const router = useRouter(); // ← yeh add karo
               </div>
 
               {/* Row 2 */}
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                     Email
@@ -656,7 +666,7 @@ const router = useRouter(); // ← yeh add karo
               </div>
 
               {/* Row 3 */}
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                     Website

@@ -17,6 +17,7 @@ export default function Page() {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("Pending");
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -773,33 +774,33 @@ export default function Page() {
       <div className="bg-gray-100 ">
         {/* breadcrumb */}
 
-        <div className="bg-white w-full border-gray-100 p-3 mt-1 mb-5 flex justify-between items-center">
-          <div className="flex items-center text-gray-700">
-            <p>
+        <div className="bg-white w-full shadow-lg p-3 mt-1 mb-5 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
+          <div className="hidden sm:flex items-center text-gray-700 w-full sm:w-auto">
+            <p className="flex items-center flex-wrap">
               <Link
                 href="/dashboard"
-                className="mx-3 text-xl text-gray-400 hover:text-indigo-600"
+                className="mx-2 text-xl text-gray-400 hover:text-indigo-600"
               >
                 <i className="bi bi-house"></i>
               </Link>
-              <i className="bi bi-chevron-right"></i>
+              <i className="bi bi-chevron-right text-[10px]"></i>
               <Link
                 href="#"
-                className="mx-3 text-md text-gray-700 hover:text-orange-500"
+                className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
               >
                 Sales
               </Link>
-              <i className="bi bi-chevron-right"></i>
+              <i className="bi bi-chevron-right text-[10px]"></i>
               <Link
                 href="/sales/lead"
-                className="mx-3 text-md text-gray-700 hover:text-orange-500"
+                className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
               >
                 Lead
               </Link>
             </p>
           </div>
           {/* Export Button */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-end">
             <div className="relative" ref={exportRef}>
               <button
                 onClick={() => setShowExportMenu((prev) => !prev)}
@@ -853,14 +854,24 @@ export default function Page() {
 
         {/* FILTER SECTION */}
 
-        <div className="mx-6 flex flex-wrap items-center gap-x-5 gap-y-2 mt-3 mb-5">
+        <div className="mx-6 mb-2 md:hidden mt-3 relative z-40">
+          <button onClick={() => setShowMobileFilters(!showMobileFilters)} className="w-full flex items-center justify-between text-orange-500 font-semibold bg-orange-50 px-4 py-2 rounded-sm border border-orange-200 shadow-sm transition-all">
+            <span className="flex items-center gap-2"><i className="bi bi-funnel"></i> Filters</span>
+            <i className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}></i>
+          </button>
+        </div>
+
+        <div className={`
+          ${showMobileFilters ? "absolute left-6 right-6 top-50 bg-white p-5 shadow-2xl border border-gray-100 z-50 rounded-lg grid grid-cols-2 gap-3 mt-1" : "hidden"} 
+          md:mx-6 md:mb-3 md:items-center md:gap-2 md:flex-wrap md:flex md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
+        `}>
           <input
             name="company_name"
             value={filters.company_name}
             onChange={handleFilterChange}
             ref={companyRef}
             placeholder="Company Name"
-            className="p-2 w-45  bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm"
+            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-600 text-sm"
           />
 
           <input
@@ -868,7 +879,7 @@ export default function Page() {
             value={filters.customer_name}
             onChange={handleFilterChange}
             placeholder="Customer Name"
-            className="p-2 w-45  bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm"
+            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-600 text-sm"
           />
 
           <input
@@ -876,14 +887,14 @@ export default function Page() {
             value={filters.lead_title}
             onChange={handleFilterChange}
             placeholder="Enter Lead Title"
-            className="p-2 w-45  bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm"
+            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-600 text-sm"
           />
 
           <select
             name="product_category"
             value={filters.product_category}
             onChange={handleFilterChange}
-            className="p-2 w-48  bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm"
+            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-48 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm"
           >
             <option value="">Select Product Category</option>
             {category.map((item) => (
@@ -897,7 +908,7 @@ export default function Page() {
             name="source"
             value={filters.source}
             onChange={handleFilterChange}
-            className="p-2 w-45  bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm"
+            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm"
           >
             <option value="">Select Source</option>
             {leadSource.map((item) => (
@@ -911,7 +922,7 @@ export default function Page() {
             name="assignee"
             value={filters.assignee}
             onChange={handleFilterChange}
-            className="p-2 w-45  bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm"
+            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm"
           >
             <option value="">Select Assignee</option>
             {assignee.map((item) => (
@@ -921,25 +932,25 @@ export default function Page() {
             ))}
           </select>
 
-          <div className="flex items-center px-2 w-58 bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm">
-            <span className="mx-1 text-gray-400">From Next</span>
+          <div className="flex items-center px-2 border bg-white border-gray-300 rounded-sm w-full md:w-58 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 text-gray-400 whitespace-nowrap">From Next</span>
             <input
               type="date"
               name="from_followup"
               value={filters.from_followup}
               onChange={handleFilterChange}
-              className="p-2 w-35 outline-none"
+              className="p-1 w-full md:w-35 outline-none bg-transparent"
             />
           </div>
 
-          <div className="flex items-center px-2 w-53 bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm">
-            <span className="mx-1 text-gray-400">To Next</span>
+          <div className="flex items-center px-2 border bg-white border-gray-300 rounded-sm w-full md:w-53 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 text-gray-400 whitespace-nowrap">To Next</span>
             <input
               type="date"
               name="to_followup"
               value={filters.to_followup}
               onChange={handleFilterChange}
-              className="p-2 w-35 outline-none"
+              className="p-1 w-full md:w-35 outline-none bg-transparent"
             />
           </div>
 
@@ -947,41 +958,47 @@ export default function Page() {
             name="status"
             value={filters.status}
             onChange={handleFilterChange}
-            className="p-2 w-45  bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm"
+            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm"
           >
             <option value="">Pending</option>
             <option value="Won">Won</option>
             <option value="Lost">Lost</option>
           </select>
 
-          <div className="flex items-center px-2 w-60 bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm  ">
-            <span className="mx-1 text-gray-400">From Create</span>
+          <div className="flex items-center px-2 border bg-white border-gray-300 rounded-sm w-full md:w-60 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 text-gray-400 whitespace-nowrap">From Create</span>
             <input
               type="date"
               name="from_created"
               value={filters.from_created}
               onChange={handleFilterChange}
-              className="p-2 w-35 outline-none"
+              className="p-1 w-full md:w-35 outline-none bg-transparent"
             />
           </div>
 
-          <div className="flex items-center px-2 w-58 bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm">
-            <span className="mx-1 text-gray-400">To Create</span>
+          <div className="flex items-center px-2 border bg-white border-gray-300 rounded-sm w-full md:w-58 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 text-gray-400 whitespace-nowrap">To Create</span>
             <input
               type="date"
               name="to_created"
               value={filters.to_created}
               onChange={handleFilterChange}
-              className="p-2 w-35 outline-none"
+              className="p-1 w-full md:w-35 outline-none bg-transparent"
             />
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 col-span-2 md:col-span-1">
             <button
-              onClick={resetFilters}
-              className="border border-gray-300 cursor-pointer rounded-sm p-0.5 bg-gray-200 text-gray-700 hover:bg-gray-300 text-md text-center mx- px-3"
+              onClick={() => {
+                resetFilters();
+                setShowMobileFilters(false);
+              }}
+              className="border border-gray-300 w-full md:w-auto cursor-pointer rounded-sm p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm text-center font-semibold"
             >
               Clear
+            </button>
+            <button onClick={() => setShowMobileFilters(false)} className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-2 bg-orange-100 text-orange-700 hover:bg-orange-200 text-sm text-center font-semibold">
+              Apply
             </button>
           </div>
         </div>

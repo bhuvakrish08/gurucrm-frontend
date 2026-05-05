@@ -235,7 +235,7 @@ export default function QuotationPage() {
       });
       const now = new Date();
       const date = now.toISOString().split("T")[0];
-      const time = now.toTimeString().slice(0, 5).replace("_", "-");
+      const time = now.toTimeString().slice(0, 5).replace(":", "-");
       doc.save(`Quotation_${activeTab}_(${date})_${time}.pdf`);
       toast.success("PDF exported successfully");
       setShowExportMenu(false);
@@ -248,6 +248,7 @@ export default function QuotationPage() {
   // ========================
   // FILTER
   // ========================
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const debounceRef = useRef(null);
   const [filters, setFilters] = useState({
     company_name: "",
@@ -671,10 +672,10 @@ export default function QuotationPage() {
   const filteredQuotations = hasActiveFilters
     ? quotations
     : quotations.filter((q) => {
-        if (activeTab === "Pending")
-          return q.displayStatus !== "Won" && q.displayStatus !== "Lost";
-        return q.displayStatus === activeTab;
-      });
+      if (activeTab === "Pending")
+        return q.displayStatus !== "Won" && q.displayStatus !== "Lost";
+      return q.displayStatus === activeTab;
+    });
 
   const pendingCount = quotations.filter(
     (q) => q.displayStatus !== "Won" && q.displayStatus !== "Lost",
@@ -737,26 +738,26 @@ export default function QuotationPage() {
       <Header />
       <div className="bg-gray-100 min-h-screen">
         {/* Breadcrumb */}
-        <div className="bg-white w-full border-gray-100 p-3 mt-1 mb-5 flex justify-between items-center">
-          <div className="flex items-center text-gray-700">
-            <p>
+        <div className="bg-white w-full border-gray-100 p-3 mt-1 mb-5 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
+          <div className="hidden sm:flex items-center text-gray-700 w-full sm:w-auto">
+            <p className="flex items-center flex-wrap">
               <Link
                 href="/dashboard"
-                className="mx-3 text-xl text-gray-400 hover:text-indigo-600"
+                className="mx-2 text-xl text-gray-400 hover:text-indigo-600"
               >
                 <i className="bi bi-house"></i>
               </Link>
-              <i className="bi bi-chevron-right"></i>
+              <i className="bi bi-chevron-right text-[10px]"></i>
               <Link
                 href="#"
-                className="mx-3 text-md text-gray-700 hover:text-orange-500"
+                className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
               >
                 Sales
               </Link>
-              <i className="bi bi-chevron-right"></i>
+              <i className="bi bi-chevron-right text-[10px]"></i>
               <Link
                 href="/sales/quotation"
-                className="mx-3 text-md text-gray-700 hover:text-orange-500"
+                className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
               >
                 Quotation
               </Link>
@@ -764,73 +765,81 @@ export default function QuotationPage() {
           </div>
 
           {/* Export Dropdown */}
-          <div className="relative" ref={exportRef}>
-            <button
-              onClick={() => setShowExportMenu((prev) => !prev)}
-              className="flex items-center gap-2   px-4 py-2 rounded-sm bg-orange-50 text-orange-500  text-sm font-semibold tracking-wide transition-all shadow-sm"
-            >
-              <i className="bi bi-download text-base"></i>
-              Export
-              <i
-                className={`bi bi-chevron-down text-xs transition-transform duration-200 ${showExportMenu ? "rotate-180" : ""}`}
-              ></i>
-            </button>
-            {showExportMenu && (
-              <div className="absolute right-0 top-full mt-1.5 w-44 bg-white rounded-sm shadow-lg border border-gray-100 overflow-hidden z-50">
-                <button
-                  onClick={exportToExcel}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-all"
-                >
-                  <div className="w-7 h-7 rounded-sm  flex items-center justify-center">
-                    <i className="bi bi-file-earmark-excel text-green-600 text-sm"></i>
-                  </div>
-                  Export Excel
-                </button>
-                <div className="h-px bg-gray-100 mx-3"></div>
-                <button
-                  onClick={exportToPDF}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-all"
-                >
-                  <div className="w-7 h-7 rounded-sm  flex items-center justify-center">
-                    <i className="bi bi-file-earmark-pdf text-red-600 text-sm"></i>
-                  </div>
-                  Export PDF
-                </button>
-              </div>
-            )}
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <div className="relative w-full sm:w-auto" ref={exportRef}>
+              <button
+                onClick={() => setShowExportMenu((prev) => !prev)}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-sm bg-orange-50 text-orange-500 text-sm font-bold tracking-wide transition-all shadow-sm border border-orange-100"
+              >
+                <i className="bi bi-download text-base"></i>
+                Export
+                <i
+                  className={`bi bi-chevron-down text-xs transition-transform duration-200 ${showExportMenu ? "rotate-180" : ""}`}
+                ></i>
+              </button>
+              {showExportMenu && (
+                <div className="absolute right-0 top-full mt-1.5 w-44 bg-white rounded-sm shadow-lg border border-gray-100 overflow-hidden z-50">
+                  <button
+                    onClick={exportToExcel}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-all text-left"
+                  >
+                    <i className="bi bi-file-earmark-excel text-green-600 text-base"></i>
+                    Export Excel
+                  </button>
+                  <div className="h-px bg-gray-100 mx-3"></div>
+                  <button
+                    onClick={exportToPDF}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-all text-left"
+                  >
+                    <i className="bi bi-file-earmark-pdf text-red-600 text-base"></i>
+                    Export PDF
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Filter Section */}
-        <div className="mx-6 flex flex-wrap items-center gap-x-5 gap-y-2 mt-3 mb-5">
+        <div className="mx-6 md:hidden mt-3 relative z-40">
+          <button onClick={() => setShowMobileFilters(!showMobileFilters)} className="w-full flex items-center justify-between text-orange-500 font-semibold bg-orange-50 px-4 py-2 rounded-sm border border-orange-200 shadow-sm transition-all">
+            <span className="flex items-center gap-2"><i className="bi bi-funnel"></i> Filters</span>
+            <i className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}></i>
+          </button>
+        </div>
+
+        <div className={`
+          ${showMobileFilters ? "absolute left-6 right-6 top-50 bg-white p-5 shadow-2xl border border-gray-100 z-50 rounded-lg grid grid-cols-2 gap-3 mt-1" : "hidden"} 
+          md:mx-6 md:flex md:flex-wrap md:items-center md:gap-x-5 md:gap-y-2 md:mt-3 md:mb-5 md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
+        `}>
           <input
             name="company_name"
             value={filters.company_name}
             onChange={handleFilterChange}
-            placeholder="Company Name"
-            className="p-2 w-48 bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm"
+            placeholder="Company"
+            className="p-2 w-full md:w-48 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm"
           />
           <input
             name="customer_name"
             value={filters.customer_name}
             onChange={handleFilterChange}
-            placeholder="Customer Name"
-            className="p-2 w-48 bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm"
+            placeholder="Customer"
+            className="p-2 w-full md:w-48 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm"
           />
           <input
             name="lead_title"
             value={filters.lead_title}
             onChange={handleFilterChange}
             placeholder="Lead Title"
-            className="p-2 w-48 bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm"
+            className="p-2 w-full md:w-48 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm"
           />
           <select
             name="assignee"
             value={filters.assignee}
             onChange={handleFilterChange}
-            className="p-2 w-36 bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm"
+            className="p-2 w-full md:w-36 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm"
           >
-            <option value="">Select Assignee</option>
+            <option value="">Assignee</option>
             {asignee.map((item) => (
               <option key={item.value} value={item.value}>
                 {item.label}
@@ -841,39 +850,49 @@ export default function QuotationPage() {
             name="quotation_status"
             value={filters.quotation_status}
             onChange={handleFilterChange}
-            className="p-2 w-44 bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm"
+            className="p-2 w-full md:w-45 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm"
           >
-            <option value="">Select Status</option>
-            <option value="Pending">Pending</option>
+            <option value="">Status</option>
             <option value="Won">Won</option>
             <option value="Lost">Lost</option>
           </select>
-          <div className="flex items-center px-2 bg-white rounded-sm text-gray-400 text-sm">
-            <span className="mx-1 text-gray-400">From</span>
+
+          <div className="flex flex-col px-2 w-full md:w-58 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm">
+            <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">From Date</span>
             <input
               type="date"
               name="from_date"
               value={filters.from_date}
               onChange={handleFilterChange}
-              className="p-2 w-35 outline-none text-sm"
+              className="p-1 w-full md:w-35 outline-none text-sm"
             />
           </div>
-          <div className="flex items-center px-2 bg-white rounded-sm text-gray-400 text-sm">
-            <span className="mx-1 text-gray-400">To</span>
+
+          <div className="flex flex-col px-2 w-full md:w-58 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm">
+            <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">To Date</span>
             <input
               type="date"
               name="to_date"
               value={filters.to_date}
               onChange={handleFilterChange}
-              className="p-2 w-35 outline-none text-sm"
+              className="p-1 w-full md:w-35 outline-none text-sm"
             />
           </div>
-          <button
-            onClick={resetFilters}
-            className="border border-gray-300 cursor-pointer rounded-sm p-0.5 bg-gray-200 text-gray-700 hover:bg-gray-300 text-md text-center px-3"
-          >
-            Clear
-          </button>
+
+          <div className="flex gap-2 col-span-2">
+            <button
+              onClick={() => { resetFilters(); setShowMobileFilters(false); }}
+              className="border border-gray-300 w-full md:w-auto cursor-pointer rounded-sm p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm text-center font-semibold"
+            >
+              Clear
+            </button>
+            <button
+              onClick={() => setShowMobileFilters(false)}
+              className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-2 bg-orange-100 text-orange-700 hover:bg-orange-200 text-sm text-center font-semibold"
+            >
+              Apply
+            </button>
+          </div>
         </div>
 
         {/* Tabs + Table */}
@@ -924,10 +943,9 @@ export default function QuotationPage() {
               // <div className="overflow-x-auto">
               //   <table className="w-full text-sm">
               <div
-                className="overflow-x-auto overflow-y-scroll max-h-[500px] custom-scroll "
-                style={{ overflowX: "scroll" }}
+                className="overflow-x-auto overflow-y-auto max-h-[500px] custom-scroll"
               >
-                <table className="w-full text-sm ">
+                <table className="w-full text-sm whitespace-nowrap">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-100">
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
@@ -992,7 +1010,7 @@ export default function QuotationPage() {
 
                           <td className="text-lg px-3 text-center">
                             {q.displayStatus === "Won" ||
-                            q.displayStatus === "Lost" ? (
+                              q.displayStatus === "Lost" ? (
                               <div
                                 className="w-9 h-9 tracking-widest rounded-full border inline-flex items-center justify-center bg-gray-50 border-gray-300 text-gray-400 cursor-not-allowed mx-auto shadow-sm"
                                 title="Quotation locked"
@@ -1023,8 +1041,8 @@ export default function QuotationPage() {
                           <td className="px-3 text-gray-500">
                             {q.first_quotation_date
                               ? new Date(
-                                  q.first_quotation_date,
-                                ).toLocaleDateString()
+                                q.first_quotation_date,
+                              ).toLocaleDateString()
                               : "-"}
                           </td>
                           <td className="px-3 text-gray-500">
@@ -1032,8 +1050,8 @@ export default function QuotationPage() {
                               ? new Date(q.quotation_date).toLocaleDateString()
                               : q.quotation_created_at
                                 ? new Date(
-                                    q.quotation_created_at,
-                                  ).toLocaleDateString()
+                                  q.quotation_created_at,
+                                ).toLocaleDateString()
                                 : "-"}
                           </td>
                           <td className="px-3 font-semibold text-gray-700">
@@ -1063,7 +1081,7 @@ export default function QuotationPage() {
 
                           <td className="px-3 text-center">
                             {q.proforma_percentage &&
-                            Number(q.proforma_percentage) > 0 ? (
+                              Number(q.proforma_percentage) > 0 ? (
                               <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">
                                 <i className="bi bi-check-circle-fill text-emerald-500 text-[10px]"></i>
                                 {Number(q.proforma_percentage).toFixed(0)}%
@@ -1183,7 +1201,7 @@ export default function QuotationPage() {
 
                               {q.latest_quotation_id ? (
                                 q.displayStatus === "Won" ||
-                                q.displayStatus === "Lost" ? (
+                                  q.displayStatus === "Lost" ? (
                                   <div
                                     className="text-gray-300 w-8 h-8 rounded-full flex items-center justify-center"
                                     title="Locked"
@@ -1220,9 +1238,9 @@ export default function QuotationPage() {
 
                 {/* ======================== PAGINATION WITH DROPDOWN ======================== */}
                 {filteredQuotations.length > 0 && (
-                  <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-white rounded-b-lg mt-2">
+                  <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-3 border-t border-gray-100 bg-white rounded-b-lg mt-2 gap-3">
                     {/* Left: Records per page + total count */}
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 justify-center sm:justify-start">
                       <span>Show</span>
                       <select
                         value={itemsPerPage}
@@ -1259,7 +1277,7 @@ export default function QuotationPage() {
 
                     {/* Right: Prev / Page info / Next */}
                     {totalPages > 1 && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 mt-3 sm:mt-0">
                         <button
                           type="button"
                           onClick={() => handlePageChange(currentPage - 1)}
@@ -1389,8 +1407,8 @@ export default function QuotationPage() {
                         onChange={(selectedOptions) => {
                           const values = selectedOptions
                             ? selectedOptions
-                                .map((option) => option.value)
-                                .join(",")
+                              .map((option) => option.value)
+                              .join(",")
                             : "";
                           setForm((prev) => ({ ...prev, assignee: values }));
                         }}
@@ -1562,7 +1580,7 @@ export default function QuotationPage() {
                           />
                           <path
                             fill="white"
-                            d="M4 12a8 8 0 018-8v4 a4 4 0 00-4 4H4z"
+                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                           />
                         </svg>
                         Processing...
@@ -1630,8 +1648,8 @@ export default function QuotationPage() {
                           : b.quotation_status === "Approved"
                             ? 1
                             : Math.sign(
-                                new Date(b.created_at) - new Date(a.created_at),
-                              ),
+                              new Date(b.created_at) - new Date(a.created_at),
+                            ),
                       )
                       .map((item, index) => (
                         <div
@@ -1761,9 +1779,9 @@ export default function QuotationPage() {
                                 ₹
                                 {item.amount && item.discount
                                   ? (
-                                      (item.amount * item.discount) /
-                                      100
-                                    ).toFixed(2)
+                                    (item.amount * item.discount) /
+                                    100
+                                  ).toFixed(2)
                                   : "0"}
                               </span>
                             </div>
@@ -2114,15 +2132,14 @@ export default function QuotationPage() {
               {/* REMAINING CARD */}
               {piGrandTotal > 0 && (
                 <div
-                  className={`rounded-xl p-3 border transition-all ${
-                    piIsOver
+                  className={`rounded-xl p-3 border transition-all ${piIsOver
                       ? "bg-red-50 border-red-200"
                       : piEnteredPct === 100
                         ? "bg-green-50 border-green-200"
                         : piEnteredPct > 0
                           ? "bg-emerald-50 border-emerald-200"
                           : "bg-blue-50 border-blue-100"
-                  }`}
+                    }`}
                 >
                   <p className="text-xs font-bold uppercase tracking-wider mb-2 text-gray-500">
                     {piEnteredPct > 0
@@ -2132,13 +2149,12 @@ export default function QuotationPage() {
                   <div className="flex justify-between items-center">
                     <div className="text-center">
                       <p
-                        className={`text-xl font-bold ${
-                          piIsOver
+                        className={`text-xl font-bold ${piIsOver
                             ? "text-red-600"
                             : piEnteredPct === 100
                               ? "text-green-600"
                               : "text-emerald-600"
-                        }`}
+                          }`}
                       >
                         {piIsOver
                           ? "Over!"
@@ -2151,13 +2167,12 @@ export default function QuotationPage() {
                     <div className="w-px h-10 bg-gray-200"></div>
                     <div className="text-center">
                       <p
-                        className={`text-xl font-bold ${
-                          piIsOver
+                        className={`text-xl font-bold ${piIsOver
                             ? "text-red-600"
                             : piEnteredPct === 100
                               ? "text-green-600"
                               : "text-emerald-600"
-                        }`}
+                          }`}
                       >
                         {piIsOver
                           ? "Over!"
@@ -2173,13 +2188,12 @@ export default function QuotationPage() {
                   <div className="mt-3">
                     <div className="w-full bg-white rounded-full h-2 border border-gray-200 overflow-hidden">
                       <div
-                        className={`h-2 rounded-full transition-all duration-300 ${
-                          piIsOver
+                        className={`h-2 rounded-full transition-all duration-300 ${piIsOver
                             ? "bg-red-500"
                             : piEnteredPct >= 100
                               ? "bg-green-500"
                               : "bg-emerald-400"
-                        }`}
+                          }`}
                         style={{ width: `${Math.min(piEnteredPct, 100)}%` }}
                       ></div>
                     </div>
@@ -2222,15 +2236,13 @@ export default function QuotationPage() {
                   Number(piPercentage) <= 0 ||
                   Number(piPercentage) > 100
                 }
-                className={`flex-1 text-white rounded-xl py-2.5 text-sm font-semibold transition-all flex justify-center items-center gap-2 ${
-                  isCreatingPI ||
-                  !piPercentage ||
-                  Number(piPercentage) <= 0 ||
-                  Number(piPercentage) > 100
+                className={`flex-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl py-2.5 text-sm font-semibold shadow-md shadow-emerald-200 transition-all flex justify-center items-center gap-2 ${isCreatingPI ||
+                    !piPercentage ||
+                    Number(piPercentage) <= 0 ||
+                    Number(piPercentage) > 100
                     ? "opacity-60 cursor-not-allowed"
                     : ""
-                }`}
-                style={{ background: "#f07400" }}
+                  }`}
               >
                 {isCreatingPI ? (
                   <>

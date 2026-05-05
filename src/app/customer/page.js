@@ -212,26 +212,26 @@ export default function AddCustomer() {
       <Header />
       <div className=" bg-gray-100 ">
         {/* Header */}
-        <div className="bg-white w-full max-w-8xl rounded-2xl shadow-lg p-2 mt-1 mb-5">
-          <div className=" my-1.5">
-            <p>
+        <div className="bg-white w-full shadow-lg p-3 mt-1 mb-5">
+          <div className="hidden sm:flex items-center text-gray-700 w-full sm:w-auto">
+            <p className="flex items-center flex-wrap">
               <Link
                 href="/dashboard"
-                className="mx-3 text-xl text-gray-400 hover:text-indigo-600"
+                className="mx-2 text-xl text-gray-400 hover:text-indigo-600"
               >
                 <i className="bi bi-house"></i>
               </Link>
-              <i className="bi bi-chevron-right"></i>
+              <i className="bi bi-chevron-right text-[10px]"></i>
               <Link
                 href="/customer-list"
-                className="mx-3 text-md text-gray-700 hover:text-indigo-600"
+                className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
               >
                 Customer List
               </Link>
-              <i className="bi bi-chevron-right"></i>
+              <i className="bi bi-chevron-right text-[10px]"></i>
               <Link
                 href="/customer"
-                className="mx-3 text-md text-gray-700 hover:text-indigo-600"
+                className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
               >
                 Add Customer
               </Link>
@@ -288,7 +288,7 @@ export default function AddCustomer() {
               </div>
 
               {/* Form Fields */}
-              <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">
                     Company Name *
@@ -355,7 +355,7 @@ export default function AddCustomer() {
                 <h3 className="text-blue-900 font-medium mb-2">
                   Add Address Details
                 </h3>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">
                       Address Type *
@@ -379,7 +379,7 @@ export default function AddCustomer() {
               {/* GST Details */}
               <div className="mb-4">
                 <h3 className="text-blue-900 font-medium mb-2">Add GST Details</h3>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">GST Type</label>
                     <select name="gst_type" value={formData.gst_type} onChange={handleChange} className="w-full border rounded p-2">
@@ -405,7 +405,7 @@ export default function AddCustomer() {
               {/* Additional Details */}
               <div className="mb-6">
                 <h3 className="text-blue-900 font-medium mb-2">Add more details</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">Website</label>
                     <input type="text" name="website" ref={websiteRef} value={formData.website} onFocus={handleFocus} onBlur={handleBlur} onChange={handleChange} className="w-full border rounded p-2" />
@@ -432,7 +432,7 @@ export default function AddCustomer() {
           {/* Contact Details Section */}
           {activeTab === "contact" && (
             <div className="bg-white shadow rounded-2xl p-6">
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">
                     Contact Person*

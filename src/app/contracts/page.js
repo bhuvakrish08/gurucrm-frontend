@@ -50,6 +50,7 @@ export default function Page() {
 
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deleteId, setDeleteId] = useState(null);
+    const [showMobileFilters, setShowMobileFilters] = useState(false);
 
 
     const router = useRouter()
@@ -71,7 +72,8 @@ export default function Page() {
             headers: { Authorization: `Bearer ${token}` },
             params: filters
         });
-        setContracts(res.data.result || []);
+        const data = res.data.result || [];
+        setContracts(Array.isArray(data) ? data : []);
     };
 
 
@@ -162,7 +164,8 @@ export default function Page() {
                     params: { status: 1 },
                 });
 
-                setUsers(res.data.data || res.data);
+                const data = res.data.data || res.data;
+                setUsers(Array.isArray(data) ? data : []);
 
             } catch (err) {
                 console.error("Failed to fetch names:", err);
@@ -181,7 +184,8 @@ export default function Page() {
                     params: { status: 1 },
                 });
 
-                setCompany(res.data.data || res.data);
+                const data = res.data.data || res.data;
+                setCompany(Array.isArray(data) ? data : []);
 
             } catch (err) {
                 console.error("Failed to fetch names:", err);
@@ -200,7 +204,8 @@ export default function Page() {
                     params: { status: 1 },
                 });
 
-                setCustomers(res.data.data || res.data);
+                const data = res.data.data || res.data;
+                setCustomers(Array.isArray(data) ? data : []);
 
             } catch (err) {
                 console.error("Failed to fetch names:", err);
@@ -219,7 +224,8 @@ export default function Page() {
                 const res = await axios.get(`${API_BASE}/api/contract-types/contracts`,
                     { params: { status: 1 } }
                 );
-                setContractList(res.data.data);
+                const data = res.data.data || res.data;
+                setContractList(Array.isArray(data) ? data : []);
             } catch { }
         };
 
@@ -247,39 +253,51 @@ export default function Page() {
             <Header />
             <div className="bg-gray-100">
                 {/* Header */}
-                <div className="bg-white w-full rounded-2xl shadow-lg p-3 mt-1 mb-5 flex justify-between items-center">
-                    <div className="flex items-center text-gray-700">
-                        <p>
-                            <Link href="/dashboard" className="mx-3 text-xl text-gray-400 hover:text-indigo-600">
+                {/* Header */}
+                <div className="bg-white w-full shadow-lg p-3 mt-1 mb-5 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
+                    <div className="hidden sm:flex items-center text-gray-700 w-full sm:w-auto">
+                        <p className="flex items-center flex-wrap">
+                            <Link href="/dashboard" className="mx-2 text-xl text-gray-400 hover:text-indigo-600">
                                 <i className="bi bi-house"></i>
                             </Link>
-                            <i className="bi bi-chevron-right"></i>
-                            <Link href="#" className="mx-3 text-md text-gray-700 hover:text-indigo-600">
+                            <i className="bi bi-chevron-right text-[10px]"></i>
+                            <Link href="#" className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold">
                                 Contract
                             </Link>
-                            <i className="bi bi-chevron-right"></i>
-                            <Link href="/contracts" className="mx-3 text-md text-gray-700 hover:text-indigo-600">
+                            <i className="bi bi-chevron-right text-[10px]"></i>
+                            <Link href="/contracts" className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold">
                                 Contract List
                             </Link>
                         </p>
                     </div>
 
-                    <div>
-                        <input type="text" placeholder="🔍 Search..." value={filters.search || ""} onChange={(e) => setFilters({ ...filters, search: e.target.value })} className="border w-sm border-gray-300 text-gray-700 placeholder-gray-400 p-1 px-2 mx-5 rounded-md" />
-                        <Link href="/contracts/add-contracts" className="bg-blue-800 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-900">
+                    <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                        <div className="relative w-full sm:w-auto">
+                            <input type="text" placeholder="🔍 Search..." value={filters.search || ""} onChange={(e) => setFilters({ ...filters, search: e.target.value })} className="border w-full sm:w-64 border-gray-300 text-gray-700 placeholder-gray-400 p-2 sm:p-1 px-3 rounded-sm focus:ring-1 outline-none focus:ring-orange-200 transition-all text-sm" />
+                        </div>
+                        <Link href="/contracts/add-contracts" className="block text-center bg-blue-800 text-white px-5 py-2 rounded-sm shadow hover:bg-blue-900 font-bold text-sm w-full sm:w-auto">
                             + ADD CONTRACT
                         </Link>
                     </div>
                 </div>
 
                 {/* Filters */}
-                <div className="mx-6 flex flex-wrap items-center gap-x-5 gap-y-2 mt-3 mb-5">
+                <div className="mx-6 md:hidden mt-3 relative z-40">
+                    <button onClick={() => setShowMobileFilters(!showMobileFilters)} className="w-full flex items-center justify-between text-orange-500 font-semibold bg-orange-50 px-4 py-2 rounded-sm border border-orange-200 shadow-sm transition-all">
+                        <span className="flex items-center gap-2"><i className="bi bi-funnel"></i> Filters</span>
+                        <i className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}></i>
+                    </button>
+                </div>
 
-                    <input type="text" name="contract_name" placeholder="Enter Contract Name" value={filters.contract_name || ""} onChange={(e) => setFilters({ ...filters, contract_name: e.target.value })} className="p-2 w-52 border text-gray-700 bg-white rounded-md" />
+                <div className={`
+                    ${showMobileFilters ? "absolute left-6 right-6 top-50 bg-white p-5 shadow-2xl border border-gray-100 z-50 rounded-lg grid grid-cols-2 gap-3 mt-1" : "hidden"} 
+                    md:mx-6 md:flex md:flex-wrap md:items-center md:gap-x-5 md:gap-y-2 md:mt-3 md:mb-5 md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
+                `}>
+                    <input type="text" name="contract_name" placeholder="Contract Name" value={filters.contract_name || ""} onChange={(e) => setFilters({ ...filters, contract_name: e.target.value })} className="p-2 w-full md:w-52 border border-gray-200 md:border text-gray-700 bg-white rounded-md text-sm" />
 
                     {/* Status */}
-                    <select name="customer_name" value={filters.customer_name || ""} onChange={(e) => setFilters({ ...filters, customer_name: e.target.value })} className="p-2 w-52 border text-gray-700 bg-white rounded-md">
-                        <option value="">Select Customer</option>
+                    <select name="customer_name" value={filters.customer_name || ""} onChange={(e) => setFilters({ ...filters, customer_name: e.target.value })} className="p-2 w-full md:w-52 border border-gray-200 md:border text-gray-700 bg-white rounded-md text-sm">
+                        <option value="">Customer</option>
                         {customers.map((item) => (
                             <option key={item.id} value={item.customer_name}>
                                 {item.customer_name}
@@ -288,8 +306,8 @@ export default function Page() {
                     </select>
 
                     {/* Priority */}
-                    <select name="contract_type" value={filters.contract_type || ""} onChange={(e) => setFilters({ ...filters, contract_type: e.target.value })} className="p-2 w-52 border text-gray-700 bg-white rounded-md">
-                        <option value="">Select Contract Type</option>
+                    <select name="contract_type" value={filters.contract_type || ""} onChange={(e) => setFilters({ ...filters, contract_type: e.target.value })} className="p-2 w-full md:w-52 border border-gray-200 md:border text-gray-700 bg-white rounded-md text-sm">
+                        <option value="">Type</option>
                         {contractList.map((item) => (
                             <option key={item.id} value={item.id}>
                                 {item.name}
@@ -298,8 +316,8 @@ export default function Page() {
                     </select>
 
                     {/* Assignee - dynamic API */}
-                    <select name="assignee" value={filters.assignee || "-"} onChange={(e) => setFilters({ ...filters, assignee: e.target.value })} className="p-2 w-52 border text-gray-700 bg-white rounded-md">
-                        <option value="">Select Assignee</option>
+                    <select name="assignee" value={filters.assignee || "-"} onChange={(e) => setFilters({ ...filters, assignee: e.target.value })} className="p-2 w-full md:w-52 border border-gray-200 md:border text-gray-700 bg-white rounded-md text-sm">
+                        <option value="">Assignee</option>
 
                         {asignee.map((item) => (
                             <option key={item.id} value={item.name}>
@@ -309,20 +327,20 @@ export default function Page() {
                     </select>
 
                     {/* Start Date Range */}
-                    <div className="flex items-center border bg-white rounded-md px-2">
-                        <span className="mx-1 text-gray-400">Start Date</span>
-                        <input type="date" value={filters.start_date || ""} onChange={(e) => setFilters({ ...filters, start_date: e.target.value })} className="p-2 w-32 outline-none" />
+                    <div className="flex flex-col border border-gray-200 md:border bg-white rounded-md px-2 w-full md:w-auto">
+                        <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">Start Date</span>
+                        <input type="date" value={filters.start_date || ""} onChange={(e) => setFilters({ ...filters, start_date: e.target.value })} className="p-1 w-full md:w-32 outline-none text-sm" />
                     </div>
 
                     {/* Due Date Range */}
-                    <div className="flex items-center border bg-white rounded-md px-2">
-                        <span className="mx-1 text-gray-400">Due Date</span>
-                        <input type="date" value={filters.end_date || ""} onChange={(e) => setFilters({ ...filters, end_date: e.target.value })} className="p-2 w-32 outline-none" />
+                    <div className="flex flex-col border border-gray-200 md:border bg-white rounded-md px-2 w-full md:w-auto">
+                        <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">Due Date</span>
+                        <input type="date" value={filters.end_date || ""} onChange={(e) => setFilters({ ...filters, end_date: e.target.value })} className="p-1 w-full md:w-32 outline-none text-sm" />
                     </div>
 
                     {/* Assignee - dynamic API */}
-                    <select name="created_by_name" value={filters.created_by_name || ""} onChange={(e) => setFilters({ ...filters, created_by_name: e.target.value })} className="p-2 w-52 border text-gray-700 bg-white rounded-md">
-                        <option value="">Select Created By</option>
+                    <select name="created_by_name" value={filters.created_by_name || ""} onChange={(e) => setFilters({ ...filters, created_by_name: e.target.value })} className="p-2 w-full md:w-52 border border-gray-200 md:border text-gray-700 bg-white rounded-md text-sm">
+                        <option value="">Created By</option>
 
                         {users.map((item) => (
                             <option key={item.id} value={item.name}>
@@ -331,16 +349,35 @@ export default function Page() {
                         ))}
                     </select>
 
-                    {/* created Date Range */}
-                    <div className="flex items-center border bg-white rounded-md px-2">
-                        <span className="mx-1 text-gray-400">Created Date</span>
-                        <input type="date" value={filters.created_at || ""} onChange={(e) => setFilters({ ...filters, created_at: e.target.value })} className="p-2 w-32 outline-none" />
+                    {/* Start Date Range */}
+                    <div className="flex flex-col border border-gray-200 md:border bg-white rounded-md px-2 w-full md:w-auto">
+                        <span className="text-[10px] text-gray-400 uppercase font-bold pt-1 whitespace-nowrap">Created Date</span>
+                        <input type="date" value={filters.created_at || ""} onChange={(e) => setFilters({ ...filters, created_at: e.target.value })} className="p-1 w-full md:w-32 outline-none text-sm" />
                     </div>
 
-                    {/* CLEAR BUTTON */}
-                    <button type="button" className="border rounded-md p-0.5 bg-gray-200 text-gray-700 hover:bg-gray-300 text-md text-center px-3" onClick={() => setFilters({})}>
-                        Clear
-                    </button>
+                    <div className="flex gap-2 col-span-2">
+                        <button onClick={() => {
+                            setFilters({
+                                search: "",
+                                company_name: "",
+                                customer_name: "",
+                                contract_name: "",
+                                contract_type: "",
+                                contract_value: "",
+                                start_date: "",
+                                end_date: "",
+                                assignee: "",
+                                created_by_name: "",
+                                created_at: "",
+                            });
+                            setShowMobileFilters(false);
+                        }} className="border border-gray-300 w-full md:w-auto cursor-pointer rounded-md p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm text-center font-semibold">
+                            Clear
+                        </button>
+                        <button onClick={() => setShowMobileFilters(false)} className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-2 bg-orange-100 text-orange-700 hover:bg-orange-200 text-sm text-center font-semibold">
+                            Apply
+                        </button>
+                    </div>
                 </div>
 
                 {/* Table */}
@@ -348,7 +385,8 @@ export default function Page() {
                     <div className="bg-white shadow-md rounded-2xl p-1 border border-gray-200">
                         <h3 className="mx-2 text-md mt-2">Contract Listing</h3>
                         <hr className="text-gray-300 mx-2 mt-2 mb-3" />
-                        <table className=" w-full text-sm text-left text-gray-700 border-collapse mt-2 mb-2 custom-scroll">
+                        <div className="overflow-x-auto overflow-y-auto max-h-[500px] custom-scroll">
+                            <table className=" w-full text-sm text-left text-gray-700 border-collapse mt-2 mb-2 whitespace-nowrap">
                             <thead className="bg-gray-50 text-gray-900  text-xs">
                                 <tr>
                                     <th className="py-3 px-5 w-10">#</th>
@@ -414,13 +452,15 @@ export default function Page() {
                                             </td>
 
                                             <td style={{ display: "flex", gap: "1px", alignItems: "center" }} className="py-2 px-4">
-                                                {String(item.assignee)
+                                                {(item.assignee ? String(item.assignee) : "")
                                                     .split(",")
                                                     .map((name, index) => {
-                                                        const letter = name.trim().charAt(0).toUpperCase();
+                                                        const cleanName = name.trim();
+                                                        if (!cleanName) return null;
+                                                        const letter = cleanName.charAt(0).toUpperCase();
 
                                                         return (
-                                                            <div key={index} title={name.trim()} className="px-3 py-1.5 bg-blue-800 text-white rounded-full font-semibold text-sm flex justify-center items-center min-w-[28px] text-center select-none">
+                                                            <div key={index} title={cleanName} className="px-3 py-1.5 bg-blue-800 text-white rounded-full font-semibold text-sm flex justify-center items-center min-w-[28px] text-center select-none">
                                                                 {letter}
                                                             </div>
                                                         );
@@ -453,9 +493,10 @@ export default function Page() {
                                 )}
                             </tbody>
                         </table>
+                        </div>
 
                         {totalPages > 1 && (
-                            <div className="flex items-center justify-between px-6 py-3 border-gray-200 bg-white rounded-b-lg">
+                            <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-3 border-gray-200 bg-white rounded-b-lg gap-3">
                                 {/* Previous Button */}
                                 <button type="button" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="px-4 py-2 text-sm font-medium rounded-md border bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">
                                     Previous

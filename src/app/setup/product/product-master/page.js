@@ -32,6 +32,7 @@ export default function Page() {
     const [productCategory, setProductCategory] = useState([]);
     const [productUnit, setProductUnit] = useState([]);
     const [scrollOffsets, setScrollOffsets] = useState({});
+    const [showMobileFilters, setShowMobileFilters] = useState(false);
     const [filters, setFilters] = useState({
         product_name: "",
         product_category: "",
@@ -215,41 +216,51 @@ export default function Page() {
             <Header />
             <div className="bg-gray-100">
                 {/* Header */}
-                <div className="bg-white w-full rounded-2xl shadow-lg p-3 mt-1 mb-5 flex justify-between items-center">
-                    <div className="flex items-center text-gray-700">
-                        <p>
-                            <Link href="/dashboard" className="mx-3 text-xl text-gray-400 hover:text-indigo-600">
+                <div className="bg-white w-full shadow-lg p-3 mt-1 mb-5 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
+                    <div className="hidden sm:flex items-center text-gray-700 w-full sm:w-auto">
+                        <p className="flex items-center flex-wrap">
+                            <Link href="/dashboard" className="mx-2 text-xl text-gray-400 hover:text-indigo-600">
                                 <i className="bi bi-house"></i>
                             </Link>
-                            <i className="bi bi-chevron-right"></i>
-                            <Link href="/setup" className="mx-3 text-md text-gray-700 hover:text-indigo-600">
+                            <i className="bi bi-chevron-right text-[10px]"></i>
+                            <Link href="/setup" className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold">
                                 Setup
                             </Link>
-                            <i className="bi bi-chevron-right"></i>
-                            <Link href="#" className="mx-3 text-md text-gray-700 hover:text-indigo-600">
+                            <i className="bi bi-chevron-right text-[10px]"></i>
+                            <Link href="#" className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold">
                                 Product
                             </Link>
-                            <i className="bi bi-chevron-right"></i>
-                            <Link href="/setup/product/product-master" className="mx-3 text-md text-gray-700 hover:text-indigo-600">
+                            <i className="bi bi-chevron-right text-[10px]"></i>
+                            <Link href="/setup/product/product-master" className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold">
                                 Product Master
                             </Link>
                         </p>
                     </div>
 
-                    <div>
-                        <button type="button" onClick={() => { setEditId(null); setFormData({ product_name: "", product_category: "", unit: "", product_code: "", product_type: "", purchase_price: "", sales_price: "", product_code_type: "", code: "", current_stocks: "", description: "" }); setShowForm(true); }} className="bg-blue-800 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-900">
+                    <div className="w-full sm:w-auto">
+                        <button type="button" onClick={() => { setEditId(null); setFormData({ product_name: "", product_category: "", unit: "", product_code: "", product_type: "", purchase_price: "", sales_price: "", product_code_type: "", code: "", current_stocks: "", description: "" }); setShowForm(true); }} className="w-full sm:w-auto bg-blue-800 text-white px-5 py-2 rounded-sm shadow hover:bg-blue-900 font-bold text-sm">
                             + ADD PRODUCT
                         </button>
                     </div>
                 </div>
 
                 {/* Filters */}
-                <div className="mx-6">
+                <div className="mx-6 md:hidden mt-3 relative z-40">
+                    <button onClick={() => setShowMobileFilters(!showMobileFilters)} className="w-full flex items-center justify-between text-orange-500 font-semibold bg-orange-50 px-4 py-2 rounded-sm border border-orange-200 shadow-sm transition-all">
+                        <span className="flex items-center gap-2"><i className="bi bi-funnel"></i> Filters</span>
+                        <i className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}></i>
+                    </button>
+                </div>
 
-                    <input type="text" name="product_name" placeholder="Enter Product Name" className="p-2 w-53 mb-3 border text-gray-500 bg-white rounded-md mx-2" value={filters.product_name} onChange={handleFilterChange} />
+                <div className={`
+                    ${showMobileFilters ? "absolute left-6 right-6 top-50 bg-white p-5 shadow-2xl border border-gray-100 z-50 rounded-lg grid grid-cols-2 gap-3 mt-1" : "hidden"} 
+                    md:mx-6 md:flex md:flex-wrap md:items-center md:gap-x-5 md:gap-y-2 md:mt-3 md:mb-5 md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
+                `}>
 
-                    <select name="product_category" value={filters.product_category} onChange={handleFilterChange} className="mx-2 bg-white text-gray-500 w-53 p-2 border rounded-md">
-                        <option value="">Select Product Category</option>
+                    <input type="text" name="product_name" placeholder="Product Name" className="p-2 w-full md:w-53 mb-0 md:mb-3 border border-gray-200 md:border text-gray-700 bg-white rounded-md md:mx-2 text-sm" value={filters.product_name} onChange={handleFilterChange} />
+
+                    <select name="product_category" value={filters.product_category} onChange={handleFilterChange} className="p-2 w-full md:w-53 mb-0 md:mb-3 border border-gray-200 md:border text-gray-500 bg-white rounded-md md:mx-2 text-sm">
+                        <option value="">Category</option>
                         {productCategory.map((item) => (
                             <option key={item.id || item.name} value={item.name}>
                                 {item.name}
@@ -257,10 +268,10 @@ export default function Page() {
                         ))}
                     </select>
 
-                    <input type="text" name="product_code" placeholder="Enter Product Code" className="p-2 w-53 mb-3 border text-gray-500 bg-white rounded-md mx-2" value={filters.product_code} onChange={handleFilterChange} />
+                    <input type="text" name="product_code" placeholder="Product Code" className="p-2 w-full md:w-53 mb-0 md:mb-3 border border-gray-200 md:border text-gray-700 bg-white rounded-md md:mx-2 text-sm" value={filters.product_code} onChange={handleFilterChange} />
 
-                    <select name="unit" value={filters.unit} onChange={handleFilterChange} className="mx-2 bg-white text-gray-500 w-53 p-2 border rounded-md">
-                        <option value="">Select Product Unit</option>
+                    <select name="unit" value={filters.unit} onChange={handleFilterChange} className="p-2 w-full md:w-53 mb-0 md:mb-3 border border-gray-200 md:border text-gray-500 bg-white rounded-md md:mx-2 text-sm">
+                        <option value="">Unit</option>
                         {productUnit.map((item) => (
                             <option key={item.id || item.name} value={item.name}>
                                 {item.name}
@@ -268,29 +279,34 @@ export default function Page() {
                         ))}
                     </select>
 
-                    <input type="text" name="code" placeholder="Enter Code" className="p-2 w-53 mb-3 border text-gray-500 bg-white rounded-md mx-2" value={filters.code} onChange={handleFilterChange} />
+                    <input type="text" name="code" placeholder="Code" className="p-2 w-full md:w-53 mb-0 md:mb-3 border border-gray-200 md:border text-gray-700 bg-white rounded-md md:mx-2 text-sm" value={filters.code} onChange={handleFilterChange} />
 
-                    <input type="text" name="purchase_price" placeholder="Enter Purchase Price" className="p-2 w-53 mb-3 border text-gray-500 bg-white rounded-md mx-2" value={filters.purchase_price} onChange={handleFilterChange} />
+                    <input type="text" name="purchase_price" placeholder="Purchase Price" className="p-2 w-full md:w-53 mb-0 md:mb-3 border border-gray-200 md:border text-gray-700 bg-white rounded-md md:mx-2 text-sm" value={filters.purchase_price} onChange={handleFilterChange} />
 
-                    <input type="text" name="current_stocks" placeholder="Enter Current Stocks" className="p-2 w-53 mb-3 border text-gray-500 bg-white rounded-md mx-2" value={filters.current_stocks} onChange={handleFilterChange} />
+                    <input type="text" name="current_stocks" placeholder="Current Stocks" className="p-2 w-full md:w-53 mb-0 md:mb-3 border border-gray-200 md:border text-gray-700 bg-white rounded-md md:mx-2 text-sm" value={filters.current_stocks} onChange={handleFilterChange} />
 
-                    <select name="product_type" value={filters.product_type} onChange={handleFilterChange} className="mx-2 bg-white text-gray-500 w-53 p-2 border rounded-md">
-                        <option value="">Select Product Type</option>
+                    <select name="product_type" value={filters.product_type} onChange={handleFilterChange} className="p-2 w-full md:w-53 mb-0 md:mb-3 border border-gray-200 md:border text-gray-500 bg-white rounded-md md:mx-2 text-sm">
+                        <option value="">Type</option>
                         <option value="Both">Both</option>
                         <option value="sales">Sales</option>
                         <option value="purchase">Purchase</option>
                     </select>
 
-                    <button type="button" onClick={() => { setFilters({ product_name: "", product_category: "", product_code: "", unit: "", code: "", purchase_price: "", current_stocks: "", product_type: "" }); fetchData(); }}
-                        className="border rounded-md p-0.5 bg-gray-200 text-gray-700 hover:bg-gray-300 text-md text-center mx-5 px-3">
-                        Clear
-                    </button>
+                    <div className="flex gap-2 col-span-2">
+                        <button type="button" onClick={() => { setFilters({ product_name: "", product_category: "", product_code: "", unit: "", code: "", purchase_price: "", current_stocks: "", product_type: "" }); setShowMobileFilters(false); fetchData(); }}
+                            className="border border-gray-300 w-full md:w-auto md:mb-3 cursor-pointer rounded-sm p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm text-center font-semibold">
+                            Clear
+                        </button>
+                        <button type="button" onClick={() => setShowMobileFilters(false)} className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-2 bg-orange-100 text-orange-700 hover:bg-orange-200 text-sm text-center font-semibold">
+                            Apply
+                        </button>
+                    </div>
                 </div>
 
                 {/* Table */}
                 <form className="p-1 mx-4">
                     <div className="bg-white shadow-md rounded-2xl p-1 border border-gray-200">
-                        <table className=" w-full text-sm text-left text-gray-700 border-collapse mt-2 mb-2">
+                        <table className=" w-full text-sm text-left text-gray-700 border-collapse mt-2 mb-2 whitespace-nowrap">
                             <thead className="bg-gray-50 text-gray-900  text-xs">
                                 <tr>
                                     <th className="py-3 px-5 w-10">#</th>
@@ -373,7 +389,7 @@ export default function Page() {
                         </table>
 
                         {totalPages > 1 && (
-                            <div className="flex items-center justify-between px-6 py-3 border-gray-200 bg-white rounded-b-lg">
+                            <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-3 border-gray-200 bg-white rounded-b-lg gap-3">
                                 {/* Previous Button */}
                                 <button type="button" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="px-4 py-2 text-sm font-medium rounded-md border bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">
                                     Previous
