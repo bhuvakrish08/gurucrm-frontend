@@ -1287,12 +1287,8 @@ export default function Page() {
 
                     {/* Left: Items per page dropdown */}
                     <div className="flex flex-wrap items-center gap-2 justify-center sm:justify-start">
-                      <span className="text-sm text-gray-500">Show</span>
                       <select
                         value={itemsPerPage}
-                        onChange={handleItemsPerPageChange}
-                        className="border border-gray-200 rounded-md px-2 py-1.5 text-sm text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300 cursor-pointer"
-                      >
                         <option value={25}>25</option>
                         <option value={50}>50</option>
                         <option value={100}>100</option>
@@ -1323,8 +1319,7 @@ export default function Page() {
                         <span className="text-sm text-gray-600 px-2">
                           Page{" "}
                           <span className="font-semibold">{currentPage}</span>{" "}
-                          of{" "}
-                          <span className="font-semibold">{totalPages}</span>
+                          of <span className="font-semibold">{totalPages}</span>
                         </span>
 
                         {/* Next Button */}
@@ -1346,56 +1341,112 @@ export default function Page() {
         </div>
       </div>
 
-      {/* ✅ DELETE CONFIRMATION MODAL */}
-      {showDeleteModal && leadToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white w-[400px] rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
-            <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-red-50 to-white border-b border-gray-100">
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white w-full max-w-md rounded-[20px] shadow-xl overflow-hidden">
+            {/* HEADER */}
+            <div
+              className="flex justify-between items-center px-6 py-4"
+              style={{ background: "#f5e6d8" }}
+            >
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span>
-                <h2 className="text-sm font-semibold text-gray-700 tracking-wide uppercase">
+                <span
+                  className="w-2.5 h-2.5 rounded-full"
+                  style={{ background: "#f07400" }}
+                ></span>
+                <h2 className="text-[13px] font-bold text-gray-600 tracking-widest uppercase">
                   Delete Lead
                 </h2>
               </div>
               <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setLeadToDelete(null);
-                }}
-                className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-100 hover:bg-red-100 text-gray-400 hover:text-red-500 transition-all"
+                onClick={() => setShowDeleteModal(false)}
+                className="text-[#f07400] hover:text-orange-600"
               >
-                ✕
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <line
+                    x1="2"
+                    y1="2"
+                    x2="16"
+                    y2="16"
+                    stroke="#f07400"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                  <line
+                    x1="16"
+                    y1="2"
+                    x2="2"
+                    y2="16"
+                    stroke="#f07400"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
               </button>
             </div>
 
-            <div className="flex flex-col items-center justify-center px-6 py-8 gap-4">
-              <div className="w-20 h-20 rounded-full bg-red-50 border-2 border-red-100 flex items-center justify-center">
-                <i className="bi bi-trash3 text-3xl text-red-400"></i>
+            {/* BODY */}
+            <div className="px-7 pt-9 pb-5 text-center">
+              <div
+                className="w-[78px] h-[78px] mx-auto rounded-full flex items-center justify-center mb-5"
+                style={{ background: "#f5e0c6" }}
+              >
+                <svg width="32" height="34" viewBox="0 0 32 34" fill="none">
+                  <path
+                    d="M3 8H29"
+                    stroke="#f07400"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M12 8V5C12 4.448 12.448 4 13 4H19C19.552 4 20 4.448 20 5V8"
+                    stroke="#f07400"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M5 8L6.5 29C6.5 29.552 6.948 30 7.5 30H24.5C25.052 30 25.5 29.552 25.5 29L27 8"
+                    stroke="#f07400"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M12 14V24"
+                    stroke="#f07400"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M20 14V24"
+                    stroke="#f07400"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
               </div>
-              <div className="text-center">
-                <p className="text-gray-800 font-semibold text-base">
-                  {leadToDelete.customer_name}
-                </p>
-                <p className="text-gray-400 text-sm mt-1">
-                  This action cannot be undone. Are you sure?
-                </p>
-              </div>
+
+              <h3 className="text-[17px] font-bold text-gray-800 tracking-widest uppercase mb-2">
+                {leadToDelete?.customer_name || "DELETE LEAD"}
+              </h3>
+              <p className="text-[13px] text-gray-400">
+                This action cannot be undone. Are you sure?
+              </p>
             </div>
 
-            <div className="flex justify-center gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
+            {/* FOOTER */}
+            <div className="flex gap-3.5 px-7 pb-8 pt-2">
               <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setLeadToDelete(null);
-                }}
-                className="px-6 py-2 rounded-xl text-sm font-medium text-gray-600 bg-white border border-gray-200 hover:bg-gray-100 transition-all"
+                onClick={() => setShowDeleteModal(false)}
+                className="flex-1 border border-gray-200 py-3 rounded-xl text-gray-500 bg-gray-50 hover:bg-gray-100 transition text-[15px] font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
                 disabled={deleteLoading}
-                className="px-6 py-2 rounded-xl text-sm font-semibold text-white bg-red-500 hover:bg-red-600 disabled:opacity-60 transition-all shadow-md shadow-red-200"
+                className="flex-1 py-3 rounded-xl text-white text-[15px] font-semibold hover:opacity-90 transition"
+                style={{ background: "#f07400" }}
               >
                 {deleteLoading ? "Deleting..." : "Delete"}
               </button>
@@ -1403,7 +1454,6 @@ export default function Page() {
           </div>
         </div>
       )}
-
       {/* ADD FOLLOW-UP MODAL */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -1545,31 +1595,33 @@ export default function Page() {
                 onClick={handleSubmit}
                 disabled={btnLoading}
                 className={`px-6 py-2 text-sm font-semibold text-white rounded-xl transition-all shadow-md shadow-orange-200 flex items-center gap-2
-                ${btnLoading ? "bg-orange-400 cursor-not-allowed" : "bg-orange-500 hover:bg-orange-600"}`}
+  ${btnLoading ? "bg-orange-400 cursor-not-allowed" : "bg-orange-500 hover:bg-orange-600"}`}
               >
                 {btnLoading ? (
-                  <svg
-                    className="animate-spin h-4 w-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="white"
-                      strokeWidth="4"
-                      opacity="0.25"
-                    />
-                    <path
-                      fill="white"
-                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                    />
-                  </svg>
+                  <>
+                    <svg
+                      className="animate-spin h-4 w-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="white"
+                        strokeWidth="4"
+                        opacity="0.25"
+                      />
+                      <path
+                        fill="white"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      />
+                    </svg>
+                    Adding...
+                  </>
                 ) : (
                   "Add"
                 )}
-                {btnLoading ? "Adding..." : "Add"}
               </button>
             </div>
           </div>
@@ -1881,6 +1933,7 @@ export default function Page() {
                 ${updateLoading ? "bg-orange-400 cursor-not-allowed" : "bg-orange-500 hover:bg-orange-600"}`}
               >
                 {updateLoading ? (
+                  <>
                   <svg
                     className="animate-spin h-4 w-4"
                     viewBox="0 0 24 24"
@@ -1899,10 +1952,12 @@ export default function Page() {
                       d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                     />
                   </svg>
+                  Add Follow-Up
+                  </>
                 ) : (
                   "Add Follow-Up"
                 )}
-                {updateLoading ? "Adding..." : "Add Follow-Up"}
+               
               </button>
             </div>
           </div>

@@ -433,8 +433,8 @@ export default function Page() {
                     onChange={(selectedOptions) => {
                       const values = selectedOptions
                         ? selectedOptions
-                          .map((option) => option.value)
-                          .join(",")
+                            .map((option) => option.value)
+                            .join(",")
                         : "";
 
                       setFormData({ ...formData, assignee: values });
@@ -486,7 +486,7 @@ export default function Page() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className={`px-6 py-2 rounded-lg bg-blue-800 text-white flex items-center gap-2
+                  className={`px-6 py-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white flex items-center gap-2
     ${isSubmitting ? "opacity-70 cursor-not-allowed" : ""}
   `}
                 >
