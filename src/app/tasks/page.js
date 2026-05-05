@@ -854,7 +854,7 @@ const exportToPDF = async () => {
               Apply
             </button>
         </div>
-      </div>
+
 
         {/* Created By - dynamic API */}
         <select

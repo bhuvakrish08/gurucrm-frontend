@@ -9,7 +9,6 @@ import Image from "next/image";
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [salesOpen, setSalesOpen] = useState(false);
   const [customerOpen, setCustomerOpen] = useState(false);
   const [mobileSalesOpen, setMobileSalesOpen] = useState(false);
@@ -23,7 +22,7 @@ export default function Header() {
     setSalesOpen(false);
     setMobileCustomerOpen(false);
     setMobileSalesOpen(false);
-  }, [pathname, searchParams]);
+  }, [pathname]);
 
   const salesRef = useRef(null);
   const customerRef = useRef(null);
