@@ -7,6 +7,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Image from "next/image";
 
 export default function Header() {
+  // Remove search
   const router = useRouter();
   const pathname = usePathname();
   const [salesOpen, setSalesOpen] = useState(false);
