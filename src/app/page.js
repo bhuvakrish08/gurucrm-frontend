@@ -174,8 +174,7 @@ export default function Page() {
       <div className="absolute top-1/3 right-10 w-[300px] h-[300px] bg-gray-200 opacity-30 rounded-full blur-[120px]"></div>
       <div className="absolute bottom-20 left-1/4 w-[300px] h-[300px] bg-green-200 opacity-30 rounded-full blur-[120px]"></div>
       {/* ── NEW: Outer card wrapper — holds carousel + login side by side ─── */}
-      <div className="relative z-10 w-full max-w-3xl flex overflow-hidden shadow-2xl rounded-xl border border-white/30 h-[520px]">
-        {" "}
+      <div className="relative z-10 w-[95%] sm:w-full max-w-3xl flex flex-col md:flex-row overflow-hidden shadow-2xl rounded-xl border border-white/30 min-h-[500px] md:h-[520px]">
         {/* ── NEW: Left side — Image Carousel (hidden on mobile) ───────────── */}
         <div className="hidden md:block md:w-[45%] flex-shrink-0 h-full">
           <div className="relative w-full h-full">
@@ -183,11 +182,7 @@ export default function Page() {
           </div>
         </div>
         {/* ── RIGHT side — Original login card (bg + all content unchanged) ── */}
-        {/* NOTE: removed max-w-md (handled by outer wrapper now),
-                  removed z-10 (handled by outer wrapper),
-                  changed rounded-3xl → rounded-r-3xl on md, rounded-3xl on mobile
-                  everything else is identical to original */}
-        <div className="flex-1 bg-white/60 backdrop-blur-2xl flex flex-col justify-center items-center px-10 py-12 rounded-r-xl">
+        <div className="flex-1 bg-white/60 backdrop-blur-2xl flex flex-col justify-center items-center px-6 sm:px-10 py-10 rounded-xl md:rounded-none md:rounded-r-xl">
           {!forgotMode ? (
             <>
               {/* ── Company Logo ─────────────────────────────────────────── */}

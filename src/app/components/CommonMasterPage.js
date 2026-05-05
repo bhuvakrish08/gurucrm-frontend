@@ -32,6 +32,7 @@ export default function CommonMasterPage({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const searchTimeout = useRef(null);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   //  PAGINATION ADDED HERE
   const [currentPage, setCurrentPage] = useState(1);
@@ -176,44 +177,42 @@ export default function CommonMasterPage({
     <>
       <div className="bg-gray-100">
         {/* Header */}
-        <div className="bg-white w-full rounded-sm shadow-lg p-3 mt-1 mb-5 flex justify-between items-center">
-          <div className="flex items-center text-gray-700">
-            <span>
+        <div className="bg-white w-full shadow-lg p-3 mt-1 mb-5 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
+          <div className="hidden sm:flex items-center text-gray-700 w-full sm:w-auto">
+            <p className="flex items-center flex-wrap">
               <Link
                 href="/dashboard"
-                className="mx-3 text-xl text-gray-400 hover:text-indigo-600"
+                className="mx-2 text-xl text-gray-400 hover:text-indigo-600"
               >
                 <i className="bi bi-house"></i>
               </Link>
-            </span>
-            <i className="bi bi-chevron-right"></i>
-            <span>
+              <i className="bi bi-chevron-right text-[10px]"></i>
               <Link
                 href="/setup"
-                className="mx-3 text-gray-700 hover:text-orange-500"
+                className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
               >
                 Setup
               </Link>
-            </span>
-            <i className="bi bi-chevron-right"></i>
-            {breadcrumbs.map((b, i) => (
-              <span
-                key={i}
-                className="flex items-center text-gray-700 hover:text-orange-500"
-              >
-                <span className="mx-3">{b}</span>
-                {i < breadcrumbs.length - 1 && (
-                  <i className="bi bi-chevron-right"></i>
-                )}
-              </span>
-            ))}
+              <i className="bi bi-chevron-right text-[10px]"></i>
+              {breadcrumbs.map((b, i) => (
+                <span
+                  key={i}
+                  className="flex items-center text-gray-700 hover:text-orange-500 font-semibold"
+                >
+                  <span className="mx-2">{b}</span>
+                  {i < breadcrumbs.length - 1 && (
+                    <i className="bi bi-chevron-right text-[10px]"></i>
+                  )}
+                </span>
+              ))}
+            </p>
           </div>
 
-          <div>
+          <div className="w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setShowForm(true)}
-              className="bg-orange-500 text-white px-4 py-2 rounded-sm shadow hover:bg-orange-600"
+              className="w-full sm:w-auto bg-orange-500 text-white px-5 py-2 rounded-sm shadow hover:bg-orange-600 font-bold text-sm"
             >
               + Add {title}
             </button>
@@ -221,15 +220,25 @@ export default function CommonMasterPage({
         </div>
 
         {/* Filters */}
-        <div className="mx-6">
+        <div className="mx-6 md:hidden mt-3 relative z-40">
+          <button type="button" onClick={() => setShowMobileFilters(!showMobileFilters)} className="w-full flex items-center justify-between text-orange-500 font-semibold bg-orange-50 px-4 py-2 rounded-sm border border-orange-200 shadow-sm transition-all">
+             <span className="flex items-center gap-2"><i className="bi bi-funnel"></i> Filters</span>
+             <i className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}></i>
+          </button>
+        </div>
+
+        <div className={`
+          ${showMobileFilters ? "absolute left-6 right-6 top-50 bg-white p-5 shadow-2xl border border-gray-100 z-50 rounded-lg grid grid-cols-2 gap-3 mt-1" : "hidden"} 
+          md:mx-6 md:flex md:flex-wrap md:items-center md:gap-y-2 md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
+        `}>
           {extraColumn && (
             <select
               value={parentDesignation}
               onChange={(e) => setParentDesignation(e.target.value)}
-              className="mx-2 bg-white  w-60 p-2 border border-gray-300 rounded-sm outline-none focus:ring-1 focus:ring-orange-200 text-gray-400"
+              className="w-full md:w-60 md:mx-2 bg-white p-2 border border-gray-300 rounded-sm outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm"
               required
             >
-              <option value="">Select Parent Designation</option>
+              <option value="">Parent</option>
               {parentOptions.map((opt) => (
                 <option key={opt.id} value={opt.name}>
                   {opt.name}
@@ -241,39 +250,49 @@ export default function CommonMasterPage({
           <input
             type="text"
             placeholder={`Enter ${title}`}
-            className="p-2 w-50 mb-3 border text-gray-400 bg-white  border-gray-300 rounded-sm outline-none focus:ring-1 focus:ring-orange-200 "
+            className="p-2 w-full md:w-50 mb-0 md:mb-3 border text-gray-400 bg-white border-gray-300 rounded-sm outline-none focus:ring-1 focus:ring-orange-200 text-sm"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
 
           <select
-            className="mx-3 w-48 p-2 border text-gray-400 bg-white rounded-sm border-gray-300 outline-none focus:ring-1 focus:ring-orange-200"
+            className="w-full md:w-48 md:mx-3 p-2 border text-gray-400 bg-white rounded-sm border-gray-300 outline-none focus:ring-1 focus:ring-orange-200 text-sm"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
-            <option value="">Select Status</option>
+            <option value="">Status</option>
             <option value="1">Active</option>
             <option value="0">Inactive</option>
           </select>
 
-          <button
-            type="button"
-            onClick={() => {
-              setParentDesignation("");
-              setName("");
-              setStatusFilter("");
-              fetchData();
-            }}
-            className="border rounded-sm p-0.5 border-gray-200  text-md text-center px-2   bg-gray-200 text-gray-700 hover:bg-gray-300"
-          >
-            Clear
-          </button>
+          <div className="flex gap-2 col-span-2">
+            <button
+              type="button"
+              onClick={() => {
+                setParentDesignation("");
+                setName("");
+                setStatusFilter("");
+                setShowMobileFilters(false);
+                fetchData();
+              }}
+              className="border border-gray-300 w-full md:w-auto cursor-pointer rounded-sm p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm text-center font-semibold"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowMobileFilters(false)}
+              className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-2 bg-orange-100 text-orange-700 hover:bg-orange-200 text-sm text-center font-semibold"
+            >
+              Apply
+            </button>
+          </div>
         </div>
 
         {/* Table */}
         <form className="p-1 mx-5">
-          <div className="bg-white shadow-md rounded-sm p-1 border border-gray-200">
-            <table className="mx-15 w-11/12 text-sm text-left text-gray-700 border-collapse mt-2 mb-2">
+          <div className="overflow-x-auto overflow-y-auto max-h-[500px] custom-scroll bg-white shadow-md rounded-sm p-1 border border-gray-200">
+            <table className="w-full text-sm text-left text-gray-700 border-collapse mt-2 mb-2 whitespace-nowrap">
               <thead className="bg-gray-50 text-gray-900 uppercase text-xs">
                 <tr>
                   <th className="py-3 px-5 w-10">#</th>
@@ -352,7 +371,7 @@ export default function CommonMasterPage({
             </table>
 
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-6 py-3 border-gray-200 bg-white rounded-b-lg">
+              <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-3 border-gray-200 bg-white rounded-b-lg gap-3">
                 {/* Previous Button */}
                 <button
                   type="button"

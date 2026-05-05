@@ -318,18 +318,22 @@ export default function EditContract() {
     <>
       <Header />
       <div className="bg-gray-100">
-        <div className="bg-white w-full rounded-2xl shadow-lg p-3 mt-1 mb-5 flex justify-between items-center">
-          <p className="text-gray-700">
-            <Link href="/dashboard" className="mx-3 text-xl text-gray-400 hover:text-indigo-600">
-              <i className="bi bi-house"></i>
-            </Link>
-            <i className="bi bi-chevron-right"></i> Contract
-            <i className="bi bi-chevron-right"></i>
-            <button onClick={() => { localStorage.removeItem("edit_user_id"); router.push("/contracts"); }} className="mx-3 hover:text-indigo-600">
-              Contract List
-            </button>
-            <i className="bi bi-chevron-right"></i> Edit Contract
-          </p>
+        <div className="bg-white w-full rounded-2xl shadow-lg p-3 mt-1 mb-5 flex justify-between items-center text-sm font-semibold">
+          <div className="hidden sm:flex items-center text-gray-700 w-full sm:w-auto">
+            <p className="flex items-center flex-wrap">
+              <Link href="/dashboard" className="mx-3 text-xl text-gray-400 hover:text-indigo-600">
+                <i className="bi bi-house"></i>
+              </Link>
+              <i className="bi bi-chevron-right text-[10px]"></i>
+              <span className="mx-3 font-semibold">Contract</span>
+              <i className="bi bi-chevron-right text-[10px]"></i>
+              <button onClick={() => { localStorage.removeItem("edit_user_id"); router.push("/contracts"); }} className="mx-3 hover:text-indigo-600 font-semibold">
+                Contract List
+              </button>
+              <i className="bi bi-chevron-right text-[10px]"></i>
+              <span className="mx-3 font-semibold">Edit Contract</span>
+            </p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="p-1 mx-4">

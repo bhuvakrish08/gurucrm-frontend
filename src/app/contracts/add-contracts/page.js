@@ -107,7 +107,8 @@ export default function Page() {
         const res = await axios.get(`${API_BASE}/api/organizations/organization-name`,
         );
 
-        setCompanyname(res.data.data || res.data);
+        const data = res.data.data || res.data;
+        setCompanyname(Array.isArray(data) ? data : []);
       } catch {
         setCompanyname([]);
       }
@@ -134,7 +135,8 @@ export default function Page() {
           { params: { company_name: selected } }
         );
 
-        setCustomername(res.data.data || res.data);
+        const data = res.data.data || res.data;
+        setCustomername(Array.isArray(data) ? data : []);
       } catch {
         setCustomername([]);
       }
@@ -152,7 +154,8 @@ export default function Page() {
         const res = await axios.get(`${API_BASE}/api/contract-types/contracts`,
           { params: { status: 1 } }
         );
-        setContractList(res.data.data);
+        const data = res.data.data || res.data;
+        setContractList(Array.isArray(data) ? data : []);
       } catch { }
     };
 
@@ -167,7 +170,9 @@ export default function Page() {
           { params: { status: 1 } }
         );
 
-        const cleaned = (res.data.data || []).map((item) => ({
+        const data = res.data.data || res.data;
+        const dataArr = Array.isArray(data) ? data : [];
+        const cleaned = dataArr.map((item) => ({
           ...item,
           name: item.name.split(" ")[0],
         }));
@@ -251,18 +256,22 @@ export default function Page() {
     <>
       <Header />
       <div className="bg-gray-100">
-        <div className="bg-white w-full rounded-2xl shadow-lg p-3 mt-1 mb-5 flex justify-between items-center">
-          <p className="text-gray-700">
-            <Link href="/dashboard" className="mx-3 text-xl text-gray-400 hover:text-indigo-600">
-              <i className="bi bi-house"></i>
-            </Link>
-            <i className="bi bi-chevron-right"></i> Contract
-            <i className="bi bi-chevron-right"></i>
-            <Link href="/contracts" className="mx-3 hover:text-indigo-600">
-              Contract List
-            </Link>
-            <i className="bi bi-chevron-right"></i> Add Contract
-          </p>
+        <div className="bg-white w-full rounded-2xl shadow-lg p-3 mt-1 mb-5 flex justify-between items-center text-sm font-semibold">
+          <div className="hidden sm:flex items-center text-gray-700 w-full sm:w-auto">
+            <p className="flex items-center flex-wrap">
+              <Link href="/dashboard" className="mx-3 text-xl text-gray-400 hover:text-indigo-600">
+                <i className="bi bi-house"></i>
+              </Link>
+              <i className="bi bi-chevron-right text-[10px]"></i>
+              <span className="mx-3 font-semibold">Contract</span>
+              <i className="bi bi-chevron-right text-[10px]"></i>
+              <Link href="/contracts" className="mx-3 hover:text-indigo-600 font-semibold">
+                Contract List
+              </Link>
+              <i className="bi bi-chevron-right text-[10px]"></i>
+              <span className="mx-3 font-semibold">Add Contract</span>
+            </p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="p-1 mx-4">

@@ -28,6 +28,7 @@ export default function ProformaPage() {
   const [recordsPerPage, setRecordsPerPage] = useState(25);
 
   // ── FILTER STATE ──────────────────────────────────────────
+ const [showMobileFilters, setShowMobileFilters] = useState(false);
  const [filters, setFilters] = useState({
   customer_name: "",
   assignee: "",
@@ -400,24 +401,24 @@ const [assigneeList, setAssigneeList] = useState([]);
 
       <div className="bg-gray-100 min-h-screen">
         {/* ── BREADCRUMB + EXPORT ─────────────────────────── */}
-        <div className="bg-white w-full border-gray-100 p-3 mt-1 mb-5 flex justify-between items-center">
-          <div className="flex items-center text-gray-700">
-            <p>
-              <Link href="/dashboard" className="mx-3 text-xl text-gray-400 hover:text-indigo-600">
+        <div className="bg-white w-full border-gray-100 p-3 mt-1 mb-5 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
+          <div className="hidden sm:flex items-center text-gray-700 w-full sm:w-auto">
+            <p className="flex items-center flex-wrap">
+              <Link href="/dashboard" className="mx-2 text-xl text-gray-400 hover:text-indigo-600">
                 <i className="bi bi-house"></i>
               </Link>
-              <i className="bi bi-chevron-right"></i>
-              <Link href="#" className="mx-3 text-md text-gray-700 hover:text-orange-500">Sales</Link>
-              <i className="bi bi-chevron-right"></i>
-              <Link href="/sales/proforma" className="mx-3 text-md text-gray-700 hover:text-orange-500">Proforma</Link>
+              <i className="bi bi-chevron-right text-[10px]"></i>
+              <Link href="#" className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold">Sales</Link>
+              <i className="bi bi-chevron-right text-[10px]"></i>
+              <Link href="/sales/proforma" className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold">Proforma</Link>
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="relative" ref={exportRef}>
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <div className="relative w-full sm:w-auto" ref={exportRef}>
               <button
                 onClick={() => setShowExportMenu((prev) => !prev)}
-                className="flex items-center gap-2  bg-orange-50 text-orange-500 px-4 py-2 rounded-sm text-sm font-semibold tracking-wide transition-all shadow-sm"
+                className="w-full flex items-center justify-center gap-2 bg-orange-50 text-orange-500 px-4 py-2 rounded-sm text-sm font-bold tracking-wide transition-all shadow-sm border border-orange-100"
               >
                 <i className="bi bi-download text-base"></i>
                 Export
@@ -427,21 +428,17 @@ const [assigneeList, setAssigneeList] = useState([]);
                 <div className="absolute right-0 top-full mt-1.5 w-44 bg-white rounded-sm shadow-lg border border-gray-100 overflow-hidden z-50">
                   <button
                     onClick={exportToExcel}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-all"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-all text-left"
                   >
-                    <div className="w-7 h-7 rounded-sm  flex items-center justify-center">
-                      <i className="bi bi-file-earmark-excel text-green-600 text-sm"></i>
-                    </div>
+                    <i className="bi bi-file-earmark-excel text-green-600 text-base"></i>
                     Export Excel
                   </button>
                   <div className="h-px bg-gray-100 mx-3"></div>
                   <button
                     onClick={exportToPDF}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-all"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-all text-left"
                   >
-                    <div className="w-7 h-7 rounded-sm flex items-center justify-center">
-                      <i className="bi bi-file-earmark-pdf text-red-600 text-sm"></i>
-                    </div>
+                    <i className="bi bi-file-earmark-pdf text-red-600 text-base"></i>
                     Export PDF
                   </button>
                 </div>
@@ -451,36 +448,51 @@ const [assigneeList, setAssigneeList] = useState([]);
         </div>
 
         {/* ── FILTER SECTION ──────────────────────────────── */}
-        <div className="mx-6 flex flex-wrap items-center gap-x-5 gap-y-2 mt-3 mb-5">
-          <input name="customer_name" value={filters.customer_name} onChange={handleFilterChange} placeholder="Customer Name" className="p-2 w-45 bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm" />
-          <input name="quotation_no" value={filters.quotation_no} onChange={handleFilterChange} placeholder="Quotation No" className="p-2 w-45 bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm" />
-          <select name="assignee" value={filters.assignee} onChange={handleFilterChange} className="p-2 w-45 bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm">
-            <option value="">Select Assignee</option>
+        <div className="mx-6 md:hidden mt-3 relative z-40">
+          <button onClick={() => setShowMobileFilters(!showMobileFilters)} className="w-full flex items-center justify-between text-orange-500 font-semibold bg-orange-50 px-4 py-2 rounded-sm border border-orange-200 shadow-sm transition-all">
+             <span className="flex items-center gap-2"><i className="bi bi-funnel"></i> Filters</span>
+             <i className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}></i>
+          </button>
+        </div>
+
+        <div className={`
+          ${showMobileFilters ? "absolute left-6 right-6 top-50 bg-white p-5 shadow-2xl border border-gray-100 z-50 rounded-lg grid grid-cols-2 gap-3 mt-1" : "hidden"} 
+          md:mx-6 md:flex md:flex-wrap md:items-center md:gap-x-5 md:gap-y-2 md:mt-3 md:mb-5 md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
+        `}>
+          <input name="customer_name" value={filters.customer_name} onChange={handleFilterChange} placeholder="Customer" className="p-2 w-full md:w-45 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm" />
+          <input name="quotation_no" value={filters.quotation_no} onChange={handleFilterChange} placeholder="Quotation No" className="p-2 w-full md:w-45 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm" />
+          <select name="assignee" value={filters.assignee} onChange={handleFilterChange} className="p-2 w-full md:w-45 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm">
+            <option value="">Assignee</option>
             {assigneeList.map((item) => (
               <option key={item.id} value={item.name}>{item.name}</option>
             ))}
           </select>
-          <select name="status" value={filters.status} onChange={handleFilterChange} className="p-2 w-45 bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm">
-            <option value="">Select Status</option>
+          <select name="status" value={filters.status} onChange={handleFilterChange} className="p-2 w-full md:w-45 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm">
+            <option value="">Status</option>
             <option value="draft">Draft</option>
             <option value="partial">Pending</option>
             <option value="paid">Won</option>
           </select>
-          <div className="flex items-center px-2 w-58 bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm">
-            <span className="mx-1 text-gray-400 whitespace-nowrap">From Date</span>
-            <input type="date" name="from_date" value={filters.from_date} onChange={handleFilterChange} className="p-2 w-35 outline-none" />
+          <div className="flex items-center px-2 w-full md:w-58 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 text-gray-400 whitespace-nowrap">From</span>
+            <input type="date" name="from_date" value={filters.from_date} onChange={handleFilterChange} className="p-2 w-full md:w-35 outline-none" />
           </div>
-          <div className="flex items-center px-2 w-53 bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm">
-            <span className="mx-1 text-gray-400 whitespace-nowrap">To Date</span>
-            <input type="date" name="to_date" value={filters.to_date} onChange={handleFilterChange} className="p-2 w-35 outline-none" />
+          <div className="flex items-center px-2 w-full md:w-53 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 text-gray-400 whitespace-nowrap">To</span>
+            <input type="date" name="to_date" value={filters.to_date} onChange={handleFilterChange} className="p-2 w-full md:w-35 outline-none" />
           </div>
-          <input type="number" name="min_percentage" value={filters.min_percentage} onChange={handleFilterChange} placeholder="Min %" min="0" max="100" className="p-2 w-24 bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm" />
-          <input type="number" name="max_percentage" value={filters.max_percentage} onChange={handleFilterChange} placeholder="Max %" min="0" max="100" className="p-2 w-24 bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm" />
-          <input type="number" name="min_total" value={filters.min_total} onChange={handleFilterChange} placeholder="Min Total ₹" className="p-2 w-32 bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm" />
-          <input type="number" name="max_total" value={filters.max_total} onChange={handleFilterChange} placeholder="Max Total ₹" className="p-2 w-32 bg-white rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm" />
-          <button onClick={resetFilters} className="border border-gray-300 cursor-pointer rounded-sm p-0.5 bg-gray-200 text-gray-700 hover:bg-gray-300 text-md text-center px-3">
-            Clear
-          </button>
+          <input type="number" name="min_percentage" value={filters.min_percentage} onChange={handleFilterChange} placeholder="Min %" min="0" max="100" className="p-2 w-full md:w-24 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm" />
+          <input type="number" name="max_percentage" value={filters.max_percentage} onChange={handleFilterChange} placeholder="Max %" min="0" max="100" className="p-2 w-full md:w-24 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm" />
+          <input type="number" name="min_total" value={filters.min_total} onChange={handleFilterChange} placeholder="Min ₹" className="p-2 w-full md:w-32 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm" />
+          <input type="number" name="max_total" value={filters.max_total} onChange={handleFilterChange} placeholder="Max ₹" className="p-2 w-full md:w-32 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm" />
+          <div className="flex gap-2 col-span-2 md:col-span-1">
+            <button onClick={() => { resetFilters(); setShowMobileFilters(false); }} className="border border-gray-300 w-full md:w-auto cursor-pointer rounded-sm p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm font-semibold text-center px-6">
+              Clear
+            </button>
+            <button onClick={() => setShowMobileFilters(false)} className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-2 bg-orange-100 text-orange-700 hover:bg-orange-200 text-sm font-semibold text-center px-6">
+              Apply
+            </button>
+          </div>
         </div>
 
         {/* ── TABLE ────────────────────────────────────────── */}
@@ -491,8 +503,8 @@ const [assigneeList, setAssigneeList] = useState([]);
             ) : (
               // <div className="overflow-x-auto">
               //   <table className="w-full text-sm custom-scroll">
-                 <div className="overflow-x-auto overflow-y-scroll max-h-[500px] custom-scroll " style={{overflowX: 'scroll'}}>
-                <table className="w-full text-sm ">
+                  <div className="overflow-x-auto overflow-y-auto max-h-[500px] custom-scroll">
+                <table className="w-full text-sm whitespace-nowrap">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-100">
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">#</th>
@@ -590,9 +602,9 @@ const [assigneeList, setAssigneeList] = useState([]);
 
                 {/* ── PAGINATION BAR ────────────────────────── */}
                 {piData.length > 0 && (
-                  <div className="flex items-center justify-between px-2 py-3 border-t border-gray-100 mt-2">
+                  <div className="flex flex-col sm:flex-row items-center justify-between px-2 py-3 border-t border-gray-100 mt-2 gap-3">
                     {/* Left: Records info + per-page dropdown */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3 justify-center sm:justify-start">
                       <span className="text-xs text-gray-400">
                         Showing{" "}
                         <span className="font-semibold text-gray-600">{startIndex + 1}</span>
@@ -625,7 +637,7 @@ const [assigneeList, setAssigneeList] = useState([]);
 
                     {/* Right: Page navigation */}
                     {totalPages > 1 && (
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 mt-3 sm:mt-0">
                         {/* Prev */}
                         <button
                           onClick={() => handlePageChange(currentPage - 1)}
@@ -695,8 +707,8 @@ const [assigneeList, setAssigneeList] = useState([]);
         const afterRemainingAmt = remainingAmount - (Number(rupees) || 0);
 
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="bg-white w-full max-w-[920px] rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="bg-white w-full max-w-[920px] rounded-2xl shadow-2xl border border-gray-100 overflow-hidden max-h-[95vh] overflow-y-auto">
               {/* Header */}
               <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-orange-50 to-white">
                 <div className="flex items-center gap-2">
@@ -710,9 +722,9 @@ const [assigneeList, setAssigneeList] = useState([]);
               </div>
 
               {/* Body */}
-              <div className="flex">
+              <div className="flex flex-col md:flex-row">
                 {/* LEFT */}
-                <div className="w-1/2 px-6 py-5 border-r border-gray-100">
+                <div className="w-full md:w-1/2 px-6 py-5 border-b md:border-b-0 md:border-r border-gray-100">
                   <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-4">
                     {editing ? "Edit Follow-Up" : "Add New Follow-Up"}
                   </p>
@@ -807,7 +819,7 @@ const [assigneeList, setAssigneeList] = useState([]);
                 </div>
 
                 {/* RIGHT - History */}
-                <div className="w-1/2 px-6 py-5 flex flex-col">
+                <div className="w-full md:w-1/2 px-6 py-5 flex flex-col bg-gray-50/50">
                   <div className="flex justify-between items-center mb-4">
                     <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">Follow-Up History</p>
                     <span className="text-xs bg-orange-50 text-orange-500 px-2.5 py-1 rounded-full font-semibold border border-orange-100">
