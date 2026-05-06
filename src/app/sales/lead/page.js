@@ -871,7 +871,7 @@ export default function Page() {
             onChange={handleFilterChange}
             ref={companyRef}
             placeholder="Company Name"
-            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-600 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  text-gray-600 text-sm outline-none"
           />
 
           <input
@@ -879,7 +879,7 @@ export default function Page() {
             value={filters.customer_name}
             onChange={handleFilterChange}
             placeholder="Customer Name"
-            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-600 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  text-gray-600 text-sm outline-none"
           />
 
           <input
@@ -887,14 +887,14 @@ export default function Page() {
             value={filters.lead_title}
             onChange={handleFilterChange}
             placeholder="Enter Lead Title"
-            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-600 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-600 text-sm"
           />
 
           <select
             name="product_category"
             value={filters.product_category}
             onChange={handleFilterChange}
-            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-48 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-48  outline-none  text-gray-400 text-sm"
           >
             <option value="">Select Product Category</option>
             {category.map((item) => (
@@ -908,7 +908,7 @@ export default function Page() {
             name="source"
             value={filters.source}
             onChange={handleFilterChange}
-            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-400 text-sm"
           >
             <option value="">Select Source</option>
             {leadSource.map((item) => (
@@ -922,7 +922,7 @@ export default function Page() {
             name="assignee"
             value={filters.assignee}
             onChange={handleFilterChange}
-            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-400 text-sm"
           >
             <option value="">Select Assignee</option>
             {assignee.map((item) => (
@@ -932,7 +932,7 @@ export default function Page() {
             ))}
           </select>
 
-          <div className="flex items-center px-2 border bg-white border-gray-300 rounded-sm w-full md:w-58 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm col-span-2 md:col-span-1">
+          <div className="flex items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-58  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
             <span className="mx-1 text-gray-400 whitespace-nowrap">From Next</span>
             <input
               type="date"
@@ -943,7 +943,7 @@ export default function Page() {
             />
           </div>
 
-          <div className="flex items-center px-2 border bg-white border-gray-300 rounded-sm w-full md:w-53 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm col-span-2 md:col-span-1">
+          <div className="flex items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-53  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
             <span className="mx-1 text-gray-400 whitespace-nowrap">To Next</span>
             <input
               type="date"
@@ -958,14 +958,14 @@ export default function Page() {
             name="status"
             value={filters.status}
             onChange={handleFilterChange}
-            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-400 text-sm"
           >
             <option value="">Pending</option>
             <option value="Won">Won</option>
             <option value="Lost">Lost</option>
           </select>
 
-          <div className="flex items-center px-2 border bg-white border-gray-300 rounded-sm w-full md:w-60 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm col-span-2 md:col-span-1">
+          <div className="flex items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-60  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
             <span className="mx-1 text-gray-400 whitespace-nowrap">From Create</span>
             <input
               type="date"
@@ -976,7 +976,7 @@ export default function Page() {
             />
           </div>
 
-          <div className="flex items-center px-2 border bg-white border-gray-300 rounded-sm w-full md:w-58 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm col-span-2 md:col-span-1">
+          <div className="flex items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-58  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
             <span className="mx-1 text-gray-400 whitespace-nowrap">To Create</span>
             <input
               type="date"
