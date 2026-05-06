@@ -171,7 +171,7 @@ export default function Page() {
           { params: { status: 1 } },
         );
         setLeadSource(res.data);
-      } catch { }
+      } catch {}
     };
 
     fetchSource();
@@ -186,7 +186,7 @@ export default function Page() {
           { params: { status: 1 } },
         );
         setLeadCategory(res.data);
-      } catch { }
+      } catch {}
     };
 
     fetchCategory();
@@ -200,7 +200,7 @@ export default function Page() {
           params: { status: 1 },
         });
         setCategory(res.data);
-      } catch { }
+      } catch {}
     };
 
     fetchProductCategory();
@@ -302,7 +302,7 @@ export default function Page() {
                     value={formData.company_name}
                     onChange={handleChange}
                     placeholder="Company Name"
-                    className="w-full border rounded-lg px-3 py-2"
+                    className="w-full border rounded-sm px-3 py-2  border-orange-300 outline-none"
                   />
                 </div>
 
@@ -314,7 +314,7 @@ export default function Page() {
                     value={formData.customer_name}
                     onChange={handleChange}
                     placeholder="Customer Name"
-                    className="w-full border rounded-lg px-3 py-2"
+                    className="w-full border rounded-lg px-3 py-2 border-orange-300 outline-none"
                   />
                 </div>
 
@@ -326,7 +326,7 @@ export default function Page() {
                     name="lead_title"
                     value={formData.lead_title}
                     onChange={handleChange}
-                    className="w-full border rounded-lg px-3 py-2"
+                    className="w-full border rounded-lg px-3 py-2 border-orange-300 outline-none"
                   />
                 </div>
 
@@ -337,7 +337,7 @@ export default function Page() {
                     name="source"
                     value={formData.source}
                     onChange={handleChange}
-                    className="w-full border rounded-lg px-3 py-2"
+                    className="w-full border rounded-lg px-3 py-2 border-orange-300 outline-none"
                   >
                     <option value="">-- Select --</option>
                     {leadSource.map((item) => (
@@ -355,7 +355,7 @@ export default function Page() {
                     name="status"
                     value={formData.status}
                     onChange={handleChange}
-                    className="w-full border rounded-lg px-3 py-2 "
+                    className="w-full border rounded-lg px-3 py-2  border-orange-300 outline-none"
                   >
                     <option>Qualified</option>
                     <option>Pending</option>
@@ -374,7 +374,7 @@ export default function Page() {
                     name="product_category"
                     value={formData.product_category}
                     onChange={handleChange}
-                    className="w-full border rounded-lg px-3 py-2"
+                    className="w-full border rounded-lg px-3 py-2 border-orange-300 outline-none"
                   >
                     <option value="">-- Select --</option>
 
@@ -393,7 +393,7 @@ export default function Page() {
                     name="product_name"
                     value={formData.product_name}
                     onChange={handleChange}
-                    className="w-full border rounded-lg px-3 py-2"
+                    className="w-full border rounded-lg px-3 py-2 border-orange-300 outline-none"
                   >
                     <option value="">-- Select Product --</option>
 
@@ -412,7 +412,7 @@ export default function Page() {
                     name="priority"
                     value={formData.priority}
                     onChange={handleChange}
-                    className="w-full border rounded-lg px-3 py-2"
+                    className="w-full border rounded-lg px-3 py-2 border-orange-300 outline-none"
                   >
                     <option value="">-- Select --</option>
                     <option>High</option>
@@ -450,7 +450,7 @@ export default function Page() {
                     name="category"
                     value={formData.category}
                     onChange={handleChange}
-                    className="w-full border rounded-lg px-3 py-2"
+                    className="w-full border rounded-lg px-3 py-2 border-orange-300 outline-none"
                   >
                     <option value="">-- Select --</option>
                     {leadCategory.map((item) => (
@@ -470,7 +470,7 @@ export default function Page() {
                   rows="2"
                   value={formData.description}
                   onChange={handleChange}
-                  className="w-full border rounded-lg px-3 py-2"
+                  className="w-full border rounded-lg px-3 py-2 border-orange-300 outline-none"
                 />
               </div>
 
