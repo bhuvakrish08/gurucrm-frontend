@@ -1498,7 +1498,7 @@ export default function Page() {
                   name="follow_up_date"
                   value={form.follow_up_date}
                   onChange={handleChange}
-                  className="w-full mt-1.5 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 focus:border-transparent outline-none bg-gray-50 transition-all"
+                  className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50 transition-all"
                 />
               </div>
               <div className="col-span-1">
@@ -1509,7 +1509,7 @@ export default function Page() {
                   name="activity_type"
                   value={form.activity_type}
                   onChange={handleChange}
-                  className="w-full mt-1.5 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50 transition-all"
+                  className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50 transition-all"
                 >
                   <option value="">-- Select --</option>
                   <option>Call</option>
@@ -1525,7 +1525,7 @@ export default function Page() {
                   name="follow_up_by"
                   value={form.follow_up_by}
                   onChange={handleChange}
-                  className="w-full mt-1.5 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50 transition-all"
+                  className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50 transition-all"
                 >
                   <option value="">Select User</option>
                   {assignee.map((item) => (
@@ -1544,7 +1544,7 @@ export default function Page() {
                     name="contact_person"
                     value={form.contact_person}
                     onChange={handleChange}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50 transition-all"
+                    className="w-full border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50 transition-all"
                   />
                 </div>
               </div>
@@ -1556,10 +1556,10 @@ export default function Page() {
                   name="description"
                   value={form.description}
                   onChange={handleChange}
-                  className="w-full mt-1.5 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50 h-20 resize-none transition-all"
+                  className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50 h-20 resize-none transition-all"
                 />
               </div>
-              <div className="col-span-2 border-2 border-dashed border-orange-100 rounded-xl p-3 text-center bg-orange-50/40">
+              <div className="col-span-2 border-2 border-dashed border-orange-300 rounded-xl p-3 text-center bg-orange-50/40">
                 <button
                   onClick={() => setShowFileModal(true)}
                   className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 mx-auto transition-all shadow-md shadow-orange-200"
@@ -1685,7 +1685,7 @@ export default function Page() {
                           follow_up_date: e.target.value,
                         })
                       }
-                      className="w-full mt-1.5 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50"
+                      className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50"
                     />
                   </div>
                   <div>
@@ -1700,7 +1700,7 @@ export default function Page() {
                           activity_type: e.target.value,
                         })
                       }
-                      className="w-full mt-1.5 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50"
+                      className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50"
                     >
                       <option value="">-- Select --</option>
                       <option>Call</option>
@@ -1720,7 +1720,7 @@ export default function Page() {
                           follow_up_by: e.target.value,
                         })
                       }
-                      className="w-full mt-1.5 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50"
+                      className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50"
                     >
                       <option value="">Select User</option>
                       {assignee.map((item) => (
@@ -1742,7 +1742,7 @@ export default function Page() {
                           contact_person: e.target.value,
                         })
                       }
-                      className="w-full mt-1.5 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50"
+                      className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50"
                     />
                   </div>
                   <div className="col-span-2">
@@ -1757,10 +1757,10 @@ export default function Page() {
                           description: e.target.value,
                         })
                       }
-                      className="w-full mt-1.5 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50 h-20 resize-none"
+                      className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50 h-20 resize-none"
                     />
                   </div>
-                  <div className="col-span-2 border-2 border-dashed border-orange-100 rounded-xl p-3 text-center bg-orange-50/40">
+                  <div className="col-span-2 border-2 border-dashed border-orange-300 rounded-xl p-3 text-center bg-orange-50/40">
                     <button
                       onClick={() => setShowFileModal(true)}
                       className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 mx-auto transition-all shadow-md shadow-orange-200"
