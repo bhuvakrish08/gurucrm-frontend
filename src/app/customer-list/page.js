@@ -193,14 +193,14 @@ export default function CustomerList() {
             value={filters.customer_name}
             onChange={handleChange}
             placeholder="Enter Name"
-            className="border bg-white border-gray-300 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 focus:ring-orange-200 outline-none focus:ring-1 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 text-sm"
           />
 
           <input
             type="text"
             name="mobile"
             placeholder="Contact No."
-            className="border bg-white border-gray-300 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 focus:ring-orange-200 outline-none focus:ring-1 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 text-sm"
             value={filters.mobile || ""}
             onChange={(e) => {
               const val = e.target.value;
@@ -218,14 +218,14 @@ export default function CustomerList() {
             value={filters.email}
             onChange={handleChange}
             placeholder="Enter Email"
-            className="border bg-white border-gray-300 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 focus:ring-orange-200 outline-none focus:ring-1 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 text-sm"
           />
 
           <select
             name="industry"
             value={filters.industry}
             onChange={handleChange}
-            className="border bg-white border-gray-300 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 focus:ring-orange-200 outline-none focus:ring-1 text-gray-500 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 text-gray-500 text-sm"
           >
             <option value="">Industry</option>
             {industries.map((item) => (

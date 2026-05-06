@@ -235,7 +235,7 @@ export default function CommonMasterPage({
             <select
               value={parentDesignation}
               onChange={(e) => setParentDesignation(e.target.value)}
-              className="w-full md:w-60 md:mx-2 bg-white p-2 border border-gray-300 rounded-sm outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm"
+              className="w-full md:w-60 md:mx-2 bg-white p-2 border border-orange-300 rounded-sm outline-none text-gray-400 text-sm"
               required
             >
               <option value="">Parent</option>
@@ -250,13 +250,13 @@ export default function CommonMasterPage({
           <input
             type="text"
             placeholder={`Enter ${title}`}
-            className="p-2 w-full md:w-50 mb-0 md:mb-3 border text-gray-400 bg-white border-gray-300 rounded-sm outline-none focus:ring-1 focus:ring-orange-200 text-sm"
+            className="p-2 w-full md:w-50 mb-0 md:mb-3 border text-gray-400 bg-white border-orange-300 rounded-sm outline-none  text-sm"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
 
           <select
-            className="w-full md:w-48 md:mx-3 p-2 border text-gray-400 bg-white rounded-sm border-gray-300 outline-none focus:ring-1 focus:ring-orange-200 text-sm"
+            className="w-full md:w-48 md:mx-3 p-2 border text-gray-400 bg-white rounded-sm border-orange-300 outline-none  text-sm"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
