@@ -754,7 +754,7 @@ const exportToPDF = async () => {
           onChange={(e) =>
             setFilters({ ...filters, task_name: e.target.value })
           }
-          className="p-2 w-full md:w-52 border border-gray-200 md:border-none text-gray-600 bg-white rounded-sm focus:ring-1  focus:ring-orange-200 transition-all focus:outline-none text-sm"
+          className="p-2 w-full md:w-52 border border-orange-300 md:border-none text-gray-600 bg-white rounded-sm  transition-all outline-none text-sm"
         />
 
         {/* Status */}
@@ -762,7 +762,7 @@ const exportToPDF = async () => {
           name="status"
           value={filters.status || ""}
           onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-          className="p-2 w-full md:w-52 border border-gray-200 md:border-none text-gray-400 bg-white rounded-sm focus:ring-1 focus:ring-orange-200 transition-all focus:outline-none text-sm"
+          className="p-2 w-full md:w-52 border border-orange-300 md:border-none text-gray-400 bg-white rounded-sm  transition-all outline-none text-sm"
         >
           <option value="">Status</option>
 
@@ -778,7 +778,7 @@ const exportToPDF = async () => {
           name="priority"
           value={filters.priority || ""}
           onChange={(e) => setFilters({ ...filters, priority: e.target.value })}
-          className="p-2 w-full md:w-52 border border-gray-200 md:border-none text-gray-400 bg-white rounded-sm focus:ring-1 outline-none focus:ring-orange-200 transition-all focus:outline-none text-sm"
+          className="p-2 w-full md:w-52 border border-orange-300 md:border-none text-gray-400 bg-white rounded-sm  transition-all outline-none text-sm"
         >
           <option value="">Priority</option>
           <option value="High">High</option>
@@ -791,7 +791,7 @@ const exportToPDF = async () => {
           name="assignee"
           value={filters.assignee || "-"}
           onChange={(e) => setFilters({ ...filters, assignee: e.target.value })}
-          className="p-2 w-full md:w-52 border border-gray-200 md:border-none text-gray-400 bg-white rounded-sm focus:ring-1 focus:ring-orange-200 transition-all focus:outline-none text-sm"
+          className="p-2 w-full md:w-52 border border-orange-300 md:border-none text-gray-400 bg-white rounded-sm  transition-all outline-none text-sm"
         >
           <option value="">Assignee</option>
 
@@ -803,7 +803,7 @@ const exportToPDF = async () => {
         </select>
 
         {/* Start Date Range */}
-        <div className="flex flex-col border border-gray-200 md:border-none bg-white rounded-sm focus-within:ring-1 focus-within:ring-orange-200 transition-all px-2 w-full md:w-auto">
+        <div className="flex flex-col border border-orange-300 md:border-none bg-white rounded-sm transition-all px-2 w-full md:w-auto">
           <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">Start Date</span>
           <input
             type="date"
@@ -815,7 +815,7 @@ const exportToPDF = async () => {
           />
         </div>
            {/* Due Date Range */}
-        <div className="flex flex-col border border-gray-200 md:border-none bg-white rounded-sm focus-within:ring-1 focus-within:ring-orange-200 transition-all px-2 w-full md:w-auto">
+        <div className="flex flex-col border border-orange-300 md:border-none bg-white rounded-sm transition-all px-2 w-full md:w-auto">
           <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">Due Date</span>
           <input
             type="date"
@@ -863,7 +863,7 @@ const exportToPDF = async () => {
           onChange={(e) =>
             setFilters({ ...filters, created_by_name: e.target.value })
           }
-          className="p-2 w-full md:w-52 border border-gray-200 md:border-none text-gray-400 bg-white rounded-sm focus:ring-1 focus:ring-orange-200 transition-all focus:outline-none"
+          className="p-2 w-full md:w-52 border border-orange-300 md:border-none text-gray-400 bg-white rounded-sm  transition-all outline-none"
         >
           <option value="">Select Created By</option>
 
@@ -875,7 +875,7 @@ const exportToPDF = async () => {
         </select>
 
         {/* created Date Range */}
-        <div className="flex items-center border border-gray-200 md:border-none bg-white rounded-sm focus-within:ring-1 focus-within:ring-orange-200 transition-all px-2 w-full md:w-auto">
+        <div className="flex items-center border border-orange-300 md:border-none bg-white rounded-sm transition-all px-2 w-full md:w-auto">
           <span className="mx-1 text-gray-400 whitespace-nowrap">Created Date</span>
           <input
             type="date"
@@ -1124,7 +1124,7 @@ const exportToPDF = async () => {
                       name="task_name"
                       value={formData.task_name}
                       onChange={handleChange}
-                      className="w-full border  rounded-sm px-4 py-2  border-gray-300 outline-none focus:ring-1 focus:ring-orange-200"
+                      className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none "
                       required
                     />
                   </div>
@@ -1142,7 +1142,7 @@ const exportToPDF = async () => {
                             setStartDate(e.target.value);
                             setDueDate("");
                           }}
-                          className="w-full border  rounded-sm px-4 py-2  border-gray-300 outline-none focus:ring-1 focus:ring-orange-200"
+                          className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none "
                           required
                         />
                       </div>
@@ -1156,7 +1156,7 @@ const exportToPDF = async () => {
                       value={dueDate}
                       min={startDate}
                       onChange={(e) => setDueDate(e.target.value)}
-                      className="w-full border  rounded-sm px-4 py-2  border-gray-300 outline-none focus:ring-1 focus:ring-orange-200"
+                      className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none "
                       required
                     />
                   </div>
@@ -1170,7 +1170,7 @@ const exportToPDF = async () => {
                           name="status"
                           value={formData.status}
                           onChange={handleChange}
-                          className="w-full border  rounded-sm px-4 py-2  border-gray-300 outline-none focus:ring-1 focus:ring-orange-200"
+                          className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none"
                           required
                         >
                           {status.map((item) => (
@@ -1192,7 +1192,7 @@ const exportToPDF = async () => {
                           name="priority"
                           value={formData.priority}
                           onChange={handleChange}
-                          className="w-full border  rounded-sm px-4 py-2  border-gray-300 outline-none focus:ring-1 focus:ring-orange-200"
+                          className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none"
                           required
                         >
                           <option value=""> --Select-- </option>
@@ -1211,7 +1211,7 @@ const exportToPDF = async () => {
                         name="recurring_type"
                         value={formData.recurring_type}
                         onChange={handleChange}
-                        className="w-full border  rounded-sm px-4 py-2  border-gray-300 outline-none focus:ring-1 focus:ring-orange-200"
+                        className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none"
                         required
                       >
                         <option value="">-- Select --</option>
@@ -1231,7 +1231,7 @@ const exportToPDF = async () => {
                         name="repeat_every"
                         value={formData.repeat_every}
                         onChange={handleChange}
-                        className="w-full border  rounded-sm px-4 py-2  border-gray-300 outline-none focus:ring-1 focus:ring-orange-200"
+                        className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none"
                         required
                       >
                         <option value="">-- Select --</option>
@@ -1251,7 +1251,7 @@ const exportToPDF = async () => {
                           setRelatedTo(e.target.value);
                           setSecondValue("");
                         }}
-                        className="w-full border  rounded-sm px-4 py-2  border-gray-300 outline-none focus:ring-1 focus:ring-orange-200"
+                        className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none"
                         required
                       >
                         <option value="">-- Select --</option>
@@ -1269,7 +1269,7 @@ const exportToPDF = async () => {
                     <div className="relative">
                       {relatedTo ? (
                         <select
-                          className="w-full border  rounded-sm px-4 py-2  border-gray-300 outline-none focus:ring-1 focus:ring-orange-200"
+                          className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none"
                           value={secondValue}
                           onChange={(e) => setSecondValue(e.target.value)}
                           required
@@ -1289,7 +1289,7 @@ const exportToPDF = async () => {
                           )}
                         </select>
                       ) : (
-                        <div className="w-full border border-gray-200 bg-gray-100 rounded-md px-4 py-2 text-gray-400">
+                        <div className="w-full border border-orange-300 bg-orange-100 rounded-md px-4 py-2 text-orange-500">
                           Select Related To first
                         </div>
                       )}
@@ -1399,7 +1399,7 @@ const exportToPDF = async () => {
                         name="template"
                         value={formData.template}
                         onChange={handleChange}
-                        className="w-full border  rounded-sm px-4 py-2  border-gray-300 outline-none focus:ring-1 focus:ring-orange-200"
+                        className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none"
                         required
                       >
                         <option value="">-- Select --</option>
@@ -1416,14 +1416,14 @@ const exportToPDF = async () => {
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-md px-4 py-2 outline-none focus:ring-1 focus:ring-orange-200"
+                    className="w-full border border-orange-300 rounded-md px-4 py-2 outline-none "
                     required
                   ></textarea>
                 </div>
 
                 <div className="text-gray-600 mt-2">
                   <label className="block mb-2 ">Select Files *</label>
-                  <div className="border border-dashed border-gray-400 text-center ">
+                  <div className="border border-dashed border-orange-300 text-center ">
                     <div className="m-3">
                       <h3 className="mb-3">Upload Documents</h3>
                       <button
@@ -1509,7 +1509,7 @@ const exportToPDF = async () => {
                         <div
                           onDrop={handleDrop}
                           onDragOver={(e) => e.preventDefault()}
-                          className="border-2 border-dashed border-gray-400 m-6 p-8 text-center rounded-xl"
+                          className="border-2 border-dashed border-orange-300 m-6 p-8 text-center rounded-xl"
                         >
                           <p className="font-semibold mt-3">DRAG FILES HERE</p>
                           <p className="text-gray-500 mt-1">

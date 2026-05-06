@@ -476,7 +476,7 @@ export default function CommonMasterPage({
                 <input
                   type="text"
                   placeholder="Enter name"
-                  className="border p-2 w-full rounded-sm mb-3 outline-none focus:ring-orange-200 focus:ring-1 border-gray-300"
+                  className="border p-2 w-full rounded-sm mb-3 outline-none  border-orange-300"
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   required

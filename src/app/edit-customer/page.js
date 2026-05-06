@@ -584,7 +584,7 @@ const router = useRouter(); // ← yeh add karo
                   </label>
                   <input
                     name="company_name"
-                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400 transition-all"
+                    className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
                     placeholder="Enter Company Name"
                     value={formData.company_name}
                     onChange={handleChange}
@@ -600,7 +600,7 @@ const router = useRouter(); // ← yeh add karo
                     placeholder="Enter customer name"
                     value={formData.customer_name}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-sm px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-orange-200 transition-all"
+                    className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
                   />
                 </div>
                 <div>
@@ -642,7 +642,7 @@ const router = useRouter(); // ← yeh add karo
                     placeholder="Enter email address"
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-sm px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-orange-200 transition-all"
+                    className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
                   />
                 </div>
                 <div>
@@ -653,7 +653,7 @@ const router = useRouter(); // ← yeh add karo
                     name="industry"
                     value={formData.industry}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-sm px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-orange-200 transition-all"
+                    className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
                   >
                     <option value="">Select Industry</option>
                     {industries.map((item) => (
@@ -678,7 +678,7 @@ const router = useRouter(); // ← yeh add karo
                     onBlur={handleBlur}
                     value={formData.website}
                     onChange={handleChange}
-                    className="w-full bg-gray-50 border border-gray-200 rounded-sm px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-orange-200 transition-all"
+                    className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
                   />
                   {error && (
                     <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1">
@@ -696,7 +696,7 @@ const router = useRouter(); // ← yeh add karo
                     value={formData.remarks}
                     onChange={handleChange}
                     rows="3"
-                    className="w-full bg-gray-50 border border-gray-200 rounded-sm px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-orange-200 transition-all resize-none"
+                    className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all resize-none"
                   ></textarea>
                 </div>
               </div>
@@ -737,7 +737,7 @@ const router = useRouter(); // ← yeh add karo
                             </label>
                           )}
                           <select
-                            className="w-full bg-white border border-gray-200 rounded-sm px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-orange-200 transition-all"
+                            className="w-full bg-white border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
                             value={gst.gst_type}
                             onChange={(e) =>
                               updateGst(gst.id, "gst_type", e.target.value)
@@ -757,7 +757,7 @@ const router = useRouter(); // ← yeh add karo
                           )}
                           <input
                             type="text"
-                            className="w-full bg-white border border-gray-200 rounded-sm px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-orange-200 transition-all"
+                            className="w-full bg-white border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
                             placeholder="Enter GST number"
                             value={gst.gst_number}
                             onChange={(e) =>
@@ -773,7 +773,7 @@ const router = useRouter(); // ← yeh add karo
                           )}
                           <input
                             type="text"
-                            className="w-full bg-white border border-gray-200 rounded-sm px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-orange-200 transition-all"
+                            className="w-full bg-white border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
                             placeholder="Enter state"
                             value={gst.gst_state}
                             onChange={(e) =>
@@ -958,7 +958,7 @@ const router = useRouter(); // ← yeh add karo
                           name="address_type"
                           value={addressForm.address_type}
                           onChange={handleAddressChange}
-                          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400"
+                          className="w-full bg-gray-50 border border-orange-300 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none "
                         >
                           <option value="">Select Address Type</option>
                           <option>Billing</option>
@@ -977,7 +977,7 @@ const router = useRouter(); // ← yeh add karo
                           onChange={handleAddressChange}
                           rows="3"
                           placeholder="Enter full address"
-                          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400 resize-none"
+                          className="w-full bg-gray-50 border border-orange-300 rounded-lg px-3 py-2.5 text-sm text-gray-700 outline-none "
                         />
                       </div>
                     </div>
@@ -1143,7 +1143,7 @@ const router = useRouter(); // ← yeh add karo
                           value={contactForm.contact_person}
                           onChange={handleContactChange}
                           placeholder="Enter contact person name"
-                          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400"
+                          className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none"
                         />
                       </div>
                       <div>
@@ -1156,7 +1156,7 @@ const router = useRouter(); // ← yeh add karo
                           value={contactForm.contact_number}
                           onChange={handleContactChange}
                           placeholder="Enter contact number"
-                          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400"
+                          className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none"
                         />
                       </div>
                       <div>
@@ -1169,7 +1169,7 @@ const router = useRouter(); // ← yeh add karo
                           value={contactForm.email}
                           onChange={handleContactChange}
                           placeholder="Enter email address"
-                          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400"
+                          className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none"
                         />
                       </div>
                       <div>
@@ -1180,7 +1180,7 @@ const router = useRouter(); // ← yeh add karo
                           name="contact_designation"
                           value={contactForm.contact_designation}
                           onChange={handleContactChange}
-                          className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-400"
+                          className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none"
                         >
                           <option value="">Select Designation</option>
                           {designations.map((d) => (

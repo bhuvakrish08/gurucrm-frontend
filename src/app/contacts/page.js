@@ -532,7 +532,7 @@ export default function Page() {
                 name="company_name"
                 value={formdata.company_name}
                 onChange={handleFormCompanyChange}
-                className="w-full border rounded-sm p-2 mb-5 outline-none focus:ring-1 focus:ring-orange-200 border-gray-300 "
+                className="w-full border rounded-sm p-2 mb-5 outline-none border-orange-300 "
               >
                 <option value="">Select Company Name</option>
                 {companyname.map((item) => (
@@ -560,7 +560,7 @@ export default function Page() {
                     customer_name: selectedCustomer?.customer_name || "",
                   }));
                 }}
-                className="w-full border rounded-sm p-2 mb-5 outline-none focus:ring-1 focus:ring-orange-200 border-gray-300 "
+                className="w-full border rounded-sm p-2 mb-5 outline-none border-orange-300 "
               >
                 <option value="">Select Customer Name</option>
                 {customername.map((item) => (
@@ -575,7 +575,7 @@ export default function Page() {
               </label>
               <input
                 type="text"
-                className="border p-2 w-md rounded-sm mb-3 focus:ring-1 focus:ring-orange-200 outline-none border-gray-300"
+                className="border p-2 w-md rounded-sm mb-3  outline-none border-orange-300"
                 name="contact_person"
                 value={formdata.contact_person}
                 onChange={handleChange}
@@ -586,7 +586,7 @@ export default function Page() {
               </label>
               <input
                 type="text"
-                className="border p-2 w-md rounded-sm mb-3 focus:ring-1 focus:ring-orange-200 outline-none border-gray-300"
+                className="border p-2 w-md rounded-sm mb-3  outline-none border-orange-300"
                 name="contact_number"
                 value={formdata.contact_number}
                 onChange={handleChange}
@@ -597,7 +597,7 @@ export default function Page() {
               </label>
               <input
                 type="text"
-                className="border p-2 w-md rounded-sm    mb-3 focus:ring-1 focus:ring-orange-200 outline-none border-gray-300"
+                className="border p-2 w-md rounded-sm    mb-3 outline-none border-orange-300"
                 name="email"
                 value={formdata.email}
                 onChange={handleChange}
@@ -610,7 +610,7 @@ export default function Page() {
                 name="contact_designation"
                 value={formdata.contact_designation}
                 onChange={handleChange}
-                className="w-full border rounded-sm p-2 mb-5 outline-none focus:ring-1 focus:ring-orange-200 border-gray-300 "
+                className="w-full border rounded-sm p-2 mb-5 outline-none border-orange-300 "
               >
                 <option value="">Select Contact Designation</option>
                 {designations.map((item) => (

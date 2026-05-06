@@ -298,29 +298,22 @@ export default function AddCustomer() {
                     value={formData.company_name}
                     onChange={handleChange}
                     placeholder="Enter Company name"
-                    className="w-full border rounded p-2"
+                    className="w-full border rounded-sm p-2 border-orange-300 outline-none"
                   />
-                  {/* <select name="company_name" value={formData.company_name} onChange={handleChange} className="w-full border rounded p-2" >
-                                            <option value="">Select Industry</option>
-                                            {companyname.map((item) => (
-                                                <option key={item.id} value={item.id}>
-                                                    {item.organization_name}
-                                                </option>
-                                            ))}
-                                        </select> */}
+                
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">
                     Customer Name *
                   </label>
-                  <input type="text" name="customer_name" value={formData.customer_name} onChange={handleChange} placeholder="Enter customer name" className="w-full border rounded p-2" />
+                  <input type="text" name="customer_name" value={formData.customer_name} onChange={handleChange} placeholder="Enter customer name" className="w-full border rounded-sm p-2 border-orange-300 outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Email*</label>
-                  <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Enter email address" className="w-full border rounded p-2" />
+                  <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Enter email address" className="w-full border rounded-sm p-2 border-orange-300 outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Mobile No.*</label>
+                  <label className="block text-sm font-medium mb-1  ">Mobile No.</label>
                   <PhoneInput
                     country={"in"}
                     value={formData.mobile}
@@ -338,8 +331,8 @@ export default function AddCustomer() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Industry *</label>
-                  <select name="industry" value={formData.industry} onChange={handleChange} className="w-full border rounded p-2">
+                  <label className="block text-sm font-medium mb-1 border-orange-300 outline-none">Industry *</label>
+                  <select name="industry" value={formData.industry} onChange={handleChange} className="w-full border rounded-sm p-2 border-orange-300 outline-none">
                     <option value="">Select Industry*</option>
                     {industries.map((item) => (
                       <option key={item.id} value={item.id}>
@@ -360,7 +353,7 @@ export default function AddCustomer() {
                     <label className="block text-sm font-medium mb-1">
                       Address Type *
                     </label>
-                    <select name="address_type" value={formData.address_type} onChange={handleChange} className="w-full border rounded p-2">
+                    <select name="address_type" value={formData.address_type} onChange={handleChange} className="w-full border rounded-sm p-2 border-orange-300 outline-none">
                       <option value="">Select Adress Type</option>
                       <option>Billing</option>
                       <option>Shipping</option>
@@ -370,7 +363,7 @@ export default function AddCustomer() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1"> Address * </label>
-                    <textarea name="address" value={formData.address} onChange={handleChange} placeholder="Enter address" className="w-full border rounded p-2"></textarea>
+                    <textarea name="address" value={formData.address} onChange={handleChange} placeholder="Enter address" className="w-full border rounded-sm p-2 border-orange-300 outline-none"></textarea>
                   </div>
 
                 </div>
@@ -382,7 +375,7 @@ export default function AddCustomer() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">GST Type</label>
-                    <select name="gst_type" value={formData.gst_type} onChange={handleChange} className="w-full border rounded p-2">
+                    <select name="gst_type" value={formData.gst_type} onChange={handleChange} className="w-full border rounded-sm p-2 border-orange-300 outline-none">
                       <option value="">Select GST Type</option>
                       <option>Registered Regular</option>
                       <option>Registered Composite</option>
@@ -393,11 +386,11 @@ export default function AddCustomer() {
                     <label className="block text-sm font-medium mb-1">
                       GST Number
                     </label>
-                    <input type="text" name="gst_number" value={formData.gst_number} onChange={handleChange} placeholder="Enter GST number" className="w-full border rounded p-2" />
+                    <input type="text" name="gst_number" value={formData.gst_number} onChange={handleChange} placeholder="Enter GST number" className="w-full border rounded-sm p-2 border-orange-300 outline-none" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">State</label>
-                    <input type="text" name="gst_state" value={formData.gst_state} onChange={handleChange} placeholder="Enter State" className="w-full border rounded p-2" />
+                    <input type="text" name="gst_state" value={formData.gst_state} onChange={handleChange} placeholder="Enter State" className="w-full border rounded-sm p-2 border-orange-300 outline-none" />
                   </div>
                 </div>
               </div>
@@ -408,12 +401,12 @@ export default function AddCustomer() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">Website</label>
-                    <input type="text" name="website" ref={websiteRef} value={formData.website} onFocus={handleFocus} onBlur={handleBlur} onChange={handleChange} className="w-full border rounded p-2" />
+                    <input type="text" name="website" ref={websiteRef} value={formData.website} onFocus={handleFocus} onBlur={handleBlur} onChange={handleChange} className="w-full border rounded-sm p-2 border-orange-300 outline-none" />
                     {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Remarks</label>
-                    <textarea name="remarks" value={formData.remarks} onChange={handleChange} placeholder="Enter remarks" className="w-full border rounded p-2"></textarea>
+                    <textarea name="remarks" value={formData.remarks} onChange={handleChange} placeholder="Enter remarks" className="w-full border rounded-sm p-2 border-orange-300 outline-none"></textarea>
                   </div>
                 </div>
               </div>
@@ -437,21 +430,21 @@ export default function AddCustomer() {
                   <label className="block text-sm font-medium mb-1">
                     Contact Person*
                   </label>
-                  <input type="text" name="contact_person" value={formData.contact_person} onChange={handleChange} placeholder="Enter contact person name" className="w-full border rounded p-2" />
+                  <input type="text" name="contact_person" value={formData.contact_person} onChange={handleChange} placeholder="Enter contact person name" className="w-full border rounded-sm p-2 border-orange-300 outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">
                     Contact Number*
                   </label>
-                  <input type="text" name="contact_number" value={formData.contact_number} onChange={handleChange} placeholder="Enter contact number" className="w-full border rounded p-2" />
+                  <input type="text" name="contact_number" value={formData.contact_number} onChange={handleChange} placeholder="Enter contact number" className="w-full border rounded-sm p-2 border-orange-300 outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Email*</label>
-                  <input type="email" name="contact_email" value={formData.contact_email} onChange={handleChange} placeholder="Enter email" className="w-full border rounded p-2" />
+                  <input type="email" name="contact_email" value={formData.contact_email} onChange={handleChange} placeholder="Enter email" className="w-full border rounded-sm p-2 border-orange-300 outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Contact Designation*</label>
-                  <select name="contact_designation" value={formData.contact_designation} onChange={handleChange} className="w-full border rounded p-2">
+                  <select name="contact_designation" value={formData.contact_designation} onChange={handleChange} className="w-full border rounded-sm p-2 border-orange-300 outline-none">
                     <option value="">Select Contact Designation</option>
                     {designations.map((item) => (
                       <option key={item.id} value={item.id}>
