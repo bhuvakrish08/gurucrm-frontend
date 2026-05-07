@@ -817,27 +817,27 @@ export default function QuotationPage() {
             value={filters.company_name}
             onChange={handleFilterChange}
             placeholder="Company"
-            className="p-2 w-full md:w-48 bg-white border border-orange-300 md:border-none rounded-sm focus:outline-none  text-gray-600 text-sm"
+            className="p-2 w-full md:w-48 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-600 text-sm"
           />
           <input
             name="customer_name"
             value={filters.customer_name}
             onChange={handleFilterChange}
             placeholder="Customer"
-            className="p-2 w-full md:w-48 bg-white border border-orange-300 md:border-none rounded-sm focus:outline-none  text-gray-600 text-sm"
+            className="p-2 w-full md:w-48 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-600 text-sm"
           />
           <input
             name="lead_title"
             value={filters.lead_title}
             onChange={handleFilterChange}
             placeholder="Lead Title"
-            className="p-2 w-full md:w-48 bg-white border border-orange-300 md:border-none rounded-sm focus:outline-none  text-gray-600 text-sm"
+            className="p-2 w-full md:w-48 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-600 text-sm"
           />
           <select
             name="assignee"
             value={filters.assignee}
             onChange={handleFilterChange}
-            className="p-2 w-full md:w-36 bg-white border border-orange-300 md:border-none rounded-sm focus:outline-none  text-gray-400 text-sm"
+            className="p-2 w-full md:w-36 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-400 text-sm"
           >
             <option value="">Assignee</option>
             {asignee.map((item) => (
@@ -850,14 +850,14 @@ export default function QuotationPage() {
             name="quotation_status"
             value={filters.quotation_status}
             onChange={handleFilterChange}
-            className="p-2 w-full md:w-45 bg-white border border-orange-300 md:border-none rounded-sm focus:outline-none  text-gray-400 text-sm"
+            className="p-2 w-full md:w-45 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-400 text-sm"
           >
             <option value="">Status</option>
             <option value="Won">Won</option>
             <option value="Lost">Lost</option>
           </select>
 
-          <div className="flex flex-col px-2 w-full md:w-58 bg-white border border-orange-300 md:border-none rounded-sm focus:outline-none  text-gray-400 text-sm">
+          <div className="flex flex-col px-2 w-full md:w-58 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-400 text-sm">
             <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">From Date</span>
             <input
               type="date"
@@ -868,7 +868,7 @@ export default function QuotationPage() {
             />
           </div>
 
-          <div className="flex flex-col px-2 w-full md:w-58 bg-white border border-orange-300 md:border-none rounded-sm focus:outline-none  text-gray-400 text-sm">
+          <div className="flex flex-col px-2 w-full md:w-58 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-400 text-sm">
             <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">To Date</span>
             <input
               type="date"

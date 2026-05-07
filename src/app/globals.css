@@ -42,7 +42,7 @@ html, body {
 }
 
 /* Hide all scrollbars globally */
-* {
+ *{
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
