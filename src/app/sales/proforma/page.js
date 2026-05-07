@@ -565,30 +565,34 @@ export default function ProformaPage() {
         </div>
 
         <div
-          className={`
-          ${showMobileFilters ? "absolute left-6 right-6 top-50 bg-white p-5 shadow-2xl border border-gray-100 z-50 rounded-lg grid grid-cols-2 gap-3 mt-1" : "hidden"} 
-          md:mx-6 md:flex md:flex-wrap md:items-center md:gap-x-5 md:gap-y-2 md:mt-3 md:mb-5 md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
-        `}
-        >
+  className={`
+    ${
+      showMobileFilters
+        ? "absolute left-6 right-6 top-[170px] bg-white p-5 shadow-2xl rounded-lg grid grid-cols-2 gap-3 mt-1 z-[999] ring-2 ring-orange-300"
+        : "hidden"
+    }
+    md:mx-6 md:flex md:flex-wrap md:items-center md:gap-x-5 md:gap-y-2 md:mt-3 md:mb-5 md:relative md:bg-transparent md:p-0 md:shadow-none md:ring-0
+  `}
+>
           <input
             name="customer_name"
             value={filters.customer_name}
             onChange={handleFilterChange}
             placeholder="Customer"
-            className="p-2 w-full md:w-45 bg-white border border-orange-300 md:border-none rounded-sm focus:outline-none text-gray-600 text-sm"
+            className="p-2 w-full md:w-45 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-600 text-sm"
           />
           <input
             name="quotation_no"
             value={filters.quotation_no}
             onChange={handleFilterChange}
             placeholder="Quotation No"
-            className="p-2 w-full md:w-45 bg-white border border-orange-300 md:border-none rounded-sm focus:outline-none  text-gray-600 text-sm"
+            className="p-2 w-full md:w-45 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-600 text-sm"
           />
           <select
             name="assignee"
             value={filters.assignee}
             onChange={handleFilterChange}
-            className="p-2 w-full md:w-45 bg-white border border-orange-300 md:border-none rounded-sm focus:outline-none  text-gray-400 text-sm"
+            className="p-2 w-full md:w-45 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-400 text-sm"
           >
             <option value="">Assignee</option>
             {assigneeList.map((item) => (
@@ -601,14 +605,14 @@ export default function ProformaPage() {
             name="status"
             value={filters.status}
             onChange={handleFilterChange}
-            className="p-2 w-full md:w-45 bg-white border border-orange-300 md:border-none rounded-sm focus:outline-none  text-gray-400 text-sm"
+            className="p-2 w-full md:w-45 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-400 text-sm"
           >
             <option value="">Status</option>
             <option value="draft">Draft</option>
             <option value="partial">Pending</option>
             <option value="paid">Won</option>
           </select>
-          <div className="flex items-center px-2 w-full md:w-58 bg-white border border-orange-300 md:border-none rounded-sm focus:outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
+          <div className="flex items-center px-2 w-full md:w-58 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
             <span className="mx-1 text-gray-400 whitespace-nowrap">From</span>
             <input
               type="date"
@@ -618,7 +622,7 @@ export default function ProformaPage() {
               className="p-2 w-full md:w-35 outline-none"
             />
           </div>
-          <div className="flex items-center px-2 w-full md:w-53 bg-white border border-orange-300 md:border-none rounded-sm focus:outline-none text-gray-400 text-sm col-span-2 md:col-span-1">
+          <div className="flex items-center px-2 w-full md:w-53 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-400 text-sm col-span-2 md:col-span-1">
             <span className="mx-1 text-gray-400 whitespace-nowrap">To</span>
             <input
               type="date"
@@ -636,7 +640,7 @@ export default function ProformaPage() {
             placeholder="Min %"
             min="0"
             max="100"
-            className="p-2 w-full md:w-24 bg-white border border-orange-300 md:border-none rounded-sm focus:outline-none  text-gray-600 text-sm"
+            className="p-2 w-full md:w-24 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-600 text-sm"
           />
           <input
             type="number"
@@ -646,7 +650,7 @@ export default function ProformaPage() {
             placeholder="Max %"
             min="0"
             max="100"
-            className="p-2 w-full md:w-24 bg-white border border-orange-300 md:border-none rounded-sm focus:outline-none  text-gray-600 text-sm"
+            className="p-2 w-full md:w-24 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-600 text-sm"
           />
           <input
             type="number"
@@ -654,7 +658,7 @@ export default function ProformaPage() {
             value={filters.min_total}
             onChange={handleFilterChange}
             placeholder="Min ₹"
-            className="p-2 w-full md:w-32 bg-white border border-orange-300 md:border-none rounded-sm focus:outline-none  text-gray-600 text-sm"
+            className="p-2 w-full md:w-32 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-600 text-sm"
           />
           <input
             type="number"
@@ -662,7 +666,7 @@ export default function ProformaPage() {
             value={filters.max_total}
             onChange={handleFilterChange}
             placeholder="Max ₹"
-            className="p-2 w-full md:w-32 bg-white border border-orange-300 md:border-none rounded-sm focus:outline-none  text-gray-600 text-sm"
+            className="p-2 w-full md:w-32 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-600 text-sm"
           />
           <div className="flex gap-2 col-span-2 md:col-span-1">
             <button
@@ -691,7 +695,10 @@ export default function ProformaPage() {
             ) : (
               // <div className="overflow-x-auto">
               //   <table className="w-full text-sm custom-scroll">
-              <div className="overflow-x-auto overflow-y-auto max-h-[500px] custom-scroll">
+              <div
+                className="overflow-x-auto overflow-y-scroll max-h-[500px] custom-scroll"
+                style={{ overflowX: "scroll" }}
+              >
                 <table className="w-full text-sm whitespace-nowrap">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-100">
