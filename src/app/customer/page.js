@@ -414,7 +414,7 @@ export default function AddCustomer() {
               {/* Buttons */}
               <div className="flex justify-end gap-3">
                 <button type="button" className="border px-4 py-2 rounded bg-gray-200 hover:cursor-not-allowed" disabled>Previous</button>
-                <button type="button" onClick={() => setActiveTab("contact")} className="bg-blue-900 hover:bg-blue-950 cursor-pointer text-white px-4 py-2 rounded">
+                <button type="button" onClick={() => setActiveTab("contact")} className="bg-orange-500 hover:bg-orange-100 cursor-pointer text-white px-4 py-2 rounded">
                   Next
                 </button>
                 <button type="button" onClick={() => router.push("/customer-list")} className="border px-4 py-2 rounded hover:bg-gray-200 cursor-pointer">Cancel</button>
@@ -460,7 +460,7 @@ export default function AddCustomer() {
                 <button type="button" onClick={() => setActiveTab("customer")} className="border px-4 py-2 rounded cursor-pointer hover:bg-gray-200">
                   Previous
                 </button>
-                <button type="submit" className="bg-blue-900 text-white px-4 py-2 rounded cursor-pointer">
+                <button type="submit" className="bg-orange-500 text-white px-4 py-2 rounded cursor-pointer">
                   Save
                 </button>
                 <button type="button" onClick={() => router.push("/customer-list")} className="border px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 cursor-pointer">Cancel</button>
