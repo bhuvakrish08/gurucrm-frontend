@@ -943,7 +943,7 @@ export default function QuotationPage() {
               // <div className="overflow-x-auto">
               //   <table className="w-full text-sm">
               <div
-                className="overflow-x-auto overflow-y-auto max-h-[500px] custom-scroll"
+                className="overflow-x-auto overflow-y-scroll max-h-[500px] custom-scroll"    style={{ overflowX: "scroll" }}
               >
                 <table className="w-full text-sm whitespace-nowrap">
                   <thead>
