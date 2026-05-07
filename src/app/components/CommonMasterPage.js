@@ -461,6 +461,7 @@ export default function CommonMasterPage({
                       className="border p-2 w-full rounded-sm"
                     >
                       <option value="">-- Select Parent --</option>
+
                       {parentOptions.map((opt) => (
                         <option key={opt.id} value={opt.name}>
                           {opt.name}

@@ -934,17 +934,17 @@ const router = useRouter(); // ← yeh add karo
               {showaddressModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                   <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
-                    <div className="flex items-center justify-between px-6 py-4 bg-orange-500">
+                    <div className="flex items-center justify-between px-6 py-4 from-orange-100 to-white bg-gradient-to-r">
                       <div className="flex items-center gap-2">
-                        <i className="bi bi-geo-alt text-white"></i>
-                        <h3 className="text-white font-semibold">
+                        <i className="bi bi-geo-alt text-black"></i>
+                        <h3 className="text-black font-semibold">
                           {editAddressId ? "Edit Address" : "Add New Address"}
                         </h3>
                       </div>
                       <button
                         type="button"
                         onClick={closeAddressModal}
-                        className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 hover:cursor-pointer transition-all"
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-[#ff6b00] hover:bg-[#f5e8d8] hover:cursor-pointer transition-all"
                       >
                         <i className="bi bi-x-lg text-sm"></i>
                       </button>
@@ -1117,17 +1117,17 @@ const router = useRouter(); // ← yeh add karo
               {showcontactsModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                   <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
-                    <div className="flex items-center justify-between px-6 py-4 bg-orange-500">
+                    <div className="flex items-center justify-between px-6 py-4 from-orange-100 to-white bg-gradient-to-r">
                       <div className="flex items-center gap-2">
-                        <i className="bi bi-telephone text-white"></i>
-                        <h3 className="text-white font-semibold">
+                        <i className="bi bi-telephone text-black"></i>
+                        <h3 className="text-black font-semibold">
                           {editContactId ? "Edit Contact" : "Add Contact"}
                         </h3>
                       </div>
                       <button
                         type="button"
                         onClick={closeContactModal}
-                        className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 hover:cursor-pointer transition-all"
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-[#ff6b00] hover:bg-[#f5e8d8] hover:cursor-pointer transition-all"
                       >
                         <i className="bi bi-x-lg text-sm"></i>
                       </button>
