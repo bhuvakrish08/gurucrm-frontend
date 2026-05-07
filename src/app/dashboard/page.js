@@ -495,6 +495,9 @@ export default function Dashboard() {
       } else {
         totalProformaAmount += Number(pi.total) || 0;
       }
+
+      // pi.total is already the sum of all follow-up paid amounts
+      totalPaid += Number(pi.total) || 0;
     });
 
     const paymentDue = Math.max(0, totalProformaAmount - totalPaid);
