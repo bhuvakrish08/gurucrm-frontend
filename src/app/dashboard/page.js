@@ -478,14 +478,6 @@ export default function Dashboard() {
 
     const safePis = Array.isArray(pis) ? pis : [];
     safePis.forEach((pi) => {
-<<<<<<< Updated upstream
-      totalProformaAmount += Number(pi.total) || 0;
-
-      if (pi.follow_ups && Array.isArray(pi.follow_ups)) {
-        pi.follow_ups.forEach((followUp) => {
-          totalPaid += Number(followUp.total) || 0;
-        });
-=======
       // Use the quotation's grand_total as the actual total invoice amount.
       // pi.total is the sum of paid follow-up amounts, NOT the grand total.
       if (pi.quotation_grand_total) {
@@ -502,7 +494,6 @@ export default function Dashboard() {
         }
       } else {
         totalProformaAmount += Number(pi.total) || 0;
->>>>>>> Stashed changes
       }
     });
 
