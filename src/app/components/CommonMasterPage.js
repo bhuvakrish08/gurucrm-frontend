@@ -250,13 +250,13 @@ export default function CommonMasterPage({
           <input
             type="text"
             placeholder={`Enter ${title}`}
-            className="p-2 w-full md:w-50 mb-0 md:mb-3 border text-gray-400 bg-white border-orange-300 rounded-sm outline-none  text-sm"
+            className="p-2 w-full md:w-50 mb-0 md:mb-3 border text-gray-400 bg-white border-orange-300 rounded-sm outline-none text-sm"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
 
           <select
-            className="w-full md:w-48 md:mx-3 p-2 border text-gray-400 bg-white rounded-sm border-orange-300 outline-none  text-sm"
+            className="w-full md:w-48 md:mx-3 md:mb-3 p-2 border text-gray-400 bg-white rounded-sm border-orange-300 outline-none text-sm"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -265,7 +265,7 @@ export default function CommonMasterPage({
             <option value="0">Inactive</option>
           </select>
 
-          <div className="flex gap-2 col-span-2">
+          <div className="flex gap-2 col-span-2 md:mb-3">
             <button
               type="button"
               onClick={() => {
