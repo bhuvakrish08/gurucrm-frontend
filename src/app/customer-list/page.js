@@ -148,7 +148,7 @@ export default function CustomerList() {
         {/* Header bar */}
         <div className="bg-white w-full rounded-sm shadow-lg p-3 mt-1 mb-5">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
-            <p className="hidden sm:flex items-center flex-wrap">
+            <p className="flex items-center flex-wrap">
               <Link href="/dashboard" className="mx-3 text-xl text-gray-400 hover:text-indigo-600">
                 <i className="bi bi-house"></i>
               </Link>
@@ -264,7 +264,7 @@ export default function CustomerList() {
         {/* Table */}
         <form className="p-2 w-8xl mx-3">
           <div className="bg-white shadow rounded-sm p-6">
-            <div className="overflow-x-auto overflow-y-scroll max-h-[500px] custom-scroll" style={{ overflowX: "scroll" }}>
+            <div className="overflow-x-auto overflow-y-scroll max-h-[380px] custom-scroll" style={{ overflowX: "scroll" }}>
               <table className="w-full text-sm border border-gray-200 text-left whitespace-nowrap">
                 <thead className="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                   <tr>

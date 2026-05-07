@@ -472,10 +472,10 @@ const router = useRouter(); // ← yeh add karo
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gray-50">
+      <div className="bg-gray-50">
         {/* Breadcrumb */}
-        <div className="bg-white shadow-lg p-3 mt-1 mb-5">
-          <div className="hidden sm:flex items-center text-gray-700 w-full sm:w-auto">
+        <div className="bg-white w-full rounded-sm shadow-lg p-3 mt-1 mb-5">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
             <p className="flex items-center flex-wrap">
               <Link
                 href="/dashboard"
@@ -509,7 +509,7 @@ const router = useRouter(); // ← yeh add karo
           </div>
         </div>
 
-        <div className="max-w-6xl mx-auto px-6 py-5 pb-24">
+        <div className="max-w-6xl mx-auto px-6 py-5">
           {/* Tabs */}
           <div className="flex gap-1 mb-6 border-b border-gray-200">
             {[
@@ -535,7 +535,7 @@ const router = useRouter(); // ← yeh add karo
 
           {/* ── UPDATE CUSTOMER TAB ── */}
           {activeTab === "update-customer" && (
-            <form className="bg-white rounded-sm border border-gray-200 shadow-sm p-6 space-y-5 max-w-[800px]">
+            <form className="bg-white rounded-sm border border-gray-200 shadow-sm p-6 space-y-5 max-w-[800px] max-h-[63vh] overflow-y-auto custom-scroll">
               {/* Customer Type */}
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
@@ -862,7 +862,7 @@ const router = useRouter(); // ← yeh add karo
                 </button>
               </div>
 
-              <div className="overflow-hidden">
+              <div className="overflow-y-auto max-h-[300px] custom-scroll">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-100">
@@ -1049,7 +1049,7 @@ const router = useRouter(); // ← yeh add karo
                 </button>
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="overflow-y-auto max-h-[400px] custom-scroll">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-100">
