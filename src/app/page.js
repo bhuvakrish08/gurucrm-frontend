@@ -59,7 +59,7 @@ function ImageCarousel() {
       setFading(false);
     }, 400);
   };
-  
+
   const slide = SLIDES[current];
 
   return (
@@ -125,25 +125,25 @@ export default function Page() {
 
   const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL;
   const [formData, setFormData] = useState({
-  email: "",
-  password: "",
-  confirmPassword: "",
-});
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
   const [message, setMessage] = useState("");
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState("login"); // login | forgot | otp | reset
-const [identifier, setIdentifier] = useState("");
-const [otp, setOtp] = useState("");
-const [timer, setTimer] = useState(120);
-const [userId, setUserId] = useState("");
-useEffect(() => {
-  if (step === "otp" && timer > 0) {
-    const t = setTimeout(() => setTimer(timer - 1), 1000);
-    return () => clearTimeout(t);
-  }
-}, [timer, step]);
+  const [identifier, setIdentifier] = useState("");
+  const [otp, setOtp] = useState("");
+  const [timer, setTimer] = useState(120);
+  const [userId, setUserId] = useState("");
+  useEffect(() => {
+    if (step === "otp" && timer > 0) {
+      const t = setTimeout(() => setTimer(timer - 1), 1000);
+      return () => clearTimeout(t);
+    }
+  }, [timer, step]);
   // ── All original handlers — untouched ──────────────────────────────────────
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -173,64 +173,64 @@ useEffect(() => {
     }
   };
 
-const handleForgotPassword = async (e) => {
-  e.preventDefault();
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
 
-  try {
-    await axios.post(`${API_BASE}/api/send-otp`, {
-      identifier: formData.email,
-    });
+    try {
+      await axios.post(`${API_BASE}/api/send-otp`, {
+        identifier: formData.email,
+      });
 
-    setOtp("");              // 🔥 CLEAR OLD OTP
-    setIdentifier(formData.email);
-    setStep("otp");
-    setTimer(120);
+      setOtp("");              // 🔥 CLEAR OLD OTP
+      setIdentifier(formData.email);
+      setStep("otp");
+      setTimer(120);
 
-    toast.success("OTP sent");
-  } catch (err) {
-    toast.error(err.data?.message || "Error");
-  }
-};
+      toast.success("OTP sent");
+    } catch (err) {
+      toast.error(err.data?.message || "Error");
+    }
+  };
 
-//verify otp
-const handleVerifyOtp = async (e) => {
-  e.preventDefault();
+  //verify otp
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
 
-  try {
-    const res = await axios.post(`${API_BASE}/api/verify-otp`, {
-      identifier,
-      otp,
-    });
+    try {
+      const res = await axios.post(`${API_BASE}/api/verify-otp`, {
+        identifier,
+        otp,
+      });
 
-    setUserId(res.data.userId);
-    setStep("reset");
+      setUserId(res.data.userId);
+      setStep("reset");
 
-    toast.success("OTP verified");
-  } catch {
-    toast.error("Invalid OTP");
-  }
-};
+      toast.success("OTP verified");
+    } catch {
+      toast.error("Invalid OTP");
+    }
+  };
 
-//resetpassword
-const handleResetPassword = async (e) => {
-  e.preventDefault();
+  //resetpassword
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
 
-  if (formData.password !== formData.confirmPassword) {
-    return toast.error("Passwords do not match");
-  }
+    if (formData.password !== formData.confirmPassword) {
+      return toast.error("Passwords do not match");
+    }
 
-  try {
-    await axios.post(`${API_BASE}/api/reset-password`, {
-      userId,
-      password: formData.password,
-    });
+    try {
+      await axios.post(`${API_BASE}/api/reset-password`, {
+        userId,
+        password: formData.password,
+      });
 
-    toast.success("Password updated");
-    setStep("login");
-  } catch {
-    toast.error("Error resetting password");
-  }
-};
+      toast.success("Password updated");
+      setStep("login");
+    } catch {
+      toast.error("Error resetting password");
+    }
+  };
 
   return (
     // ── Original background — untouched ──────────────────────────────────────
@@ -256,165 +256,179 @@ const handleResetPassword = async (e) => {
         <div className="flex-1 bg-white/60 backdrop-blur-2xl flex flex-col justify-center items-center px-10 py-12 rounded-r-xl">
           {/* ───── STEP आधारित UI ───── */}
 
-{step === "login" && (
-  <>
-    {/* Logo */}
-    <div className="mb-4 flex flex-col items-center">
-      <Image
-        src="/venster_logo.png"
-        alt="Company Logo"
-        width={80}
-        height={80}
-        className="object-contain"
-      />
-    </div>
+          {step === "login" && (
+            <>
+              {/* Logo */}
+              <div className="mb-4 flex flex-col items-center">
+                <Image
+                  src="/venster_logo.png"
+                  alt="Company Logo"
+                  width={80}
+                  height={80}
+                  className="object-contain"
+                />
+              </div>
 
-    <h1 className="text-4xl font-extrabold text-gray-800 mb-6">
-      Welcome Back
-    </h1>
+              <h1 className="text-4xl font-extrabold text-gray-800 mb-6">
+                Welcome Back
+              </h1>
 
-    <p className="text-gray-500 mb-8 text-center">
-      Please login to your account
-    </p>
+              <p className="text-gray-500 mb-8 text-center">
+                Please login to your account
+              </p>
 
-    <form onSubmit={handleLogin} className="flex flex-col gap-4 w-full max-w-sm">
-      <input
-        type="email"
-        placeholder="Email"
-        name="email"
-        value={formData.email}
-        onChange={handleChange}
-        className="p-3 border border-gray-300 rounded-sm"
-        required
-      />
+              <form onSubmit={handleLogin} className="flex flex-col gap-4 w-full max-w-sm">
+                <input
+                  type="email"
+                  placeholder="Email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="p-3 border border-gray-300 rounded-sm"
+                  required
+                />
 
-      <div className="relative">
-        <input
-          type={showPassword ? "text" : "password"}
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleChange}
-          className="p-3 border border-gray-300 rounded-sm w-full"
-        />
-        <span
-          onClick={() => setShowPassword(!showPassword)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
-        >
-          {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
-        </span>
-      </div>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    placeholder="Password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="p-3 border border-gray-300 rounded-sm w-full"
+                  />
+                  <span
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
+                  >
+                    {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
+                  </span>
+                </div>
 
-      <p
-        onClick={() => setStep("forgot")}
-        className="text-right text-gray-600 cursor-pointer hover:underline"
-      >
-        Forgot Password
-      </p>
+                <p
+                  onClick={() => setStep("forgot")}
+                  className="text-right text-gray-600 cursor-pointer hover:underline"
+                >
+                  Forgot Password
+                </p>
 
-      <button className="p-3 bg-orange-500 text-white rounded-sm">
-        Sign In
-      </button>
-    </form>
-  </>
-)}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={`p-3 rounded-sm text-white flex items-center justify-center gap-2 transition-all duration-300 ${loading
+                      ? "bg-orange-400 cursor-not-allowed opacity-80"
+                      : "bg-orange-500 hover:bg-orange-600"
+                    }`}
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Signing In...
+                    </>
+                  ) : (
+                    "Sign In"
+                  )}
+                </button>
+              </form>
+            </>
+          )}
 
-{/* ───── FORGOT ───── */}
-{step === "forgot" && (
-  <>
-    <h1 className="text-3xl font-bold mb-6">Reset Password</h1>
+          {/* ───── FORGOT ───── */}
+          {step === "forgot" && (
+            <>
+              <h1 className="text-3xl font-bold mb-6">Reset Password</h1>
 
-    <form onSubmit={handleForgotPassword} className="flex flex-col gap-4 w-full">
-      <input
-        type="text"
-        placeholder="Enter email or mobile"
-        name="email"
-        value={formData.email}
-        onChange={handleChange}
-        className="p-3 border rounded-sm"
-        required
-      />
+              <form onSubmit={handleForgotPassword} className="flex flex-col gap-4 w-full">
+                <input
+                  type="text"
+                  placeholder="Enter email or mobile"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="p-3 border rounded-sm"
+                  required
+                />
 
-      <button className="p-3 bg-orange-500 text-white rounded-sm">
-        Send OTP
-      </button>
-    </form>
+                <button className="p-3 bg-orange-500 text-white rounded-sm">
+                  Send OTP
+                </button>
+              </form>
 
-    <button
-      onClick={() => setStep("login")}
-      className="mt-4 text-gray-500 hover:underline"
-    >
-      Back to Login
-    </button>
-  </>
-)}
+              <button
+                onClick={() => setStep("login")}
+                className="mt-4 text-gray-500 hover:underline"
+              >
+                Back to Login
+              </button>
+            </>
+          )}
 
-{/* ───── OTP ───── */}
-{step === "otp" && (
-  <>
-    <h1 className="text-3xl font-bold mb-4">Verify OTP</h1>
+          {/* ───── OTP ───── */}
+          {step === "otp" && (
+            <>
+              <h1 className="text-3xl font-bold mb-4">Verify OTP</h1>
 
-    <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4 w-full">
-      <input
-  type="text"
-  placeholder="Enter OTP"
-  value={otp}
-  onChange={(e) => setOtp(e.target.value)}
-  autoComplete="one-time-code"
-  inputMode="numeric"
-  name="otp"
-  maxLength={6}
-  className="p-3 border rounded-sm text-center text-lg tracking-widest"
-/>
+              <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4 w-full">
+                <input
+                  type="text"
+                  placeholder="Enter OTP"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  autoComplete="one-time-code"
+                  inputMode="numeric"
+                  name="otp"
+                  maxLength={6}
+                  className="p-3 border rounded-sm text-center text-lg tracking-widest"
+                />
 
-      <button className="p-3 bg-orange-500 text-white rounded-sm">
-        Verify OTP
-      </button>
-    </form>
+                <button className="p-3 bg-orange-500 text-white rounded-sm">
+                  Verify OTP
+                </button>
+              </form>
 
-    <div className="mt-3">
-      {timer > 0 ? (
-        <p>Resend in {timer}s</p>
-      ) : (
-        <button
-          onClick={handleForgotPassword}
-          className="text-orange-500 hover:underline"
-        >
-          Resend OTP
-        </button>
-      )}
-    </div>
-  </>
-)}
+              <div className="mt-3">
+                {timer > 0 ? (
+                  <p>Resend in {timer}s</p>
+                ) : (
+                  <button
+                    onClick={handleForgotPassword}
+                    className="text-orange-500 hover:underline"
+                  >
+                    Resend OTP
+                  </button>
+                )}
+              </div>
+            </>
+          )}
 
-{/* ───── RESET PASSWORD ───── */}
-{step === "reset" && (
-  <>
-    <h1 className="text-3xl font-bold mb-4">New Password</h1>
+          {/* ───── RESET PASSWORD ───── */}
+          {step === "reset" && (
+            <>
+              <h1 className="text-3xl font-bold mb-4">New Password</h1>
 
-    <form onSubmit={handleResetPassword} className="flex flex-col gap-4 w-full">
-      <input
-        type="password"
-        name="password"
-        placeholder="New Password"
-        onChange={handleChange}
-        className="p-3 border rounded-sm"
-      />
+              <form onSubmit={handleResetPassword} className="flex flex-col gap-4 w-full">
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="New Password"
+                  onChange={handleChange}
+                  className="p-3 border rounded-sm"
+                />
 
-      <input
-        type="password"
-        name="confirmPassword"
-        placeholder="Confirm Password"
-        onChange={handleChange}
-        className="p-3 border rounded-sm"
-      />
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  placeholder="Confirm Password"
+                  onChange={handleChange}
+                  className="p-3 border rounded-sm"
+                />
 
-      <button className="p-3 bg-orange-500 text-white rounded-sm">
-        Update Password
-      </button>
-    </form>
-  </>
-)}
+                <button className="p-3 bg-orange-500 text-white rounded-sm">
+                  Update Password
+                </button>
+              </form>
+            </>
+          )}
 
           {message && (
             <p className="mt-6 text-red-500 font-medium">{message}</p>

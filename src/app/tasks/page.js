@@ -812,8 +812,8 @@ export default function Page() {
         </select>
 
         {/* Start Date Range */}
-        <div className="flex flex-col border border-orange-300 md:border bg-white rounded-sm transition-all px-2 w-full md:w-auto">
-          <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">
+        <div className="p-1 w-full md:w-54 border border-orange-300 md:border  text-gray-400 bg-white rounded-sm  transition-all outline-none">
+          <span className="text-[10px] text-gray-400 uppercase font-bold pt-1 mx-2">
             Start Date
           </span>
           <input
@@ -826,8 +826,8 @@ export default function Page() {
           />
         </div>
         {/* Due Date Range */}
-        <div className="flex flex-col border border-orange-300 md:border bg-white rounded-sm transition-all px-2 w-full md:w-auto">
-          <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">
+        <div className="p-1 w-full md:w-54 border border-orange-300 md:border  text-gray-400 bg-white rounded-sm  transition-all outline-none">
+          <span className="text-[10px] text-gray-400 uppercase font-bold pt-1 mx-2">
             Due Date
           </span>
           <input
@@ -848,7 +848,7 @@ export default function Page() {
           onChange={(e) =>
             setFilters({ ...filters, created_by_name: e.target.value })
           }
-          className="p-2 w-full md:w-52 border border-orange-300 md:border  text-gray-400 bg-white rounded-sm  transition-all outline-none"
+          className="p-2 w-full md:w-52 border border-orange-300 md:border text-gray-400 bg-white rounded-sm  transition-all outline-none text-sm"
         >
           <option value="">Select Created By</option>
 
@@ -860,8 +860,8 @@ export default function Page() {
         </select>
 
         {/* created Date Range */}
-        <div className="flex items-center border border-orange-300 md:border bg-white rounded-sm transition-all px-2 w-full md:w-auto">
-          <span className="mx-1 text-gray-400 whitespace-nowrap">
+        <div className="p-1 w-full md:w-62 border border-orange-300 md:border  text-gray-400 bg-white rounded-sm  transition-all outline-none">
+          <span className="text-[10px] text-gray-400 uppercase font-bold pt-1 mx-2">
             Created Date
           </span>
           <input
@@ -870,7 +870,7 @@ export default function Page() {
             onChange={(e) =>
               setFilters({ ...filters, created_at: e.target.value })
             }
-            className="p-2 w-full md:w-32 outline-none"
+            className="p-1 w-full md:w-32 outline-none text-sm"
           />
         </div>
 

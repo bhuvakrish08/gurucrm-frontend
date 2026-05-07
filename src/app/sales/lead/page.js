@@ -938,8 +938,8 @@ export default function Page() {
             ))}
           </select>
 
-          <div className="flex items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-58  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
-            <span className="mx-1 text-gray-400 whitespace-nowrap">
+          <div className="flex p-1 items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-58  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 p-1 text-gray-400 whitespace-nowrap">
               From Next
             </span>
             <input
@@ -951,8 +951,8 @@ export default function Page() {
             />
           </div>
 
-          <div className="flex items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-53  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
-            <span className="mx-1 text-gray-400 whitespace-nowrap">
+          <div className="flex p-1 items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-53  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 p-1 text-gray-400 whitespace-nowrap">
               To Next
             </span>
             <input
@@ -968,15 +968,15 @@ export default function Page() {
             name="status"
             value={filters.status}
             onChange={handleFilterChange}
-            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-400 text-sm"
+            className="border p-1 bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-400 text-sm"
           >
             <option value="">Pending</option>
             <option value="Won">Won</option>
             <option value="Lost">Lost</option>
           </select>
 
-          <div className="flex items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-60  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
-            <span className="mx-1 text-gray-400 whitespace-nowrap">
+          <div className="flex p-1 items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-60  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 p-1 text-gray-400 whitespace-nowrap">
               From Create
             </span>
             <input
@@ -988,8 +988,8 @@ export default function Page() {
             />
           </div>
 
-          <div className="flex items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-58  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
-            <span className="mx-1 text-gray-400 whitespace-nowrap">
+          <div className="flex p-1 items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-58  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 p-1 text-gray-400 whitespace-nowrap">
               To Create
             </span>
             <input
