@@ -432,6 +432,7 @@ export default function Dashboard() {
     let totalProformaAmount = 0;
 
     const safePis = Array.isArray(pis) ? pis : [];
+<<<<<<< Updated upstream
     safePis.forEach(pi => {
       totalProformaAmount += Number(pi.total) || 0;
       
@@ -439,7 +440,29 @@ export default function Dashboard() {
         pi.follow_ups.forEach(followUp => {
           totalPaid += Number(followUp.total) || 0;
         });
+=======
+    safePis.forEach((pi) => {
+      // Use the quotation's grand_total as the actual total invoice amount.
+      // pi.total is the sum of paid follow-up amounts, NOT the grand total.
+      if (pi.quotation_grand_total) {
+        totalProformaAmount += Number(pi.quotation_grand_total) || 0;
+      } else if (pi.follow_ups && pi.follow_ups.length > 0) {
+        // Fallback: reverse-calculate grand total from first follow-up
+        const f = pi.follow_ups[pi.follow_ups.length - 1];
+        const pct = Number(f.proforma_percentage) || 0;
+        const amt = Number(f.total) || 0;
+        if (pct > 0) {
+          totalProformaAmount += (amt / pct) * 100;
+        } else {
+          totalProformaAmount += Number(pi.total) || 0;
+        }
+      } else {
+        totalProformaAmount += Number(pi.total) || 0;
+>>>>>>> Stashed changes
       }
+
+      // pi.total is already the sum of all follow-up paid amounts
+      totalPaid += Number(pi.total) || 0;
     });
 
     const paymentDue = Math.max(0, totalProformaAmount - totalPaid);
