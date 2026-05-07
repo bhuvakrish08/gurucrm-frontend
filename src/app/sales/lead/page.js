@@ -1468,7 +1468,7 @@ export default function Page() {
             <div className="flex gap-3.5 px-7 pb-8 pt-2">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 border border-gray-200 py-3 rounded-xl text-gray-500 bg-gray-50 hover:bg-gray-100 transition text-[15px] font-medium"
+                className="flex-1 border border-gray-200 py-3 rounded-sm text-gray-500 bg-gray-50 hover:bg-gray-100 transition text-[15px] font-medium"
               >
                 Cancel
               </button>
@@ -1486,8 +1486,8 @@ export default function Page() {
       )}
       {/* ADD FOLLOW-UP MODAL */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white w-[480px] rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 ">
+          <div className="bg-white w-[480px] rounded-sm shadow-xl  overflow-hidden">
             {/* Header */}
             <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-orange-50 to-white">
               <div className="flex items-center gap-2">
@@ -1498,7 +1498,7 @@ export default function Page() {
               </div>
               <button
                 onClick={() => setShowModal(false)}
-                className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-100 hover:bg-orange-100 text-gray-400 hover:text-orange-500 transition-all"
+                className="w-7 h-7 flex items-center justify-center rounded-full text-orange-500 transition-all"
               >
                 ✕
               </button>
@@ -1617,14 +1617,14 @@ export default function Page() {
             <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100 bg-gray-50">
               <button
                 onClick={() => setShowModal(false)}
-                className="px-5 py-2 text-sm font-medium border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-100 transition-all"
+                className="px-5 py-2 text-sm font-medium border border-gray-200 rounded-sm text-gray-600 hover:bg-gray-100 transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={btnLoading}
-                className={`px-6 py-2 text-sm font-semibold text-white rounded-xl transition-all shadow-md shadow-orange-200 flex items-center gap-2
+                className={`px-6 py-2 text-sm font-semibold text-white rounded-sm transition-all shadow-md shadow-orange-200 flex items-center gap-2
   ${btnLoading ? "bg-orange-400 cursor-not-allowed" : "bg-orange-500 hover:bg-orange-600"}`}
               >
                 {btnLoading ? (
@@ -1952,14 +1952,14 @@ export default function Page() {
                   setSelectedFiles([]);
                   setPreviewFollowUp(null);
                 }}
-                className="px-5 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
+                className="px-5 py-2 rounded-sm text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleUpdate}
                 disabled={updateLoading}
-                className={`px-6 py-2 rounded-xl text-sm font-semibold text-white transition-all shadow-md shadow-orange-200 flex items-center gap-2
+                className={`px-6 py-2 rounded-sm text-sm font-semibold text-white transition-all shadow-md shadow-orange-200 flex items-center gap-2
                 ${updateLoading ? "bg-orange-400 cursor-not-allowed" : "bg-orange-500 hover:bg-orange-600"}`}
               >
                 {updateLoading ? (
@@ -2026,7 +2026,7 @@ export default function Page() {
       {/* FILE UPLOAD MODAL */}
       {showFileModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30">
-          <div className="bg-white w-[580px] rounded-sm shadow-2xl border border-gray-100 overflow-hidden">
+          <div className="bg-white w-[400px] rounded-sm shadow-2xl  overflow-hidden">
             {/* Header */}
             <div className="flex justify-between items-center px-6 py-4 from-orange-100 to-white border-b border-gray-100 bg-gradient-to-r">
               <div className="flex items-center gap-2">
@@ -2037,7 +2037,7 @@ export default function Page() {
               </div>
               <button
                 onClick={() => setShowFileModal(false)}
-                className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-100 hover:bg-orange-100 text-gray-400 hover:text-orange-500 transition-all"
+                className="w-7 h-7 flex items-center justify-center rounded-full  text-orange-500 transition-all"
               >
                 ✕
               </button>
@@ -2046,7 +2046,7 @@ export default function Page() {
             {/* Body */}
             <div className="flex gap-5 p-6">
               <div
-                className="w-1/2 border-2 border-dashed border-orange-200 rounded-2xl flex flex-col items-center justify-center p-8 text-center bg-orange-50/50 hover:bg-orange-50 transition-all cursor-pointer"
+                className="w-1/2 border-2 border-dashed border-orange-200 rounded-sm flex flex-col items-center justify-center p-8 text-center bg-orange-50/50  transition-all cursor-pointer"
                 onDrop={handleDrop}
                 onDragOver={(e) => e.preventDefault()}
                 onClick={() => document.getElementById("fileInput").click()}
@@ -2089,7 +2089,7 @@ export default function Page() {
                     {selectedFiles.map((file, i) => (
                       <div
                         key={i}
-                        className="flex justify-between items-center border border-gray-100 rounded-xl px-3 py-2.5 bg-gray-50 hover:bg-white shadow-sm transition-all"
+                        className="flex justify-between items-center border border-gray-100 rounded-sm px-3 py-2.5 bg-gray-50 hover:bg-white shadow-sm transition-all"
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <div className="w-7 h-7 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
@@ -2120,7 +2120,7 @@ export default function Page() {
             <div className="flex justify-end px-6 py-4 border-t border-gray-100 bg-gray-50">
               <button
                 onClick={() => setShowFileModal(false)}
-                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-xl text-sm font-semibold transition-all shadow-md shadow-orange-200"
+                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-sm text-sm font-semibold transition-all shadow-md shadow-orange-200"
               >
                 Done
               </button>
