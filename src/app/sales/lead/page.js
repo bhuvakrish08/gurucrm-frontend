@@ -579,15 +579,12 @@ export default function Page() {
         Object.entries(filters).filter(([_, v]) => v !== ""),
       );
 
-      const res = await axios.get(
-        `${API_BASE}/api/lead/sales/leads/filter`,
-        {
-          params,
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+      const res = await axios.get(`${API_BASE}/api/lead/sales/leads/filter`, {
+        params,
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-      );
+      });
 
       const formatted = (res.data?.data || []).map((item) => {
         let finalStatus = "Pending";
@@ -855,23 +852,32 @@ export default function Page() {
         {/* FILTER SECTION */}
 
         <div className="mx-6 mb-2 md:hidden mt-3 relative z-40">
-          <button onClick={() => setShowMobileFilters(!showMobileFilters)} className="w-full flex items-center justify-between text-orange-500 font-semibold bg-orange-50 px-4 py-2 rounded-sm border border-orange-200 shadow-sm transition-all">
-            <span className="flex items-center gap-2"><i className="bi bi-funnel"></i> Filters</span>
-            <i className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}></i>
+          <button
+            onClick={() => setShowMobileFilters(!showMobileFilters)}
+            className="w-full flex items-center justify-between text-orange-500 font-semibold bg-orange-50 px-4 py-2 rounded-sm border border-orange-200 shadow-sm transition-all"
+          >
+            <span className="flex items-center gap-2">
+              <i className="bi bi-funnel"></i> Filters
+            </span>
+            <i
+              className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}
+            ></i>
           </button>
         </div>
 
-        <div className={`
+        <div
+          className={`
           ${showMobileFilters ? "absolute left-6 right-6 top-50 bg-white p-5 shadow-2xl border border-gray-100 z-50 rounded-lg grid grid-cols-2 gap-3 mt-1" : "hidden"} 
           md:mx-6 md:mb-3 md:items-center md:gap-2 md:flex-wrap md:flex md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
-        `}>
+        `}
+        >
           <input
             name="company_name"
             value={filters.company_name}
             onChange={handleFilterChange}
             ref={companyRef}
             placeholder="Company Name"
-            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-600 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  text-gray-600 text-sm outline-none"
           />
 
           <input
@@ -879,7 +885,7 @@ export default function Page() {
             value={filters.customer_name}
             onChange={handleFilterChange}
             placeholder="Customer Name"
-            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-600 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  text-gray-600 text-sm outline-none"
           />
 
           <input
@@ -887,14 +893,14 @@ export default function Page() {
             value={filters.lead_title}
             onChange={handleFilterChange}
             placeholder="Enter Lead Title"
-            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-600 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-600 text-sm"
           />
 
           <select
             name="product_category"
             value={filters.product_category}
             onChange={handleFilterChange}
-            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-48 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-48  outline-none  text-gray-400 text-sm"
           >
             <option value="">Select Product Category</option>
             {category.map((item) => (
@@ -908,7 +914,7 @@ export default function Page() {
             name="source"
             value={filters.source}
             onChange={handleFilterChange}
-            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-400 text-sm"
           >
             <option value="">Select Source</option>
             {leadSource.map((item) => (
@@ -922,7 +928,7 @@ export default function Page() {
             name="assignee"
             value={filters.assignee}
             onChange={handleFilterChange}
-            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-400 text-sm"
           >
             <option value="">Select Assignee</option>
             {assignee.map((item) => (
@@ -932,8 +938,10 @@ export default function Page() {
             ))}
           </select>
 
-          <div className="flex items-center px-2 border bg-white border-gray-300 rounded-sm w-full md:w-58 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm col-span-2 md:col-span-1">
-            <span className="mx-1 text-gray-400 whitespace-nowrap">From Next</span>
+          <div className="flex items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-58  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 text-gray-400 whitespace-nowrap">
+              From Next
+            </span>
             <input
               type="date"
               name="from_followup"
@@ -943,8 +951,10 @@ export default function Page() {
             />
           </div>
 
-          <div className="flex items-center px-2 border bg-white border-gray-300 rounded-sm w-full md:w-53 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm col-span-2 md:col-span-1">
-            <span className="mx-1 text-gray-400 whitespace-nowrap">To Next</span>
+          <div className="flex items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-53  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 text-gray-400 whitespace-nowrap">
+              To Next
+            </span>
             <input
               type="date"
               name="to_followup"
@@ -958,15 +968,17 @@ export default function Page() {
             name="status"
             value={filters.status}
             onChange={handleFilterChange}
-            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:w-45 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-400 text-sm"
           >
             <option value="">Pending</option>
             <option value="Won">Won</option>
             <option value="Lost">Lost</option>
           </select>
 
-          <div className="flex items-center px-2 border bg-white border-gray-300 rounded-sm w-full md:w-60 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm col-span-2 md:col-span-1">
-            <span className="mx-1 text-gray-400 whitespace-nowrap">From Create</span>
+          <div className="flex items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-60  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 text-gray-400 whitespace-nowrap">
+              From Create
+            </span>
             <input
               type="date"
               name="from_created"
@@ -976,8 +988,10 @@ export default function Page() {
             />
           </div>
 
-          <div className="flex items-center px-2 border bg-white border-gray-300 rounded-sm w-full md:w-58 focus:ring-orange-200 outline-none focus:ring-1 text-gray-400 text-sm col-span-2 md:col-span-1">
-            <span className="mx-1 text-gray-400 whitespace-nowrap">To Create</span>
+          <div className="flex items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-58  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 text-gray-400 whitespace-nowrap">
+              To Create
+            </span>
             <input
               type="date"
               name="to_created"
@@ -997,7 +1011,10 @@ export default function Page() {
             >
               Clear
             </button>
-            <button onClick={() => setShowMobileFilters(false)} className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-2 bg-orange-100 text-orange-700 hover:bg-orange-200 text-sm text-center font-semibold">
+            <button
+              onClick={() => setShowMobileFilters(false)}
+              className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-2 bg-orange-100 text-orange-700 hover:bg-orange-200 text-sm text-center font-semibold"
+            >
               Apply
             </button>
           </div>
@@ -1498,7 +1515,7 @@ export default function Page() {
                   name="follow_up_date"
                   value={form.follow_up_date}
                   onChange={handleChange}
-                  className="w-full mt-1.5 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 focus:border-transparent outline-none bg-gray-50 transition-all"
+                  className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50 transition-all"
                 />
               </div>
               <div className="col-span-1">
@@ -1509,7 +1526,7 @@ export default function Page() {
                   name="activity_type"
                   value={form.activity_type}
                   onChange={handleChange}
-                  className="w-full mt-1.5 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50 transition-all"
+                  className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50 transition-all"
                 >
                   <option value="">-- Select --</option>
                   <option>Call</option>
@@ -1525,7 +1542,7 @@ export default function Page() {
                   name="follow_up_by"
                   value={form.follow_up_by}
                   onChange={handleChange}
-                  className="w-full mt-1.5 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50 transition-all"
+                  className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50 transition-all"
                 >
                   <option value="">Select User</option>
                   {assignee.map((item) => (
@@ -1544,7 +1561,7 @@ export default function Page() {
                     name="contact_person"
                     value={form.contact_person}
                     onChange={handleChange}
-                    className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50 transition-all"
+                    className="w-full border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50 transition-all"
                   />
                 </div>
               </div>
@@ -1556,10 +1573,10 @@ export default function Page() {
                   name="description"
                   value={form.description}
                   onChange={handleChange}
-                  className="w-full mt-1.5 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50 h-20 resize-none transition-all"
+                  className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50 h-20 resize-none transition-all"
                 />
               </div>
-              <div className="col-span-2 border-2 border-dashed border-orange-100 rounded-xl p-3 text-center bg-orange-50/40">
+              <div className="col-span-2 border-2 border-dashed border-orange-300 rounded-xl p-3 text-center bg-orange-50/40">
                 <button
                   onClick={() => setShowFileModal(true)}
                   className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 mx-auto transition-all shadow-md shadow-orange-200"
@@ -1685,7 +1702,7 @@ export default function Page() {
                           follow_up_date: e.target.value,
                         })
                       }
-                      className="w-full mt-1.5 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50"
+                      className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50"
                     />
                   </div>
                   <div>
@@ -1700,7 +1717,7 @@ export default function Page() {
                           activity_type: e.target.value,
                         })
                       }
-                      className="w-full mt-1.5 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50"
+                      className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50"
                     >
                       <option value="">-- Select --</option>
                       <option>Call</option>
@@ -1720,7 +1737,7 @@ export default function Page() {
                           follow_up_by: e.target.value,
                         })
                       }
-                      className="w-full mt-1.5 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50"
+                      className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50"
                     >
                       <option value="">Select User</option>
                       {assignee.map((item) => (
@@ -1742,7 +1759,7 @@ export default function Page() {
                           contact_person: e.target.value,
                         })
                       }
-                      className="w-full mt-1.5 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50"
+                      className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50"
                     />
                   </div>
                   <div className="col-span-2">
@@ -1757,10 +1774,10 @@ export default function Page() {
                           description: e.target.value,
                         })
                       }
-                      className="w-full mt-1.5 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50 h-20 resize-none"
+                      className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50 h-20 resize-none"
                     />
                   </div>
-                  <div className="col-span-2 border-2 border-dashed border-orange-100 rounded-xl p-3 text-center bg-orange-50/40">
+                  <div className="col-span-2 border-2 border-dashed border-orange-300 rounded-xl p-3 text-center bg-orange-50/40">
                     <button
                       onClick={() => setShowFileModal(true)}
                       className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 mx-auto transition-all shadow-md shadow-orange-200"
@@ -1947,30 +1964,29 @@ export default function Page() {
               >
                 {updateLoading ? (
                   <>
-                  <svg
-                    className="animate-spin h-4 w-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="white"
-                      strokeWidth="4"
-                      opacity="0.25"
-                    />
-                    <path
-                      fill="white"
-                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                    />
-                  </svg>
-                  Add Follow-Up
+                    <svg
+                      className="animate-spin h-4 w-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="white"
+                        strokeWidth="4"
+                        opacity="0.25"
+                      />
+                      <path
+                        fill="white"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      />
+                    </svg>
+                    Add Follow-Up
                   </>
                 ) : (
                   "Add Follow-Up"
                 )}
-               
               </button>
             </div>
           </div>

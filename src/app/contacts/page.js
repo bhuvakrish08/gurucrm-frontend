@@ -260,7 +260,7 @@ export default function Page() {
     <>
       <Header />
       <div className="bg-gray-100">
-        {/* Header */}
+        {/* breadcrumb */}
         <div className="bg-white w-full shadow-lg p-3 mt-1 mb-5 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
           <div className="hidden sm:flex items-center text-gray-700 w-full sm:w-auto">
             <p className="flex items-center flex-wrap">
@@ -314,7 +314,7 @@ export default function Page() {
             name="company_name"
             value={filters.company_name}
             onChange={handleFilterCompanyChange}
-            className="border bg-white border-gray-300 rounded-sm px-3 py-2 w-full md:w-54 md:mx-2 focus:ring-orange-200 outline-none focus:ring-1 text-gray-500 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-3 py-2 w-full md:w-54 md:mx-2 outline-none text-gray-500 text-sm"
           >
             <option value="">Company</option>
             {companyname.map((item) => (
@@ -328,7 +328,7 @@ export default function Page() {
             name="customer_name"
             value={filters.customer_name}
             onChange={handleFilterChange}
-            className="border bg-white border-gray-300 rounded-sm px-2 py-2 w-full md:flex-1 md:min-w-0 focus:ring-orange-200 outline-none focus:ring-1 text-gray-500 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:flex-1 md:min-w-0 outline-none text-gray-500 text-sm"
           >
             <option value="">Customer</option>
             {filterCustomernames.map((item) =>
@@ -344,7 +344,7 @@ export default function Page() {
             type="text"
             name="contact_person"
             placeholder="Person"
-            className="border bg-white border-gray-300 rounded-sm px-3 py-2 w-full md:w-54 md:mx-2 focus:ring-orange-200 outline-none focus:ring-1 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-3 py-2 w-full md:w-54 md:mx-2 outline-none text-sm"
             value={filters.contact_person}
             onChange={handleFilterChange}
           />
@@ -353,7 +353,7 @@ export default function Page() {
             type="text"
             name="contact_number"
             placeholder="Number"
-            className="border bg-white border-gray-300 rounded-sm px-3 py-2 w-full md:w-54 md:mx-2 focus:ring-orange-200 outline-none focus:ring-1 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-3 py-2 w-full md:w-54 md:mx-2 outline-none text-sm"
             value={filters.contact_number}
             onChange={handleFilterChange}
           />
@@ -362,7 +362,7 @@ export default function Page() {
             type="text"
             name="email"
             placeholder="Email"
-            className="border bg-white border-gray-300 rounded-sm px-3 py-2 w-full md:w-54 md:mx-2 focus:ring-orange-200 outline-none focus:ring-1 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-3 py-2 w-full md:w-54 md:mx-2 outline-none text-sm"
             value={filters.email}
             onChange={handleFilterChange}
           />
@@ -371,7 +371,7 @@ export default function Page() {
             name="contact_designation"
             value={filters.contact_designation}
             onChange={handleFilterChange}
-            className="border bg-white border-gray-300 rounded-sm px-3 py-2 w-full md:w-54 md:mx-2 focus:ring-orange-200 outline-none focus:ring-1  text-gray-500 text-sm"
+            className="border bg-white border-orange-300 rounded-sm px-3 py-2 w-full md:w-54 md:mx-2 outline-none text-gray-500 text-sm"
           >
             <option value="">Designation</option>
             {designations.map((item) => (
@@ -532,7 +532,7 @@ export default function Page() {
                 name="company_name"
                 value={formdata.company_name}
                 onChange={handleFormCompanyChange}
-                className="w-full border rounded-sm p-2 mb-5 outline-none focus:ring-1 focus:ring-orange-200 border-gray-300 "
+                className="w-full border rounded-sm p-2 mb-5 outline-none border-orange-300 "
               >
                 <option value="">Select Company Name</option>
                 {companyname.map((item) => (
@@ -560,7 +560,7 @@ export default function Page() {
                     customer_name: selectedCustomer?.customer_name || "",
                   }));
                 }}
-                className="w-full border rounded-sm p-2 mb-5 outline-none focus:ring-1 focus:ring-orange-200 border-gray-300 "
+                className="w-full border rounded-sm p-2 mb-5 outline-none border-orange-300 "
               >
                 <option value="">Select Customer Name</option>
                 {customername.map((item) => (
@@ -575,7 +575,7 @@ export default function Page() {
               </label>
               <input
                 type="text"
-                className="border p-2 w-md rounded-sm mb-3 focus:ring-1 focus:ring-orange-200 outline-none border-gray-300"
+                className="border p-2 w-md rounded-sm mb-3  outline-none border-orange-300"
                 name="contact_person"
                 value={formdata.contact_person}
                 onChange={handleChange}
@@ -586,7 +586,7 @@ export default function Page() {
               </label>
               <input
                 type="text"
-                className="border p-2 w-md rounded-sm mb-3 focus:ring-1 focus:ring-orange-200 outline-none border-gray-300"
+                className="border p-2 w-md rounded-sm mb-3  outline-none border-orange-300"
                 name="contact_number"
                 value={formdata.contact_number}
                 onChange={handleChange}
@@ -597,7 +597,7 @@ export default function Page() {
               </label>
               <input
                 type="text"
-                className="border p-2 w-md rounded-sm    mb-3 focus:ring-1 focus:ring-orange-200 outline-none border-gray-300"
+                className="border p-2 w-md rounded-sm    mb-3 outline-none border-orange-300"
                 name="email"
                 value={formdata.email}
                 onChange={handleChange}
@@ -610,7 +610,7 @@ export default function Page() {
                 name="contact_designation"
                 value={formdata.contact_designation}
                 onChange={handleChange}
-                className="w-full border rounded-sm p-2 mb-5 outline-none focus:ring-1 focus:ring-orange-200 border-gray-300 "
+                className="w-full border rounded-sm p-2 mb-5 outline-none border-orange-300 "
               >
                 <option value="">Select Contact Designation</option>
                 {designations.map((item) => (

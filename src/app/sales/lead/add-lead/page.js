@@ -337,7 +337,7 @@ const [errors, setErrors] = useState({});
                 value={formData.company_name}
                 placeholder="Company Name"
                 onChange={handleChange}
-                className="w-full border border-gray-200 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-orange-300 bg-white"
+                className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none  bg-white"
               />
             </div>
 
@@ -350,7 +350,7 @@ const [errors, setErrors] = useState({});
                 value={formData.customer_name}
                 placeholder="Customer Name"
                 onChange={handleChange}
-                className="w-full border border-gray-200 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-orange-300 bg-white"
+                className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none  bg-white"
               />
             </div>
 
@@ -363,7 +363,7 @@ const [errors, setErrors] = useState({});
                 name="lead_title"
                 value={formData.lead_title}
                 onChange={handleChange}
-                className="w-full border border-gray-200 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-orange-300"
+                className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none  bg-white"
               />
             </div>
 
@@ -375,7 +375,7 @@ const [errors, setErrors] = useState({});
                 name="source"
                 value={formData.source}
                 onChange={handleChange}
-                className="w-full border border-gray-200 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-orange-300 bg-white"
+                className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none  bg-white"
               >
                 <option value="">-- Select --</option>
                 {leadSource.map((item) => (
@@ -394,7 +394,7 @@ const [errors, setErrors] = useState({});
                 name="status"
                 value={formData.status}
                 disabled
-                className="w-full border border-gray-200 rounded-md px-3 py-1.5 text-sm bg-gray-50 text-gray-400 cursor-not-allowed"
+                className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm bg-gray-50 text-gray-400 cursor-not-allowed"
               >
                 <option>Qualified</option>
               </select>
@@ -408,7 +408,7 @@ const [errors, setErrors] = useState({});
                 name="product_category"
                 value={formData.product_category}
                 onChange={handleChange}
-                className="w-full border border-gray-200 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-orange-300 bg-white"
+                className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none  bg-white"
               >
                 <option value="">-- Select --</option>
                 {category.map((item) => (
@@ -427,7 +427,7 @@ const [errors, setErrors] = useState({});
                 name="product_name"
                 value={formData.product_name}
                 onChange={handleChange}
-                className="w-full border border-gray-200 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-orange-300 bg-white"
+                className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none  bg-white"
               >
                 <option value="">-- Select Product --</option>
                 {productList.map((item) => (
@@ -446,7 +446,7 @@ const [errors, setErrors] = useState({});
                 name="priority"
                 value={formData.priority}
                 onChange={handleChange}
-                className="w-full border border-gray-200 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-orange-300 bg-white"
+                className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none  bg-white"
               >
                 <option value="">-- Select --</option>
                 <option>High</option>
@@ -456,7 +456,7 @@ const [errors, setErrors] = useState({});
             </div>
 
             <div>
-              <label className="block mb-1 text-sm font-medium ">
+              <label className="block mb-1 text-sm font-medium  ">
                 Assignee *
               </label>
 
@@ -479,10 +479,10 @@ const [errors, setErrors] = useState({});
                 styles={{
                   control: (provided, state) => ({
                     ...provided,
-                    borderColor: state.isFocused ? "#F5C99A" : "#e5e7eb",
+                    borderColor: state.isFocused ? "border-orange-300" : "border-orange-300",
                     boxShadow: state.isFocused ? "0 0 0 1px #F5C99A" : "none",
                     "&:hover": {
-                      borderColor: "#F5C99A",
+                      borderColor: "border-orange-300",
                     },
                     minHeight: "40px",
                     borderRadius: "6px",
@@ -551,7 +551,7 @@ const [errors, setErrors] = useState({});
                 name="category"
                 value={formData.category}
                 onChange={handleChange}
-                className="w-full border border-gray-200 rounded-sm px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-orange-300 bg-white"
+                className="w-full border border-orange-300 rounded-sm px-3 py-1.5 text-sm text-gray-700 focus:outline-none  bg-white"
               >
                 <option value="">-- Select --</option>
                 {leadCategory.map((item) => (
@@ -573,7 +573,7 @@ const [errors, setErrors] = useState({});
               rows="1"
               value={formData.description}
               onChange={handleChange}
-              className="w-full border border-gray-200 rounded-sm px-3 py-1.5 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-orange-300"
+              className="w-full border border-orange-300 rounded-sm px-3 py-1.5 text-sm text-gray-700 focus:outline-none  bg-white"
             />
           </div>
 
