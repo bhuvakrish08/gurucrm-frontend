@@ -13,37 +13,31 @@ export default function Page() {
   useAuth();
 
   const [data, setData] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [sortConfig, setSortConfig] = useState({ column: null, direction: null });
   const [scrollOffsets, setScrollOffsets] = useState({}); 
 
-  // Fetch table data (fetching all for client-side pagination)
-  const fetchData = async (sort = sortConfig) => {
+  // Fetch table data
+  const fetchData = async (p = 1, sort = sortConfig) => {
     try {
       const res = await axios.get(`${API_BASE}/api/organizations/read`, {
         params: {
-          limit: 1000, // Fetch all for client-side pagination
+          page: p,
           sortColumn: sort.column,
           sortDirection: sort.direction,
         },
       });
-      setData(res.data.data || []);
+      setData(res.data.data);
+      setTotalPages(res.data.totalPages);
     } catch (err) {
       console.error("Error fetching data:", err);
     }
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  // Reset page when items per page changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [itemsPerPage]);
-
+    fetchData(page);
+  }, [page]);
 
 
   // column scroll
@@ -82,31 +76,7 @@ export default function Page() {
     }
   };
 
-  // Standardized Pagination Calculations
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = data.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(data.length / itemsPerPage);
-
-  const getSlidingPages = () => {
-    const visibleCount = 5;
-    if (totalPages <= visibleCount) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
-    let start = currentPage - Math.floor(visibleCount / 2);
-    let end = currentPage + Math.floor(visibleCount / 2);
-    if (start < 1) {
-      start = 1;
-      end = visibleCount;
-    }
-    if (end > totalPages) {
-      end = totalPages;
-      start = totalPages - visibleCount + 1;
-    }
-    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
-  };
-
-  // 🔹 Column Scroll Arrows Component
+   // 🔹 Column Scroll Arrows Component
   const ColumnScroll = ({ columnKey }) => (
     <span className="ml-1 inline-flex flex-col">
       <ChevronUpIcon
@@ -123,7 +93,6 @@ export default function Page() {
       />
     </span>
   );
-
 
   return (
     <>
@@ -176,99 +145,46 @@ export default function Page() {
                 </thead>
 
                 <tbody>
-                  {currentItems.length > 0 ? (
-                    currentItems.map((item, i) => (
-                      <tr key={i} className="hover:bg-gray-50 transition border-b border-gray-100">
-                        <td className="text-center p-3 text-gray-600">
-                          {indexOfFirstItem + i + 1}
+                  {data.length > 0 ? (
+                    data.map((item, i) => (
+                      <tr key={i} className="hover:bg-gray-50">
+                        <td className="text-center p-2">
+                          {(page - 1) * 5 + (i + 1)}
                         </td>
-                        <td className="p-3 font-medium text-gray-800">{item.organization_name}</td>
-                        <td className="p-3 text-gray-600">{item.email}</td>
-                        <td className="p-3 text-gray-600">{item.address_1}</td>
-                        <td className="p-3 text-gray-600">{item.country}</td>
-                        <td className="p-3 text-gray-600">{item.state}</td>
+                        <td className="p-2">{item.organization_name}</td>
+                        <td className="p-2">{item.email}</td>
+                        <td className="p-2">{item.address_1}</td>
+                        <td className="p-2">{item.country}</td>
+                        <td className="p-2">{item.state}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="6" className="text-center text-gray-400 py-10">
+                      <td colSpan="6" className="text-center text-gray-500 p-3">
                         No records found
                       </td>
                     </tr>
                   )}
-
                 </tbody>
               </table>
             </div>
 
-            {/* ✅ STANDARDIZED MICARA IMS PAGINATION */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white rounded-b-lg mt-4">
-              {/* Left side: Rows per page selector */}
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-slate-500 font-medium">
-                  Rows per page:
-                </span>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all cursor-pointer font-medium"
-                >
-                  {[10, 20, 100, 200].map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-between mt-10">
+                <button onClick={(e) => {e.preventDefault(); if (page > 1) setPage(page - 1); }}
+                  disabled={page === 1} className={`px-3 py-1 rounded-md ${
+                    page === 1 ? "bg-gray-300" : "bg-blue-800 text-white"}`}> Previous </button>
+
+                <p className="text-gray-500">
+                  Page {page} of {totalPages}
+                </p>
+
+                <button onClick={(e) => {e.preventDefault(); if (page < totalPages) setPage(page + 1);}}
+                  disabled={page === totalPages} className={`px-3 py-1 rounded-md ${
+                    page === totalPages ? "bg-gray-300" : "bg-blue-800 text-white"}`}> Next </button>
               </div>
-
-
-              {/* Right side: Navigation buttons (only if totalPages > 1) */}
-              {totalPages > 1 && (
-                <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
-                  {/* Previous Button */}
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <i className="bi bi-chevron-left text-sm"></i>
-                  </button>
-
-                  {/* Page Buttons */}
-                  <div className="flex items-center gap-1.5">
-                    {getSlidingPages().map((page) => (
-                      <button
-                        type="button"
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${
-                          currentPage === page
-                            ? "bg-[#212121] text-white shadow-md shadow-black/10"
-                            : "border border-slate-200 text-slate-600 hover:bg-slate-50"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Next Button */}
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <i className="bi bi-chevron-right text-sm"></i>
-                  </button>
-                </div>
-              )}
-            </div>
-
+            )}
           </div>
         </form>
       </div>

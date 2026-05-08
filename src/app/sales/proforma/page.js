@@ -22,10 +22,9 @@ export default function ProformaPage() {
   const exportRef = useRef(null);
   const debounceRef = useRef(null);
 
-  // Standardized Micara IMS Pagination Logic
+  // ── PAGINATION STATE ──────────────────────────────────────
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-
+  const [recordsPerPage, setRecordsPerPage] = useState(25);
 
   // ── FILTER STATE ──────────────────────────────────────────
   const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -52,30 +51,53 @@ export default function ProformaPage() {
 
   const API = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-  // Standardized Pagination Calculations
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const paginatedData = piData.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(piData.length / itemsPerPage);
+  // ── PAGINATION LOGIC ──────────────────────────────────────
+  const totalRecords = piData.length;
+  const totalPages = Math.ceil(totalRecords / recordsPerPage);
+  const startIndex = (currentPage - 1) * recordsPerPage;
+  const endIndex = startIndex + recordsPerPage;
+  const paginatedData = piData.slice(startIndex, endIndex);
 
-  const getSlidingPages = () => {
-    const visibleCount = 5;
-    if (totalPages <= visibleCount) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
-    let start = currentPage - Math.floor(visibleCount / 2);
-    let end = currentPage + Math.floor(visibleCount / 2);
-    if (start < 1) {
-      start = 1;
-      end = visibleCount;
-    }
-    if (end > totalPages) {
-      end = totalPages;
-      start = totalPages - visibleCount + 1;
-    }
-    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  const handleRecordsPerPageChange = (val) => {
+    setRecordsPerPage(Number(val));
+    setCurrentPage(1);
   };
 
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
+
+  const getPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      if (currentPage <= 4) {
+        pages.push(1, 2, 3, 4, 5, "...", totalPages);
+      } else if (currentPage >= totalPages - 3) {
+        pages.push(
+          1,
+          "...",
+          totalPages - 4,
+          totalPages - 3,
+          totalPages - 2,
+          totalPages - 1,
+          totalPages,
+        );
+      } else {
+        pages.push(
+          1,
+          "...",
+          currentPage - 1,
+          currentPage,
+          currentPage + 1,
+          "...",
+          totalPages,
+        );
+      }
+    }
+    return pages;
+  };
 
   // ── FETCH ALL PI ─────────────────────────────────────────
   const fetchPI = async () => {
@@ -118,12 +140,6 @@ export default function ProformaPage() {
     debounceRef.current = setTimeout(() => searchPI(), 200);
     return () => clearTimeout(debounceRef.current);
   }, [filters]);
-
-  // Reset page when filters or items per page changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filters, itemsPerPage]);
-
 
   // ── RESET FILTERS ─────────────────────────────────────────
   const resetFilters = () => {
@@ -724,7 +740,7 @@ export default function ProformaPage() {
                   <tbody>
                     {paginatedData.length > 0 ? (
                       paginatedData.map((item, index) => {
-                        const globalIndex = indexOfFirstItem + index;
+                        const globalIndex = startIndex + index;
                         return (
                           <tr
                             key={item.pi_id}
@@ -843,74 +859,103 @@ export default function ProformaPage() {
                   </tbody>
                 </table>
 
-                {/* ✅ STANDARDIZED MICARA IMS PAGINATION */}
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white rounded-b-lg">
-                  {/* Left side: Rows per page selector */}
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-slate-500 font-medium">
-                      Rows per page:
-                    </span>
-                    <select
-                      value={itemsPerPage}
-                      onChange={(e) => {
-                        setItemsPerPage(Number(e.target.value));
-                        setCurrentPage(1);
-                      }}
-                      className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all cursor-pointer font-medium"
-                    >
-                      {[10, 20, 100, 200].map((size) => (
-                        <option key={size} value={size}>
-                          {size}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-
-                  {/* Right side: Navigation buttons (only if totalPages > 1) */}
-                  {totalPages > 1 && (
-                    <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
-                      {/* Previous Button */}
-                      <button
-                        type="button"
-                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        <i className="bi bi-chevron-left text-sm"></i>
-                      </button>
-
-                      {/* Page Buttons */}
+                {/* ── PAGINATION BAR ────────────────────────── */}
+                {piData.length > 0 && (
+                  <div className="flex flex-col sm:flex-row items-center justify-between px-2 py-3 border-t border-gray-100 mt-2 gap-3">
+                    {/* Left: Records info + per-page dropdown */}
+                    <div className="flex flex-wrap items-center gap-3 justify-center sm:justify-start">
+                      <span className="text-xs text-gray-400">
+                        Showing{" "}
+                        <span className="font-semibold text-gray-600">
+                          {startIndex + 1}
+                        </span>
+                        {" – "}
+                        <span className="font-semibold text-gray-600">
+                          {Math.min(endIndex, totalRecords)}
+                        </span>
+                        {" of "}
+                        <span className="font-semibold text-gray-600">
+                          {totalRecords}
+                        </span>
+                        {hasActiveFilters ? " filtered" : ""} record(s)
+                      </span>
                       <div className="flex items-center gap-1.5">
-                        {getSlidingPages().map((page) => (
-                          <button
-                            type="button"
-                            key={page}
-                            onClick={() => setCurrentPage(page)}
-                            className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${
-                              currentPage === page
-                                ? "bg-[#212121] text-white shadow-md shadow-black/10"
-                                : "border border-slate-200 text-slate-600 hover:bg-slate-50"
-                            }`}
-                          >
-                            {page}
-                          </button>
-                        ))}
+                        <span className="text-xs text-gray-400">Show</span>
+                        <select
+                          value={recordsPerPage}
+                          onChange={(e) =>
+                            handleRecordsPerPageChange(e.target.value)
+                          }
+                          className="border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-600 focus:outline-none focus:ring-1 focus:ring-orange-300 bg-white cursor-pointer"
+                        >
+                          <option value={25}>25</option>
+                          <option value={50}>50</option>
+                          <option value={100}>100</option>
+                          <option value={200}>200</option>
+                        </select>
+                        <span className="text-xs text-gray-400">per page</span>
                       </div>
-
-                      {/* Next Button */}
-                      <button
-                        type="button"
-                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        <i className="bi bi-chevron-right text-sm"></i>
-                      </button>
+                      {hasActiveFilters && (
+                        <button
+                          onClick={resetFilters}
+                          className="text-xs text-orange-500 hover:text-orange-600 font-semibold"
+                        >
+                          Clear filters ✕
+                        </button>
+                      )}
                     </div>
-                  )}
-                </div>
 
+                    {/* Right: Page navigation */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center gap-1 mt-3 sm:mt-0">
+                        {/* Prev */}
+                        <button
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          className={`w-8 h-8 flex items-center justify-center rounded-lg border text-xs font-semibold transition-all
+                            ${currentPage === 1 ? "border-gray-100 text-gray-300 cursor-not-allowed" : "border-gray-200 text-gray-600 hover:bg-orange-50 hover:border-orange-300 hover:text-orange-500"}`}
+                        >
+                          <i className="bi bi-chevron-left text-xs"></i>
+                        </button>
+
+                        {/* Page numbers */}
+                        {getPageNumbers().map((page, i) =>
+                          page === "..." ? (
+                            <span
+                              key={`dots-${i}`}
+                              className="w-8 h-8 flex items-center justify-center text-gray-400 text-xs"
+                            >
+                              ...
+                            </span>
+                          ) : (
+                            <button
+                              key={page}
+                              onClick={() => handlePageChange(page)}
+                              className={`w-8 h-8 flex items-center justify-center rounded-lg border text-xs font-semibold transition-all
+                                ${
+                                  currentPage === page
+                                    ? "bg-orange-500 border-orange-500 text-white shadow-sm shadow-orange-200"
+                                    : "border-gray-200 text-gray-600 hover:bg-orange-50 hover:border-orange-300 hover:text-orange-500"
+                                }`}
+                            >
+                              {page}
+                            </button>
+                          ),
+                        )}
+
+                        {/* Next */}
+                        <button
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage === totalPages}
+                          className={`w-8 h-8 flex items-center justify-center rounded-lg border text-xs font-semibold transition-all
+                            ${currentPage === totalPages ? "border-gray-100 text-gray-300 cursor-not-allowed" : "border-gray-200 text-gray-600 hover:bg-orange-50 hover:border-orange-300 hover:text-orange-500"}`}
+                        >
+                          <i className="bi bi-chevron-right text-xs"></i>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>

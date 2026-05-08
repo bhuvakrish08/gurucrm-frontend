@@ -14,9 +14,8 @@ export default function CustomerList() {
 
   useAuth();
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-
+  const [data, setData] = useState([]);
+  const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   // BUG FIX #1: was "setDesignations" (undefined variable), changed to setIndustries
   const [industries, setIndustries] = useState([]);
@@ -33,9 +32,9 @@ export default function CustomerList() {
     industry: "",
   });
 
-  const [data, setData] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: "id", direction: "ASC" });
-
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   // Store offset for each scrollable column
   const [columnOffsets, setColumnOffsets] = useState({
@@ -50,9 +49,8 @@ export default function CustomerList() {
   const fetchCustomers = async () => {
     try {
       const query = new URLSearchParams({
-        // Remove server-side pagination to allow client-side slicing
-        // page,
-        // limit: 10,
+        page,
+        limit: 10,
         search,
         sortBy: sortConfig.key,
         order: sortConfig.direction,
@@ -64,6 +62,8 @@ export default function CustomerList() {
 
       if (result.success) {
         setData(result.data);
+        // Reset to page 1 when new data arrives
+        setCurrentPage(1);
       } else {
         setData([]);
       }
@@ -71,7 +71,6 @@ export default function CustomerList() {
       console.error("Error fetching customers:", error);
     }
   };
-
 
   // Fetching Active Industries
   useEffect(() => {
@@ -92,50 +91,30 @@ export default function CustomerList() {
 
   useEffect(() => {
     fetchCustomers();
-  }, [sortConfig]);
+  }, [page, sortConfig]);
 
   useEffect(() => {
     const delay = setTimeout(() => {
+      setPage(1);
       fetchCustomers();
     }, 300);
     return () => clearTimeout(delay);
   }, [search, filters]);
-
-  // Reset page when filters, search, or items per page changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filters, search, itemsPerPage]);
-
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Standardized Pagination Calculations
+  // PAGINATION
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentData = data.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(data.length / itemsPerPage);
 
-  const getSlidingPages = () => {
-    const visibleCount = 5;
-    if (totalPages <= visibleCount) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
-    let start = currentPage - Math.floor(visibleCount / 2);
-    let end = currentPage + Math.floor(visibleCount / 2);
-    if (start < 1) {
-      start = 1;
-      end = visibleCount;
-    }
-    if (end > totalPages) {
-      end = totalPages;
-      start = totalPages - visibleCount + 1;
-    }
-    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  const handlePageChange = (p) => {
+    if (p >= 1 && p <= totalPages) setCurrentPage(p);
   };
-
 
   const handleDelete = async (id) => {
     try {
@@ -352,74 +331,30 @@ export default function CustomerList() {
             </div>
 
             {/* Pagination */}
-            {/* ✅ STANDARDIZED MICARA IMS PAGINATION */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white rounded-b-lg mt-4">
-              {/* Left side: Rows per page selector */}
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-slate-500 font-medium">
-                  Rows per page:
-                </span>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all cursor-pointer font-medium"
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-3 border-gray-200 bg-white rounded-b-lg gap-3">
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 text-sm font-medium rounded-sm border bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {[10, 20, 100, 200].map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
+                  Previous
+                </button>
+                <span className="text-sm text-gray-600">
+                  Page <span className="font-semibold">{currentPage}</span> of{" "}
+                  <span className="font-semibold">{totalPages}</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 text-sm font-medium rounded-sm border bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
               </div>
-
-
-              {/* Right side: Navigation buttons (only if totalPages > 1) */}
-              {totalPages > 1 && (
-                <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
-                  {/* Previous Button */}
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <i className="bi bi-chevron-left text-sm"></i>
-                  </button>
-
-                  {/* Page Buttons */}
-                  <div className="flex items-center gap-1.5">
-                    {getSlidingPages().map((page) => (
-                      <button
-                        type="button"
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${
-                          currentPage === page
-                            ? "bg-[#212121] text-white shadow-md shadow-black/10"
-                            : "border border-slate-200 text-slate-600 hover:bg-slate-50"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Next Button */}
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <i className="bi bi-chevron-right text-sm"></i>
-                  </button>
-                </div>
-              )}
-            </div>
-
+            )}
           </div>
         </form>
       </div>

@@ -35,10 +35,9 @@ export default function Page() {
 
   const APIBase = `${API_BASE}/api/manage-user`;
 
-  // Standardized Micara IMS Pagination Logic
+  //  PAGINATION ADDED HERE
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-
+  const [itemsPerPage] = useState(10);
 
   const fetchData = async () => {
     try {
@@ -69,12 +68,6 @@ export default function Page() {
     return () => clearTimeout(delay);
   }, [filters]);
 
-  // Reset page when filters or items per page changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filters, itemsPerPage]);
-
-
   useEffect(() => {
     fetchData();
   }, []);
@@ -97,30 +90,16 @@ export default function Page() {
     navigator.clipboard.writeText(text);
   };
 
-  // Standardized Pagination Calculations
+  //  PAGINATION CALCULATIONS
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentData = users.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(users.length / itemsPerPage);
 
-  const getSlidingPages = () => {
-    const visibleCount = 5;
-    if (totalPages <= visibleCount) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
-    }
-    let start = currentPage - Math.floor(visibleCount / 2);
-    let end = currentPage + Math.floor(visibleCount / 2);
-    if (start < 1) {
-      start = 1;
-      end = visibleCount;
-    }
-    if (end > totalPages) {
-      end = totalPages;
-      start = totalPages - visibleCount + 1;
-    }
-    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
-
 
   // to fetch active roles name
   useEffect(() => {
@@ -482,74 +461,35 @@ export default function Page() {
                 </tbody>
               </table>
             </div>
-            {/* ✅ STANDARDIZED MICARA IMS PAGINATION */}
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white rounded-b-lg">
-              {/* Left side: Rows per page selector */}
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-slate-500 font-medium">
-                  Rows per page:
-                </span>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all cursor-pointer font-medium"
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-3 border-gray-200 bg-white rounded-b-lg gap-3">
+                {/* Previous Button */}
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 text-sm font-medium rounded-md border bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {[10, 20, 100, 200].map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
+                  Previous
+                </button>
+
+                {/* Page Info Centered */}
+                <span className="text-sm text-gray-600">
+                  Page <span className="font-semibold">{currentPage}</span> of{" "}
+                  <span className="font-semibold">{totalPages}</span>
+                </span>
+
+                {/* Next Button */}
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 text-sm font-medium rounded-md border bg-blue-800 text-white hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
               </div>
-
-
-              {/* Right side: Navigation buttons (only if totalPages > 1) */}
-              {totalPages > 1 && (
-                <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
-                  {/* Previous Button */}
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <i className="bi bi-chevron-left text-sm"></i>
-                  </button>
-
-                  {/* Page Buttons */}
-                  <div className="flex items-center gap-1.5">
-                    {getSlidingPages().map((page) => (
-                      <button
-                        type="button"
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${
-                          currentPage === page
-                            ? "bg-[#212121] text-white shadow-md shadow-black/10"
-                            : "border border-slate-200 text-slate-600 hover:bg-slate-50"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Next Button */}
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <i className="bi bi-chevron-right text-sm"></i>
-                  </button>
-                </div>
-              )}
-            </div>
-
+            )}
           </div>
         </form>
       </div>
