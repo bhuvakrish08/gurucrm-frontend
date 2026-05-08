@@ -18,13 +18,15 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("Pending");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+
+  // ✅ FIXED: Separated status popup state — selectedLead always full object
   const [showPopup, setShowPopup] = useState(false);
-  const [selectedLead, setSelectedLead] = useState(null);
+  const [statusChangeLeadId, setStatusChangeLeadId] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState("");
 
-  const router = useRouter();
+  const [selectedLead, setSelectedLead] = useState(null);
 
-  // Multer Required Hooks
+  const router = useRouter();
 
   const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -61,23 +63,17 @@ export default function Page() {
 
   useAuth();
 
+  const getToken = () => localStorage.getItem("token");
+
   const fetchLeads = async () => {
     try {
       const res = await axios.get(`${API_BASE}/api/lead/read`);
 
       const formatted = (res.data?.result || []).map((item) => {
         let finalStatus = "Pending";
-        if (item.status === "Won") {
-          finalStatus = "Won";
-        } else if (item.status === "Lost") {
-          finalStatus = "Lost";
-        } else {
-          finalStatus = "Pending";
-        }
-        return {
-          ...item,
-          status: finalStatus,
-        };
+        if (item.status === "Won") finalStatus = "Won";
+        else if (item.status === "Lost") finalStatus = "Lost";
+        return { ...item, status: finalStatus };
       });
 
       setLeads(formatted);
@@ -92,7 +88,6 @@ export default function Page() {
     fetchLeads();
   }, []);
 
-  // ✅ Close export menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (exportRef.current && !exportRef.current.contains(e.target)) {
@@ -104,9 +99,8 @@ export default function Page() {
   }, []);
 
   // ===================================================
-  // ✅ EXPORT TO EXCEL
+  // EXPORT TO EXCEL
   // ===================================================
-
   const exportToExcel = async () => {
     try {
       const XLSX = await import("xlsx");
@@ -152,9 +146,8 @@ export default function Page() {
   };
 
   // ===================================================
-  // ✅ EXPORT TO PDF
+  // EXPORT TO PDF
   // ===================================================
-
   const exportToPDF = async () => {
     try {
       const { default: jsPDF } = await import("jspdf");
@@ -171,7 +164,7 @@ export default function Page() {
       doc.text(
         `Exported on: ${new Date().toLocaleDateString("en-GB")}   |   Total Records: ${filteredLeads.length}`,
         14,
-        22,
+        22
       );
 
       const tableData = filteredLeads.map((lead, index) => [
@@ -193,39 +186,21 @@ export default function Page() {
         startY: 27,
         head: [
           [
-            "#",
-            "Company",
-            "Customer",
-            "Lead Title",
-            "Product Cat.",
-            "Source",
-            "Assignee",
-            "Next Follow Up",
-            "Created",
-            "Status",
+            "#", "Company", "Customer", "Lead Title", "Product Cat.",
+            "Source", "Assignee", "Next Follow Up", "Created", "Status",
           ],
         ],
         body: tableData,
         theme: "grid",
-        styles: {
-          fontSize: 8,
-          cellPadding: 3,
-          textColor: [40, 40, 40],
-        },
+        styles: { fontSize: 8, cellPadding: 3, textColor: [40, 40, 40] },
         headStyles: {
           fillColor: [234, 88, 12],
           textColor: [255, 255, 255],
           fontStyle: "bold",
           fontSize: 8,
         },
-        alternateRowStyles: {
-          fillColor: [255, 247, 237],
-        },
-        columnStyles: {
-          0: { cellWidth: 8 },
-          3: { cellWidth: 35 },
-          9: { cellWidth: 20 },
-        },
+        alternateRowStyles: { fillColor: [255, 247, 237] },
+        columnStyles: { 0: { cellWidth: 8 }, 3: { cellWidth: 35 }, 9: { cellWidth: 20 } },
       });
 
       const now = new Date();
@@ -242,8 +217,9 @@ export default function Page() {
     }
   };
 
-  // functions for multer functionality
-
+  // ===================================================
+  // FILE HANDLING
+  // ===================================================
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -265,36 +241,24 @@ export default function Page() {
     let remainingSlots = MAX_FILES - updatedFiles.length;
 
     if (remainingSlots <= 0) {
-      toast.error("You can upload only 5 files ");
+      toast.error("You can upload only 5 files");
       e.target.value = "";
       return;
     }
 
     for (let file of files) {
       if (remainingSlots <= 0) {
-        toast.error("Maximum 5 files allowed ");
+        toast.error("Maximum 5 files allowed");
         break;
       }
       const ext = file.name.split(".").pop().toLowerCase();
       const isDuplicate = updatedFiles.some(
-        (f) => f.name === file.name && f.size === file.size,
+        (f) => f.name === file.name && f.size === file.size
       );
-      if (isDuplicate) {
-        toast.error("Duplicate file not allowed ");
-        continue;
-      }
-      if (![...IMAGE_EXT, ...DOC_EXT].includes(ext)) {
-        toast.error("Only JPG, PNG, PDF allowed ");
-        continue;
-      }
-      if (IMAGE_EXT.includes(ext) && file.size > MAX_IMG_SIZE) {
-        toast.error("Image must be under 2MB ");
-        continue;
-      }
-      if (DOC_EXT.includes(ext) && file.size > MAX_DOC_SIZE) {
-        toast.error("PDF must be under 2MB ");
-        continue;
-      }
+      if (isDuplicate) { toast.error("Duplicate file not allowed"); continue; }
+      if (![...IMAGE_EXT, ...DOC_EXT].includes(ext)) { toast.error("Only JPG, PNG, PDF allowed"); continue; }
+      if (IMAGE_EXT.includes(ext) && file.size > MAX_IMG_SIZE) { toast.error("Image must be under 2MB"); continue; }
+      if (DOC_EXT.includes(ext) && file.size > MAX_DOC_SIZE) { toast.error("PDF must be under 2MB"); continue; }
       updatedFiles.push(file);
       remainingSlots--;
     }
@@ -303,6 +267,9 @@ export default function Page() {
     e.target.value = "";
   };
 
+  // ===================================================
+  // ADD FOLLOW-UP (first time)
+  // ===================================================
   const handleSubmit = async () => {
     try {
       if (!form.activity_type || !form.contact_person || !form.description) {
@@ -313,11 +280,9 @@ export default function Page() {
       setBtnLoading(true);
 
       const formData = new FormData();
-
       Object.keys(form).forEach((key) => {
         if (key !== "files") formData.append(key, form[key]);
       });
-
       formData.append("lead_id", selectedLead.lead_id);
       formData.append("status", "Pending");
       formData.append("remarks", "");
@@ -327,16 +292,12 @@ export default function Page() {
       }
 
       await axios.post(`${API_BASE}/api/lead-follow-up/insert`, formData, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+        headers: { Authorization: `Bearer ${getToken()}` },
       });
 
       toast.success("Follow-up added");
-
       setShowModal(false);
       setSelectedFiles([]);
-
       fetchLeads();
     } catch (err) {
       console.log(err);
@@ -346,6 +307,9 @@ export default function Page() {
     }
   };
 
+  // ===================================================
+  // OPEN UPDATE MODAL
+  // ===================================================
   const openUpdateModal = async (lead) => {
     setSelectedLead(lead);
     setShowUpdateModal(true);
@@ -363,7 +327,7 @@ export default function Page() {
 
     try {
       const res = await axios.get(
-        `${API_BASE}/api/lead-follow-up/history/${lead.lead_id}`,
+        `${API_BASE}/api/lead-follow-up/history/${lead.lead_id}`
       );
       setFollowUpHistory(res.data?.result || []);
     } catch (err) {
@@ -371,21 +335,19 @@ export default function Page() {
     }
   };
 
+  // ===================================================
+  // ADD FOLLOW-UP (update modal)
+  // ===================================================
   const handleUpdate = async () => {
     try {
-      if (
-        !updateForm.activity_type ||
-        !updateForm.contact_person ||
-        !updateForm.description
-      ) {
-        toast.error("Please fill all required fields ");
+      if (!updateForm.activity_type || !updateForm.contact_person || !updateForm.description) {
+        toast.error("Please fill all required fields");
         return;
       }
 
       setUpdateLoading(true);
 
       const formData = new FormData();
-
       formData.append("lead_id", selectedLead.lead_id);
       formData.append("follow_up_date", updateForm.follow_up_date);
       formData.append("activity_type", updateForm.activity_type);
@@ -400,17 +362,14 @@ export default function Page() {
       }
 
       await axios.post(`${API_BASE}/api/lead-follow-up/insert`, formData, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+        headers: { Authorization: `Bearer ${getToken()}` },
       });
 
-      toast.success("New follow-up added ");
+      toast.success("New follow-up added");
 
       const res = await axios.get(
-        `${API_BASE}/api/lead-follow-up/history/${selectedLead.lead_id}`,
+        `${API_BASE}/api/lead-follow-up/history/${selectedLead.lead_id}`
       );
-
       setFollowUpHistory(res.data?.result || []);
       setPreviewFollowUp(null);
 
@@ -423,16 +382,18 @@ export default function Page() {
       });
 
       setSelectedFiles([]);
-
       fetchLeads();
     } catch (err) {
-      toast.error("Failed to add follow-up ");
+      toast.error("Failed to add follow-up");
       console.log(err);
     } finally {
       setUpdateLoading(false);
     }
   };
 
+  // ===================================================
+  // DELETE LEAD
+  // ===================================================
   const openDeleteModal = (lead) => {
     setLeadToDelete(lead);
     setShowDeleteModal(true);
@@ -443,9 +404,7 @@ export default function Page() {
     setDeleteLoading(true);
     try {
       await axios.delete(`${API_BASE}/api/lead/${leadToDelete.lead_id}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+        headers: { Authorization: `Bearer ${getToken()}` },
       });
       toast.success("Lead deleted successfully");
       setShowDeleteModal(false);
@@ -459,17 +418,14 @@ export default function Page() {
     }
   };
 
+  // ===================================================
+  // EDIT LEAD
+  // ===================================================
   const handleEdit = async (lead) => {
     try {
-      const token = localStorage.getItem("token");
-
       const res = await axios.get(
         `${API_BASE}/api/lead/sales/leads/view-leads/${lead.lead_id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
+        { headers: { Authorization: `Bearer ${getToken()}` } }
       );
 
       const leadData = res.data.lead;
@@ -489,7 +445,7 @@ export default function Page() {
           assignee: leadData.assignee,
           category: leadData.category,
           description: leadData.description,
-        }),
+        })
       );
 
       router.push("/sales/lead/update-lead");
@@ -498,19 +454,15 @@ export default function Page() {
     }
   };
 
+  // ===================================================
+  // VIEW LEAD
+  // ===================================================
   const handleView = async (lead) => {
     try {
-      const token = localStorage.getItem("token");
-
       const res = await axios.get(
         `${API_BASE}/api/lead/sales/leads/view-details/${lead.lead_id}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
+        { headers: { Authorization: `Bearer ${getToken()}` } }
       );
-
       setViewLead(res.data.lead);
       setShowViewModal(true);
     } catch (error) {
@@ -519,35 +471,44 @@ export default function Page() {
     }
   };
 
+  // ===================================================
+  // ✅ FIXED: STATUS CHANGE — now sends Authorization header
+  // ===================================================
   const handleStatusChange = (lead_id, newStatus) => {
-    setSelectedLead(lead_id);
+    setStatusChangeLeadId(lead_id);   // ✅ separate state — no conflict with selectedLead
     setSelectedStatus(newStatus);
     setShowPopup(true);
   };
 
   const confirmStatusChange = async () => {
     try {
-      await axios.put(`${API_BASE}/api/lead/update-status/${selectedLead}`, {
-        status: selectedStatus,
-      });
+      await axios.put(
+        `${API_BASE}/api/lead/update-status/${statusChangeLeadId}`,
+        { status: selectedStatus },
+        {
+          headers: { Authorization: `Bearer ${getToken()}` }, // ✅ FIXED: was missing
+        }
+      );
 
       setLeads((prev) =>
         prev.map((lead) =>
-          lead.lead_id === selectedLead
+          lead.lead_id === statusChangeLeadId
             ? { ...lead, status: selectedStatus }
-            : lead,
-        ),
+            : lead
+        )
       );
 
       setShowPopup(false);
       toast.success("Status Updated");
     } catch (err) {
       console.log(err);
+      toast.error("Failed to update status");
     }
   };
 
-  // ================= FILTER LOGIC =================
-
+  // ===================================================
+  // FILTER LOGIC
+  // ===================================================
   const debounceRef = useRef(null);
 
   const [filters, setFilters] = useState({
@@ -567,16 +528,13 @@ export default function Page() {
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
   const searchLeads = async () => {
     try {
       const params = Object.fromEntries(
-        Object.entries(filters).filter(([_, v]) => v !== ""),
+        Object.entries(filters).filter(([_, v]) => v !== "")
       );
 
       const res = await axios.get(`${API_BASE}/api/lead/sales/leads/filter`, {
@@ -590,10 +548,7 @@ export default function Page() {
         let finalStatus = "Pending";
         if (item.status === "Won") finalStatus = "Won";
         else if (item.status === "Lost") finalStatus = "Lost";
-        return {
-          ...item,
-          status: finalStatus,
-        };
+        return { ...item, status: finalStatus };
       });
 
       setLeads(formatted);
@@ -610,9 +565,7 @@ export default function Page() {
       return;
     }
 
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
+    if (debounceRef.current) clearTimeout(debounceRef.current);
 
     debounceRef.current = setTimeout(() => {
       searchLeads();
@@ -636,20 +589,18 @@ export default function Page() {
       from_followup: "",
       to_followup: "",
     });
-
     fetchLeads();
   };
 
-  // ================= TAB + FILTER MERGE =================
-
+  // ===================================================
+  // TAB + FILTER MERGE
+  // ===================================================
   const hasActiveFilters = Object.values(filters).some((v) => v !== "");
 
   const filteredLeads = hasActiveFilters
     ? leads
     : leads.filter((l) => {
-        if (activeTab === "Pending") {
-          return l.status !== "Won" && l.status !== "Lost";
-        }
+        if (activeTab === "Pending") return l.status !== "Won" && l.status !== "Lost";
         return l.status === activeTab;
       });
 
@@ -657,47 +608,40 @@ export default function Page() {
   const wonCount = leads.filter((l) => l.status === "Won").length;
   const lostCount = leads.filter((l) => l.status === "Lost").length;
 
-  // ================= PAGINATION =================
-
+  // ===================================================
+  // PAGINATION
+  // ===================================================
   const [currentPage, setCurrentPage] = useState(1);
-  // ✅ itemsPerPage is now dynamic state (default 25)
   const [itemsPerPage, setItemsPerPage] = useState(25);
 
-  // Reset page when filters, tab, or items per page changes
   useEffect(() => {
     setCurrentPage(1);
   }, [filters, activeTab, itemsPerPage]);
 
   const paginatedLeads = filteredLeads.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
+    currentPage * itemsPerPage
   );
-
   const totalPages = Math.ceil(filteredLeads.length / itemsPerPage);
 
   const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
-  // ✅ Items per page change handler
   const handleItemsPerPageChange = (e) => {
     setItemsPerPage(Number(e.target.value));
     setCurrentPage(1);
   };
 
-  // Dynamic Dropdowns
-
+  // ===================================================
+  // DYNAMIC DROPDOWNS
+  // ===================================================
   const companyRef = useRef(null);
 
   const [assignee, setAssignee] = useState([]);
   const [leadSource, setLeadSource] = useState([]);
   const [leadCategory, setLeadCategory] = useState([]);
   const [category, setCategory] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [companyname, setCompanyname] = useState([]);
-  const [customername, setCustomername] = useState([]);
 
   useEffect(() => {
     const fetchAssignee = async () => {
@@ -705,47 +649,40 @@ export default function Page() {
         const res = await axios.get(`${API_BASE}/api/manage-user/asignee`, {
           params: { status: 1 },
         });
-
         const cleanedData = (res.data?.data || res.data || []).map((item) => ({
           ...item,
           name: item.name ? item.name.split(" ")[0] : "",
         }));
-
         setAssignee(cleanedData);
       } catch (err) {
         console.error("Failed to fetch names:", err);
         setAssignee([]);
       }
     };
-
     fetchAssignee();
   }, []);
 
   useEffect(() => {
     const fetchSource = async () => {
       try {
-        const res = await axios.get(
-          `${API_BASE}/api/inquiry-lead-source/read`,
-          { params: { status: 1 } },
-        );
+        const res = await axios.get(`${API_BASE}/api/inquiry-lead-source/read`, {
+          params: { status: 1 },
+        });
         setLeadSource(res.data);
       } catch {}
     };
-
     fetchSource();
   }, []);
 
   useEffect(() => {
     const fetchCategory = async () => {
       try {
-        const res = await axios.get(
-          `${API_BASE}/api/inquiry-lead-category/read`,
-          { params: { status: 1 } },
-        );
+        const res = await axios.get(`${API_BASE}/api/inquiry-lead-category/read`, {
+          params: { status: 1 },
+        });
         setLeadCategory(res.data);
       } catch {}
     };
-
     fetchCategory();
   }, []);
 
@@ -758,7 +695,6 @@ export default function Page() {
         setCategory(res.data);
       } catch {}
     };
-
     fetchProductCategory();
   }, []);
 
@@ -768,48 +704,30 @@ export default function Page() {
     <>
       <Header />
 
-      <div className="bg-gray-100 ">
-        {/* breadcrumb */}
-
+      <div className="bg-gray-100">
+        {/* Breadcrumb */}
         <div className="bg-white w-full shadow-lg p-3 mt-1 mb-5 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
           <div className="hidden sm:flex items-center text-gray-700 w-full sm:w-auto">
             <p className="flex items-center flex-wrap">
-              <Link
-                href="/dashboard"
-                className="mx-2 text-xl text-gray-400 hover:text-indigo-600"
-              >
+              <Link href="/dashboard" className="mx-2 text-xl text-gray-400 hover:text-indigo-600">
                 <i className="bi bi-house"></i>
               </Link>
               <i className="bi bi-chevron-right text-[10px]"></i>
-              <Link
-                href="#"
-                className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
-              >
-                Sales
-              </Link>
+              <Link href="#" className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold">Sales</Link>
               <i className="bi bi-chevron-right text-[10px]"></i>
-              <Link
-                href="/sales/lead"
-                className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
-              >
-                Lead
-              </Link>
+              <Link href="/sales/lead" className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold">Lead</Link>
             </p>
           </div>
-          {/* Export Button */}
+
           <div className="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-end">
             <div className="relative" ref={exportRef}>
               <button
                 onClick={() => setShowExportMenu((prev) => !prev)}
-                className="flex items-center gap-2  bg-orange-50 text-orange-500 px-4 py-2 rounded-sm text-sm font-semibold tracking-wide transition-all shadow-sm"
+                className="flex items-center gap-2 bg-orange-50 text-orange-500 px-4 py-2 rounded-sm text-sm font-semibold tracking-wide transition-all shadow-sm"
               >
                 <i className="bi bi-download text-base"></i>
                 Export
-                <i
-                  className={`bi bi-chevron-down text-xs transition-transform duration-200 ${
-                    showExportMenu ? "rotate-180" : ""
-                  }`}
-                ></i>
+                <i className={`bi bi-chevron-down text-xs transition-transform duration-200 ${showExportMenu ? "rotate-180" : ""}`}></i>
               </button>
 
               {showExportMenu && (
@@ -818,19 +736,17 @@ export default function Page() {
                     onClick={exportToExcel}
                     className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-all"
                   >
-                    <div className="w-7 h-7 rounded-sm  flex items-center justify-center">
+                    <div className="w-7 h-7 rounded-sm flex items-center justify-center">
                       <i className="bi bi-file-earmark-excel text-green-600 text-sm"></i>
                     </div>
                     Export Excel
                   </button>
-
                   <div className="h-px bg-gray-100 mx-3"></div>
-
                   <button
                     onClick={exportToPDF}
                     className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-all"
                   >
-                    <div className="w-7 h-7 rounded-sm  flex items-center justify-center">
+                    <div className="w-7 h-7 rounded-sm flex items-center justify-center">
                       <i className="bi bi-file-earmark-pdf text-red-600 text-sm"></i>
                     </div>
                     Export PDF
@@ -839,7 +755,6 @@ export default function Page() {
               )}
             </div>
 
-            {/* Add Lead Button */}
             <Link
               href="/sales/lead/add-lead"
               className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-sm text-sm font-semibold shadow-md transition-all"
@@ -849,8 +764,7 @@ export default function Page() {
           </div>
         </div>
 
-        {/* FILTER SECTION */}
-
+        {/* Mobile Filter Toggle */}
         <div className="mx-6 mb-2 md:hidden mt-3 relative z-40">
           <button
             onClick={() => setShowMobileFilters(!showMobileFilters)}
@@ -903,11 +817,7 @@ export default function Page() {
             className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-48  outline-none  text-gray-400 text-sm"
           >
             <option value="">Select Product Category</option>
-            {category.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
+            {category.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
           </select>
 
           <select
@@ -917,11 +827,7 @@ export default function Page() {
             className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-400 text-sm"
           >
             <option value="">Select Source</option>
-            {leadSource.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
+            {leadSource.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
           </select>
 
           <select
@@ -931,11 +837,7 @@ export default function Page() {
             className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-400 text-sm"
           >
             <option value="">Select Assignee</option>
-            {assignee.map((item) => (
-              <option key={item.id} value={item.name}>
-                {item.name}
-              </option>
-            ))}
+            {assignee.map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}
           </select>
 
           <div className="flex p-1 items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-58  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
@@ -1002,13 +904,8 @@ export default function Page() {
           </div>
 
           <div className="flex gap-2 col-span-2 md:col-span-1">
-            <button
-              onClick={() => {
-                resetFilters();
-                setShowMobileFilters(false);
-              }}
-              className="border border-gray-300 w-full md:w-auto cursor-pointer rounded-sm p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm text-center font-semibold"
-            >
+            <button onClick={() => { resetFilters(); setShowMobileFilters(false); }}
+              className="border border-gray-300 w-full md:w-auto cursor-pointer rounded-sm p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm text-center font-semibold">
               Clear
             </button>
             <button
@@ -1020,183 +917,87 @@ export default function Page() {
           </div>
         </div>
 
-        {/* tabs */}
-
-        <div className="bg-white rounded-sm border border-gray-100  py-2 mx-7">
+        {/* Tabs + Table */}
+        <div className="bg-white rounded-sm border border-gray-100 py-2 mx-7">
           <div className="flex items-center gap-8 px-6 pt-4 border-b border-gray-100">
-            <button
-              onClick={() => setActiveTab("Pending")}
-              className={`pb-3 px-3 text-sm font-medium relative cursor-pointer transition-all ${
-                activeTab === "Pending"
-                  ? "text-blue-600"
-                  : "text-gray-400 hover:text-gray-600"
-              }`}
-            >
+            <button onClick={() => setActiveTab("Pending")}
+              className={`pb-3 px-3 text-sm font-medium relative cursor-pointer transition-all ${activeTab === "Pending" ? "text-blue-600" : "text-gray-400 hover:text-gray-600"}`}>
               Pending
-              <span className="ml-2 bg-blue-100 text-blue-600 cursor-pointer text-xs px-2 py-0.5 rounded-full">
-                {pendingCount}
-              </span>
-              {activeTab === "Pending" && (
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>
-              )}
+              <span className="ml-2 bg-blue-100 text-blue-600 text-xs px-2 py-0.5 rounded-full">{pendingCount}</span>
+              {activeTab === "Pending" && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>}
             </button>
 
-            <button
-              onClick={() => setActiveTab("Won")}
-              className={`pb-3 text-sm font-medium cursor-pointer relative ${
-                activeTab === "Won" ? "text-green-600" : "text-gray-500"
-              }`}
-            >
+            <button onClick={() => setActiveTab("Won")}
+              className={`pb-3 text-sm font-medium cursor-pointer relative ${activeTab === "Won" ? "text-green-600" : "text-gray-500"}`}>
               Won
-              <span className="ml-2 bg-green-100 text-green-600 text-xs px-2 py-0.5 rounded-full">
-                {wonCount}
-              </span>
-              {activeTab === "Won" && (
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600"></div>
-              )}
+              <span className="ml-2 bg-green-100 text-green-600 text-xs px-2 py-0.5 rounded-full">{wonCount}</span>
+              {activeTab === "Won" && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600"></div>}
             </button>
 
-            <button
-              onClick={() => setActiveTab("Lost")}
-              className={`pb-3 text-sm font-medium relative ${
-                activeTab === "Lost" ? "text-red-600" : "text-gray-500"
-              }`}
-            >
+            <button onClick={() => setActiveTab("Lost")}
+              className={`pb-3 text-sm font-medium relative ${activeTab === "Lost" ? "text-red-600" : "text-gray-500"}`}>
               Lost
-              <span className="ml-2 bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full">
-                {lostCount}
-              </span>
-              {activeTab === "Lost" && (
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-red-600"></div>
-              )}
+              <span className="ml-2 bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full">{lostCount}</span>
+              {activeTab === "Lost" && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-red-600"></div>}
             </button>
           </div>
-
-          {/* table */}
 
           <div className="p-4">
             {loading ? (
               <div className="text-center py-10 text-gray-400">Loading...</div>
             ) : (
-              <div
-                className="overflow-x-auto overflow-y-scroll max-h-[600px] custom-scroll "
-                style={{ overflowX: "scroll" }}
-              >
-                <table className="w-full text-sm ">
+              <div className="overflow-x-auto overflow-y-scroll max-h-[600px] custom-scroll" style={{ overflowX: "scroll" }}>
+                <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-100">
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        #
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Company Name
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Customer Name
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider ">
-                        Lead Title
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Product Category
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Source
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Assignee
-                      </th>
-                      <th className="py-3 px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Next Follow Up
-                      </th>
-                      <th className="py-3 px-3 text-left  text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Created
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Action
-                      </th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">#</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Company Name</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Customer Name</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Lead Title</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Product Category</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Source</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Assignee</th>
+                      <th className="py-3 px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Next Follow Up</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Created</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Action</th>
                     </tr>
                   </thead>
 
                   <tbody>
                     {filteredLeads.length > 0 ? (
                       paginatedLeads.map((lead, index) => (
-                        <tr
-                          key={lead.lead_id}
-                          className="border-b border-gray-50 hover:bg-indigo-50/30 transition-colors"
-                        >
-                          <td className="py-3 px-2">
-                            {(currentPage - 1) * itemsPerPage + index + 1}
-                          </td>
+                        <tr key={lead.lead_id} className="border-b border-gray-50 hover:bg-indigo-50/30 transition-colors">
+                          <td className="py-3 px-2">{(currentPage - 1) * itemsPerPage + index + 1}</td>
 
-                          <td className="font-medium px-2">
-                            {lead.company_name}
-                          </td>
+                          <td className="font-medium px-2">{lead.company_name}</td>
 
-                          <td className="text-orange-500 cursor-pointer px-3">
-                            {lead.customer_name}
-                          </td>
+                          <td className="text-orange-500 cursor-pointer px-3">{lead.customer_name}</td>
 
-                          <td className="py-3 px-2 w-46 max-w-46 truncate">
-                            {lead.lead_title}
-                          </td>
+                          <td className="py-3 px-2 w-46 max-w-46 truncate">{lead.lead_title}</td>
 
-                          <td className="text-gray-500 px-3">
-                            {lead.product_category || "-"}
-                          </td>
+                          <td className="text-gray-500 px-3">{lead.product_category || "-"}</td>
 
                           <td className="px-3">{lead.source}</td>
 
-                          <td
-                            style={{
-                              display: "flex",
-                              gap: "1px",
-                              alignItems: "center",
-                            }}
-                            className="py-2 px-4"
-                          >
+                          <td style={{ display: "flex", gap: "1px", alignItems: "center" }} className="py-2 px-4">
                             {lead.assignee
-                              ? String(lead.assignee)
-                                  .split(",")
-                                  .map((name, index) => {
-                                    const letter = name
-                                      .trim()
-                                      .charAt(0)
-                                      .toUpperCase();
-
-                                    return (
-                                      <div
-                                        key={index}
-                                        title={name.trim()}
-                                        className="px-3 py-1.5 bg-blue-800 text-white rounded-full font-semibold text-sm flex justify-center items-center min-w-[28px] text-center select-none"
-                                      >
-                                        {letter}
-                                      </div>
-                                    );
-                                  })
+                              ? String(lead.assignee).split(",").map((name, idx) => (
+                                  <div key={idx} title={name.trim()}
+                                    className="px-3 py-1.5 bg-blue-800 text-white rounded-full font-semibold text-sm flex justify-center items-center min-w-[28px] text-center select-none">
+                                    {name.trim().charAt(0).toUpperCase()}
+                                  </div>
+                                ))
                               : "-"}
                           </td>
 
-                          <td className=" text-center">
+                          <td className="text-center">
                             {lead.next_follow_up_date ? (
                               <span
-                                onClick={() => {
-                                  if (lead.status === "Pending") {
-                                    openUpdateModal(lead);
-                                  }
-                                }}
-                                className={`${
-                                  lead.status === "Pending"
-                                    ? "cursor-pointer text-blue-800"
-                                    : "text-gray-400 cursor-not-allowed"
-                                }`}
+                                onClick={() => { if (lead.status === "Pending") openUpdateModal(lead); }}
+                                className={`${lead.status === "Pending" ? "cursor-pointer text-blue-800" : "text-gray-400 cursor-not-allowed"}`}
                               >
-                                {new Date(
-                                  lead.next_follow_up_date,
-                                ).toLocaleDateString()}
+                                {new Date(lead.next_follow_up_date).toLocaleDateString()}
                               </span>
                             ) : (
                               <button
@@ -1206,9 +1007,7 @@ export default function Page() {
                                   setSelectedLead(lead);
                                   setSelectedFiles([]);
                                   setForm({
-                                    follow_up_date: new Date()
-                                      .toISOString()
-                                      .split("T")[0],
+                                    follow_up_date: new Date().toISOString().split("T")[0],
                                     activity_type: "",
                                     follow_up_by: "",
                                     contact_person: "",
@@ -1217,11 +1016,7 @@ export default function Page() {
                                   setShowModal(true);
                                 }}
                                 className={`w-9 h-9 rounded-full border flex items-center justify-center mx-auto
-                                  ${
-                                    lead.status === "Pending"
-                                      ? "hover:bg-gray-100 cursor-pointer"
-                                      : "bg-gray-100 cursor-not-allowed opacity-60"
-                                  }`}
+                                  ${lead.status === "Pending" ? "hover:bg-gray-100 cursor-pointer" : "bg-gray-100 cursor-not-allowed opacity-60"}`}
                               >
                                 <i className="bi bi-plus text-lg"></i>
                               </button>
@@ -1236,54 +1031,34 @@ export default function Page() {
                             <select
                               value={lead.status}
                               onMouseDown={(e) => {
-                                if (
-                                  !isAdmin &&
-                                  (lead.status === "Won" ||
-                                    lead.status === "Lost")
-                                ) {
+                                if (!isAdmin && (lead.status === "Won" || lead.status === "Lost")) {
                                   e.preventDefault();
                                   toast.error("Only Admin can change Status");
                                 }
                               }}
-                              onChange={(e) => {
-                                handleStatusChange(
-                                  lead.lead_id,
-                                  e.target.value,
-                                );
-                              }}
+                              onChange={(e) => handleStatusChange(lead.lead_id, e.target.value)}
                               className={`border rounded-sm px-3 py-1 text-xs font-semibold outline-none cursor-pointer
-                                ${lead.status === "Pending" ? "border-gray-200 bg-gray-50 text-gray-700 cursor-pointer" : ""}
-                                ${lead.status === "Won" ? "border-green-200 bg-green-50 text-green-700 cursor-pointer" : ""}
-                                ${lead.status === "Lost" ? "border-red-200 bg-red-50 text-red-700 cursor-pointer" : ""}
+                                ${lead.status === "Pending" ? "border-gray-200 bg-gray-50 text-gray-700" : ""}
+                                ${lead.status === "Won" ? "border-green-200 bg-green-50 text-green-700" : ""}
+                                ${lead.status === "Lost" ? "border-red-200 bg-red-50 text-red-700" : ""}
                               `}
                             >
-                              <option value="Pending"> Pending </option>
-                              <option value="Won"> Won </option>
-                              <option value="Lost"> Lost </option>
+                              <option value="Pending">Pending</option>
+                              <option value="Won">Won</option>
+                              <option value="Lost">Lost</option>
                             </select>
                           </td>
 
                           <td className="text-lg">
                             {lead.status === "Pending" ? (
                               <>
-                                <button
-                                  onClick={() => handleView(lead)}
-                                  className="text-gray-400 hover:text-green-600 cursor-pointer"
-                                >
+                                <button onClick={() => handleView(lead)} className="text-gray-400 hover:text-green-600 cursor-pointer">
                                   <i className="bi bi-eye text-xl"></i>
                                 </button>
-
-                                <button
-                                  onClick={() => handleEdit(lead)}
-                                  className="text-gray-400 hover:text-blue-800 mx-2 cursor-pointer"
-                                >
+                                <button onClick={() => handleEdit(lead)} className="text-gray-400 hover:text-blue-800 mx-2 cursor-pointer">
                                   <i className="bi bi-pencil-square"></i>
                                 </button>
-
-                                <button
-                                  onClick={() => openDeleteModal(lead)}
-                                  className="text-gray-400 hover:text-red-600 cursor-pointer"
-                                >
+                                <button onClick={() => openDeleteModal(lead)} className="text-gray-400 hover:text-red-600 cursor-pointer">
                                   <i className="bi bi-trash3"></i>
                                 </button>
                               </>
@@ -1297,68 +1072,39 @@ export default function Page() {
                       ))
                     ) : (
                       <tr>
-                        <td
-                          colSpan="11"
-                          className="text-center py-10 text-gray-400"
-                        >
-                          No Data Found
-                        </td>
+                        <td colSpan="11" className="text-center py-10 text-gray-400">No Data Found</td>
                       </tr>
                     )}
                   </tbody>
                 </table>
 
-                {/* ✅ UPDATED PAGINATION WITH ITEMS PER PAGE DROPDOWN */}
                 {filteredLeads.length > 0 && (
                   <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-white rounded-b-lg">
-                    {/* Left: Items per page dropdown */}
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-500">Show</span>
-                      <select
-                        value={itemsPerPage}
-                        onChange={handleItemsPerPageChange}
-                        className="border border-gray-200 rounded-md px-2 py-1.5 text-sm text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300 cursor-pointer"
-                      >
+                      <select value={itemsPerPage} onChange={handleItemsPerPageChange}
+                        className="border border-gray-200 rounded-md px-2 py-1.5 text-sm text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300 cursor-pointer">
                         <option value={25}>25</option>
                         <option value={50}>50</option>
                         <option value={100}>100</option>
                         <option value={200}>200</option>
                       </select>
                       <span className="text-sm text-gray-500">
-                        records — Total:{" "}
-                        <span className="font-semibold text-gray-700">
-                          {filteredLeads.length}
-                        </span>
+                        records — Total: <span className="font-semibold text-gray-700">{filteredLeads.length}</span>
                       </span>
                     </div>
 
-                    {/* Center: Page navigation (only show if more than 1 page) */}
                     {totalPages > 1 && (
                       <div className="flex items-center gap-2">
-                        {/* Previous Button */}
-                        <button
-                          type="button"
-                          onClick={() => handlePageChange(currentPage - 1)}
-                          disabled={currentPage === 1}
-                          className="px-4 py-2 text-sm font-medium rounded-md border bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
+                        <button type="button" onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1}
+                          className="px-4 py-2 text-sm font-medium rounded-md border bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed">
                           Previous
                         </button>
-
-                        {/* Page Info */}
                         <span className="text-sm text-gray-600 px-2">
-                          Page{" "}
-                          <span className="font-semibold">{currentPage}</span>{" "}
-                          of <span className="font-semibold">{totalPages}</span>
+                          Page <span className="font-semibold">{currentPage}</span> of <span className="font-semibold">{totalPages}</span>
                         </span>
-
-                        {/* Next Button */}
-                        <button
-                          type="button"
-                          onClick={() => handlePageChange(currentPage + 1)}
-                          disabled={currentPage === totalPages}
-                          className="px-4 py-2 text-sm font-medium rounded-md border bg-blue-800 text-white hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
+                        <button type="button" onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages}
+                          className="px-4 py-2 text-sm font-medium rounded-md border bg-blue-800 text-white hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed">
                           Next
                         </button>
                       </div>
@@ -1371,100 +1117,39 @@ export default function Page() {
         </div>
       </div>
 
+      {/* DELETE MODAL */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="bg-white w-full max-w-md rounded-[20px] shadow-xl overflow-hidden">
-            {/* HEADER */}
-            <div
-              className="flex justify-between items-center px-6 py-4"
-              style={{ background: "#f5e6d8" }}
-            >
+            <div className="flex justify-between items-center px-6 py-4" style={{ background: "#f5e6d8" }}>
               <div className="flex items-center gap-2">
-                <span
-                  className="w-2.5 h-2.5 rounded-full"
-                  style={{ background: "#f07400" }}
-                ></span>
-                <h2 className="text-[13px] font-bold text-gray-600 tracking-widest uppercase">
-                  Delete Lead
-                </h2>
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: "#f07400" }}></span>
+                <h2 className="text-[13px] font-bold text-gray-600 tracking-widest uppercase">Delete Lead</h2>
               </div>
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="text-[#f07400] hover:text-orange-600"
-              >
+              <button onClick={() => setShowDeleteModal(false)} className="text-[#f07400] hover:text-orange-600">
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <line
-                    x1="2"
-                    y1="2"
-                    x2="16"
-                    y2="16"
-                    stroke="#f07400"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                  <line
-                    x1="16"
-                    y1="2"
-                    x2="2"
-                    y2="16"
-                    stroke="#f07400"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
+                  <line x1="2" y1="2" x2="16" y2="16" stroke="#f07400" strokeWidth="2" strokeLinecap="round" />
+                  <line x1="16" y1="2" x2="2" y2="16" stroke="#f07400" strokeWidth="2" strokeLinecap="round" />
                 </svg>
               </button>
             </div>
 
-            {/* BODY */}
             <div className="px-7 pt-9 pb-5 text-center">
-              <div
-                className="w-[78px] h-[78px] mx-auto rounded-full flex items-center justify-center mb-5"
-                style={{ background: "#f5e0c6" }}
-              >
+              <div className="w-[78px] h-[78px] mx-auto rounded-full flex items-center justify-center mb-5" style={{ background: "#f5e0c6" }}>
                 <svg width="32" height="34" viewBox="0 0 32 34" fill="none">
-                  <path
-                    d="M3 8H29"
-                    stroke="#f07400"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M12 8V5C12 4.448 12.448 4 13 4H19C19.552 4 20 4.448 20 5V8"
-                    stroke="#f07400"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M5 8L6.5 29C6.5 29.552 6.948 30 7.5 30H24.5C25.052 30 25.5 29.552 25.5 29L27 8"
-                    stroke="#f07400"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M12 14V24"
-                    stroke="#f07400"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M20 14V24"
-                    stroke="#f07400"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
+                  <path d="M3 8H29" stroke="#f07400" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M12 8V5C12 4.448 12.448 4 13 4H19C19.552 4 20 4.448 20 5V8" stroke="#f07400" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M5 8L6.5 29C6.5 29.552 6.948 30 7.5 30H24.5C25.052 30 25.5 29.552 25.5 29L27 8" stroke="#f07400" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M12 14V24" stroke="#f07400" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M20 14V24" stroke="#f07400" strokeWidth="2" strokeLinecap="round" />
                 </svg>
               </div>
-
               <h3 className="text-[17px] font-bold text-gray-800 tracking-widest uppercase mb-2">
                 {leadToDelete?.customer_name || "DELETE LEAD"}
               </h3>
-              <p className="text-[13px] text-gray-400">
-                This action cannot be undone. Are you sure?
-              </p>
+              <p className="text-[13px] text-gray-400">This action cannot be undone. Are you sure?</p>
             </div>
 
-            {/* FOOTER */}
             <div className="flex gap-3.5 px-7 pb-8 pt-2">
               <button
                 onClick={() => setShowDeleteModal(false)}
@@ -1472,18 +1157,16 @@ export default function Page() {
               >
                 Cancel
               </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleteLoading}
+              <button onClick={handleDelete} disabled={deleteLoading}
                 className="flex-1 py-3 rounded-xl text-white text-[15px] font-semibold hover:opacity-90 transition"
-                style={{ background: "#f07400" }}
-              >
+                style={{ background: "#f07400" }}>
                 {deleteLoading ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>
         </div>
       )}
+
       {/* ADD FOLLOW-UP MODAL */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 ">
@@ -1492,9 +1175,7 @@ export default function Page() {
             <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-orange-50 to-white">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-orange-500 inline-block"></span>
-                <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                  Add Lead Activities
-                </h2>
+                <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Add Lead Activities</h2>
               </div>
               <button
                 onClick={() => setShowModal(false)}
@@ -1504,7 +1185,6 @@ export default function Page() {
               </button>
             </div>
 
-            {/* Body */}
             <div className="px-6 py-5 grid grid-cols-2 gap-x-4 gap-y-3">
               <div className="col-span-1">
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -1545,11 +1225,7 @@ export default function Page() {
                   className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50 transition-all"
                 >
                   <option value="">Select User</option>
-                  {assignee.map((item) => (
-                    <option key={item.id} value={item.name}>
-                      {item.name}
-                    </option>
-                  ))}
+                  {assignee.map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}
                 </select>
               </div>
               <div className="col-span-1">
@@ -1586,34 +1262,18 @@ export default function Page() {
                 {selectedFiles.length > 0 && (
                   <div className="mt-2 space-y-1 text-left">
                     {selectedFiles.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex justify-between items-center bg-white px-3 py-1 text-xs rounded-lg border border-gray-100 shadow-sm"
-                      >
-                        <span className="text-gray-600 truncate">
-                          {file.name}
-                        </span>
-                        <button
-                          onClick={() =>
-                            setSelectedFiles(
-                              selectedFiles.filter((_, i) => i !== index),
-                            )
-                          }
-                          className="text-orange-500 hover:text-orange-600 ml-2"
-                        >
-                          ✕
-                        </button>
+                      <div key={index} className="flex justify-between items-center bg-white px-3 py-1 text-xs rounded-lg border border-gray-100 shadow-sm">
+                        <span className="text-gray-600 truncate">{file.name}</span>
+                        <button onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== index))}
+                          className="text-orange-500 hover:text-orange-600 ml-2">✕</button>
                       </div>
                     ))}
                   </div>
                 )}
-                <p className="text-xs text-gray-400 mt-1.5">
-                  Max 2MB · JPG, PNG, PDF
-                </p>
+                <p className="text-xs text-gray-400 mt-1.5">Max 2MB · JPG, PNG, PDF</p>
               </div>
             </div>
 
-            {/* Footer */}
             <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100 bg-gray-50">
               <button
                 onClick={() => setShowModal(false)}
@@ -1629,29 +1289,13 @@ export default function Page() {
               >
                 {btnLoading ? (
                   <>
-                    <svg
-                      className="animate-spin h-4 w-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="white"
-                        strokeWidth="4"
-                        opacity="0.25"
-                      />
-                      <path
-                        fill="white"
-                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                      />
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" opacity="0.25" />
+                      <path fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                     </svg>
                     Adding...
                   </>
-                ) : (
-                  "Add"
-                )}
+                ) : "Add"}
               </button>
             </div>
           </div>
@@ -1660,34 +1304,22 @@ export default function Page() {
 
       {/* UPDATE FOLLOW-UP MODAL */}
       {showUpdateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 ">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30">
           <div className="bg-white w-full max-w-[800px] rounded-sm shadow-xl border border-gray-100 overflow-hidden">
-            {/* Header */}
-            <div className="flex justify-between items-center px-6 py-4  bg-gradient-to-r from-orange-100 to-white">
+            <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-orange-100 to-white">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-orange-500 inline-block"></span>
-                <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                  Update Lead Activities
-                </h2>
+                <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Update Lead Activities</h2>
               </div>
-              <button
-                onClick={() => {
-                  setShowUpdateModal(false);
-                  setSelectedFiles([]);
-                  setPreviewFollowUp(null);
-                }}
-                className="w-7 h-7 flex items-center justify-center  text-orange-500 text-md"
-              >
+              <button onClick={() => { setShowUpdateModal(false); setSelectedFiles([]); setPreviewFollowUp(null); }}
+                className="w-7 h-7 flex items-center justify-center text-orange-500 text-md">
                 ✕
               </button>
             </div>
 
             <div className="flex">
-              {/* LEFT - Form */}
               <div className="w-1/2 px-6 py-5 border-r border-gray-100">
-                <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-4">
-                  Add New Follow-Up
-                </p>
+                <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-4">Add New Follow-Up</p>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                   <div>
                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -1740,11 +1372,7 @@ export default function Page() {
                       className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50"
                     >
                       <option value="">Select User</option>
-                      {assignee.map((item) => (
-                        <option key={item.id} value={item.name}>
-                          {item.name}
-                        </option>
-                      ))}
+                      {assignee.map((item) => <option key={item.id} value={item.name}>{item.name}</option>)}
                     </select>
                   </div>
                   <div>
@@ -1787,40 +1415,22 @@ export default function Page() {
                     {selectedFiles.length > 0 && (
                       <div className="mt-2 space-y-1 text-left">
                         {selectedFiles.map((file, index) => (
-                          <div
-                            key={index}
-                            className="flex justify-between items-center bg-white px-3 py-1 text-xs rounded-lg border border-gray-100 shadow-sm"
-                          >
-                            <span className="text-gray-600 truncate">
-                              {file.name}
-                            </span>
-                            <button
-                              onClick={() =>
-                                setSelectedFiles(
-                                  selectedFiles.filter((_, i) => i !== index),
-                                )
-                              }
-                              className="text-orange-400 hover:text-orange-600 ml-2"
-                            >
-                              ✕
-                            </button>
+                          <div key={index} className="flex justify-between items-center bg-white px-3 py-1 text-xs rounded-lg border border-gray-100 shadow-sm">
+                            <span className="text-gray-600 truncate">{file.name}</span>
+                            <button onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== index))}
+                              className="text-orange-400 hover:text-orange-600 ml-2">✕</button>
                           </div>
                         ))}
                       </div>
                     )}
-                    <p className="text-xs text-gray-400 mt-1.5">
-                      Max 2MB · JPG, PNG, PDF
-                    </p>
+                    <p className="text-xs text-gray-400 mt-1.5">Max 2MB · JPG, PNG, PDF</p>
                   </div>
                 </div>
               </div>
 
-              {/* RIGHT - History */}
               <div className="w-1/2 px-6 py-5 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
-                  <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">
-                    Follow-Up History
-                  </p>
+                  <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">Follow-Up History</p>
                   <span className="text-xs bg-orange-50 text-orange-500 px-2.5 py-1 rounded-full font-semibold border border-orange-100">
                     {followUpHistory.length} record(s)
                   </span>
@@ -1833,118 +1443,65 @@ export default function Page() {
                     </div>
                   ) : (
                     followUpHistory.map((item, idx) => (
-                      <div
-                        key={item.follow_up_id}
-                        onClick={() =>
-                          setPreviewFollowUp(
-                            previewFollowUp?.follow_up_id === item.follow_up_id
-                              ? null
-                              : item,
-                          )
-                        }
-                        className={`border rounded-xl p-3 cursor-pointer transition-all select-none ${previewFollowUp?.follow_up_id === item.follow_up_id ? "border-orange-400 bg-orange-50 shadow-sm" : "hover:bg-gray-50 border-gray-200"}`}
-                      >
+                      <div key={item.follow_up_id}
+                        onClick={() => setPreviewFollowUp(previewFollowUp?.follow_up_id === item.follow_up_id ? null : item)}
+                        className={`border rounded-xl p-3 cursor-pointer transition-all select-none
+                          ${previewFollowUp?.follow_up_id === item.follow_up_id ? "border-orange-400 bg-orange-50 shadow-sm" : "hover:bg-gray-50 border-gray-200"}`}>
                         <div className="flex justify-between items-center">
                           <div className="flex items-center gap-2">
                             {idx === 0 && (
-                              <span className="text-xs bg-orange-100 text-orange-500 px-2 py-0.5 rounded-full font-semibold">
-                                Latest
-                              </span>
+                              <span className="text-xs bg-orange-100 text-orange-500 px-2 py-0.5 rounded-full font-semibold">Latest</span>
                             )}
-                            <p className="font-semibold text-sm text-gray-700">
-                              {item.activity_type}
-                            </p>
+                            <p className="font-semibold text-sm text-gray-700">{item.activity_type}</p>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="text-xs text-gray-400">
-                              {item.follow_up_date
-                                ? new Date(
-                                    item.follow_up_date,
-                                  ).toLocaleDateString()
-                                : "—"}
+                              {item.follow_up_date ? new Date(item.follow_up_date).toLocaleDateString() : "—"}
                             </span>
-                            <i
-                              className={`bi ${previewFollowUp?.follow_up_id === item.follow_up_id ? "bi-chevron-up" : "bi-chevron-down"} text-gray-400 text-xs`}
-                            ></i>
+                            <i className={`bi ${previewFollowUp?.follow_up_id === item.follow_up_id ? "bi-chevron-up" : "bi-chevron-down"} text-gray-400 text-xs`}></i>
                           </div>
                         </div>
-                        <p className="text-xs text-gray-400 mt-1 truncate">
-                          {item.description}
-                        </p>
+                        <p className="text-xs text-gray-400 mt-1 truncate">{item.description}</p>
                       </div>
                     ))
                   )}
                 </div>
+
                 {previewFollowUp && (
                   <div className="mt-4 border border-orange-200 rounded-xl bg-gradient-to-br from-orange-50 to-white p-4 text-sm shadow-sm">
                     <div className="flex justify-between items-center mb-3">
-                      <p className="font-bold text-orange-500 text-xs uppercase tracking-wide">
-                        Details
-                      </p>
-                      <button
-                        onClick={() => setPreviewFollowUp(null)}
-                        className="text-gray-400 hover:text-gray-600 text-xs"
-                      >
-                        ✕ Close
-                      </button>
+                      <p className="font-bold text-orange-500 text-xs uppercase tracking-wide">Details</p>
+                      <button onClick={() => setPreviewFollowUp(null)} className="text-gray-400 hover:text-gray-600 text-xs">✕ Close</button>
                     </div>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
                       {[
-                        {
-                          label: "Activity Type",
-                          value: previewFollowUp.activity_type,
-                        },
-                        {
-                          label: "Follow-Up Date",
-                          value: previewFollowUp.follow_up_date
-                            ? new Date(
-                                previewFollowUp.follow_up_date,
-                              ).toLocaleDateString()
-                            : "—",
-                        },
-                        {
-                          label: "Contact Person",
-                          value: previewFollowUp.contact_person,
-                        },
-                        {
-                          label: "Follow-Up By",
-                          value: previewFollowUp.follow_up_by,
-                        },
+                        { label: "Activity Type", value: previewFollowUp.activity_type },
+                        { label: "Follow-Up Date", value: previewFollowUp.follow_up_date ? new Date(previewFollowUp.follow_up_date).toLocaleDateString() : "—" },
+                        { label: "Contact Person", value: previewFollowUp.contact_person },
+                        { label: "Follow-Up By", value: previewFollowUp.follow_up_by },
                       ].map(({ label, value }) => (
                         <div key={label}>
-                          <p className="text-xs text-gray-400 font-medium">
-                            {label}
-                          </p>
-                          <p className="font-semibold text-gray-700 text-sm mt-0.5">
-                            {value || "—"}
-                          </p>
+                          <p className="text-xs text-gray-400 font-medium">{label}</p>
+                          <p className="font-semibold text-gray-700 text-sm mt-0.5">{value || "—"}</p>
                         </div>
                       ))}
                       <div>
-                        <p className="text-xs text-gray-400 font-medium">
-                          Status
-                        </p>
-                        <span
-                          className={`text-xs px-2.5 py-0.5 rounded-full font-semibold mt-0.5 inline-block ${previewFollowUp.status === "Completed" ? "bg-green-100 text-green-600" : previewFollowUp.status === "Cancelled" ? "bg-orange-100 text-orange-500" : "bg-orange-100 text-orange-600"}`}
-                        >
+                        <p className="text-xs text-gray-400 font-medium">Status</p>
+                        <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold mt-0.5 inline-block
+                          ${previewFollowUp.status === "Completed" ? "bg-green-100 text-green-600" : previewFollowUp.status === "Cancelled" ? "bg-orange-100 text-orange-500" : "bg-orange-100 text-orange-600"}`}>
                           {previewFollowUp.status}
                         </span>
                       </div>
                     </div>
                     <div className="mt-2.5">
-                      <p className="text-xs text-gray-400 font-medium">
-                        Description
-                      </p>
-                      <p className="text-gray-700 mt-1 text-sm whitespace-pre-wrap">
-                        {previewFollowUp.description || "—"}
-                      </p>
+                      <p className="text-xs text-gray-400 font-medium">Description</p>
+                      <p className="text-gray-700 mt-1 text-sm whitespace-pre-wrap">{previewFollowUp.description || "—"}</p>
                     </div>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Footer */}
             <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
               <button
                 onClick={() => {
@@ -1995,27 +1552,17 @@ export default function Page() {
 
       {/* STATUS CHANGE POPUP */}
       {showPopup && (
-        <div className="fixed inset-0 bg-gray-900/30  flex items-center justify-center backdrop-blur-sm  z-50">
+        <div className="fixed inset-0 bg-gray-900/30 flex items-center justify-center backdrop-blur-sm z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 w-80">
-            <h2 className="text-lg font-semibold mb-3 text-center">
-              Confirm Status Change
-            </h2>
-
-            <p className="text-sm text-gray-600 mb-5">
-              Are you sure you want to change status?
-            </p>
-
+            <h2 className="text-lg font-semibold mb-3 text-center">Confirm Status Change</h2>
+            <p className="text-sm text-gray-600 mb-5">Are you sure you want to change status?</p>
             <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowPopup(false)}
-                className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
-              >
+              <button onClick={() => setShowPopup(false)}
+                className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all">
                 Cancel
               </button>
-              <button
-                onClick={confirmStatusChange}
-                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-md shadow-orange-200"
-              >
+              <button onClick={confirmStatusChange}
+                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-md shadow-orange-200">
                 Yes Change
               </button>
             </div>
@@ -2031,9 +1578,7 @@ export default function Page() {
             <div className="flex justify-between items-center px-6 py-4 from-orange-100 to-white border-b border-gray-100 bg-gradient-to-r">
               <div className="flex items-center gap-2">
                 <i className="bi bi-cloud-upload text-orange-500 text-base"></i>
-                <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                  Upload Files
-                </h2>
+                <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Upload Files</h2>
               </div>
               <button
                 onClick={() => setShowFileModal(false)}
@@ -2043,36 +1588,19 @@ export default function Page() {
               </button>
             </div>
 
-            {/* Body */}
             <div className="flex gap-5 p-6">
               <div
                 className="w-1/2 border-2 border-dashed border-orange-200 rounded-sm flex flex-col items-center justify-center p-8 text-center bg-orange-50/50  transition-all cursor-pointer"
                 onDrop={handleDrop}
                 onDragOver={(e) => e.preventDefault()}
-                onClick={() => document.getElementById("fileInput").click()}
-              >
+                onClick={() => document.getElementById("fileInput").click()}>
                 <div className="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center mb-3">
                   <i className="bi bi-cloud-arrow-up text-orange-500 text-2xl"></i>
                 </div>
-                <p className="font-bold text-gray-700 text-sm">
-                  Drag files here
-                </p>
-                <p className="text-xs text-gray-400 mt-1">
-                  or{" "}
-                  <span className="text-orange-500 font-semibold underline">
-                    browse
-                  </span>
-                </p>
-                <p className="text-xs text-gray-400 mt-3 bg-white border border-gray-100 rounded-lg px-3 py-1">
-                  JPG · PNG · PDF · Max 2MB
-                </p>
-                <input
-                  id="fileInput"
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={handleSelect}
-                />
+                <p className="font-bold text-gray-700 text-sm">Drag files here</p>
+                <p className="text-xs text-gray-400 mt-1">or <span className="text-orange-500 font-semibold underline">browse</span></p>
+                <p className="text-xs text-gray-400 mt-3 bg-white border border-gray-100 rounded-lg px-3 py-1">JPG · PNG · PDF · Max 2MB</p>
+                <input id="fileInput" type="file" multiple className="hidden" onChange={handleSelect} />
               </div>
 
               <div className="w-1/2 flex flex-col justify-center">
@@ -2095,18 +1623,10 @@ export default function Page() {
                           <div className="w-7 h-7 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
                             <i className="bi bi-file-earmark text-orange-500 text-xs"></i>
                           </div>
-                          <span className="text-sm text-gray-700 truncate">
-                            {file.name}
-                          </span>
+                          <span className="text-sm text-gray-700 truncate">{file.name}</span>
                         </div>
-                        <button
-                          onClick={() =>
-                            setSelectedFiles(
-                              selectedFiles.filter((_, index) => index !== i),
-                            )
-                          }
-                          className="text-gray-300 hover:text-red-500 ml-2 flex-shrink-0 transition-all"
-                        >
+                        <button onClick={() => setSelectedFiles(selectedFiles.filter((_, index) => index !== i))}
+                          className="text-gray-300 hover:text-red-500 ml-2 flex-shrink-0 transition-all">
                           ✕
                         </button>
                       </div>
@@ -2116,7 +1636,6 @@ export default function Page() {
               </div>
             </div>
 
-            {/* Footer */}
             <div className="flex justify-end px-6 py-4 border-t border-gray-100 bg-gray-50">
               <button
                 onClick={() => setShowFileModal(false)}
@@ -2132,160 +1651,83 @@ export default function Page() {
       {/* VIEW LEAD MODAL */}
       {showViewModal && viewLead && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30">
-          <div className="bg-white w-full max-w-2xl border border-gray-100 rounded-sm shadow-2xl overflow-hidden ">
-            {/* Orange Header */}
-            <div className="from-orange-100 to-white  px-6 py-3 flex items-center justify-between bg-gradient-to-r">
+          <div className="bg-white w-full max-w-2xl border border-gray-100 rounded-sm shadow-2xl overflow-hidden">
+            <div className="from-orange-100 to-white px-6 py-3 flex items-center justify-between bg-gradient-to-r">
               <div className="flex items-center gap-3">
                 <div className="w-7 h-7 flex items-center justify-center">
-                  <i className="bi bi-person  text-md text-orange-500"></i>
+                  <i className="bi bi-person text-md text-orange-500"></i>
                 </div>
                 <div>
-                  <p className="text-sm  font-semibold text-gray-700 uppercase tracking-wide">
-                    {viewLead.customer_name || "—"}
-                  </p>
-                  <p className="text-gray-400 text-md">
-                    {viewLead.status || "—"}
-                  </p>
+                  <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide">{viewLead.customer_name || "—"}</p>
+                  <p className="text-gray-400 text-md">{viewLead.status || "—"}</p>
                 </div>
               </div>
-              <button
-                onClick={() => setShowViewModal(false)}
-                className="w-7 h-7  flex items-center justify-center text-orange-500 text-md"
-              >
+              <button onClick={() => setShowViewModal(false)}
+                className="w-7 h-7 flex items-center justify-center text-orange-500 text-md">
                 <i className="bi bi-x-lg text-sm"></i>
               </button>
             </div>
 
-            {/* Cards Grid */}
             <div className="p-6 grid grid-cols-2 gap-4">
-              <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-center gap-3">
-                <i className="bi bi-building text-orange-400 text-lg"></i>
-                <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wider ">
-                    Company
-                  </p>
-                  <p className="text-sm font-semibold text-gray-700">
-                    {viewLead.company_name || "—"}
-                  </p>
+              {[
+                { icon: "bi-building", label: "Company", value: viewLead.company_name },
+                { icon: "bi-person-circle", label: "Customer Name", value: viewLead.customer_name },
+                { icon: "bi-flag", label: "Source", value: viewLead.source },
+                { icon: "bi-layers", label: "Product Category", value: viewLead.product_category },
+                { icon: "bi-box-seam", label: "Product Name", value: viewLead.product_name },
+                { icon: "bi-tag", label: "Category", value: viewLead.category },
+                { icon: "bi-person-check", label: "Assignee", value: viewLead.assignee },
+                { icon: "bi-calendar3", label: "Created", value: viewLead.created_at ? new Date(viewLead.created_at).toLocaleDateString() : "—" },
+              ].map(({ icon, label, value }) => (
+                <div key={label} className="bg-gray-50 rounded-sm px-4 py-3 flex items-center gap-3">
+                  <i className={`bi ${icon} text-orange-400 text-lg`}></i>
+                  <div>
+                    <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">{label}</p>
+                    <p className="text-sm font-semibold text-gray-700">{value || "—"}</p>
+                  </div>
                 </div>
-              </div>
-
-              <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-center gap-3">
-                <i className="bi bi-person-circle text-orange-400 text-lg"></i>
-                <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
-                    Customer Name
-                  </p>
-                  <p className="text-sm font-semibold text-gray-700">
-                    {viewLead.customer_name || "—"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-center gap-3">
-                <i className="bi bi-flag text-orange-400 text-lg"></i>
-                <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
-                    Source
-                  </p>
-                  <p className="text-sm font-semibold text-gray-700">
-                    {viewLead.source || "—"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-center gap-3">
-                <i className="bi bi-layers text-orange-400 text-lg"></i>
-                <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
-                    Product Category
-                  </p>
-                  <p className="text-sm font-semibold text-gray-700">
-                    {viewLead.product_category || "—"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-center gap-3">
-                <i className="bi bi-box-seam text-orange-400 text-lg"></i>
-                <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
-                    Product Name
-                  </p>
-                  <p className="text-sm font-semibold text-gray-700">
-                    {viewLead.product_name || "—"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-center gap-3">
-                <i className="bi bi-tag text-orange-400 text-lg"></i>
-                <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
-                    Category
-                  </p>
-                  <p className="text-sm font-semibold text-gray-700">
-                    {viewLead.category || "—"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-center gap-3">
-                <i className="bi bi-person-check text-orange-400 text-lg"></i>
-                <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
-                    Assignee
-                  </p>
-                  <p className="text-sm font-semibold text-gray-700">
-                    {viewLead.assignee || "—"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-center gap-3">
-                <i className="bi bi-calendar3 text-orange-400 text-lg"></i>
-                <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
-                    Created
-                  </p>
-                  <p className="text-sm font-semibold text-gray-700">
-                    {viewLead.created_at
-                      ? new Date(viewLead.created_at).toLocaleDateString()
-                      : "—"}
-                  </p>
-                </div>
-              </div>
+              ))}
 
               <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-start gap-3">
                 <i className="bi bi-pencil text-orange-400 text-lg"></i>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
-                    Lead Title
-                  </p>
-                  <p className="text-sm font-semibold text-gray-700 break-words whitespace-normal">
-                    {viewLead.lead_title || "—"}
-                  </p>
+                  <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Lead Title</p>
+                  <p className="text-sm font-semibold text-gray-700 break-words whitespace-normal">{viewLead.lead_title || "—"}</p>
                 </div>
               </div>
+
               <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-start gap-3">
                 <i className="bi bi-chat-left-text text-orange-400 text-lg"></i>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
-                    Description
-                  </p>
-                  <p className="text-sm font-semibold text-gray-700 break-words whitespace-normal">
-                    {viewLead.description || "—"}
-                  </p>
+                  <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Description</p>
+                  <p className="text-sm font-semibold text-gray-700 break-words whitespace-normal">{viewLead.description || "—"}</p>
                 </div>
               </div>
+
+              {viewLead.updated_by && (
+                <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-start gap-3">
+                  <i className="bi bi-person-gear text-orange-400 text-lg"></i>
+                  <div>
+                    <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Updated By</p>
+                    <p className="text-sm font-semibold text-gray-700">{viewLead.updated_by}</p>
+                  </div>
+                </div>
+              )}
+
+              {viewLead.updated_at && (
+                <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-start gap-3">
+                  <i className="bi bi-clock-history text-orange-400 text-lg"></i>
+                  <div>
+                    <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Last Updated</p>
+                    <p className="text-sm font-semibold text-gray-700">{new Date(viewLead.updated_at).toLocaleString()}</p>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Footer */}
             <div className="flex justify-end px-6 py-4 border-t border-gray-100">
-              <button
-                onClick={() => setShowViewModal(false)}
-                className="px-6 py-2 text-sm font-medium border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-100 transition-all"
-              >
+              <button onClick={() => setShowViewModal(false)}
+                className="px-6 py-2 text-sm font-medium border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-100 transition-all">
                 Close
               </button>
             </div>
