@@ -194,7 +194,7 @@ export default function Header() {
               onClick={handlelogout}
               className="flex items-center text-red-500 hover:text-red-600 cursor-pointer transition-colors w-full font-bold text-lg"
             >
-              <i className="bi bi-box-arrow-right mr-3 cursor-pointer text-2xl"></i>
+              <i className="bi bi-box-arrow-right mr-3 text-2xl"></i>
               Logout
             </button>
           </div>
