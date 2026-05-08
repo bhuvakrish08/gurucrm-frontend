@@ -824,14 +824,8 @@ export default function QuotationPage() {
         <div
           className={`
           ${showMobileFilters ? "absolute left-6 right-6 top-50 bg-white p-5 shadow-2xl border border-gray-100 z-50 rounded-lg grid grid-cols-2 gap-3 mt-1" : "hidden"} 
-<<<<<<< Updated upstream
-          md:mx-6 md:flex md:flex-wrap md:items-center md:gap-x-5 md:gap-y-2 md:mt-3 md:mb-5 md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
-        `}
-        >
-=======
           md:mx-6 md:flex md:flex-wrap md:items-center md:gap-x-2.5 md:gap-y-2 md:mt-3 md:mb-5 md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
         `}>
->>>>>>> Stashed changes
           <input
             name="company_name"
             value={filters.company_name}
@@ -877,15 +871,8 @@ export default function QuotationPage() {
             <option value="Lost">Lost</option>
           </select>
 
-<<<<<<< Updated upstream
-          <div className="flex flex-col px-2 w-full md:w-58 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-400 text-sm">
-            <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">
-              From Date
-            </span>
-=======
           <div className="p-1 w-full md:w-58 border border-orange-300 md:border  text-gray-400 bg-white rounded-sm  transition-all outline-none">
             <span className="text-[10px] text-gray-400 uppercase font-bold mx-2 pt-1">From Date</span>
->>>>>>> Stashed changes
             <input
               type="date"
               name="from_date"
@@ -895,15 +882,8 @@ export default function QuotationPage() {
             />
           </div>
 
-<<<<<<< Updated upstream
-          <div className="flex flex-col px-2 w-full md:w-58 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-400 text-sm">
-            <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">
-              To Date
-            </span>
-=======
           <div className="p-1 w-full md:w-58 border border-orange-300 md:border  text-gray-400 bg-white rounded-sm  transition-all outline-none">
             <span className="text-[10px] text-gray-400 uppercase font-bold pt-1 mx-2">To Date</span>
->>>>>>> Stashed changes
             <input
               type="date"
               name="to_date"
