@@ -905,10 +905,8 @@ export default function QuotationPage() {
             <option value="Lost">Lost</option>
           </select>
 
-          <div className="flex flex-col px-2 w-full md:w-58 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-400 text-sm">
-            <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">
-              From Date
-            </span>
+          <div className="p-1 w-full md:w-58 border border-orange-300 md:border  text-gray-400 bg-white rounded-sm  transition-all outline-none">
+            <span className="text-[10px] text-gray-400 uppercase font-bold mx-2 pt-1">From Date</span>
             <input
               type="date"
               name="from_date"
@@ -918,10 +916,8 @@ export default function QuotationPage() {
             />
           </div>
 
-          <div className="flex flex-col px-2 w-full md:w-58 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-400 text-sm">
-            <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">
-              To Date
-            </span>
+          <div className="p-1 w-full md:w-58 border border-orange-300 md:border  text-gray-400 bg-white rounded-sm  transition-all outline-none">
+            <span className="text-[10px] text-gray-400 uppercase font-bold pt-1 mx-2">To Date</span>
             <input
               type="date"
               name="to_date"
