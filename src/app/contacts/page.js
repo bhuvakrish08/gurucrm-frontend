@@ -567,136 +567,160 @@ export default function Page() {
       </form>
 
       {/* Modal remains same */}
-      {showForm && (
+    {showForm && (
         <div className="fixed inset-0 bg-gray-900/30 z-50 flex justify-center items-center">
-          <div className="bg-white rounded-xl shadow-lg p-6 w-[500px] relative">
-            <button
-              type="button"
-              onClick={() => {
-                setShowForm(false);
-              }}
-              className="absolute top-3 right-4 text-xl text-orange-500 hover:text-orange-600"
-            >
-              ✕
-            </button>
+          <div className="bg-white rounded-xl shadow-lg w-[500px] relative overflow-hidden">
 
-            <h3 className="text-lg mb-3 text-black">
-              {editId ? "Edit" : "Add"} Table Contacts
-              <hr className="mt-3 mb-5 text-gray-300" />
-            </h3>
-            <form onSubmit={handleSubmit}>
-              <label className="block text-sm  text-gray-500 mb-2">
-                Comapany Name *
-              </label>
-              <select
-                name="company_name"
-                value={formdata.company_name}
-                onChange={handleFormCompanyChange}
-                className="w-full border rounded-sm p-2 mb-5 outline-none border-orange-300 "
+            {/* ── NEW HEADER (contact card style) ── */}
+            <div className="flex items-center justify-between px-5 py-4 bg-orange-50 border-b border-orange-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                  <i className="bi bi-person text-orange-500 text-lg"></i>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-800 leading-tight">
+                    {editId ? "Edit" : "Add"} Table Contacts
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Fill in the contact details below
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="text-orange-400 hover:text-orange-600 transition-colors text-xl leading-none cursor-pointer"
               >
-                <option value="">Select Company Name</option>
-                {companyname.map((item) => (
-                  <option key={item.company_name} value={item.company_name}>
-                    {item.company_name}
-                  </option>
-                ))}
-              </select>
+                ✕
+              </button>
+            </div>
 
-              <label className="block text-sm  text-gray-500 mb-2">
-                Customer Name *
-              </label>
-              <select
-                name="customer_id"
-                value={formdata.customer_id}
-                onChange={(e) => {
-                  const selectedId = Number(e.target.value); // ✅ force INT
-                  const selectedCustomer = customername.find(
-                    (c) => c.id === selectedId,
-                  );
+            {/* ── FORM BODY ── */}
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scroll">
 
-                  setFormData((p) => ({
-                    ...p,
-                    customer_id: selectedId, // ✅ PRIMARY KEY
-                    customer_name: selectedCustomer?.customer_name || "",
-                  }));
-                }}
-                className="w-full border rounded-sm p-2 mb-5 outline-none border-orange-300 "
-              >
-                <option value="">Select Customer Name</option>
-                {customername.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.customer_name}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Company Name <span className="text-red-400">*</span>
+                </label>
+                <select
+                  name="company_name"
+                  value={formdata.company_name}
+                  onChange={handleFormCompanyChange}
+                  className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                >
+                  <option value="">Select Company Name</option>
+                  {companyname.map((item) => (
+                    <option key={item.company_name} value={item.company_name}>
+                      {item.company_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              <label className="block text-sm  text-gray-500 mb-2">
-                Contact Person *
-              </label>
-              <input
-                type="text"
-                className="border p-2 w-md rounded-sm mb-3  outline-none border-orange-300"
-                name="contact_person"
-                value={formdata.contact_person}
-                onChange={handleChange}
-              />
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Customer Name <span className="text-red-400">*</span>
+                </label>
+                <select
+                  name="customer_id"
+                  value={formdata.customer_id}
+                  onChange={(e) => {
+                    const selectedId = Number(e.target.value);
+                    const selectedCustomer = customername.find(
+                      (c) => c.id === selectedId,
+                    );
+                    setFormData((p) => ({
+                      ...p,
+                      customer_id: selectedId,
+                      customer_name: selectedCustomer?.customer_name || "",
+                    }));
+                  }}
+                  className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                >
+                  <option value="">Select Customer Name</option>
+                  {customername.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.customer_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              <label className="block text-sm  text-gray-500 mb-2">
-                Contact Number *
-              </label>
-              <input
-                type="text"
-                className="border p-2 w-md rounded-sm mb-3  outline-none border-orange-300"
-                name="contact_number"
-                value={formdata.contact_number}
-                onChange={handleChange}
-              />
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Contact Person <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="contact_person"
+                  value={formdata.contact_person}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                />
+              </div>
 
-              <label className="block text-sm  text-gray-500 mb-2">
-                Email
-              </label>
-              <input
-                type="text"
-                className="border p-2 w-md rounded-sm    mb-3 outline-none border-orange-300"
-                name="email"
-                value={formdata.email}
-                onChange={handleChange}
-              />
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Contact Number <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="contact_number"
+                  value={formdata.contact_number}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                />
+              </div>
 
-              <label className="block text-sm  text-gray-500 mb-2">
-                Contact Designation *
-              </label>
-              <select
-                name="contact_designation"
-                value={formdata.contact_designation}
-                onChange={handleChange}
-                className="w-full border rounded-sm p-2 mb-5 outline-none border-orange-300 "
-              >
-                <option value="">Select Contact Designation</option>
-                {designations.map((item) => (
-                  <option key={item.id || item.name} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Email
+                </label>
+                <input
+                  type="text"
+                  name="email"
+                  value={formdata.email}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                />
+              </div>
 
-              <div className="flex justify-end gap-2">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Contact Designation <span className="text-red-400">*</span>
+                </label>
+                <select
+                  name="contact_designation"
+                  value={formdata.contact_designation}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                >
+                  <option value="">Select Contact Designation</option>
+                  {designations.map((item) => (
+                    <option key={item.id || item.name} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* ── FOOTER BUTTONS ── */}
+              <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowForm(false);
-                  }}
-                  className="px-4 py-2 rounded-sm    border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
+                  onClick={() => setShowForm(false)}
+                  className="px-6 py-2.5 text-sm text-gray-500 border border-gray-200 rounded-sm hover:bg-gray-50 cursor-pointer transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-orange-500  hover:bg-orange-600 text-white px-4 py-1.5 rounded-sm"
+                  className="flex items-center gap-2 px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-all shadow-sm cursor-pointer"
                 >
-                  Save
+                  <i className="bi bi-check2"></i> Save
                 </button>
               </div>
+
             </form>
           </div>
         </div>
