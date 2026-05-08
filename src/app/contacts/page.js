@@ -43,6 +43,11 @@ export default function Page() {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   const API_base = `${API_BASE}/api/contacts`;
+  
+  // Standardized Micara IMS Pagination Logic
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
 
   /* ---------------- FETCH CONTACTS ---------------- */
   const fetchData = useCallback(async () => {
@@ -67,6 +72,12 @@ export default function Page() {
     const delay = setTimeout(fetchData, 300);
     return () => clearTimeout(delay);
   }, [fetchData]);
+
+  // Reset page when filters or items per page changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, itemsPerPage]);
+
 
   /* ---------------- FETCH DROPDOWNS ---------------- */
   useEffect(() => {
@@ -239,22 +250,32 @@ export default function Page() {
     setDeleteId(null);
   };
 
-  /* ---------------- PAGINATION ---------------- */
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+
+
+  // Standardized Pagination Calculations
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-
   const currentData = contacts.slice(indexOfFirstItem, indexOfLastItem);
-
   const totalPages = Math.ceil(contacts.length / itemsPerPage);
 
-  const handlePageChange = (page) => {
-    if (page < 1) return;
-    if (page > totalPages) return;
-
-    setCurrentPage(page);
+  const getSlidingPages = () => {
+    const visibleCount = 5;
+    if (totalPages <= visibleCount) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    let start = currentPage - Math.floor(visibleCount / 2);
+    let end = currentPage + Math.floor(visibleCount / 2);
+    if (start < 1) {
+      start = 1;
+      end = visibleCount;
+    }
+    if (end > totalPages) {
+      end = totalPages;
+      start = totalPages - visibleCount + 1;
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   };
+
 
   return (
     <>
@@ -474,169 +495,232 @@ export default function Page() {
             </tbody>
           </table>
 
-          {totalPages > 1 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-3 border-gray-200 bg-white rounded-b-lg gap-3">
-              {/* Previous Button */}
-              <button
-                type="button"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="px-4 py-2 text-sm font-medium rounded-md border bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-
-              {/* Page Info Centered */}
-              <span className="text-sm text-gray-600">
-                Page <span className="font-semibold">{currentPage}</span> of{" "}
-                <span className="font-semibold">{totalPages}</span>
+          {/* ✅ STANDARDIZED MICARA IMS PAGINATION */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white rounded-b-lg">
+            {/* Left side: Rows per page selector */}
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-slate-500 font-medium">
+                Rows per page:
               </span>
-
-              {/* Next Button */}
-              <button
-                type="button"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 text-sm font-medium rounded-md border bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all cursor-pointer font-medium"
               >
-                Next
-              </button>
+                {[10, 20, 100, 200].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
+
+
+            {/* Right side: Navigation buttons (only if totalPages > 1) */}
+            {totalPages > 1 && (
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
+                {/* Previous Button */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <i className="bi bi-chevron-left text-sm"></i>
+                </button>
+
+                {/* Page Buttons */}
+                <div className="flex items-center gap-1.5">
+                  {getSlidingPages().map((page) => (
+                    <button
+                      type="button"
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${
+                        currentPage === page
+                          ? "bg-[#212121] text-white shadow-md shadow-black/10"
+                          : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Next Button */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <i className="bi bi-chevron-right text-sm"></i>
+                </button>
+              </div>
+            )}
+          </div>
+
         </div>
       </form>
 
       {/* Modal remains same */}
-      {showForm && (
+    {showForm && (
         <div className="fixed inset-0 bg-gray-900/30 z-50 flex justify-center items-center">
-          <div className="bg-white rounded-xl shadow-lg p-6 w-[500px] relative">
-            <button
-              type="button"
-              onClick={() => {
-                setShowForm(false);
-              }}
-              className="absolute top-3 right-4 text-xl text-orange-500 hover:text-orange-600"
-            >
-              ✕
-            </button>
+          <div className="bg-white rounded-xl shadow-lg w-[500px] relative overflow-hidden">
 
-            <h3 className="text-lg mb-3 text-black">
-              {editId ? "Edit" : "Add"} Table Contacts
-              <hr className="mt-3 mb-5 text-gray-300" />
-            </h3>
-            <form onSubmit={handleSubmit}>
-              <label className="block text-sm  text-gray-500 mb-2">
-                Comapany Name *
-              </label>
-              <select
-                name="company_name"
-                value={formdata.company_name}
-                onChange={handleFormCompanyChange}
-                className="w-full border rounded-sm p-2 mb-5 outline-none border-orange-300 "
+            {/* ── NEW HEADER (contact card style) ── */}
+            <div className="flex items-center justify-between px-5 py-4 bg-orange-50 border-b border-orange-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                  <i className="bi bi-person text-orange-500 text-lg"></i>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-800 leading-tight">
+                    {editId ? "Edit" : "Add"} Table Contacts
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Fill in the contact details below
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="text-orange-400 hover:text-orange-600 transition-colors text-xl leading-none cursor-pointer"
               >
-                <option value="">Select Company Name</option>
-                {companyname.map((item) => (
-                  <option key={item.company_name} value={item.company_name}>
-                    {item.company_name}
-                  </option>
-                ))}
-              </select>
+                ✕
+              </button>
+            </div>
 
-              <label className="block text-sm  text-gray-500 mb-2">
-                Customer Name *
-              </label>
-              <select
-                name="customer_id"
-                value={formdata.customer_id}
-                onChange={(e) => {
-                  const selectedId = Number(e.target.value); // ✅ force INT
-                  const selectedCustomer = customername.find(
-                    (c) => c.id === selectedId,
-                  );
+            {/* ── FORM BODY ── */}
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scroll">
 
-                  setFormData((p) => ({
-                    ...p,
-                    customer_id: selectedId, // ✅ PRIMARY KEY
-                    customer_name: selectedCustomer?.customer_name || "",
-                  }));
-                }}
-                className="w-full border rounded-sm p-2 mb-5 outline-none border-orange-300 "
-              >
-                <option value="">Select Customer Name</option>
-                {customername.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.customer_name}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Company Name <span className="text-red-400">*</span>
+                </label>
+                <select
+                  name="company_name"
+                  value={formdata.company_name}
+                  onChange={handleFormCompanyChange}
+                  className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                >
+                  <option value="">Select Company Name</option>
+                  {companyname.map((item) => (
+                    <option key={item.company_name} value={item.company_name}>
+                      {item.company_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              <label className="block text-sm  text-gray-500 mb-2">
-                Contact Person *
-              </label>
-              <input
-                type="text"
-                className="border p-2 w-md rounded-sm mb-3  outline-none border-orange-300"
-                name="contact_person"
-                value={formdata.contact_person}
-                onChange={handleChange}
-              />
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Customer Name <span className="text-red-400">*</span>
+                </label>
+                <select
+                  name="customer_id"
+                  value={formdata.customer_id}
+                  onChange={(e) => {
+                    const selectedId = Number(e.target.value);
+                    const selectedCustomer = customername.find(
+                      (c) => c.id === selectedId,
+                    );
+                    setFormData((p) => ({
+                      ...p,
+                      customer_id: selectedId,
+                      customer_name: selectedCustomer?.customer_name || "",
+                    }));
+                  }}
+                  className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                >
+                  <option value="">Select Customer Name</option>
+                  {customername.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.customer_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-              <label className="block text-sm  text-gray-500 mb-2">
-                Contact Number *
-              </label>
-              <input
-                type="text"
-                className="border p-2 w-md rounded-sm mb-3  outline-none border-orange-300"
-                name="contact_number"
-                value={formdata.contact_number}
-                onChange={handleChange}
-              />
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Contact Person <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="contact_person"
+                  value={formdata.contact_person}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                />
+              </div>
 
-              <label className="block text-sm  text-gray-500 mb-2">
-                Email
-              </label>
-              <input
-                type="text"
-                className="border p-2 w-md rounded-sm    mb-3 outline-none border-orange-300"
-                name="email"
-                value={formdata.email}
-                onChange={handleChange}
-              />
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Contact Number <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="contact_number"
+                  value={formdata.contact_number}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                />
+              </div>
 
-              <label className="block text-sm  text-gray-500 mb-2">
-                Contact Designation *
-              </label>
-              <select
-                name="contact_designation"
-                value={formdata.contact_designation}
-                onChange={handleChange}
-                className="w-full border rounded-sm p-2 mb-5 outline-none border-orange-300 "
-              >
-                <option value="">Select Contact Designation</option>
-                {designations.map((item) => (
-                  <option key={item.id || item.name} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Email
+                </label>
+                <input
+                  type="text"
+                  name="email"
+                  value={formdata.email}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                />
+              </div>
 
-              <div className="flex justify-end gap-2">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                  Contact Designation <span className="text-red-400">*</span>
+                </label>
+                <select
+                  name="contact_designation"
+                  value={formdata.contact_designation}
+                  onChange={handleChange}
+                  className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                >
+                  <option value="">Select Contact Designation</option>
+                  {designations.map((item) => (
+                    <option key={item.id || item.name} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* ── FOOTER BUTTONS ── */}
+              <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowForm(false);
-                  }}
-                  className="px-4 py-2 rounded-sm    border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
+                  onClick={() => setShowForm(false)}
+                  className="px-6 py-2.5 text-sm text-gray-500 border border-gray-200 rounded-sm hover:bg-gray-50 cursor-pointer transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="bg-orange-500  hover:bg-orange-600 text-white px-4 py-1.5 rounded-sm"
+                  className="flex items-center gap-2 px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-all shadow-sm cursor-pointer"
                 >
-                  Save
+                  <i className="bi bi-check2"></i> Save
                 </button>
               </div>
+
             </form>
           </div>
         </div>

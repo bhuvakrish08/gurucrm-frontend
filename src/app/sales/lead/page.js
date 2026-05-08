@@ -647,11 +647,11 @@ export default function Page() {
   const filteredLeads = hasActiveFilters
     ? leads
     : leads.filter((l) => {
-        if (activeTab === "Pending") {
-          return l.status !== "Won" && l.status !== "Lost";
-        }
-        return l.status === activeTab;
-      });
+      if (activeTab === "Pending") {
+        return l.status !== "Won" && l.status !== "Lost";
+      }
+      return l.status === activeTab;
+    });
 
   const pendingCount = leads.filter((l) => l.status === "Pending").length;
   const wonCount = leads.filter((l) => l.status === "Won").length;
@@ -660,32 +660,36 @@ export default function Page() {
   // ================= PAGINATION =================
 
   const [currentPage, setCurrentPage] = useState(1);
-  // ✅ itemsPerPage is now dynamic state (default 25)
-  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Reset page when filters, tab, or items per page changes
   useEffect(() => {
     setCurrentPage(1);
   }, [filters, activeTab, itemsPerPage]);
 
-  const paginatedLeads = filteredLeads.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
-  );
-
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const paginatedLeads = filteredLeads.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredLeads.length / itemsPerPage);
 
-  const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
+  const getSlidingPages = () => {
+    const visibleCount = 5;
+    if (totalPages <= visibleCount) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
     }
+    let start = currentPage - Math.floor(visibleCount / 2);
+    let end = currentPage + Math.floor(visibleCount / 2);
+    if (start < 1) {
+      start = 1;
+      end = visibleCount;
+    }
+    if (end > totalPages) {
+      end = totalPages;
+      start = totalPages - visibleCount + 1;
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   };
 
-  // ✅ Items per page change handler
-  const handleItemsPerPageChange = (e) => {
-    setItemsPerPage(Number(e.target.value));
-    setCurrentPage(1);
-  };
 
   // Dynamic Dropdowns
 
@@ -729,7 +733,7 @@ export default function Page() {
           { params: { status: 1 } },
         );
         setLeadSource(res.data);
-      } catch {}
+      } catch { }
     };
 
     fetchSource();
@@ -743,7 +747,7 @@ export default function Page() {
           { params: { status: 1 } },
         );
         setLeadCategory(res.data);
-      } catch {}
+      } catch { }
     };
 
     fetchCategory();
@@ -756,7 +760,7 @@ export default function Page() {
           params: { status: 1 },
         });
         setCategory(res.data);
-      } catch {}
+      } catch { }
     };
 
     fetchProductCategory();
@@ -806,9 +810,8 @@ export default function Page() {
                 <i className="bi bi-download text-base"></i>
                 Export
                 <i
-                  className={`bi bi-chevron-down text-xs transition-transform duration-200 ${
-                    showExportMenu ? "rotate-180" : ""
-                  }`}
+                  className={`bi bi-chevron-down text-xs transition-transform duration-200 ${showExportMenu ? "rotate-180" : ""
+                    }`}
                 ></i>
               </button>
 
@@ -938,8 +941,8 @@ export default function Page() {
             ))}
           </select>
 
-          <div className="flex items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-58  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
-            <span className="mx-1 text-gray-400 whitespace-nowrap">
+          <div className="flex p-1 items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-58  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 p-1 text-gray-400 whitespace-nowrap">
               From Next
             </span>
             <input
@@ -951,8 +954,8 @@ export default function Page() {
             />
           </div>
 
-          <div className="flex items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-53  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
-            <span className="mx-1 text-gray-400 whitespace-nowrap">
+          <div className="flex p-1 items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-53  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 p-1 text-gray-400 whitespace-nowrap">
               To Next
             </span>
             <input
@@ -968,15 +971,15 @@ export default function Page() {
             name="status"
             value={filters.status}
             onChange={handleFilterChange}
-            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-400 text-sm"
+            className="border p-1 bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-400 text-sm"
           >
             <option value="">Pending</option>
             <option value="Won">Won</option>
             <option value="Lost">Lost</option>
           </select>
 
-          <div className="flex items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-60  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
-            <span className="mx-1 text-gray-400 whitespace-nowrap">
+          <div className="flex p-1 items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-60  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 p-1 text-gray-400 whitespace-nowrap">
               From Create
             </span>
             <input
@@ -988,8 +991,8 @@ export default function Page() {
             />
           </div>
 
-          <div className="flex items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-58  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
-            <span className="mx-1 text-gray-400 whitespace-nowrap">
+          <div className="flex p-1 items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-58  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 p-1 text-gray-400 whitespace-nowrap">
               To Create
             </span>
             <input
@@ -1026,11 +1029,10 @@ export default function Page() {
           <div className="flex items-center gap-8 px-6 pt-4 border-b border-gray-100">
             <button
               onClick={() => setActiveTab("Pending")}
-              className={`pb-3 px-3 text-sm font-medium relative cursor-pointer transition-all ${
-                activeTab === "Pending"
+              className={`pb-3 px-3 text-sm font-medium relative cursor-pointer transition-all ${activeTab === "Pending"
                   ? "text-blue-600"
                   : "text-gray-400 hover:text-gray-600"
-              }`}
+                }`}
             >
               Pending
               <span className="ml-2 bg-blue-100 text-blue-600 cursor-pointer text-xs px-2 py-0.5 rounded-full">
@@ -1043,9 +1045,8 @@ export default function Page() {
 
             <button
               onClick={() => setActiveTab("Won")}
-              className={`pb-3 text-sm font-medium cursor-pointer relative ${
-                activeTab === "Won" ? "text-green-600" : "text-gray-500"
-              }`}
+              className={`pb-3 text-sm font-medium cursor-pointer relative ${activeTab === "Won" ? "text-green-600" : "text-gray-500"
+                }`}
             >
               Won
               <span className="ml-2 bg-green-100 text-green-600 text-xs px-2 py-0.5 rounded-full">
@@ -1058,9 +1059,8 @@ export default function Page() {
 
             <button
               onClick={() => setActiveTab("Lost")}
-              className={`pb-3 text-sm font-medium relative ${
-                activeTab === "Lost" ? "text-red-600" : "text-gray-500"
-              }`}
+              className={`pb-3 text-sm font-medium relative ${activeTab === "Lost" ? "text-red-600" : "text-gray-500"
+                }`}
             >
               Lost
               <span className="ml-2 bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full">
@@ -1160,23 +1160,23 @@ export default function Page() {
                           >
                             {lead.assignee
                               ? String(lead.assignee)
-                                  .split(",")
-                                  .map((name, index) => {
-                                    const letter = name
-                                      .trim()
-                                      .charAt(0)
-                                      .toUpperCase();
+                                .split(",")
+                                .map((name, index) => {
+                                  const letter = name
+                                    .trim()
+                                    .charAt(0)
+                                    .toUpperCase();
 
-                                    return (
-                                      <div
-                                        key={index}
-                                        title={name.trim()}
-                                        className="px-3 py-1.5 bg-blue-800 text-white rounded-full font-semibold text-sm flex justify-center items-center min-w-[28px] text-center select-none"
-                                      >
-                                        {letter}
-                                      </div>
-                                    );
-                                  })
+                                  return (
+                                    <div
+                                      key={index}
+                                      title={name.trim()}
+                                      className="px-3 py-1.5 bg-blue-800 text-white rounded-full font-semibold text-sm flex justify-center items-center min-w-[28px] text-center select-none"
+                                    >
+                                      {letter}
+                                    </div>
+                                  );
+                                })
                               : "-"}
                           </td>
 
@@ -1188,11 +1188,10 @@ export default function Page() {
                                     openUpdateModal(lead);
                                   }
                                 }}
-                                className={`${
-                                  lead.status === "Pending"
+                                className={`${lead.status === "Pending"
                                     ? "cursor-pointer text-blue-800"
                                     : "text-gray-400 cursor-not-allowed"
-                                }`}
+                                  }`}
                               >
                                 {new Date(
                                   lead.next_follow_up_date,
@@ -1217,10 +1216,9 @@ export default function Page() {
                                   setShowModal(true);
                                 }}
                                 className={`w-9 h-9 rounded-full border flex items-center justify-center mx-auto
-                                  ${
-                                    lead.status === "Pending"
-                                      ? "hover:bg-gray-100 cursor-pointer"
-                                      : "bg-gray-100 cursor-not-allowed opacity-60"
+                                  ${lead.status === "Pending"
+                                    ? "hover:bg-gray-100 cursor-pointer"
+                                    : "bg-gray-100 cursor-not-allowed opacity-60"
                                   }`}
                               >
                                 <i className="bi bi-plus text-lg"></i>
@@ -1263,36 +1261,44 @@ export default function Page() {
                             </select>
                           </td>
 
-                          <td className="text-lg">
-                            {lead.status === "Pending" ? (
-                              <>
-                                <button
-                                  onClick={() => handleView(lead)}
-                                  className="text-gray-400 hover:text-green-600 cursor-pointer"
-                                >
-                                  <i className="bi bi-eye text-xl"></i>
-                                </button>
+                          <td className="px-3 py-3">
+                            <div className="flex items-center gap-4">
+                              {lead.status === "Pending" ? (
+                                <>
+                                  <button
+                                    onClick={() => handleView(lead)}
+                                    className="text-gray-400 hover:text-blue-600 transition-colors"
+                                    title="View Details"
+                                  >
+                                    <i className="bi bi-eye text-xl"></i>
+                                  </button>
 
-                                <button
-                                  onClick={() => handleEdit(lead)}
-                                  className="text-gray-400 hover:text-blue-800 mx-2 cursor-pointer"
-                                >
-                                  <i className="bi bi-pencil-square"></i>
-                                </button>
+                                  <button
+                                    onClick={() => handleEdit(lead)}
+                                    className="text-gray-400 hover:text-orange-600 transition-colors"
+                                    title="Edit Lead"
+                                  >
+                                    <i className="bi bi-pencil-square text-lg"></i>
+                                  </button>
 
-                                <button
-                                  onClick={() => openDeleteModal(lead)}
-                                  className="text-gray-400 hover:text-red-600 cursor-pointer"
-                                >
-                                  <i className="bi bi-trash3"></i>
-                                </button>
-                              </>
-                            ) : (
-                              <span className="text-gray-300 cursor-not-allowed">
-                                <i className="bi bi-lock text-lg"></i>
-                              </span>
-                            )}
+                                  <button
+                                    onClick={() => openDeleteModal(lead)}
+                                    className="text-gray-400 hover:text-red-600 transition-colors"
+                                    title="Delete Lead"
+                                  >
+                                    <i className="bi bi-trash3 text-lg"></i>
+                                  </button>
+                                </>
+                              ) : (
+                                <div className="w-full flex justify-center">
+                                  <span className="text-gray-300 cursor-not-allowed bg-gray-50 p-1.5 rounded-full border border-gray-100" title="Lead locked">
+                                    <i className="bi bi-lock text-sm"></i>
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                           </td>
+
                         </tr>
                       ))
                     ) : (
@@ -1308,63 +1314,70 @@ export default function Page() {
                   </tbody>
                 </table>
 
-                {/* ✅ UPDATED PAGINATION WITH ITEMS PER PAGE DROPDOWN */}
-                {filteredLeads.length > 0 && (
-                  <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-white rounded-b-lg">
-                    {/* Left: Items per page dropdown */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-500">Show</span>
-                      <select
-                        value={itemsPerPage}
-                        onChange={handleItemsPerPageChange}
-                        className="border border-gray-200 rounded-md px-2 py-1.5 text-sm text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-orange-300 cursor-pointer"
-                      >
-                        <option value={25}>25</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                        <option value={200}>200</option>
-                      </select>
-                      <span className="text-sm text-gray-500">
-                        records — Total:{" "}
-                        <span className="font-semibold text-gray-700">
-                          {filteredLeads.length}
-                        </span>
-                      </span>
-                    </div>
-
-                    {/* Center: Page navigation (only show if more than 1 page) */}
-                    {totalPages > 1 && (
-                      <div className="flex items-center gap-2">
-                        {/* Previous Button */}
-                        <button
-                          type="button"
-                          onClick={() => handlePageChange(currentPage - 1)}
-                          disabled={currentPage === 1}
-                          className="px-4 py-2 text-sm font-medium rounded-md border bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          Previous
-                        </button>
-
-                        {/* Page Info */}
-                        <span className="text-sm text-gray-600 px-2">
-                          Page{" "}
-                          <span className="font-semibold">{currentPage}</span>{" "}
-                          of <span className="font-semibold">{totalPages}</span>
-                        </span>
-
-                        {/* Next Button */}
-                        <button
-                          type="button"
-                          onClick={() => handlePageChange(currentPage + 1)}
-                          disabled={currentPage === totalPages}
-                          className="px-4 py-2 text-sm font-medium rounded-md border bg-blue-800 text-white hover:bg-blue-900 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          Next
-                        </button>
-                      </div>
-                    )}
+                {/* ✅ STANDARDIZED MICARA IMS PAGINATION */}
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white">
+                  {/* Left side: Rows per page selector */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-slate-500 font-medium">
+                      Rows per page:
+                    </span>
+                    <select
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all cursor-pointer font-medium"
+                    >
+                      {[10, 20, 100, 200].map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                )}
+
+
+                  {/* Right side: Navigation buttons (only if totalPages > 1) */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
+                      {/* Previous Button */}
+                      <button
+                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        <i className="bi bi-chevron-left text-sm"></i>
+                      </button>
+
+                      {/* Page Buttons */}
+                      <div className="flex items-center gap-1.5">
+                        {getSlidingPages().map((page) => (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${currentPage === page
+                                ? "bg-[#212121] text-white shadow-md shadow-black/10"
+                                : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                              }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Next Button */}
+                      <button
+                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        <i className="bi bi-chevron-right text-sm"></i>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
               </div>
             )}
           </div>
@@ -1468,7 +1481,7 @@ export default function Page() {
             <div className="flex gap-3.5 px-7 pb-8 pt-2">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="flex-1 border border-gray-200 py-3 rounded-xl text-gray-500 bg-gray-50 hover:bg-gray-100 transition text-[15px] font-medium"
+                className="flex-1 border border-gray-200 py-3 rounded-sm text-gray-500 bg-gray-50 hover:bg-gray-100 transition text-[15px] font-medium"
               >
                 Cancel
               </button>
@@ -1486,8 +1499,8 @@ export default function Page() {
       )}
       {/* ADD FOLLOW-UP MODAL */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white w-[480px] rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 ">
+          <div className="bg-white w-[480px] rounded-sm shadow-xl  overflow-hidden">
             {/* Header */}
             <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-orange-50 to-white">
               <div className="flex items-center gap-2">
@@ -1498,7 +1511,7 @@ export default function Page() {
               </div>
               <button
                 onClick={() => setShowModal(false)}
-                className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-100 hover:bg-orange-100 text-gray-400 hover:text-orange-500 transition-all"
+                className="w-7 h-7 flex items-center justify-center rounded-full text-orange-500 transition-all"
               >
                 ✕
               </button>
@@ -1617,14 +1630,14 @@ export default function Page() {
             <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-100 bg-gray-50">
               <button
                 onClick={() => setShowModal(false)}
-                className="px-5 py-2 text-sm font-medium border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-100 transition-all"
+                className="px-5 py-2 text-sm font-medium border border-gray-200 rounded-sm text-gray-600 hover:bg-gray-100 transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={btnLoading}
-                className={`px-6 py-2 text-sm font-semibold text-white rounded-xl transition-all shadow-md shadow-orange-200 flex items-center gap-2
+                className={`px-6 py-2 text-sm font-semibold text-white rounded-sm transition-all shadow-md shadow-orange-200 flex items-center gap-2
   ${btnLoading ? "bg-orange-400 cursor-not-allowed" : "bg-orange-500 hover:bg-orange-600"}`}
               >
                 {btnLoading ? (
@@ -1859,8 +1872,8 @@ export default function Page() {
                             <span className="text-xs text-gray-400">
                               {item.follow_up_date
                                 ? new Date(
-                                    item.follow_up_date,
-                                  ).toLocaleDateString()
+                                  item.follow_up_date,
+                                ).toLocaleDateString()
                                 : "—"}
                             </span>
                             <i
@@ -1898,8 +1911,8 @@ export default function Page() {
                           label: "Follow-Up Date",
                           value: previewFollowUp.follow_up_date
                             ? new Date(
-                                previewFollowUp.follow_up_date,
-                              ).toLocaleDateString()
+                              previewFollowUp.follow_up_date,
+                            ).toLocaleDateString()
                             : "—",
                         },
                         {
@@ -1952,14 +1965,14 @@ export default function Page() {
                   setSelectedFiles([]);
                   setPreviewFollowUp(null);
                 }}
-                className="px-5 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
+                className="px-5 py-2 rounded-sm text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleUpdate}
                 disabled={updateLoading}
-                className={`px-6 py-2 rounded-xl text-sm font-semibold text-white transition-all shadow-md shadow-orange-200 flex items-center gap-2
+                className={`px-6 py-2 rounded-sm text-sm font-semibold text-white transition-all shadow-md shadow-orange-200 flex items-center gap-2
                 ${updateLoading ? "bg-orange-400 cursor-not-allowed" : "bg-orange-500 hover:bg-orange-600"}`}
               >
                 {updateLoading ? (
@@ -2026,7 +2039,7 @@ export default function Page() {
       {/* FILE UPLOAD MODAL */}
       {showFileModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30">
-          <div className="bg-white w-[580px] rounded-sm shadow-2xl border border-gray-100 overflow-hidden">
+          <div className="bg-white w-[400px] rounded-sm shadow-2xl  overflow-hidden">
             {/* Header */}
             <div className="flex justify-between items-center px-6 py-4 from-orange-100 to-white border-b border-gray-100 bg-gradient-to-r">
               <div className="flex items-center gap-2">
@@ -2037,7 +2050,7 @@ export default function Page() {
               </div>
               <button
                 onClick={() => setShowFileModal(false)}
-                className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-100 hover:bg-orange-100 text-gray-400 hover:text-orange-500 transition-all"
+                className="w-7 h-7 flex items-center justify-center rounded-full  text-orange-500 transition-all"
               >
                 ✕
               </button>
@@ -2046,7 +2059,7 @@ export default function Page() {
             {/* Body */}
             <div className="flex gap-5 p-6">
               <div
-                className="w-1/2 border-2 border-dashed border-orange-200 rounded-2xl flex flex-col items-center justify-center p-8 text-center bg-orange-50/50 hover:bg-orange-50 transition-all cursor-pointer"
+                className="w-1/2 border-2 border-dashed border-orange-200 rounded-sm flex flex-col items-center justify-center p-8 text-center bg-orange-50/50  transition-all cursor-pointer"
                 onDrop={handleDrop}
                 onDragOver={(e) => e.preventDefault()}
                 onClick={() => document.getElementById("fileInput").click()}
@@ -2089,7 +2102,7 @@ export default function Page() {
                     {selectedFiles.map((file, i) => (
                       <div
                         key={i}
-                        className="flex justify-between items-center border border-gray-100 rounded-xl px-3 py-2.5 bg-gray-50 hover:bg-white shadow-sm transition-all"
+                        className="flex justify-between items-center border border-gray-100 rounded-sm px-3 py-2.5 bg-gray-50 hover:bg-white shadow-sm transition-all"
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <div className="w-7 h-7 rounded-lg bg-orange-100 flex items-center justify-center flex-shrink-0">
@@ -2120,7 +2133,7 @@ export default function Page() {
             <div className="flex justify-end px-6 py-4 border-t border-gray-100 bg-gray-50">
               <button
                 onClick={() => setShowFileModal(false)}
-                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-xl text-sm font-semibold transition-all shadow-md shadow-orange-200"
+                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-sm text-sm font-semibold transition-all shadow-md shadow-orange-200"
               >
                 Done
               </button>

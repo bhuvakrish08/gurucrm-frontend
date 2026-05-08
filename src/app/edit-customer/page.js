@@ -9,15 +9,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import useAuth from "../components/useAuth";
 
-
 export default function AddCustomer() {
-  const [activeTab, setActiveTab] = useState("update-customer")
+  const [activeTab, setActiveTab] = useState("update-customer");
 
   const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL;
   useAuth();
-const router = useRouter(); // ← yeh add karo
-
-  
+  const router = useRouter(); // ← yeh add karo
 
   const [designations, setDesignations] = useState([]);
   const [industries, setIndustries] = useState([]);
@@ -25,7 +22,7 @@ const router = useRouter(); // ← yeh add karo
   const [showaddressModal, setShowAddressModal] = useState(false);
   const [showcontactsModal, setShowContactsModal] = useState(false);
   const [isSavingAddress, setIsSavingAddress] = useState(false);
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSavingContact, setIsSavingContact] = useState(false);
 
@@ -110,8 +107,8 @@ const router = useRouter(); // ← yeh add karo
   const updateGst = (id, field, value) => {
     setGstDetails(
       gstDetails.map((gst) =>
-        gst.id === id ? { ...gst, [field]: value } : gst
-      )
+        gst.id === id ? { ...gst, [field]: value } : gst,
+      ),
     );
   };
 
@@ -122,7 +119,7 @@ const router = useRouter(); // ← yeh add karo
       await axios.put(
         `${API_BASE}/api/customers/customer-gst/${customerId}`,
         { gst_details: gstDetails },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
     } catch (err) {
       console.error(err);
@@ -152,7 +149,7 @@ const router = useRouter(); // ← yeh add karo
       const res = await axios.put(
         `${API_BASE}/api/customers/customer-data/${customerId}`,
         payload,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       toast.success(res.data.message || "Customer updated successfully");
       router.push("/customer-list"); // ← aa line add karo
@@ -172,7 +169,7 @@ const router = useRouter(); // ← yeh add karo
         const token = localStorage.getItem("token");
         const res = await axios.get(
           `${API_BASE}/api/customers/customer/${customerId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${token}` } },
         );
         const { customer, gst_details } = res.data;
         setFormData({
@@ -191,7 +188,7 @@ const router = useRouter(); // ← yeh add karo
             gst_type: gst.gst_type,
             gst_number: gst.gst_number,
             gst_state: gst.state,
-          }))
+          })),
         );
       } catch (err) {
         console.error(err);
@@ -238,7 +235,7 @@ const router = useRouter(); // ← yeh add karo
       try {
         const res = await axios.get(
           `${API_BASE}/api/organizations/organization-name`,
-          { params: { status: 1 } }
+          { params: { status: 1 } },
         );
         setCompanyname(res.data.data || res.data);
       } catch (err) {
@@ -264,7 +261,7 @@ const router = useRouter(); // ← yeh add karo
       const token = localStorage.getItem("token");
       const res = await axios.get(
         `${API_BASE}/api/customers/customer-address/${customerId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       setAddresses(res.data);
     } catch (err) {
@@ -302,14 +299,14 @@ const router = useRouter(); // ← yeh add karo
         await axios.put(
           `${API_BASE}/api/customers/customer-address/${editAddressId}`,
           addressForm,
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${token}` } },
         );
         toast.success("Address updated");
       } else {
         await axios.post(
           `${API_BASE}/api/customers/customer-address`,
           { customer_id: customerId, ...addressForm },
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${token}` } },
         );
         toast.success("Address added");
       }
@@ -372,7 +369,7 @@ const router = useRouter(); // ← yeh add karo
       const token = localStorage.getItem("token");
       const res = await axios.get(
         `${API_BASE}/api/customers/customer-contacts/${customerId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
       setContacts(res.data.data);
     } catch (err) {
@@ -399,7 +396,7 @@ const router = useRouter(); // ← yeh add karo
             customer_name: formData.customer_name,
             ...contactForm,
           },
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${token}` } },
         );
         toast.success("Contact updated");
       } else {
@@ -411,7 +408,7 @@ const router = useRouter(); // ← yeh add karo
             customer_name: formData.customer_name,
             ...contactForm,
           },
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${token}` } },
         );
         toast.success("Contact added");
       }
@@ -513,9 +510,21 @@ const router = useRouter(); // ← yeh add karo
           {/* Tabs */}
           <div className="flex gap-1 mb-6 border-b border-gray-200">
             {[
-              { key: "update-customer", label: "Update Customer", icon: "bi-person" },
-              { key: "address-details", label: "Address Details", icon: "bi-geo-alt" },
-              { key: "contact-details", label: "Contact Details", icon: "bi-telephone" },
+              {
+                key: "update-customer",
+                label: "Update Customer",
+                icon: "bi-person",
+              },
+              {
+                key: "address-details",
+                label: "Address Details",
+                icon: "bi-geo-alt",
+              },
+              {
+                key: "contact-details",
+                label: "Contact Details",
+                icon: "bi-telephone",
+              },
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -818,12 +827,28 @@ const router = useRouter(); // ← yeh add karo
                     ${isSubmitting ? "opacity-70 cursor-not-allowed" : "hover:bg-orange-600 hover:cursor-pointer"}`}
                 >
                   {isSubmitting ? (
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" opacity="0.25" />
-                      <path fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                    <svg
+                      className="animate-spin h-4 w-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="white"
+                        strokeWidth="4"
+                        opacity="0.25"
+                      />
+                      <path
+                        fill="white"
+                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                      />
                     </svg>
                   ) : (
-                    <><i className="bi bi-check2"></i> Save Changes</>
+                    <>
+                      <i className="bi bi-check2"></i> Save Changes
+                    </>
                   )}
                 </button>
               </div>
@@ -883,7 +908,10 @@ const router = useRouter(); // ← yeh add karo
                   <tbody>
                     {addresses.length === 0 ? (
                       <tr>
-                        <td colSpan="4" className="text-center py-10 text-gray-400">
+                        <td
+                          colSpan="4"
+                          className="text-center py-10 text-gray-400"
+                        >
                           <i className="bi bi-geo-alt text-3xl block mb-2"></i>
                           No addresses added yet
                         </td>
@@ -934,17 +962,17 @@ const router = useRouter(); // ← yeh add karo
               {showaddressModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                   <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
-                    <div className="flex items-center justify-between px-6 py-4 bg-orange-500">
+                    <div className="flex items-center justify-between px-6 py-4 from-orange-100 to-white bg-gradient-to-r">
                       <div className="flex items-center gap-2">
-                        <i className="bi bi-geo-alt text-white"></i>
-                        <h3 className="text-white font-semibold">
+                        <i className="bi bi-geo-alt text-black"></i>
+                        <h3 className="text-black font-semibold">
                           {editAddressId ? "Edit Address" : "Add New Address"}
                         </h3>
                       </div>
                       <button
                         type="button"
                         onClick={closeAddressModal}
-                        className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 hover:cursor-pointer transition-all"
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-[#ff6b00] hover:bg-[#f5e8d8] hover:cursor-pointer transition-all"
                       >
                         <i className="bi bi-x-lg text-sm"></i>
                       </button>
@@ -997,9 +1025,23 @@ const router = useRouter(); // ← yeh add karo
                           ${isSavingAddress ? "opacity-70 cursor-not-allowed" : "hover:bg-orange-600 hover:cursor-pointer"}`}
                       >
                         {isSavingAddress ? (
-                          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                            <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" opacity="0.25" />
-                            <path fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                          <svg
+                            className="animate-spin h-4 w-4"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                          >
+                            <circle
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="white"
+                              strokeWidth="4"
+                              opacity="0.25"
+                            />
+                            <path
+                              fill="white"
+                              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                            />
                           </svg>
                         ) : editAddressId ? (
                           "Update Address"
@@ -1053,20 +1095,39 @@ const router = useRouter(); // ← yeh add karo
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-100">
-                      <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">#</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Company</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Customer</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Contact Person</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Number</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Email</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Designation</th>
-                      <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Action</th>
+                      <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        #
+                      </th>
+                      <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Company
+                      </th>
+                      <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Customer
+                      </th>
+                      <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Contact Person
+                      </th>
+                      <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Number
+                      </th>
+                      <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Email
+                      </th>
+                      <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Designation
+                      </th>
+                      <th className="px-4 py-3.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Action
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {contacts.length === 0 ? (
                       <tr>
-                        <td colSpan="8" className="text-center py-10 text-gray-400">
+                        <td
+                          colSpan="8"
+                          className="text-center py-10 text-gray-400"
+                        >
                           <i className="bi bi-telephone text-3xl block mb-2"></i>
                           No contacts added yet
                         </td>
@@ -1077,12 +1138,24 @@ const router = useRouter(); // ← yeh add karo
                           key={item.id}
                           className="border-b border-gray-50 hover:bg-gray-50 transition-colors"
                         >
-                          <td className="px-4 py-3.5 text-gray-400 text-xs font-medium">{index + 1}</td>
-                          <td className="px-4 py-3.5 text-gray-600">{item.company_name}</td>
-                          <td className="px-4 py-3.5 text-gray-700 font-medium">{item.customer_name}</td>
-                          <td className="px-4 py-3.5 text-gray-600">{item.contact_person}</td>
-                          <td className="px-4 py-3.5 text-gray-600">{item.contact_number}</td>
-                          <td className="px-4 py-3.5 text-gray-600">{item.email}</td>
+                          <td className="px-4 py-3.5 text-gray-400 text-xs font-medium">
+                            {index + 1}
+                          </td>
+                          <td className="px-4 py-3.5 text-gray-600">
+                            {item.company_name}
+                          </td>
+                          <td className="px-4 py-3.5 text-gray-700 font-medium">
+                            {item.customer_name}
+                          </td>
+                          <td className="px-4 py-3.5 text-gray-600">
+                            {item.contact_person}
+                          </td>
+                          <td className="px-4 py-3.5 text-gray-600">
+                            {item.contact_number}
+                          </td>
+                          <td className="px-4 py-3.5 text-gray-600">
+                            {item.email}
+                          </td>
                           <td className="px-4 py-3.5">
                             <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-purple-50 text-purple-600 text-xs font-semibold">
                               {item.designation_name}
@@ -1117,17 +1190,17 @@ const router = useRouter(); // ← yeh add karo
               {showcontactsModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                   <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
-                    <div className="flex items-center justify-between px-6 py-4 bg-orange-500">
+                    <div className="flex items-center justify-between px-6 py-4 from-orange-100 to-white bg-gradient-to-r">
                       <div className="flex items-center gap-2">
-                        <i className="bi bi-telephone text-white"></i>
-                        <h3 className="text-white font-semibold">
+                        <i className="bi bi-telephone text-black"></i>
+                        <h3 className="text-black font-semibold">
                           {editContactId ? "Edit Contact" : "Add Contact"}
                         </h3>
                       </div>
                       <button
                         type="button"
                         onClick={closeContactModal}
-                        className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 hover:cursor-pointer transition-all"
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-[#ff6b00] hover:bg-[#f5e8d8] hover:cursor-pointer transition-all"
                       >
                         <i className="bi bi-x-lg text-sm"></i>
                       </button>
@@ -1206,11 +1279,24 @@ const router = useRouter(); // ← yeh add karo
                         className={`w-40 flex items-center justify-center px-5 py-2 text-sm font-semibold text-white bg-orange-500 rounded-lg transition-all
                           ${isSavingContact ? "opacity-70 cursor-not-allowed" : "hover:bg-orange-600 hover:cursor-pointer"}`}
                       >
-                        
                         {isSavingContact ? (
-                          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                            <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" opacity="0.25" />
-                            <path fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                          <svg
+                            className="animate-spin h-4 w-4"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                          >
+                            <circle
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="white"
+                              strokeWidth="4"
+                              opacity="0.25"
+                            />
+                            <path
+                              fill="white"
+                              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                            />
                           </svg>
                         ) : editContactId ? (
                           "Update Contact"
