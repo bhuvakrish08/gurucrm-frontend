@@ -335,7 +335,7 @@ export default function QuotationPage() {
             wasApprovedOnce:
               q.wasApprovedOnce || newStatus === "Won" || newStatus === "Lost",
           };
-        })
+        }),
       );
     } catch (err) {
       toast.error("Failed to update status");
@@ -363,7 +363,9 @@ export default function QuotationPage() {
       description: "",
     });
     try {
-      const res = await axios.get(`${API_BASE}/api/quotation/history/${lead.lead_id}`);
+      const res = await axios.get(
+        `${API_BASE}/api/quotation/history/${lead.lead_id}`,
+      );
       const historyData = res.data?.result || [];
       const historyWithFiles = await Promise.all(
         historyData.map(async (hist) => {
@@ -672,10 +674,10 @@ export default function QuotationPage() {
   const filteredQuotations = hasActiveFilters
     ? quotations
     : quotations.filter((q) => {
-      if (activeTab === "Pending")
-        return q.displayStatus !== "Won" && q.displayStatus !== "Lost";
-      return q.displayStatus === activeTab;
-    });
+        if (activeTab === "Pending")
+          return q.displayStatus !== "Won" && q.displayStatus !== "Lost";
+        return q.displayStatus === activeTab;
+      });
 
   const pendingCount = quotations.filter(
     (q) => q.displayStatus !== "Won" && q.displayStatus !== "Lost",
@@ -683,22 +685,37 @@ export default function QuotationPage() {
   const wonCount = quotations.filter((q) => q.displayStatus === "Won").length;
   const lostCount = quotations.filter((q) => q.displayStatus === "Lost").length;
 
-  // ========================
-  // PAGINATION — DYNAMIC itemsPerPage
-  // ========================
+  // Standardized Micara IMS Pagination Logic
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  useEffect(() => { setCurrentPage(1); }, [filters, activeTab, itemsPerPage]);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, activeTab, itemsPerPage]);
 
-  const paginatedQuotations = filteredQuotations.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
-  );
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const paginatedQuotations = filteredQuotations.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredQuotations.length / itemsPerPage);
-  const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+
+  const getSlidingPages = () => {
+    const visibleCount = 5;
+    if (totalPages <= visibleCount) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    let start = currentPage - Math.floor(visibleCount / 2);
+    let end = currentPage + Math.floor(visibleCount / 2);
+    if (start < 1) {
+      start = 1;
+      end = visibleCount;
+    }
+    if (end > totalPages) {
+      end = totalPages;
+      start = totalPages - visibleCount + 1;
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   };
+
 
   const [asignee, setAsignee] = useState([]);
   useEffect(() => {
@@ -726,7 +743,9 @@ export default function QuotationPage() {
   // ========================
   // PI MODAL derived values
   // ========================
-  const piGrandTotal = selectedPIQuotation ? Number(selectedPIQuotation.grand_total) || 0 : 0;
+  const piGrandTotal = selectedPIQuotation
+    ? Number(selectedPIQuotation.grand_total) || 0
+    : 0;
   const piEnteredPct = Number(piPercentage) || 0;
   const piEnteredAmt = Number(piRupees) || 0;
   const piRemainingPct = 100 - piEnteredPct;
@@ -802,42 +821,50 @@ export default function QuotationPage() {
 
         {/* Filter Section */}
         <div className="mx-6 md:hidden mt-3 relative z-40">
-          <button onClick={() => setShowMobileFilters(!showMobileFilters)} className="w-full flex items-center justify-between text-orange-500 font-semibold bg-orange-50 px-4 py-2 rounded-sm border border-orange-200 shadow-sm transition-all">
-            <span className="flex items-center gap-2"><i className="bi bi-funnel"></i> Filters</span>
-            <i className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}></i>
+          <button
+            onClick={() => setShowMobileFilters(!showMobileFilters)}
+            className="w-full flex items-center justify-between text-orange-500 font-semibold bg-orange-50 px-4 py-2 rounded-sm border border-orange-200 shadow-sm transition-all"
+          >
+            <span className="flex items-center gap-2">
+              <i className="bi bi-funnel"></i> Filters
+            </span>
+            <i
+              className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}
+            ></i>
           </button>
         </div>
 
-        <div className={`
+        <div
+          className={`
           ${showMobileFilters ? "absolute left-6 right-6 top-50 bg-white p-5 shadow-2xl border border-gray-100 z-50 rounded-lg grid grid-cols-2 gap-3 mt-1" : "hidden"} 
-          md:mx-6 md:flex md:flex-wrap md:items-center md:gap-x-5 md:gap-y-2 md:mt-3 md:mb-5 md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
+          md:mx-6 md:flex md:flex-wrap md:items-center md:gap-x-2.5 md:gap-y-2 md:mt-3 md:mb-5 md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
         `}>
           <input
             name="company_name"
             value={filters.company_name}
             onChange={handleFilterChange}
             placeholder="Company"
-            className="p-2 w-full md:w-48 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm"
+            className="p-2 w-full md:w-48 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-600 text-sm"
           />
           <input
             name="customer_name"
             value={filters.customer_name}
             onChange={handleFilterChange}
             placeholder="Customer"
-            className="p-2 w-full md:w-48 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm"
+            className="p-2 w-full md:w-48 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-600 text-sm"
           />
           <input
             name="lead_title"
             value={filters.lead_title}
             onChange={handleFilterChange}
             placeholder="Lead Title"
-            className="p-2 w-full md:w-48 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-600 text-sm"
+            className="p-2 w-full md:w-48 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-600 text-sm"
           />
           <select
             name="assignee"
             value={filters.assignee}
             onChange={handleFilterChange}
-            className="p-2 w-full md:w-36 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm"
+            className="p-2 w-full md:w-36 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-400 text-sm"
           >
             <option value="">Assignee</option>
             {asignee.map((item) => (
@@ -850,15 +877,15 @@ export default function QuotationPage() {
             name="quotation_status"
             value={filters.quotation_status}
             onChange={handleFilterChange}
-            className="p-2 w-full md:w-45 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm"
+            className="p-2 w-full md:w-45 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-400 text-sm"
           >
             <option value="">Status</option>
             <option value="Won">Won</option>
             <option value="Lost">Lost</option>
           </select>
 
-          <div className="flex flex-col px-2 w-full md:w-58 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm">
-            <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">From Date</span>
+          <div className="p-1 w-full md:w-58 border border-orange-300 md:border  text-gray-400 bg-white rounded-sm  transition-all outline-none">
+            <span className="text-[10px] text-gray-400 uppercase font-bold mx-2 pt-1">From Date</span>
             <input
               type="date"
               name="from_date"
@@ -868,8 +895,8 @@ export default function QuotationPage() {
             />
           </div>
 
-          <div className="flex flex-col px-2 w-full md:w-58 bg-white border border-gray-200 md:border-none rounded-sm focus:outline-none focus:ring-1 focus:ring-orange-200 text-gray-400 text-sm">
-            <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">To Date</span>
+          <div className="p-1 w-full md:w-58 border border-orange-300 md:border  text-gray-400 bg-white rounded-sm  transition-all outline-none">
+            <span className="text-[10px] text-gray-400 uppercase font-bold pt-1 mx-2">To Date</span>
             <input
               type="date"
               name="to_date"
@@ -881,7 +908,10 @@ export default function QuotationPage() {
 
           <div className="flex gap-2 col-span-2">
             <button
-              onClick={() => { resetFilters(); setShowMobileFilters(false); }}
+              onClick={() => {
+                resetFilters();
+                setShowMobileFilters(false);
+              }}
               className="border border-gray-300 w-full md:w-auto cursor-pointer rounded-sm p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm text-center font-semibold"
             >
               Clear
@@ -943,7 +973,8 @@ export default function QuotationPage() {
               // <div className="overflow-x-auto">
               //   <table className="w-full text-sm">
               <div
-                className="overflow-x-auto overflow-y-auto max-h-[500px] custom-scroll"
+                className="overflow-x-auto overflow-y-scroll max-h-[500px] custom-scroll"
+                style={{ overflowX: "scroll" }}
               >
                 <table className="w-full text-sm whitespace-nowrap">
                   <thead>
@@ -1010,7 +1041,7 @@ export default function QuotationPage() {
 
                           <td className="text-lg px-3 text-center">
                             {q.displayStatus === "Won" ||
-                              q.displayStatus === "Lost" ? (
+                            q.displayStatus === "Lost" ? (
                               <div
                                 className="w-9 h-9 tracking-widest rounded-full border inline-flex items-center justify-center bg-gray-50 border-gray-300 text-gray-400 cursor-not-allowed mx-auto shadow-sm"
                                 title="Quotation locked"
@@ -1041,8 +1072,8 @@ export default function QuotationPage() {
                           <td className="px-3 text-gray-500">
                             {q.first_quotation_date
                               ? new Date(
-                                q.first_quotation_date,
-                              ).toLocaleDateString()
+                                  q.first_quotation_date,
+                                ).toLocaleDateString()
                               : "-"}
                           </td>
                           <td className="px-3 text-gray-500">
@@ -1050,8 +1081,8 @@ export default function QuotationPage() {
                               ? new Date(q.quotation_date).toLocaleDateString()
                               : q.quotation_created_at
                                 ? new Date(
-                                  q.quotation_created_at,
-                                ).toLocaleDateString()
+                                    q.quotation_created_at,
+                                  ).toLocaleDateString()
                                 : "-"}
                           </td>
                           <td className="px-3 font-semibold text-gray-700">
@@ -1081,7 +1112,7 @@ export default function QuotationPage() {
 
                           <td className="px-3 text-center">
                             {q.proforma_percentage &&
-                              Number(q.proforma_percentage) > 0 ? (
+                            Number(q.proforma_percentage) > 0 ? (
                               <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">
                                 <i className="bi bi-check-circle-fill text-emerald-500 text-[10px]"></i>
                                 {Number(q.proforma_percentage).toFixed(0)}%
@@ -1201,7 +1232,7 @@ export default function QuotationPage() {
 
                               {q.latest_quotation_id ? (
                                 q.displayStatus === "Won" ||
-                                  q.displayStatus === "Lost" ? (
+                                q.displayStatus === "Lost" ? (
                                   <div
                                     className="text-gray-300 w-8 h-8 rounded-full flex items-center justify-center"
                                     title="Locked"
@@ -1236,74 +1267,74 @@ export default function QuotationPage() {
                   </tbody>
                 </table>
 
-                {/* ======================== PAGINATION WITH DROPDOWN ======================== */}
-                {filteredQuotations.length > 0 && (
-                  <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-3 border-t border-gray-100 bg-white rounded-b-lg mt-2 gap-3">
-                    {/* Left: Records per page + total count */}
-                    <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 justify-center sm:justify-start">
-                      <span>Show</span>
-                      <select
-                        value={itemsPerPage}
-                        onChange={(e) => {
-                          setItemsPerPage(Number(e.target.value));
-                          setCurrentPage(1);
-                        }}
-                        className="border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-700 bg-white focus:outline-none focus:ring-1 focus:ring-blue-300 cursor-pointer"
-                      >
-                        <option value={10}>10</option>
-                        <option value={25}>25</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                        <option value={200}>200</option>
-                      </select>
-                      <span>
-                        records &nbsp;|&nbsp; Showing{" "}
-                        <span className="font-semibold text-gray-700">
-                          {(currentPage - 1) * itemsPerPage + 1}
-                        </span>{" "}
-                        –{" "}
-                        <span className="font-semibold text-gray-700">
-                          {Math.min(
-                            currentPage * itemsPerPage,
-                            filteredQuotations.length,
-                          )}
-                        </span>{" "}
-                        of{" "}
-                        <span className="font-semibold text-gray-700">
-                          {filteredQuotations.length}
-                        </span>
-                      </span>
-                    </div>
-
-                    {/* Right: Prev / Page info / Next */}
-                    {totalPages > 1 && (
-                      <div className="flex items-center gap-2 mt-3 sm:mt-0">
-                        <button
-                          type="button"
-                          onClick={() => handlePageChange(currentPage - 1)}
-                          disabled={currentPage === 1}
-                          className="px-4 py-2 text-sm font-medium rounded-md border bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50"
-                        >
-                          Previous
-                        </button>
-                        <span className="text-sm text-gray-600">
-                          Page{" "}
-                          <span className="font-semibold">{currentPage}</span>{" "}
-                          of <span className="font-semibold">{totalPages}</span>
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handlePageChange(currentPage + 1)}
-                          disabled={currentPage === totalPages}
-                          className="px-4 py-2 text-sm font-medium rounded-md border bg-blue-800 text-white hover:bg-blue-900 disabled:opacity-50"
-                        >
-                          Next
-                        </button>
-                      </div>
-                    )}
+                {/* ✅ STANDARDIZED MICARA IMS PAGINATION */}
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white rounded-b-lg">
+                  {/* Left side: Rows per page selector */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-slate-500 font-medium">
+                      Rows per page:
+                    </span>
+                    <select
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all cursor-pointer font-medium"
+                    >
+                      {[10, 20, 100, 200].map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                )}
-                {/* ======================== END PAGINATION ======================== */}
+
+
+                  {/* Right side: Navigation buttons (only if totalPages > 1) */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
+                      {/* Previous Button */}
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        <i className="bi bi-chevron-left text-sm"></i>
+                      </button>
+
+                      {/* Page Buttons */}
+                      <div className="flex items-center gap-1.5">
+                        {getSlidingPages().map((page) => (
+                          <button
+                            type="button"
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${
+                              currentPage === page
+                                ? "bg-[#212121] text-white shadow-md shadow-black/10"
+                                : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Next Button */}
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        <i className="bi bi-chevron-right text-sm"></i>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
               </div>
             )}
           </div>
@@ -1313,20 +1344,16 @@ export default function QuotationPage() {
       {/* ──────────────────── QUOTATION UPDATE MODAL ──────────────────── */}
       {showQuotationModal && selectedLead && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white w-[90vw] max-w-[1200px] h-[85vh] rounded-2xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col">
+          <div className="bg-white w-[90vw] max-w-[900px] h-[85vh] rounded-sm shadow-xl overflow-hidden border border-gray-100 flex flex-col">
             <div
               className="flex justify-between items-center px-6 py-4 border-b border-gray-100 shadow-sm z-10"
-              style={{ background: "#f5e6d8" }}
+              style={{
+                background: "linear-gradient(to right, #f5e0c6, #ffffff)",
+              }}
             >
               <div className="flex items-center gap-3">
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center"
-                  style={{ background: "#f5e0c6" }}
-                >
-                  <i
-                    className="bi bi-activity text-lg"
-                    style={{ color: "#f07400" }}
-                  ></i>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center ">
+                  <i className="bi bi-activity text-lg text-orange-500"></i>
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
@@ -1339,7 +1366,7 @@ export default function QuotationPage() {
               </div>
               <button
                 onClick={() => setShowQuotationModal(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 transition-all"
+                className="w-8 h-8 flex items-center justify-center rounded-full  text-orange-500 transition-all"
               >
                 ✕
               </button>
@@ -1359,7 +1386,7 @@ export default function QuotationPage() {
                         name="quotation_date"
                         value={form.quotation_date}
                         onChange={handleChange}
-                        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50"
+                        className="w-full mt-1 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50"
                       />
                     </div>
                     <div>
@@ -1370,7 +1397,7 @@ export default function QuotationPage() {
                         name="activity_type"
                         value={form.activity_type}
                         onChange={handleChange}
-                        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50"
+                        className="w-full mt-1 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50"
                       >
                         <option value="">-- Select --</option>
                         <option>Sent</option>
@@ -1389,7 +1416,7 @@ export default function QuotationPage() {
                         name="quotation_no"
                         value={form.quotation_no}
                         onChange={handleChange}
-                        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50"
+                        className="w-full mt-1 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50"
                       />
                     </div>
                     <div>
@@ -1407,8 +1434,8 @@ export default function QuotationPage() {
                         onChange={(selectedOptions) => {
                           const values = selectedOptions
                             ? selectedOptions
-                              .map((option) => option.value)
-                              .join(",")
+                                .map((option) => option.value)
+                                .join(",")
                             : "";
                           setForm((prev) => ({ ...prev, assignee: values }));
                         }}
@@ -1446,7 +1473,7 @@ export default function QuotationPage() {
                         name="amount"
                         value={form.amount || ""}
                         onChange={handleChange}
-                        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50"
+                        className="w-full mt-1 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50"
                       />
                     </div>
                   </div>
@@ -1460,7 +1487,7 @@ export default function QuotationPage() {
                         name="discount"
                         value={form.discount || ""}
                         onChange={handleChange}
-                        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50"
+                        className="w-full mt-1 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50"
                       />
                     </div>
                     <div>
@@ -1471,7 +1498,7 @@ export default function QuotationPage() {
                         name="tax"
                         value={form.tax}
                         onChange={handleChange}
-                        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50"
+                        className="w-full mt-1 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50"
                       >
                         <option value="0">0%</option>
                         <option value="5">5%</option>
@@ -1490,7 +1517,7 @@ export default function QuotationPage() {
                         name="grand_total"
                         value={form.grand_total || ""}
                         onChange={handleChange}
-                        className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50"
+                        className="w-full mt-1 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50"
                       />
                     </div>
                   </div>
@@ -1503,7 +1530,7 @@ export default function QuotationPage() {
                       value={form.description}
                       onChange={handleChange}
                       rows="2"
-                      className="w-full mt-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-gray-50 resize-none"
+                      className="w-full mt-1 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50 resize-none"
                     ></textarea>
                   </div>
                   <div className="border border-dashed border-orange-200 rounded-xl p-4 bg-orange-50/30 text-center">
@@ -1648,8 +1675,8 @@ export default function QuotationPage() {
                           : b.quotation_status === "Approved"
                             ? 1
                             : Math.sign(
-                              new Date(b.created_at) - new Date(a.created_at),
-                            ),
+                                new Date(b.created_at) - new Date(a.created_at),
+                              ),
                       )
                       .map((item, index) => (
                         <div
@@ -1779,9 +1806,9 @@ export default function QuotationPage() {
                                 ₹
                                 {item.amount && item.discount
                                   ? (
-                                    (item.amount * item.discount) /
-                                    100
-                                  ).toFixed(2)
+                                      (item.amount * item.discount) /
+                                      100
+                                    ).toFixed(2)
                                   : "0"}
                               </span>
                             </div>
@@ -1838,30 +1865,30 @@ export default function QuotationPage() {
       {/* ──────────────────── FILE MANAGER MODAL ──────────────────── */}
       {showFileModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white w-[540px] rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
-            <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-blue-50 to-white border-b border-gray-100">
+          <div className="bg-white w-[440px] rounded-sm shadow-xl overflow-hidden border border-gray-100">
+            <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-orange-100 to-white border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <i className="bi bi-cloud-arrow-up text-blue-600 text-lg"></i>
+                <i className="bi bi-cloud-arrow-up text-orange-500 text-lg"></i>
                 <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
                   Select Quotation Files
                 </h2>
               </div>
               <button
                 onClick={() => setShowFileModal(false)}
-                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center text-gray-500 hover:text-gray-700"
+                className="w-8 h-8 rounded-full  transition-colors flex items-center justify-center text-orange-500 "
               >
                 <i className="bi bi-x-lg"></i>
               </button>
             </div>
             <div className="p-6">
               <div
-                className="w-full border-2 border-dashed border-blue-200 rounded-xl flex flex-col items-center justify-center p-8 bg-blue-50/30 hover:bg-blue-50/70 transition-colors cursor-pointer"
+                className="w-full border-2 border-dashed border-orange-300 rounded-xl flex flex-col items-center justify-center p-8  transition-colors cursor-pointer"
                 onDrop={handleDrop}
                 onDragOver={(e) => e.preventDefault()}
                 onClick={() => document.getElementById("quotFiles").click()}
               >
-                <div className="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center mb-3">
-                  <i className="bi bi-cloud-arrow-up text-blue-600 text-2xl"></i>
+                <div className="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center mb-3">
+                  <i className="bi bi-cloud-arrow-up text-orange-500 text-2xl"></i>
                 </div>
                 <p className="font-bold text-gray-700 text-sm">
                   Click or drag files here
@@ -1879,10 +1906,10 @@ export default function QuotationPage() {
                 />
               </div>
             </div>
-            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 rounded-b-2xl">
+            <div className="px-6 py-3 bg-white  flex justify-end gap-3 rounded-b-2xl">
               <button
                 onClick={() => setShowFileModal(false)}
-                className="px-5 py-2 rounded-xl text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200 transition-all"
+                className="px-5 py-2 rounded-sm text-sm font-semibold bg-orange-500 text-white hover:bg-orange-600  transition-all"
               >
                 Done
               </button>
@@ -1894,24 +1921,24 @@ export default function QuotationPage() {
       {/* Delete Confirmation Model */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white w-[420px] rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
+          <div className="bg-white w-[400px] rounded-sm shadow-xl overflow-hidden border border-gray-100">
             {/* header */}
-            <div className="flex justify-between items-center px-5 py-3 bg-gray-50 border-b">
+            <div className="flex justify-between items-center px-5 py-3 bg-gradient-to-r from-orange-100 to-white border-b border-gray-100">
               <h3 className="text-sm font-semibold text-gray-700 tracking-wide flex items-center gap-2">
-                <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                <i className="bi bi-trash  text-orange-500 text-sm"></i>
                 DELETE QUOTATION
               </h3>
 
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 hover:bg-gray-300 text-gray-500"
+                className="w-8 h-8 flex items-center justify-center rounded-full  text-orange-500"
               >
                 ✕
               </button>
             </div>
             <div className="flex flex-col items-center py-8 px-6 text-center">
-              <div className="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center mb-4 border border-red-100">
-                <i className="bi bi-trash text-red-500 text-3xl"></i>
+              <div className="w-20 h-20 rounded-full bg-orange-50 flex items-center justify-center mb-4 border border-orange-100">
+                <i className="bi bi-trash text-orange-500 text-3xl"></i>
               </div>
 
               <h2 className="text-lg font-semibold text-gray-800">
@@ -1922,17 +1949,17 @@ export default function QuotationPage() {
                 This action cannot be undone. Are you sure?
               </p>
             </div>
-            <div className="flex justify-center gap-3 px-6 py-4 border-t bg-gray-50">
+            <div className="flex justify-end gap-3 px-6 py-3 ">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="px-5 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100"
+                className="px-5 py-2 rounded-sm text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteQuotation}
                 disabled={isDeleting}
-                className="px-6 py-2 rounded-xl text-sm font-semibold bg-red-500 hover:bg-red-600 text-white shadow-md transition flex items-center gap-2"
+                className="px-6 py-2 rounded-sm text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white shadow-md transition flex items-center gap-2"
               >
                 {isDeleting ? (
                   <>
@@ -1965,33 +1992,62 @@ export default function QuotationPage() {
 
       {/* STATUS CONFIRM MODAL */}
       {showStatusModal && (
-        <div className="fixed inset-0 bg-gray-900/30 flex items-center justify-center backdrop-blur-sm z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-80">
-            <h2 className="text-lg font-semibold text-gray-800 mb-2">
-              Confirm Status Change
-            </h2>
-            <p className="text-gray-500 text-sm mb-6">
-              Are you sure you want to change status?
-            </p>
-            <div className="flex justify-end gap-3">
+        <div className="fixed inset-0 bg-gray-900/30 flex items-center justify-center z-50">
+          <div className="bg-white rounded-sm shadow-xl w-full max-w-[350px] overflow-hidden">
+            {/* Header - styled like Delete Quotation */}
+            <div className="flex items-center justify-between px-4 py-3 from-orange-100 to-white bg-gradient-to-r">
+              <div className="flex items-center gap-2">
+                {/* Status change icon */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-4 h-4 text-orange-500"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
+                  <path d="M12 6v6l4 2" />
+                </svg>
+                <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">
+                  Confirm Status Change
+                </h2>
+              </div>
               <button
                 onClick={() => setShowStatusModal(false)}
-                className="px-5 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100"
+                className="text-orange-600 text-sm leading-none"
               >
-                Cancel
+                ✕
               </button>
-              <button
-                onClick={() => {
-                  handleTableStatusChange(
-                    statusChangeData.id,
-                    statusChangeData.status,
-                  );
-                  setShowStatusModal(false);
-                }}
-                className="px-6 py-2 rounded-xl text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white shadow-md"
-              >
-                Yes Change
-              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6">
+              <p className="text-gray-500 text-sm mb-6">
+                Are you sure you want to change status?
+              </p>
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={() => setShowStatusModal(false)}
+                  className="px-5 py-2 rounded-sm text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    handleTableStatusChange(
+                      statusChangeData.id,
+                      statusChangeData.status,
+                    );
+                    setShowStatusModal(false);
+                  }}
+                  className="px-6 py-2 rounded-sm text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white "
+                >
+                  Yes Change
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1999,17 +2055,15 @@ export default function QuotationPage() {
 
       {/* ──────────────────── CONVERT TO PI MODAL ──────────────────── */}
       {showPIModal && selectedPIQuotation && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white w-[480px] rounded-2xl shadow-2xl overflow-hidden border border-gray-100">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-gray-900/30 ">
+          <div className="bg-white w-[480px] rounded-sm shadow-xl overflow-hidden ">
             {/* Header */}
             <div
-              className="flex justify-between items-center px-6 py-4"
-              style={{ background: "#f5e6d8" }}
+              className="flex justify-between items-center px-6 py-4  from-orange-100 to-white bg-gradient-to-r"
             >
               <div className="flex items-center gap-3">
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center"
-                  style={{ background: "#f5e0c6" }}
                 >
                   <i
                     className="bi bi-file-earmark-arrow-up text-lg"
@@ -2031,7 +2085,7 @@ export default function QuotationPage() {
                   setShowPIModal(false);
                   setPiPercentage("");
                 }}
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 transition-all"
+                className="w-8 h-8 flex items-center justify-center rounded-full  text-orange-500 transition-all"
               >
                 ✕
               </button>
@@ -2075,7 +2129,7 @@ export default function QuotationPage() {
               <div className="flex gap-3">
                 <div className="flex-1">
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">
-                    Percentage <span className="text-red-400">*</span>
+                    Percentage <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <input
@@ -2093,7 +2147,7 @@ export default function QuotationPage() {
                         if (num >= 0 && num <= 100)
                           handlePiPercentageChange(num);
                       }}
-                      className="w-full border border-gray-200 rounded-xl pl-3 pr-8 py-2.5 text-sm focus:ring-1 focus:ring-emerald-300 focus:border-transparent outline-none bg-gray-50 transition-all"
+                      className="w-full border border-orange-300 rounded-sm pl-3 pr-8 py-2.5 text-sm   outline-none bg-gray-50 transition-all"
                       placeholder="0"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
@@ -2104,7 +2158,7 @@ export default function QuotationPage() {
 
                 <div className="flex-1">
                   <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">
-                    Amount <span className="text-red-400">*</span>
+                    Amount <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
@@ -2122,7 +2176,7 @@ export default function QuotationPage() {
                         }
                         handlePiRupeesChange(Number(val));
                       }}
-                      className="w-full border border-gray-200 rounded-xl pl-7 pr-3 py-2.5 text-sm focus:ring-1 focus:ring-emerald-300 focus:border-transparent outline-none bg-gray-50 transition-all"
+                      className="w-full border border-orange-300 rounded-sm pl-7 pr-3 py-2.5 text-sm   outline-none bg-gray-50 transition-all"
                       placeholder="0.00"
                     />
                   </div>
@@ -2132,14 +2186,15 @@ export default function QuotationPage() {
               {/* REMAINING CARD */}
               {piGrandTotal > 0 && (
                 <div
-                  className={`rounded-xl p-3 border transition-all ${piIsOver
+                  className={`rounded-sm p-3 border transition-all ${
+                    piIsOver
                       ? "bg-red-50 border-red-200"
                       : piEnteredPct === 100
                         ? "bg-green-50 border-green-200"
                         : piEnteredPct > 0
-                          ? "bg-emerald-50 border-emerald-200"
+                          ? "bg-green-50 border-green-200"
                           : "bg-blue-50 border-blue-100"
-                    }`}
+                  }`}
                 >
                   <p className="text-xs font-bold uppercase tracking-wider mb-2 text-gray-500">
                     {piEnteredPct > 0
@@ -2149,12 +2204,13 @@ export default function QuotationPage() {
                   <div className="flex justify-between items-center">
                     <div className="text-center">
                       <p
-                        className={`text-xl font-bold ${piIsOver
+                        className={`text-xl font-bold ${
+                          piIsOver
                             ? "text-red-600"
                             : piEnteredPct === 100
                               ? "text-green-600"
-                              : "text-emerald-600"
-                          }`}
+                              : "text-green-700"
+                        }`}
                       >
                         {piIsOver
                           ? "Over!"
@@ -2167,12 +2223,13 @@ export default function QuotationPage() {
                     <div className="w-px h-10 bg-gray-200"></div>
                     <div className="text-center">
                       <p
-                        className={`text-xl font-bold ${piIsOver
+                        className={`text-xl font-bold ${
+                          piIsOver
                             ? "text-red-600"
                             : piEnteredPct === 100
                               ? "text-green-600"
-                              : "text-emerald-600"
-                          }`}
+                              : "text-green-700"
+                        }`}
                       >
                         {piIsOver
                           ? "Over!"
@@ -2188,12 +2245,13 @@ export default function QuotationPage() {
                   <div className="mt-3">
                     <div className="w-full bg-white rounded-full h-2 border border-gray-200 overflow-hidden">
                       <div
-                        className={`h-2 rounded-full transition-all duration-300 ${piIsOver
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          piIsOver
                             ? "bg-red-500"
                             : piEnteredPct >= 100
                               ? "bg-green-500"
-                              : "bg-emerald-400"
-                          }`}
+                              : "bg-green-400"
+                        }`}
                         style={{ width: `${Math.min(piEnteredPct, 100)}%` }}
                       ></div>
                     </div>
@@ -2224,7 +2282,7 @@ export default function QuotationPage() {
                   setPiPercentage("");
                   setPiRupees("");
                 }}
-                className="flex-1 border border-gray-200 text-gray-600 hover:bg-gray-100 rounded-xl py-2.5 text-sm font-semibold transition-all"
+                className="flex-1 border border-gray-200 text-gray-600 hover:bg-gray-100 rounded-sm py-2.5 text-sm font-semibold transition-all"
               >
                 Cancel
               </button>
@@ -2236,13 +2294,14 @@ export default function QuotationPage() {
                   Number(piPercentage) <= 0 ||
                   Number(piPercentage) > 100
                 }
-                className={`flex-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl py-2.5 text-sm font-semibold shadow-md shadow-emerald-200 transition-all flex justify-center items-center gap-2 ${isCreatingPI ||
-                    !piPercentage ||
-                    Number(piPercentage) <= 0 ||
-                    Number(piPercentage) > 100
+                className={`flex-1 bg-green-500 hover:bg-green-600 text-white rounded-sm py-2.5 text-sm font-semibold shadow-md shadow-green-200 transition-all flex justify-center items-center gap-2 ${
+                  isCreatingPI ||
+                  !piPercentage ||
+                  Number(piPercentage) <= 0 ||
+                  Number(piPercentage) > 100
                     ? "opacity-60 cursor-not-allowed"
                     : ""
-                  }`}
+                }`}
               >
                 {isCreatingPI ? (
                   <>

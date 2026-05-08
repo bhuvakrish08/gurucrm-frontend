@@ -152,7 +152,7 @@ export default function AddCustomer() {
     } catch (err) {
       const status = err?.response?.status || err?.status;
     }
-  }
+  };
 
   // ✅ Fetch designations
   useEffect(() => {
@@ -184,7 +184,6 @@ export default function AddCustomer() {
     };
     fetchIndustry();
   }, []);
-
 
   useEffect(() => {
     const fetchCompanyName = async () => {
@@ -240,107 +239,150 @@ export default function AddCustomer() {
         </div>
         <form onSubmit={handleSubmit} className="p-2 w-7xl mx-auto">
           {/* Tab Header */}
-          <div className="flex mb-4">
+          <div className="flex mb-4 border-b border-gray-200">
             <button
               type="button"
               onClick={() => setActiveTab("customer")}
-              className={`px-4 py-2 font-medium ${activeTab === "customer" ? "text-blue-900 border-b-2 border-blue-600" : "text-gray-600"}`}
+              className={`px-5 py-2.5 text-sm font-semibold transition-all ${
+                activeTab === "customer"
+                  ? "text-orange-500 border-b-2 border-orange-500 -mb-px"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
             >
               Personal Information
             </button>
             <button
               type="button"
               onClick={() => setActiveTab("contact")}
-              className={`px-4 py-2 font-medium ${activeTab === "contact" ? "text-blue-900 border-b-2 border-blue-600" : "text-gray-600"}`}
+              className={`px-5 py-2.5 text-sm font-semibold transition-all ${
+                activeTab === "contact"
+                  ? "text-orange-500 border-b-2 border-orange-500 -mb-px"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
             >
               Contact Details
             </button>
           </div>
 
-          {/* Personal Information Section */}
+          {/* ── PERSONAL INFORMATION TAB ── */}
           {activeTab === "customer" && (
-            <div className="bg-white shadow rounded-2xl p-6">
+            <div className="bg-white rounded-sm border border-gray-200 shadow-sm p-6 space-y-5 max-w-[900px] max-h-[63vh] overflow-y-auto custom-scroll">
               {/* Customer Type */}
-              <div className="mb-4 flex gap-4">
-                <label className="font-semibold">Customer Type</label>
-                <div className="flex gap-3">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="customer_type"
-                      value="Individual"
-                      checked={formData.customer_type === "Individual"}
-                      onChange={handleChange}
-                    />
-                    Individual
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="customer_type"
-                      value="Business"
-                      checked={formData.customer_type === "Business"}
-                      onChange={handleChange}
-                    />
-                    Business
-                  </label>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  Customer Type
+                </label>
+                <div className="flex gap-4">
+                  {["Individual", "Business"].map((type) => (
+                    <label
+                      key={type}
+                      className={`flex items-center gap-2.5 px-4 py-2.5 rounded-lg border-2 cursor-pointer transition-all ${
+                        formData.customer_type === type
+                          ? "border-orange-400 bg-orange-50 text-orange-500"
+                          : "border-gray-200 text-gray-600 hover:border-gray-300"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="customer_type"
+                        value={type}
+                        checked={formData.customer_type === type}
+                        onChange={handleChange}
+                        className="hidden"
+                      />
+                      <div
+                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                          formData.customer_type === type
+                            ? "border-orange-500"
+                            : "border-gray-300"
+                        }`}
+                      >
+                        {formData.customer_type === type && (
+                          <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                        )}
+                      </div>
+                      <span className="text-sm font-medium">{type}</span>
+                    </label>
+                  ))}
                 </div>
               </div>
 
-              {/* Form Fields */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+              {/* Row 1 — Company / Customer / Mobile */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Company Name *
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    Company Name <span className="text-red-400">*</span>
                   </label>
                   <input
                     name="company_name"
                     value={formData.company_name}
                     onChange={handleChange}
                     placeholder="Enter Company name"
-                    className="w-full border rounded p-2"
+                    className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
                   />
-                  {/* <select name="company_name" value={formData.company_name} onChange={handleChange} className="w-full border rounded p-2" >
-                                            <option value="">Select Industry</option>
-                                            {companyname.map((item) => (
-                                                <option key={item.id} value={item.id}>
-                                                    {item.organization_name}
-                                                </option>
-                                            ))}
-                                        </select> */}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Customer Name *
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    Customer Name <span className="text-red-400">*</span>
                   </label>
-                  <input type="text" name="customer_name" value={formData.customer_name} onChange={handleChange} placeholder="Enter customer name" className="w-full border rounded p-2" />
+                  <input
+                    type="text"
+                    name="customer_name"
+                    value={formData.customer_name}
+                    onChange={handleChange}
+                    placeholder="Enter customer name"
+                    className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Email*</label>
-                  <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="Enter email address" className="w-full border rounded p-2" />
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    Email <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="Enter email address"
+                    className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Mobile No.*</label>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    Mobile No.
+                  </label>
                   <PhoneInput
                     country={"in"}
                     value={formData.mobile}
                     onChange={handleMobileChange}
                     inputStyle={{
                       width: "100%",
-                      height: "38px",
-                      borderRadius: "0.375rem",
-                      border: "1px solid #d1d5db",
+                      height: "42px",
+                      borderRadius: "0.125rem",
+                      border: "1px solid #fdba74",
+                      backgroundColor: "#f9fafb",
+                      fontSize: "14px",
+                      color: "#374151",
                     }}
                     buttonStyle={{
-                      borderTopLeftRadius: "0.375rem",
-                      borderBottomLeftRadius: "0.375rem",
+                      borderTopLeftRadius: "0.125rem",
+                      borderBottomLeftRadius: "0.125rem",
+                      border: "1px solid #fdba74",
+                      backgroundColor: "#f9fafb",
                     }}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Industry *</label>
-                  <select name="industry" value={formData.industry} onChange={handleChange} className="w-full border rounded p-2">
-                    <option value="">Select Industry*</option>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    Industry <span className="text-red-400">*</span>
+                  </label>
+                  <select
+                    name="industry"
+                    value={formData.industry}
+                    onChange={handleChange}
+                    className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                  >
+                    <option value="">Select Industry</option>
                     {industries.map((item) => (
                       <option key={item.id} value={item.id}>
                         {item.name}
@@ -351,38 +393,60 @@ export default function AddCustomer() {
               </div>
 
               {/* Address Details */}
-              <div className="mb-4">
-                <h3 className="text-blue-900 font-medium mb-2">
-                  Add Address Details
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                  Address Details
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
                   <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Address Type *
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                      Address Type <span className="text-red-400">*</span>
                     </label>
-                    <select name="address_type" value={formData.address_type} onChange={handleChange} className="w-full border rounded p-2">
-                      <option value="">Select Adress Type</option>
+                    <select
+                      name="address_type"
+                      value={formData.address_type}
+                      onChange={handleChange}
+                      className="w-full bg-white border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                    >
+                      <option value="">Select Address Type</option>
                       <option>Billing</option>
                       <option>Shipping</option>
                       <option>Corporate</option>
                       <option>Warehouse</option>
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1"> Address * </label>
-                    <textarea name="address" value={formData.address} onChange={handleChange} placeholder="Enter address" className="w-full border rounded p-2"></textarea>
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                      Address <span className="text-red-400">*</span>
+                    </label>
+                    <textarea
+                      name="address"
+                      value={formData.address}
+                      onChange={handleChange}
+                      placeholder="Enter address"
+                      rows="2"
+                      className="w-full bg-white border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all resize-none"
+                    ></textarea>
                   </div>
-
                 </div>
               </div>
 
               {/* GST Details */}
-              <div className="mb-4">
-                <h3 className="text-blue-900 font-medium mb-2">Add GST Details</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                  GST Details
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
                   <div>
-                    <label className="block text-sm font-medium mb-1">GST Type</label>
-                    <select name="gst_type" value={formData.gst_type} onChange={handleChange} className="w-full border rounded p-2">
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                      GST Type
+                    </label>
+                    <select
+                      name="gst_type"
+                      value={formData.gst_type}
+                      onChange={handleChange}
+                      className="w-full bg-white border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                    >
                       <option value="">Select GST Type</option>
                       <option>Registered Regular</option>
                       <option>Registered Composite</option>
@@ -390,68 +454,156 @@ export default function AddCustomer() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                       GST Number
                     </label>
-                    <input type="text" name="gst_number" value={formData.gst_number} onChange={handleChange} placeholder="Enter GST number" className="w-full border rounded p-2" />
+                    <input
+                      type="text"
+                      name="gst_number"
+                      value={formData.gst_number}
+                      onChange={handleChange}
+                      placeholder="Enter GST number"
+                      className="w-full bg-white border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                    />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">State</label>
-                    <input type="text" name="gst_state" value={formData.gst_state} onChange={handleChange} placeholder="Enter State" className="w-full border rounded p-2" />
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                      State
+                    </label>
+                    <input
+                      type="text"
+                      name="gst_state"
+                      value={formData.gst_state}
+                      onChange={handleChange}
+                      placeholder="Enter State"
+                      className="w-full bg-white border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                    />
                   </div>
                 </div>
               </div>
 
               {/* Additional Details */}
-              <div className="mb-6">
-                <h3 className="text-blue-900 font-medium mb-2">Add more details</h3>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                  More Details
+                </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Website</label>
-                    <input type="text" name="website" ref={websiteRef} value={formData.website} onFocus={handleFocus} onBlur={handleBlur} onChange={handleChange} className="w-full border rounded p-2" />
-                    {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                      Website
+                    </label>
+                    <input
+                      type="text"
+                      name="website"
+                      ref={websiteRef}
+                      value={formData.website}
+                      onFocus={handleFocus}
+                      onBlur={handleBlur}
+                      onChange={handleChange}
+                      className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                    />
+                    {error && (
+                      <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1">
+                        <i className="bi bi-exclamation-circle"></i> {error}
+                      </p>
+                    )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Remarks</label>
-                    <textarea name="remarks" value={formData.remarks} onChange={handleChange} placeholder="Enter remarks" className="w-full border rounded p-2"></textarea>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                      Remarks
+                    </label>
+                    <textarea
+                      name="remarks"
+                      value={formData.remarks}
+                      onChange={handleChange}
+                      placeholder="Enter remarks"
+                      rows="3"
+                      className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all resize-none"
+                    ></textarea>
                   </div>
                 </div>
               </div>
 
               {/* Buttons */}
-              <div className="flex justify-end gap-3">
-                <button type="button" className="border px-4 py-2 rounded bg-gray-200 hover:cursor-not-allowed" disabled>Previous</button>
-                <button type="button" onClick={() => setActiveTab("contact")} className="bg-blue-900 hover:bg-blue-950 cursor-pointer text-white px-4 py-2 rounded">
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled
+                  className="px-6 py-2.5 text-sm text-gray-400 border border-gray-200 rounded-sm bg-gray-50 cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("contact")}
+                  className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-all shadow-sm cursor-pointer"
+                >
                   Next
                 </button>
-                <button type="button" onClick={() => router.push("/customer-list")} className="border px-4 py-2 rounded hover:bg-gray-200 cursor-pointer">Cancel</button>
+                <button
+                  type="button"
+                  onClick={() => router.push("/customer-list")}
+                  className="px-6 py-2.5 text-sm text-gray-500 border border-gray-200 rounded-sm hover:bg-gray-50 cursor-pointer transition-all"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           )}
 
-          {/* Contact Details Section */}
+          {/* ── CONTACT DETAILS TAB ── */}
           {activeTab === "contact" && (
-            <div className="bg-white shadow rounded-2xl p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div className="bg-white rounded-sm border border-gray-200 shadow-sm p-6 space-y-5 max-w-[900px] max-h-[63vh] overflow-y-auto custom-scroll">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Contact Person*
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    Contact Person <span className="text-red-400">*</span>
                   </label>
-                  <input type="text" name="contact_person" value={formData.contact_person} onChange={handleChange} placeholder="Enter contact person name" className="w-full border rounded p-2" />
+                  <input
+                    type="text"
+                    name="contact_person"
+                    value={formData.contact_person}
+                    onChange={handleChange}
+                    placeholder="Enter contact person name"
+                    className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">
-                    Contact Number*
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    Contact Number <span className="text-red-400">*</span>
                   </label>
-                  <input type="text" name="contact_number" value={formData.contact_number} onChange={handleChange} placeholder="Enter contact number" className="w-full border rounded p-2" />
+                  <input
+                    type="text"
+                    name="contact_number"
+                    value={formData.contact_number}
+                    onChange={handleChange}
+                    placeholder="Enter contact number"
+                    className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Email*</label>
-                  <input type="email" name="contact_email" value={formData.contact_email} onChange={handleChange} placeholder="Enter email" className="w-full border rounded p-2" />
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    Email <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    name="contact_email"
+                    value={formData.contact_email}
+                    onChange={handleChange}
+                    placeholder="Enter email"
+                    className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Contact Designation*</label>
-                  <select name="contact_designation" value={formData.contact_designation} onChange={handleChange} className="w-full border rounded p-2">
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    Contact Designation <span className="text-red-400">*</span>
+                  </label>
+                  <select
+                    name="contact_designation"
+                    value={formData.contact_designation}
+                    onChange={handleChange}
+                    className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
+                  >
                     <option value="">Select Contact Designation</option>
                     {designations.map((item) => (
                       <option key={item.id} value={item.id}>
@@ -463,21 +615,32 @@ export default function AddCustomer() {
               </div>
 
               {/* Buttons */}
-              <div className="flex justify-end gap-3">
-                <button type="button" onClick={() => setActiveTab("customer")} className="border px-4 py-2 rounded cursor-pointer hover:bg-gray-200">
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("customer")}
+                  className="px-6 py-2.5 text-sm text-gray-500 border border-gray-200 rounded-sm hover:bg-gray-50 cursor-pointer transition-all"
+                >
                   Previous
                 </button>
-                <button type="submit" className="bg-blue-900 text-white px-4 py-2 rounded cursor-pointer">
-                  Save
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-all shadow-sm cursor-pointer flex items-center gap-2"
+                >
+                  <i className="bi bi-check2"></i> Save
                 </button>
-                <button type="button" onClick={() => router.push("/customer-list")} className="border px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 cursor-pointer">Cancel</button>
+                <button
+                  type="button"
+                  onClick={() => router.push("/customer-list")}
+                  className="px-6 py-2.5 text-sm text-gray-500 border border-gray-200 rounded-sm hover:bg-gray-50 cursor-pointer transition-all"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           )}
         </form>
       </div>
-
-
     </>
   );
 }

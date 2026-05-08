@@ -51,9 +51,10 @@ export default function Page() {
 
   const APIBase = `${API_BASE}/api/tasks`;
 
-  //  PAGINATION ADDED HERE
+  // Standardized Micara IMS Pagination Logic
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
 
   const fetchData = async () => {
     try {
@@ -79,6 +80,12 @@ export default function Page() {
     }
   }, [token, filters]);
 
+  // Reset page when filters or items per page changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, itemsPerPage]);
+
+
   // ✅ Close export menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -93,170 +100,170 @@ export default function Page() {
   // ========================
   // ✅ EXPORT TO EXCEL
   // ========================
-const exportToExcel = async () => {
-  try {
-    if (tasks.length === 0) {
-      toast.error("No data available to export");
-      return;
+  const exportToExcel = async () => {
+    try {
+      if (tasks.length === 0) {
+        toast.error("No data available to export");
+        return;
+      }
+
+      const XLSX = await import("xlsx");
+
+      const exportData = tasks.map((item, index) => ({
+        "#": index + 1,
+        "Task Name": item.task_name || "",
+        "Start Date": item.start_date
+          ? new Date(item.start_date)
+              .toLocaleDateString("en-GB")
+              .replace(/\//g, "-")
+          : "",
+        "Due Date": item.due_date
+          ? new Date(item.due_date)
+              .toLocaleDateString("en-GB")
+              .replace(/\//g, "-")
+          : "",
+        Priority: item.priority || "",
+        Assignee: item.assignee || "",
+        Status: item.status_name || "",
+        "Created By": item.created_by_name || "",
+        "Created At": item.created_at
+          ? new Date(item.created_at)
+              .toLocaleDateString("en-GB")
+              .replace(/\//g, "-")
+          : "",
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Tasks");
+
+      const colWidths = Object.keys(exportData[0]).map((key) => ({
+        wch: Math.max(key.length, 18),
+      }));
+
+      worksheet["!cols"] = colWidths;
+
+      const now = new Date();
+      const date = now.toISOString().split("T")[0];
+      const time = now.toTimeString().slice(0, 5).replace(":", "-");
+
+      const fileName = `Tasks_(${date})_${time}.xlsx`;
+
+      XLSX.writeFile(workbook, fileName);
+
+      toast.success("Excel exported successfully");
+      setShowExportMenu(false);
+    } catch (err) {
+      console.error("Excel Export Error:", err);
+      toast.error("Excel export failed");
     }
+  };
 
-    const XLSX = await import("xlsx");
+  // ✅ EXPORT TO PDF
 
-    const exportData = tasks.map((item, index) => ({
-      "#": index + 1,
-      "Task Name": item.task_name || "",
-      "Start Date": item.start_date
-        ? new Date(item.start_date)
-            .toLocaleDateString("en-GB")
-            .replace(/\//g, "-")
-        : "",
-      "Due Date": item.due_date
-        ? new Date(item.due_date)
-            .toLocaleDateString("en-GB")
-            .replace(/\//g, "-")
-        : "",
-      Priority: item.priority || "",
-      Assignee: item.assignee || "",
-      Status: item.status_name || "",
-      "Created By": item.created_by_name || "",
-      "Created At": item.created_at
-        ? new Date(item.created_at)
-            .toLocaleDateString("en-GB")
-            .replace(/\//g, "-")
-        : "",
-    }));
+  const exportToPDF = async () => {
+    try {
+      if (tasks.length === 0) {
+        toast.error("No data available to export");
+        return;
+      }
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
+      const { default: jsPDF } = await import("jspdf");
+      const { default: autoTable } = await import("jspdf-autotable");
 
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Tasks");
+      const doc = new jsPDF({ orientation: "landscape" });
 
-    const colWidths = Object.keys(exportData[0]).map((key) => ({
-      wch: Math.max(key.length, 18),
-    }));
+      doc.setFontSize(14);
+      doc.setTextColor(40, 40, 40);
+      doc.text("Tasks Report", 14, 15);
 
-    worksheet["!cols"] = colWidths;
+      doc.setFontSize(9);
+      doc.setTextColor(120, 120, 120);
+      doc.text(
+        `Exported on: ${new Date().toLocaleDateString("en-GB")} | Total Records: ${
+          tasks.length
+        }`,
+        14,
+        22,
+      );
 
-    const now = new Date();
-    const date = now.toISOString().split("T")[0];
-    const time = now.toTimeString().slice(0, 5).replace(":", "-");
+      const tableData = tasks.map((item, index) => [
+        index + 1,
+        item.task_name || "",
+        item.start_date
+          ? new Date(item.start_date)
+              .toLocaleDateString("en-GB")
+              .replace(/\//g, "-")
+          : "-",
+        item.due_date
+          ? new Date(item.due_date)
+              .toLocaleDateString("en-GB")
+              .replace(/\//g, "-")
+          : "-",
+        item.priority || "-",
+        item.assignee || "-",
+        item.status_name || "-",
+        item.created_by_name || "-",
+        item.created_at
+          ? new Date(item.created_at)
+              .toLocaleDateString("en-GB")
+              .replace(/\//g, "-")
+          : "-",
+      ]);
 
-    const fileName = `Tasks_(${date})_${time}.xlsx`;
-
-    XLSX.writeFile(workbook, fileName);
-
-    toast.success("Excel exported successfully");
-    setShowExportMenu(false);
-  } catch (err) {
-    console.error("Excel Export Error:", err);
-    toast.error("Excel export failed");
-  }
-};
-
- // ✅ EXPORT TO PDF
-
-const exportToPDF = async () => {
-  try {
-    if (tasks.length === 0) {
-      toast.error("No data available to export");
-      return;
-    }
-
-    const { default: jsPDF } = await import("jspdf");
-    const { default: autoTable } = await import("jspdf-autotable");
-
-    const doc = new jsPDF({ orientation: "landscape" });
-
-    doc.setFontSize(14);
-    doc.setTextColor(40, 40, 40);
-    doc.text("Tasks Report", 14, 15);
-
-    doc.setFontSize(9);
-    doc.setTextColor(120, 120, 120);
-    doc.text(
-      `Exported on: ${new Date().toLocaleDateString("en-GB")} | Total Records: ${
-        tasks.length
-      }`,
-      14,
-      22
-    );
-
-    const tableData = tasks.map((item, index) => [
-      index + 1,
-      item.task_name || "",
-      item.start_date
-        ? new Date(item.start_date)
-            .toLocaleDateString("en-GB")
-            .replace(/\//g, "-")
-        : "-",
-      item.due_date
-        ? new Date(item.due_date)
-            .toLocaleDateString("en-GB")
-            .replace(/\//g, "-")
-        : "-",
-      item.priority || "-",
-      item.assignee || "-",
-      item.status_name || "-",
-      item.created_by_name || "-",
-      item.created_at
-        ? new Date(item.created_at)
-            .toLocaleDateString("en-GB")
-            .replace(/\//g, "-")
-        : "-",
-    ]);
-
-    autoTable(doc, {
-      startY: 27,
-      head: [
-        [
-          "#",
-          "Task Name",
-          "Start Date",
-          "Due Date",
-          "Priority",
-          "Assignee",
-          "Status",
-          "Created By",
-          "Created At",
+      autoTable(doc, {
+        startY: 27,
+        head: [
+          [
+            "#",
+            "Task Name",
+            "Start Date",
+            "Due Date",
+            "Priority",
+            "Assignee",
+            "Status",
+            "Created By",
+            "Created At",
+          ],
         ],
-      ],
-      body: tableData,
-      theme: "grid",
-      styles: {
-        fontSize: 8,
-        cellPadding: 3,
-        textColor: [40, 40, 40],
-      },
-      headStyles: {
-        fillColor: [249, 115, 22],
-        textColor: [255, 255, 255],
-        fontStyle: "bold",
-        fontSize: 8,
-      },
-      alternateRowStyles: {
-        fillColor: [255, 247, 237],
-      },
-      columnStyles: {
-        0: { cellWidth: 8 },
-        1: { cellWidth: 40 },
-      },
-    });
+        body: tableData,
+        theme: "grid",
+        styles: {
+          fontSize: 8,
+          cellPadding: 3,
+          textColor: [40, 40, 40],
+        },
+        headStyles: {
+          fillColor: [249, 115, 22],
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+          fontSize: 8,
+        },
+        alternateRowStyles: {
+          fillColor: [255, 247, 237],
+        },
+        columnStyles: {
+          0: { cellWidth: 8 },
+          1: { cellWidth: 40 },
+        },
+      });
 
-    const now = new Date();
-    const date = now.toISOString().split("T")[0];
-    const time = now.toTimeString().slice(0, 5).replace(":", "-");
+      const now = new Date();
+      const date = now.toISOString().split("T")[0];
+      const time = now.toTimeString().slice(0, 5).replace(":", "-");
 
-    const fileName = `Tasks_(${date})_${time}.pdf`;
+      const fileName = `Tasks_(${date})_${time}.pdf`;
 
-    doc.save(fileName);
+      doc.save(fileName);
 
-    toast.success("PDF exported successfully");
-    setShowExportMenu(false);
-  } catch (err) {
-    console.error("PDF Export Error:", err);
-    toast.error("PDF export failed");
-  }
-};
+      toast.success("PDF exported successfully");
+      setShowExportMenu(false);
+    } catch (err) {
+      console.error("PDF Export Error:", err);
+      toast.error("PDF export failed");
+    }
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -419,15 +426,30 @@ const exportToPDF = async () => {
     }
   };
 
-  //  PAGINATION CALCULATIONS
+  // Standardized Pagination Calculations
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentData = tasks.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(tasks.length / itemsPerPage);
 
-  const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  const getSlidingPages = () => {
+    const visibleCount = 5;
+    if (totalPages <= visibleCount) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    let start = currentPage - Math.floor(visibleCount / 2);
+    let end = currentPage + Math.floor(visibleCount / 2);
+    if (start < 1) {
+      start = 1;
+      end = visibleCount;
+    }
+    if (end > totalPages) {
+      end = totalPages;
+      start = totalPages - visibleCount + 1;
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   };
+
 
   // Asignee dropdown api calling
   useEffect(() => {
@@ -736,16 +758,25 @@ const exportToPDF = async () => {
 
       {/* Filters */}
       <div className="mx-6 md:hidden mt-3 relative z-40">
-        <button onClick={() => setShowMobileFilters(!showMobileFilters)} className="w-full flex items-center justify-between text-orange-500 font-semibold bg-orange-50 px-4 py-2 rounded-sm border border-orange-200 shadow-sm transition-all">
-           <span className="flex items-center gap-2"><i className="bi bi-funnel"></i> Filters</span>
-           <i className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}></i>
+        <button
+          onClick={() => setShowMobileFilters(!showMobileFilters)}
+          className="w-full flex items-center justify-between text-orange-500 font-semibold bg-orange-50 px-4 py-2 rounded-sm border border-orange-200 shadow-sm transition-all"
+        >
+          <span className="flex items-center gap-2">
+            <i className="bi bi-funnel"></i> Filters
+          </span>
+          <i
+            className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}
+          ></i>
         </button>
       </div>
 
-      <div className={`
+      <div
+        className={`
         ${showMobileFilters ? "absolute left-6 right-6 top-50 bg-white p-5 shadow-2xl border border-gray-100 z-50 rounded-lg grid grid-cols-2 gap-3 mt-1" : "hidden"} 
         md:mx-6 md:flex md:flex-wrap md:items-center md:gap-x-5 md:gap-y-2 md:mt-3 md:mb-5 md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
-      `}>
+      `}
+      >
         <input
           type="text"
           name="task_name"
@@ -754,7 +785,7 @@ const exportToPDF = async () => {
           onChange={(e) =>
             setFilters({ ...filters, task_name: e.target.value })
           }
-          className="p-2 w-full md:w-52 border border-gray-200 md:border-none text-gray-600 bg-white rounded-sm focus:ring-1  focus:ring-orange-200 transition-all focus:outline-none text-sm"
+          className="p-2 w-full md:w-52 border border-orange-300 md:border text-gray-600 bg-white rounded-sm  transition-all outline-none text-sm"
         />
 
         {/* Status */}
@@ -762,7 +793,7 @@ const exportToPDF = async () => {
           name="status"
           value={filters.status || ""}
           onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-          className="p-2 w-full md:w-52 border border-gray-200 md:border-none text-gray-400 bg-white rounded-sm focus:ring-1 focus:ring-orange-200 transition-all focus:outline-none text-sm"
+          className="p-2 w-full md:w-52 border border-orange-300 md:border text-gray-400 bg-white rounded-sm  transition-all outline-none text-sm"
         >
           <option value="">Status</option>
 
@@ -778,7 +809,7 @@ const exportToPDF = async () => {
           name="priority"
           value={filters.priority || ""}
           onChange={(e) => setFilters({ ...filters, priority: e.target.value })}
-          className="p-2 w-full md:w-52 border border-gray-200 md:border-none text-gray-400 bg-white rounded-sm focus:ring-1 outline-none focus:ring-orange-200 transition-all focus:outline-none text-sm"
+          className="p-2 w-full md:w-52 border border-orange-300 md:border text-gray-400 bg-white rounded-sm  transition-all outline-none text-sm"
         >
           <option value="">Priority</option>
           <option value="High">High</option>
@@ -791,7 +822,7 @@ const exportToPDF = async () => {
           name="assignee"
           value={filters.assignee || "-"}
           onChange={(e) => setFilters({ ...filters, assignee: e.target.value })}
-          className="p-2 w-full md:w-52 border border-gray-200 md:border-none text-gray-400 bg-white rounded-sm focus:ring-1 focus:ring-orange-200 transition-all focus:outline-none text-sm"
+          className="p-2 w-full md:w-52 border border-orange-300 md:border text-gray-400 bg-white rounded-sm  transition-all outline-none text-sm"
         >
           <option value="">Assignee</option>
 
@@ -803,8 +834,10 @@ const exportToPDF = async () => {
         </select>
 
         {/* Start Date Range */}
-        <div className="flex flex-col border border-gray-200 md:border-none bg-white rounded-sm focus-within:ring-1 focus-within:ring-orange-200 transition-all px-2 w-full md:w-auto">
-          <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">Start Date</span>
+        <div className="p-1 w-full md:w-54 border border-orange-300 md:border  text-gray-400 bg-white rounded-sm  transition-all outline-none">
+          <span className="text-[10px] text-gray-400 uppercase font-bold pt-1 mx-2">
+            Start Date
+          </span>
           <input
             type="date"
             value={filters.start_date || ""}
@@ -814,9 +847,11 @@ const exportToPDF = async () => {
             className="p-1 w-full md:w-32 outline-none text-sm"
           />
         </div>
-           {/* Due Date Range */}
-        <div className="flex flex-col border border-gray-200 md:border-none bg-white rounded-sm focus-within:ring-1 focus-within:ring-orange-200 transition-all px-2 w-full md:w-auto">
-          <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">Due Date</span>
+        {/* Due Date Range */}
+        <div className="p-1 w-full md:w-54 border border-orange-300 md:border  text-gray-400 bg-white rounded-sm  transition-all outline-none">
+          <span className="text-[10px] text-gray-400 uppercase font-bold pt-1 mx-2">
+            Due Date
+          </span>
           <input
             type="date"
             value={filters.end_date || ""}
@@ -827,34 +862,6 @@ const exportToPDF = async () => {
           />
         </div>
 
-        <div className="flex gap-2 col-span-2">
-            <button
-              type="button"
-              onClick={() => {
-                setFilters({
-                  task_name: "",
-                  status: "",
-                  priority: "",
-                  assignee: "",
-                  start_date: "",
-                  end_date: "",
-                  created_by: ""
-                });
-                setShowMobileFilters(false);
-              }}
-              className="border border-gray-300 w-full md:w-auto cursor-pointer rounded-sm p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm text-center font-semibold"
-            >
-              Clear
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowMobileFilters(false)}
-              className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-2 bg-orange-100 text-orange-700 hover:bg-orange-200 text-sm text-center font-semibold"
-            >
-              Apply
-            </button>
-        </div>
-
 
         {/* Created By - dynamic API */}
         <select
@@ -863,7 +870,7 @@ const exportToPDF = async () => {
           onChange={(e) =>
             setFilters({ ...filters, created_by_name: e.target.value })
           }
-          className="p-2 w-full md:w-52 border border-gray-200 md:border-none text-gray-400 bg-white rounded-sm focus:ring-1 focus:ring-orange-200 transition-all focus:outline-none"
+          className="p-2 w-full md:w-52 border border-orange-300 md:border text-gray-400 bg-white rounded-sm  transition-all outline-none text-sm"
         >
           <option value="">Select Created By</option>
 
@@ -875,44 +882,46 @@ const exportToPDF = async () => {
         </select>
 
         {/* created Date Range */}
-        <div className="flex items-center border border-gray-200 md:border-none bg-white rounded-sm focus-within:ring-1 focus-within:ring-orange-200 transition-all px-2 w-full md:w-auto">
-          <span className="mx-1 text-gray-400 whitespace-nowrap">Created Date</span>
+        <div className="p-1 w-full md:w-62 border border-orange-300 md:border  text-gray-400 bg-white rounded-sm  transition-all outline-none">
+          <span className="text-[10px] text-gray-400 uppercase font-bold pt-1 mx-2">
+            Created Date
+          </span>
           <input
             type="date"
             value={filters.created_at || ""}
             onChange={(e) =>
               setFilters({ ...filters, created_at: e.target.value })
             }
-            className="p-2 w-full md:w-32 outline-none"
+            className="p-1 w-full md:w-32 outline-none text-sm"
           />
         </div>
 
         {/* CLEAR BUTTON */}
         <div className="flex gap-2">
-            <button
-              onClick={() => {
-                setFilters({
-                  task_name: "",
-                  status: "",
-                  priority: "",
-                  start_date: "",
-                  end_date: "",
-                  assignee: "",
-                  created_by_name: "",
-                  created_at: "",
-                });
-                setShowMobileFilters(false);
-              }}
-              className="border border-gray-300 w-full md:w-auto cursor-pointer rounded-sm p-1.5 bg-gray-200 text-gray-700 hover:bg-gray-300 text-md text-center px-6"
-            >
-              Clear
-            </button>
-            <button
-              onClick={() => setShowMobileFilters(false)}
-              className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-1.5 bg-orange-100 text-orange-700 hover:bg-orange-200 text-md text-center px-6"
-            >
-              Apply
-            </button>
+          <button
+            onClick={() => {
+              setFilters({
+                task_name: "",
+                status: "",
+                priority: "",
+                start_date: "",
+                end_date: "",
+                assignee: "",
+                created_by_name: "",
+                created_at: "",
+              });
+              setShowMobileFilters(false);
+            }}
+            className="border border-gray-300 w-full md:w-auto cursor-pointer rounded-sm p-1.5 bg-gray-200 text-gray-700 hover:bg-gray-300 text-md text-center px-6"
+          >
+            Clear
+          </button>
+          <button
+            onClick={() => setShowMobileFilters(false)}
+            className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-1.5 bg-orange-100 text-orange-700 hover:bg-orange-200 text-md text-center px-6"
+          >
+            Apply
+          </button>
         </div>
       </div>
 
@@ -1059,35 +1068,74 @@ const exportToPDF = async () => {
             </tbody>
           </table>
 
-          {totalPages > 1 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-3 border-gray-200 bg-white rounded-b-lg gap-3">
-              {/* Previous Button */}
-              <button
-                type="button"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className=" px-4 py-2 text-sm font-medium rounded-sm  bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-
-              {/* Page Info Centered */}
-              <span className="text-sm text-gray-600">
-                Page <span className="font-semibold">{currentPage}</span> of{" "}
-                <span className="font-semibold">{totalPages}</span>
+          {/* ✅ STANDARDIZED MICARA IMS PAGINATION */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white rounded-b-lg">
+            {/* Left side: Rows per page selector */}
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-slate-500 font-medium">
+                Rows per page:
               </span>
-
-              {/* Next Button */}
-              <button
-                type="button"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 text-sm font-medium rounded-sm border bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-70 disabled:cursor-not-allowed"
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all cursor-pointer font-medium"
               >
-                Next
-              </button>
+                {[10, 20, 100, 200].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
+
+
+            {/* Right side: Navigation buttons (only if totalPages > 1) */}
+            {totalPages > 1 && (
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
+                {/* Previous Button */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <i className="bi bi-chevron-left text-sm"></i>
+                </button>
+
+                {/* Page Buttons */}
+                <div className="flex items-center gap-1.5">
+                  {getSlidingPages().map((page) => (
+                    <button
+                      type="button"
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${
+                        currentPage === page
+                          ? "bg-[#212121] text-white shadow-md shadow-black/10"
+                          : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Next Button */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  <i className="bi bi-chevron-right text-sm"></i>
+                </button>
+              </div>
+            )}
+          </div>
+
         </div>
       </form>
 
@@ -1124,7 +1172,7 @@ const exportToPDF = async () => {
                       name="task_name"
                       value={formData.task_name}
                       onChange={handleChange}
-                      className="w-full border  rounded-sm px-4 py-2  border-gray-300 outline-none focus:ring-1 focus:ring-orange-200"
+                      className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none "
                       required
                     />
                   </div>
@@ -1142,7 +1190,7 @@ const exportToPDF = async () => {
                             setStartDate(e.target.value);
                             setDueDate("");
                           }}
-                          className="w-full border  rounded-sm px-4 py-2  border-gray-300 outline-none focus:ring-1 focus:ring-orange-200"
+                          className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none "
                           required
                         />
                       </div>
@@ -1156,7 +1204,7 @@ const exportToPDF = async () => {
                       value={dueDate}
                       min={startDate}
                       onChange={(e) => setDueDate(e.target.value)}
-                      className="w-full border  rounded-sm px-4 py-2  border-gray-300 outline-none focus:ring-1 focus:ring-orange-200"
+                      className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none "
                       required
                     />
                   </div>
@@ -1170,7 +1218,7 @@ const exportToPDF = async () => {
                           name="status"
                           value={formData.status}
                           onChange={handleChange}
-                          className="w-full border  rounded-sm px-4 py-2  border-gray-300 outline-none focus:ring-1 focus:ring-orange-200"
+                          className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none"
                           required
                         >
                           {status.map((item) => (
@@ -1192,7 +1240,7 @@ const exportToPDF = async () => {
                           name="priority"
                           value={formData.priority}
                           onChange={handleChange}
-                          className="w-full border  rounded-sm px-4 py-2  border-gray-300 outline-none focus:ring-1 focus:ring-orange-200"
+                          className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none"
                           required
                         >
                           <option value=""> --Select-- </option>
@@ -1211,7 +1259,7 @@ const exportToPDF = async () => {
                         name="recurring_type"
                         value={formData.recurring_type}
                         onChange={handleChange}
-                        className="w-full border  rounded-sm px-4 py-2  border-gray-300 outline-none focus:ring-1 focus:ring-orange-200"
+                        className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none"
                         required
                       >
                         <option value="">-- Select --</option>
@@ -1231,7 +1279,7 @@ const exportToPDF = async () => {
                         name="repeat_every"
                         value={formData.repeat_every}
                         onChange={handleChange}
-                        className="w-full border  rounded-sm px-4 py-2  border-gray-300 outline-none focus:ring-1 focus:ring-orange-200"
+                        className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none"
                         required
                       >
                         <option value="">-- Select --</option>
@@ -1251,7 +1299,7 @@ const exportToPDF = async () => {
                           setRelatedTo(e.target.value);
                           setSecondValue("");
                         }}
-                        className="w-full border  rounded-sm px-4 py-2  border-gray-300 outline-none focus:ring-1 focus:ring-orange-200"
+                        className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none"
                         required
                       >
                         <option value="">-- Select --</option>
@@ -1269,7 +1317,7 @@ const exportToPDF = async () => {
                     <div className="relative">
                       {relatedTo ? (
                         <select
-                          className="w-full border  rounded-sm px-4 py-2  border-gray-300 outline-none focus:ring-1 focus:ring-orange-200"
+                          className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none"
                           value={secondValue}
                           onChange={(e) => setSecondValue(e.target.value)}
                           required
@@ -1289,7 +1337,7 @@ const exportToPDF = async () => {
                           )}
                         </select>
                       ) : (
-                        <div className="w-full border border-gray-200 bg-gray-100 rounded-md px-4 py-2 text-gray-400">
+                        <div className="w-full border border-orange-300 bg-orange-100 rounded-md px-4 py-2 text-orange-500">
                           Select Related To first
                         </div>
                       )}
@@ -1399,7 +1447,7 @@ const exportToPDF = async () => {
                         name="template"
                         value={formData.template}
                         onChange={handleChange}
-                        className="w-full border  rounded-sm px-4 py-2  border-gray-300 outline-none focus:ring-1 focus:ring-orange-200"
+                        className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none"
                         required
                       >
                         <option value="">-- Select --</option>
@@ -1416,14 +1464,14 @@ const exportToPDF = async () => {
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
-                    className="w-full border border-gray-300 rounded-md px-4 py-2 outline-none focus:ring-1 focus:ring-orange-200"
+                    className="w-full border border-orange-300 rounded-md px-4 py-2 outline-none "
                     required
                   ></textarea>
                 </div>
 
                 <div className="text-gray-600 mt-2">
                   <label className="block mb-2 ">Select Files *</label>
-                  <div className="border border-dashed border-gray-400 text-center ">
+                  <div className="border border-dashed border-orange-300 text-center ">
                     <div className="m-3">
                       <h3 className="mb-3">Upload Documents</h3>
                       <button
@@ -1509,7 +1557,7 @@ const exportToPDF = async () => {
                         <div
                           onDrop={handleDrop}
                           onDragOver={(e) => e.preventDefault()}
-                          className="border-2 border-dashed border-gray-400 m-6 p-8 text-center rounded-xl"
+                          className="border-2 border-dashed border-orange-300 m-6 p-8 text-center rounded-xl"
                         >
                           <p className="font-semibold mt-3">DRAG FILES HERE</p>
                           <p className="text-gray-500 mt-1">
