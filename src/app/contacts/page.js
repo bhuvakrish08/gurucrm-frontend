@@ -44,6 +44,10 @@ export default function Page() {
 
   const API_base = `${API_BASE}/api/contacts`;
 
+  // Standardized Micara IMS Pagination Logic
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
   /* ---------------- FETCH CONTACTS ---------------- */
   const fetchData = useCallback(async () => {
     try {
@@ -68,12 +72,17 @@ export default function Page() {
     return () => clearTimeout(delay);
   }, [fetchData]);
 
+  // Reset page when filters or items per page changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, itemsPerPage]);
+
   /* ---------------- FETCH DROPDOWNS ---------------- */
   useEffect(() => {
     axios
       .get(`${API_BASE}/api/contact/read`, { params: { status: 1 } })
       .then((res) => setDesignations(res.data))
-      .catch(() => { });
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -239,21 +248,28 @@ export default function Page() {
     setDeleteId(null);
   };
 
-  /* ---------------- PAGINATION ---------------- */
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  // Standardized Pagination Calculations
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-
   const currentData = contacts.slice(indexOfFirstItem, indexOfLastItem);
-
   const totalPages = Math.ceil(contacts.length / itemsPerPage);
 
-  const handlePageChange = (page) => {
-    if (page < 1) return;
-    if (page > totalPages) return;
-
-    setCurrentPage(page);
+  const getSlidingPages = () => {
+    const visibleCount = 5;
+    if (totalPages <= visibleCount) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    let start = currentPage - Math.floor(visibleCount / 2);
+    let end = currentPage + Math.floor(visibleCount / 2);
+    if (start < 1) {
+      start = 1;
+      end = visibleCount;
+    }
+    if (end > totalPages) {
+      end = totalPages;
+      start = totalPages - visibleCount + 1;
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   };
 
   return (
@@ -300,16 +316,25 @@ export default function Page() {
 
         {/* Filters */}
         <div className="mx-6 mb-2 md:hidden mt-3 relative z-40">
-          <button onClick={() => setShowMobileFilters(!showMobileFilters)} className="w-full flex items-center justify-between text-orange-500 font-semibold bg-orange-50 px-4 py-2 rounded-sm border border-orange-200 shadow-sm transition-all">
-            <span className="flex items-center gap-2"><i className="bi bi-funnel"></i> Filters</span>
-            <i className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}></i>
+          <button
+            onClick={() => setShowMobileFilters(!showMobileFilters)}
+            className="w-full flex items-center justify-between text-orange-500 font-semibold bg-orange-50 px-4 py-2 rounded-sm border border-orange-200 shadow-sm transition-all"
+          >
+            <span className="flex items-center gap-2">
+              <i className="bi bi-funnel"></i> Filters
+            </span>
+            <i
+              className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}
+            ></i>
           </button>
         </div>
 
-        <div className={`
+        <div
+          className={`
           ${showMobileFilters ? "absolute left-6 right-6 top-50 bg-white p-5 shadow-2xl border border-gray-100 z-50 rounded-lg grid grid-cols-2 gap-3 mt-1" : "hidden"} 
           md:mx-6 md:mb-3 md:items-center md:gap-2 md:flex-wrap md:flex md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
-        `}>
+        `}
+        >
           <select
             name="company_name"
             value={filters.company_name}
@@ -398,11 +423,14 @@ export default function Page() {
             >
               Clear
             </button>
-            <button onClick={() => setShowMobileFilters(false)} className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-2 bg-orange-100 text-orange-700 hover:bg-orange-200 text-sm text-center font-semibold">
+            <button
+              onClick={() => setShowMobileFilters(false)}
+              className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-2 bg-orange-100 text-orange-700 hover:bg-orange-200 text-sm text-center font-semibold"
+            >
               Apply
             </button>
           </div>
-        </div>    
+        </div>
       </div>
       {/* Table */}
       <form className="p-1 mx-4">
@@ -474,181 +502,226 @@ export default function Page() {
             </tbody>
           </table>
 
-          {totalPages > 1 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-3 border-gray-200 bg-white rounded-b-lg gap-3">
-              {/* Previous Button */}
-              <button
-                type="button"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="px-4 py-2 text-sm font-medium rounded-md border bg-gray-100 text-gray-700 hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-
-              {/* Page Info Centered */}
-              <span className="text-sm text-gray-600">
-                Page <span className="font-semibold">{currentPage}</span> of{" "}
-                <span className="font-semibold">{totalPages}</span>
+          {/* ✅ STANDARDIZED MICARA IMS PAGINATION */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white rounded-b-lg">
+            {/* Left side: Rows per page selector */}
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-slate-500 font-medium">
+                Rows per page:
               </span>
-
-              {/* Next Button */}
-              <button
-                type="button"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="px-4 py-2 text-sm font-medium rounded-md border bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-          )}
-        </div>
-      </form>
-
-      {/* Modal remains same */}
-      {showForm && (
-        <div className="fixed inset-0 bg-gray-900/30 z-50 flex justify-center items-center">
-          <div className="bg-white rounded-xl shadow-lg p-6 w-[500px] relative">
-            <button
-              type="button"
-              onClick={() => {
-                setShowForm(false);
-              }}
-              className="absolute top-3 right-4 text-xl text-orange-500 hover:text-orange-600"
-            >
-              ✕
-            </button>
-
-            <h3 className="text-lg mb-3 text-black">
-              {editId ? "Edit" : "Add"} Table Contacts
-              <hr className="mt-3 mb-5 text-gray-300" />
-            </h3>
-            <form onSubmit={handleSubmit}>
-              <label className="block text-sm  text-gray-500 mb-2">
-                Comapany Name *
-              </label>
               <select
-                name="company_name"
-                value={formdata.company_name}
-                onChange={handleFormCompanyChange}
-                className="w-full border rounded-sm p-2 mb-5 outline-none border-orange-300 "
-              >
-                <option value="">Select Company Name</option>
-                {companyname.map((item) => (
-                  <option key={item.company_name} value={item.company_name}>
-                    {item.company_name}
-                  </option>
-                ))}
-              </select>
-
-              <label className="block text-sm  text-gray-500 mb-2">
-                Customer Name *
-              </label>
-              <select
-                name="customer_id"
-                value={formdata.customer_id}
+                value={itemsPerPage}
                 onChange={(e) => {
-                  const selectedId = Number(e.target.value); // ✅ force INT
-                  const selectedCustomer = customername.find(
-                    (c) => c.id === selectedId,
-                  );
-
-                  setFormData((p) => ({
-                    ...p,
-                    customer_id: selectedId, // ✅ PRIMARY KEY
-                    customer_name: selectedCustomer?.customer_name || "",
-                  }));
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
                 }}
-                className="w-full border rounded-sm p-2 mb-5 outline-none border-orange-300 "
+                className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all cursor-pointer font-medium"
               >
-                <option value="">Select Customer Name</option>
-                {customername.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.customer_name}
+                {[10, 20, 100, 200].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
                   </option>
                 ))}
               </select>
+            </div>
 
-              <label className="block text-sm  text-gray-500 mb-2">
-                Contact Person *
-              </label>
-              <input
-                type="text"
-                className="border p-2 w-md rounded-sm mb-3  outline-none border-orange-300"
-                name="contact_person"
-                value={formdata.contact_person}
-                onChange={handleChange}
-              />
-
-              <label className="block text-sm  text-gray-500 mb-2">
-                Contact Number *
-              </label>
-              <input
-                type="text"
-                className="border p-2 w-md rounded-sm mb-3  outline-none border-orange-300"
-                name="contact_number"
-                value={formdata.contact_number}
-                onChange={handleChange}
-              />
-
-              <label className="block text-sm  text-gray-500 mb-2">
-                Email
-              </label>
-              <input
-                type="text"
-                className="border p-2 w-md rounded-sm    mb-3 outline-none border-orange-300"
-                name="email"
-                value={formdata.email}
-                onChange={handleChange}
-              />
-
-              <label className="block text-sm  text-gray-500 mb-2">
-                Contact Designation *
-              </label>
-              <select
-                name="contact_designation"
-                value={formdata.contact_designation}
-                onChange={handleChange}
-                className="w-full border rounded-sm p-2 mb-5 outline-none border-orange-300 "
-              >
-                <option value="">Select Contact Designation</option>
-                {designations.map((item) => (
-                  <option key={item.id || item.name} value={item.id}>
-                    {item.name}
-                  </option>
-                ))}
-              </select>
-
-              <div className="flex justify-end gap-2">
+            {/* Right side: Navigation buttons (only if totalPages > 1) */}
+            {totalPages > 1 && (
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
+                {/* Previous Button */}
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowForm(false);
-                  }}
-                  className="px-4 py-2 rounded-sm    border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(prev - 1, 1))
+                  }
+                  disabled={currentPage === 1}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  Cancel
+                  <i className="bi bi-chevron-left text-sm"></i>
                 </button>
+
+                {/* Page Buttons */}
+                <div className="flex items-center gap-1.5">
+                  {getSlidingPages().map((page) => (
+                    <button
+                      type="button"
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${
+                        currentPage === page
+                          ? "bg-[#212121] text-white shadow-md shadow-black/10"
+                          : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Next Button */}
                 <button
-                  type="submit"
-                  className="bg-orange-500  hover:bg-orange-600 text-white px-4 py-1.5 rounded-sm"
+                  type="button"
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  Save
+                  <i className="bi bi-chevron-right text-sm"></i>
                 </button>
               </div>
-            </form>
+            )}
+          </div>
+        </div>
+      </form>
+      {/* Modal remains same */}
+      {/* ── ADD TABLE CONTACTS MODAL ── */}
+      {showForm && (
+        <div className="fixed inset-0 bg-gray-900/30 z-50 flex justify-center items-center">
+          <div className="bg-white rounded-sm shadow-lg w-[450px] relative overflow-hidden">
+            {/* ✅ HEADER with gradient - like reference image */}
+            <div className="bg-gradient-to-r from-orange-100 to-white px-6 py-5 mb-2">
+              <button
+                type="button"
+                onClick={() => setShowForm(false)}
+                className="absolute top-4 right-4 text-xl text-orange-500 hover:text-orange-600"
+              >
+                ✕
+              </button>
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                {editId ? "Edit" : "Add"} Table Contacts
+              </h3>
+            </div>
+
+            {/* ✅ FORM BODY */}
+            <div className="px-6 pb-6">
+              <form onSubmit={handleSubmit}>
+                <label className="block text-sm  text-gray-500 mb-2">
+                  Comapany Name *
+                </label>
+                <select
+                  name="company_name"
+                  value={formdata.company_name}
+                  onChange={handleFormCompanyChange}
+                  className="w-full border rounded-sm p-2 mb-3 outline-none border-orange-300 "
+                >
+                  <option value="">Select Company Name</option>
+                  {companyname.map((item) => (
+                    <option key={item.company_name} value={item.company_name}>
+                      {item.company_name}
+                    </option>
+                  ))}
+                </select>
+
+                <label className="block text-sm  text-gray-500 mb-2">
+                  Customer Name *
+                </label>
+                <select
+                  name="customer_id"
+                  value={formdata.customer_id}
+                  onChange={(e) => {
+                    const selectedId = Number(e.target.value); // ✅ force INT
+                    const selectedCustomer = customername.find(
+                      (c) => c.id === selectedId,
+                    );
+
+                    setFormData((p) => ({
+                      ...p,
+                      customer_id: selectedId, // ✅ PRIMARY KEY
+                      customer_name: selectedCustomer?.customer_name || "",
+                    }));
+                  }}
+                  className="w-full border rounded-sm p-2 mb-3 outline-none border-orange-300 "
+                >
+                  <option value="">Select Customer Name</option>
+                  {customername.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.customer_name}
+                    </option>
+                  ))}
+                </select>
+
+                <label className="block text-sm  text-gray-500 mb-2">
+                  Contact Person *
+                </label>
+                <input
+                  type="text"
+                  className="border p-2  rounded-sm mb-3 outline-none border-orange-300 w-full"
+                  name="contact_person"
+                  value={formdata.contact_person}
+                  onChange={handleChange}
+                />
+
+                <label className="block text-sm  text-gray-500 mb-2">
+                  Contact Number *
+                </label>
+                <input
+                  type="text"
+                  className="border p-2 w-full rounded-sm mb-3 outline-none border-orange-300"
+                  name="contact_number"
+                  value={formdata.contact_number}
+                  onChange={handleChange}
+                />
+
+                <label className="block text-sm  text-gray-500 mb-2">
+                  Email
+                </label>
+                <input
+                  type="text"
+                  className="border p-2 w-full rounded-sm    mb-3 outline-none border-orange-300"
+                  name="email"
+                  value={formdata.email}
+                  onChange={handleChange}
+                />
+
+                <label className="block text-sm  text-gray-500 mb-2">
+                  Contact Designation *
+                </label>
+                <select
+                  name="contact_designation"
+                  value={formdata.contact_designation}
+                  onChange={handleChange}
+                  className="w-full border rounded-sm p-2 mb-3 outline-none border-orange-300 "
+                >
+                  <option value="">Select Contact Designation</option>
+                  {designations.map((item) => (
+                    <option key={item.id || item.name} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForm(false);
+                    }}
+                    className="px-4 py-2 rounded-sm    border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-orange-500  hover:bg-orange-600 text-white px-4 py-1.5 rounded-sm"
+                  >
+                    Save
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-gray-900/40 z-50 flex justify-center items-center">
-          <div className="bg-white rounded-xl shadow-xl w-[380px] relative overflow-hidden">
+        <div className="fixed inset-0 bg-gray-900/30 z-50 flex justify-center items-center">
+          <div className="bg-white rounded-sm shadow-xl w-[380px] relative overflow-hidden">
             {/* Header */}
-            <div className="bg-orange-50 px-5 py-3 flex items-center justify-between border-b border-orange-100">
+            <div className="from-orange-100 to-white bg-gradient-to-r  px-5 py-3 flex items-center justify-between ">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-orange-500 inline-block"></span>
+                <div className="bg-white rounded-xl shadow-lg p-6 w-[500px] relative overflow-hidden"></div>{" "}
+                <i className="bi bi-trash3 text-orange-500 text-sm"></i>
                 <span className="text-xs font-bold tracking-widest text-gray-700 uppercase">
                   Delete Contact
                 </span>
@@ -656,7 +729,7 @@ export default function Page() {
               <button
                 type="button"
                 onClick={handleDeleteCancel}
-                className="text-orange-400 hover:text-orange-600 text-lg font-bold"
+                className="text-orange-500 text-md "
               >
                 ✕
               </button>
@@ -681,18 +754,18 @@ export default function Page() {
               </p>
 
               {/* Buttons */}
-              <div className="flex gap-3 w-full">
+              <div className="flex gap-3 w-full p-x-6">
                 <button
                   type="button"
                   onClick={handleDeleteCancel}
-                  className="flex-1 py-2.5 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50 transition-all text-sm font-medium"
+                  className="flex-1 py-2.5 rounded-md border  border-gray-300 text-gray-600 hover:bg-gray-50 transition-all text-sm font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleDeleteConfirm}
-                  className="flex-1 py-2.5 rounded-md bg-orange-500 text-white hover:bg-orange-600 transition-all text-sm font-bold"
+                  className="flex-1 py-2.5  rounded-md bg-orange-500 text-white hover:bg-orange-600 transition-all text-sm font-medium"
                 >
                   Delete
                 </button>

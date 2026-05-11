@@ -22,9 +22,10 @@ export default function ProformaPage() {
   const exportRef = useRef(null);
   const debounceRef = useRef(null);
 
-  // ── PAGINATION STATE ──────────────────────────────────────
+  // Standardized Micara IMS Pagination Logic
   const [currentPage, setCurrentPage] = useState(1);
-  const [recordsPerPage, setRecordsPerPage] = useState(25);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
 
   // ── FILTER STATE ──────────────────────────────────────────
   const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -51,53 +52,30 @@ export default function ProformaPage() {
 
   const API = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-  // ── PAGINATION LOGIC ──────────────────────────────────────
-  const totalRecords = piData.length;
-  const totalPages = Math.ceil(totalRecords / recordsPerPage);
-  const startIndex = (currentPage - 1) * recordsPerPage;
-  const endIndex = startIndex + recordsPerPage;
-  const paginatedData = piData.slice(startIndex, endIndex);
+  // Standardized Pagination Calculations
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const paginatedData = piData.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(piData.length / itemsPerPage);
 
-  const handleRecordsPerPageChange = (val) => {
-    setRecordsPerPage(Number(val));
-    setCurrentPage(1);
-  };
-
-  const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
-  };
-
-  const getPageNumbers = () => {
-    const pages = [];
-    if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      if (currentPage <= 4) {
-        pages.push(1, 2, 3, 4, 5, "...", totalPages);
-      } else if (currentPage >= totalPages - 3) {
-        pages.push(
-          1,
-          "...",
-          totalPages - 4,
-          totalPages - 3,
-          totalPages - 2,
-          totalPages - 1,
-          totalPages,
-        );
-      } else {
-        pages.push(
-          1,
-          "...",
-          currentPage - 1,
-          currentPage,
-          currentPage + 1,
-          "...",
-          totalPages,
-        );
-      }
+  const getSlidingPages = () => {
+    const visibleCount = 5;
+    if (totalPages <= visibleCount) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
     }
-    return pages;
+    let start = currentPage - Math.floor(visibleCount / 2);
+    let end = currentPage + Math.floor(visibleCount / 2);
+    if (start < 1) {
+      start = 1;
+      end = visibleCount;
+    }
+    if (end > totalPages) {
+      end = totalPages;
+      start = totalPages - visibleCount + 1;
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   };
+
 
   // ── FETCH ALL PI ─────────────────────────────────────────
   const fetchPI = async () => {
@@ -140,6 +118,12 @@ export default function ProformaPage() {
     debounceRef.current = setTimeout(() => searchPI(), 200);
     return () => clearTimeout(debounceRef.current);
   }, [filters]);
+
+  // Reset page when filters or items per page changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters, itemsPerPage]);
+
 
   // ── RESET FILTERS ─────────────────────────────────────────
   const resetFilters = () => {
@@ -1330,7 +1314,52 @@ const downloadPIPdf = async (item, globalIndex) => {
                       </div>
                     )}
                   </div>
-                )}
+
+
+                  {/* Right side: Navigation buttons (only if totalPages > 1) */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
+                      {/* Previous Button */}
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        <i className="bi bi-chevron-left text-sm"></i>
+                      </button>
+
+                      {/* Page Buttons */}
+                      <div className="flex items-center gap-1.5">
+                        {getSlidingPages().map((page) => (
+                          <button
+                            type="button"
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${
+                              currentPage === page
+                                ? "bg-[#212121] text-white shadow-md shadow-black/10"
+                                : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Next Button */}
+                      <button
+                        type="button"
+                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                        disabled={currentPage === totalPages}
+                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                      >
+                        <i className="bi bi-chevron-right text-sm"></i>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
               </div>
             )}
           </div>
