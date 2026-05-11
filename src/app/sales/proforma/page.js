@@ -328,7 +328,7 @@ export default function ProformaPage() {
     }
   };
 
-  // ── EXPORT PDF ────────────────────────────────────────────
+  // ── EXPORT PDF (LIST) ─────────────────────────────────────
   const exportToPDF = async () => {
     try {
       const { default: jsPDF } = await import("jspdf");
@@ -351,7 +351,7 @@ export default function ProformaPage() {
         item.customer_name || "",
         item.quotation_no || "",
         item.assignee || "",
-        item.total ? `₹${Number(item.total).toLocaleString()}` : "",
+        item.total ? `Rs.${Number(item.total).toLocaleString()}` : "",
         item.proforma_percentage ? `${item.proforma_percentage}%` : "",
         item.status || "",
         item.created_at ? new Date(item.created_at).toLocaleDateString() : "",
@@ -395,6 +395,405 @@ export default function ProformaPage() {
     }
   };
 
+  // ════════════════════════════════════════════════════════
+  // ── DOWNLOAD SINGLE PI PDF (Won PI) ──────────────────────
+  // ════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════
+// ── DOWNLOAD SINGLE PI PDF — MICARA Style (Won PI) ──────────────────
+// ════════════════════════════════════════════════════════════════════
+// Replace the full downloadPIPdf function in your ProformaPage component
+// with this updated version.
+// ════════════════════════════════════════════════════════════════════
+
+// ════════════════════════════════════════════════════════════════════
+// ── DOWNLOAD SINGLE PI PDF — Fixed Alignment Version ────────────────
+// ════════════════════════════════════════════════════════════════════
+
+const downloadPIPdf = async (item, globalIndex) => {
+  try {
+    const { default: jsPDF } = await import("jspdf");
+    const { default: autoTable } = await import("jspdf-autotable");
+
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+    });
+
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+
+    // ── Colours ──────────────────────────────────────────────────────
+    const orange   = [255, 132, 0];
+    const darkGray = [40,  40,  40];
+    const lightBg  = [248, 248, 248];
+    const borderC  = [220, 220, 220];
+    const textGray = [100, 100, 100];
+    const white    = [255, 255, 255];
+    const green    = [22,  163, 74];
+
+    const piNumber   = formatPINumber(globalIndex);
+    const grandTotal = getGrandTotal(item);
+    const followUps  = item.follow_ups || [];
+
+    // ── Helper: horizontal rule ───────────────────────────────────────
+    const hRule = (y, r = 220, g = 220, b = 220, lw = 0.2) => {
+      doc.setDrawColor(r, g, b);
+      doc.setLineWidth(lw);
+      doc.line(14, y, pageW - 14, y);
+    };
+
+    // ════════════════════════════════════════════════════════════════
+    // 1. HEADER BANNER
+    // ════════════════════════════════════════════════════════════════
+    doc.setFillColor(...white);
+    doc.rect(0, 0, pageW, 30, "F");
+
+    // Company name
+    doc.setTextColor(...orange);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.text("Venster Pvt. Ltd.", 14, 13);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(...darkGray);
+    doc.text("A QUALITY BUSINESS SOLUTIONS BRAND", 14, 20);
+
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(7);
+    doc.setTextColor(...darkGray)
+    doc.text("Where Excellence Meets Professionalism", 14, 26);
+
+    // Title right side
+    doc.setTextColor(...orange);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("PROFORMA INVOICE", pageW - 14, 13, { align: "right" });
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...darkGray);
+    const piDateStr = item.pi_date
+      ? new Date(item.pi_date).toLocaleDateString("en-IN")
+      : new Date().toLocaleDateString("en-IN");
+    doc.text(`Date: ${piDateStr}`, pageW - 14, 21, { align: "right" });
+
+    // Accent line
+    doc.setFillColor(...darkGray);
+    doc.rect(0, 30, pageW, 1.2, "F");
+
+    // ════════════════════════════════════════════════════════════════
+    // 2. PI NUMBER + STATUS BADGE STRIP
+    // ════════════════════════════════════════════════════════════════
+    doc.setFillColor(...lightBg);
+    doc.rect(0, 31.2, pageW, 13, "F");
+
+    doc.setTextColor(...darkGray);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text(`PI No: ${piNumber}`, 14, 40);
+
+    // ── WON badge — fixed width & centred text ────────────────────
+    const badgeW = 32;
+    const badgeH = 8;
+    const badgeX = pageW - 14 - badgeW;
+    const badgeY = 33.5;
+
+    doc.setFillColor(...green);
+    doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 1.5, 1.5, "F");
+
+    doc.setTextColor(...white);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    // Centre text inside badge
+    doc.text("WON / PAID", badgeX + badgeW / 2, badgeY + 5.3, { align: "center" });
+
+    // ════════════════════════════════════════════════════════════════
+    // 3. COMPANY INFO + ORDER DETAILS (two-column card)
+    // ════════════════════════════════════════════════════════════════
+    const cardTop = 48;
+    const cardH   = 52;
+    const colLeft = 14;
+    const colMid  = pageW / 2 + 2;
+    const colRight = pageW - 14;
+
+    // Card background
+    doc.setFillColor(252, 252, 252);
+    doc.setDrawColor(...borderC);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(colLeft, cardTop, colRight - colLeft, cardH, 2, 2, "FD");
+
+    // Column divider
+    doc.setDrawColor(...borderC);
+    doc.setLineWidth(0.3);
+    doc.line(colMid, cardTop + 5, colMid, cardTop + cardH - 5);
+
+    // ── LEFT: Bill To ─────────────────────────────────────────────
+    doc.setTextColor(...orange);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("BILL TO / COMPANY INFO", colLeft + 6, cardTop + 9);
+
+    doc.setDrawColor(...orange);
+    doc.setLineWidth(0.5);
+    doc.line(colLeft + 6, cardTop + 11, colLeft + 55, cardTop + 11);
+
+    const leftLabelX  = colLeft + 6;
+    const leftValueX  = colLeft + 36;   // fixed value column start
+
+    const companyRows = [
+      ["Customer:",  item.customer_name || "N/A"],
+      ["Assignee:",  item.assignee       || "N/A"],
+      ["Quotation:", item.quotation_no   || "N/A"],
+      ["Created:",   item.created_at
+        ? new Date(item.created_at).toLocaleDateString("en-IN")
+        : "N/A"],
+    ];
+
+    let cy = cardTop + 19;
+    companyRows.forEach(([label, val]) => {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(...darkGray);
+      doc.text(label, leftLabelX, cy);
+
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...textGray);
+      doc.text(String(val), leftValueX, cy);
+      cy += 8;
+    });
+
+    // ── RIGHT: Order Details ──────────────────────────────────────
+    const rightLabelX = colMid + 6;
+    const rightValueX = colMid + 40;   // fixed value column start
+
+    doc.setTextColor(...orange);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.text("ORDER DETAILS", rightLabelX, cardTop + 9);
+
+    doc.setDrawColor(...orange);
+    doc.setLineWidth(0.5);
+    doc.line(rightLabelX, cardTop + 11, rightLabelX + 38, cardTop + 11);
+
+    const orderRows = [
+      ["PI Number:",   piNumber],
+      ["PI Date:",     piDateStr],
+      ["Grand Total:", `Rs. ${Number(grandTotal).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`],
+      ["Total Paid %:", `${parseFloat(Number(item.proforma_percentage).toFixed(2))}%`],
+    ];
+
+    let oy = cardTop + 19;
+    orderRows.forEach(([label, val]) => {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(...darkGray);
+      doc.text(label, rightLabelX, oy);
+
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...textGray);
+      doc.text(String(val), rightValueX, oy);
+      oy += 8;
+    });
+
+    // ════════════════════════════════════════════════════════════════
+    // 4. PAYMENT HISTORY TABLE
+    // ════════════════════════════════════════════════════════════════
+    const tableTop = cardTop + cardH + 8;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(...darkGray);
+    doc.text("PAYMENT HISTORY", 14, tableTop);
+
+    doc.setFillColor(...orange);
+    doc.rect(14, tableTop + 1.5, 40, 0.8, "F");
+
+    // Build rows
+    const tableRows = [];
+
+    const basePct = Number(item.proforma_percentage) || 0;
+    const baseAmt = followUps.length === 0
+      ? Number(item.total || 0)
+      : (grandTotal * basePct) / 100;
+
+    if (basePct > 0) {
+      tableRows.push([
+        "1",
+        item.created_at
+          ? new Date(item.created_at).toLocaleDateString("en-IN")
+          : "-",
+        "Initial Payment",
+        `${basePct}%`,
+        `Rs. ${Number(baseAmt).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`,
+        "Received",
+      ]);
+    }
+
+    followUps.forEach((f, idx) => {
+      const pct = Number(f.proforma_percentage || 0);
+      const amt = Number(f.total || 0);
+      tableRows.push([
+        String(tableRows.length + 1),
+        f.created_at
+          ? new Date(f.created_at).toLocaleDateString("en-IN")
+          : "-",
+        `Follow-Up #${idx + 1}`,
+        `${pct}%`,
+        `Rs. ${Number(amt).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`,
+        idx === followUps.length - 1 ? "Final" : "Received",
+      ]);
+    });
+
+    if (tableRows.length === 0) {
+      tableRows.push(["1", "-", "No payment records found", "-", "-", "-"]);
+    }
+
+    autoTable(doc, {
+      startY: tableTop + 5,
+      head: [["#", "Date", "Description", "Paid %", "Amount", "Status"]],
+      body: tableRows,
+      theme: "grid",
+      styles: {
+        fontSize: 8.5,
+        cellPadding: { top: 4, bottom: 4, left: 4, right: 4 },
+        textColor: darkGray,
+        lineColor: borderC,
+        lineWidth: 0.25,
+        valign: "middle",
+      },
+      headStyles: {
+        fillColor: orange,
+        textColor: white,
+        fontStyle: "bold",
+        fontSize: 8.5,
+        cellPadding: { top: 4, bottom: 4, left: 4, right: 4 },
+        halign: "left",
+      },
+      alternateRowStyles: {
+        fillColor: [255, 250, 244],
+      },
+      columnStyles: {
+        0: { cellWidth: 10,  halign: "center" },
+        1: { cellWidth: 28,  halign: "left"   },
+        2: { cellWidth: "auto", halign: "left" },
+        3: { cellWidth: 18,  halign: "center" },
+        4: { cellWidth: 42,  halign: "right"  },
+        5: { cellWidth: 22,  halign: "center", textColor: green, fontStyle: "bold" },
+      },
+      margin: { left: 14, right: 14 },
+    });
+
+    // ════════════════════════════════════════════════════════════════
+    // 5. SUMMARY SECTION
+    // ════════════════════════════════════════════════════════════════
+    const summaryY = doc.lastAutoTable.finalY + 10;
+
+    // ── Left: Thank you note ──────────────────────────────────────
+    doc.setTextColor(...darkGray);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Thank you for your business!", 14, summaryY + 8);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...textGray);
+    doc.text("This is a system-generated document.", 14, summaryY + 17);
+    doc.text("No signature is required.", 14, summaryY + 24);
+
+    // ── Right: Summary card ───────────────────────────────────────
+    const sCardW  = 80;
+    const sCardX  = pageW - 14 - sCardW;
+    const labelX  = sCardX + 6;
+    const valueX  = sCardX + sCardW - 6;   // right-aligned values
+
+    const paidAmt = (grandTotal * Number(item.proforma_percentage)) / 100;
+
+    const summaryItems = [
+      ["Grand Total",  `Rs. ${Number(grandTotal).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`],
+      ["Total Paid",   `Rs. ${Number(paidAmt).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`],
+      ["Follow-ups",   `${followUps.length} record(s)`],
+    ];
+
+    // Draw card border
+    const sCardH = summaryItems.length * 10 + 14;
+    doc.setFillColor(252, 252, 252);
+    doc.setDrawColor(...borderC);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(sCardX, summaryY, sCardW, sCardH, 2, 2, "FD");
+
+    let sY = summaryY + 10;
+    summaryItems.forEach(([label, val]) => {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...darkGray);
+      doc.text(label, labelX, sY);
+
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...darkGray);
+      doc.text(val, valueX, sY, { align: "right" });
+
+      // Separator line
+      doc.setDrawColor(...borderC);
+      doc.setLineWidth(0.2);
+      doc.line(sCardX + 4, sY + 3, sCardX + sCardW - 4, sY + 3);
+
+      sY += 10;
+    });
+
+    // Final Status row — full orange highlight
+    const finalRowY = summaryY + sCardH - 1;
+    doc.setFillColor(...orange);
+    doc.roundedRect(sCardX, finalRowY - 7, sCardW, 10, 0, 0, "F");
+    // bottom-left & bottom-right corners rounded
+    doc.roundedRect(sCardX, finalRowY - 7, sCardW, 10, 2, 2, "F");
+
+    doc.setTextColor(...white);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.text("Final Status", labelX, finalRowY - 0.5);
+    doc.text("WON / PAID", valueX, finalRowY - 0.5, { align: "right" });
+
+    // ════════════════════════════════════════════════════════════════
+    // 6. FOOTER
+    // ════════════════════════════════════════════════════════════════
+    doc.setFillColor(...orange);
+    doc.rect(0, pageH - 12, 60, 12, "F");
+
+    doc.setFillColor(...darkGray);
+    doc.rect(60, pageH - 12, pageW - 60, 12, "F");
+
+    doc.setTextColor(...white);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.text("Venster Pvt. Ltd.", 8, pageH - 4.5);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(200, 200, 200);
+    doc.text(
+      `© ${new Date().getFullYear()} Venster Pvt. Ltd. — All rights reserved.   |   Generated: ${new Date().toLocaleDateString("en-IN")}`,
+      pageW - 14,
+      pageH - 4.5,
+      { align: "right" }
+    );
+
+    // ════════════════════════════════════════════════════════════════
+    // 7. SAVE
+    // ════════════════════════════════════════════════════════════════
+    const safeName = (item.customer_name || "Invoice")
+      .replace(/[^a-zA-Z0-9]/g, "_")
+      .slice(0, 30);
+
+    doc.save(`${piNumber}_${safeName}.pdf`);
+
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to generate PDF");
+  }
+};
+
   // ── ADD FOLLOW-UP ─────────────────────────────────────────
   const handleSubmitFollowUp = async () => {
     const newPercent = Number(percentage);
@@ -421,7 +820,7 @@ export default function ProformaPage() {
       await updateStatus(selectedPI.pi_id, confirmedTotal);
       toast.success(
         confirmedTotal >= 100
-          ? "Follow-up added & marked as Won 🎉"
+          ? "Follow-up added & marked as Won!"
           : "Follow-up added successfully",
       );
       setShowModal(false);
@@ -432,12 +831,11 @@ export default function ProformaPage() {
     } catch (err) {
       toast.error(err.response?.data?.message || "Error");
     } finally {
-      setSubmitLoading(false); // ✅ ADD THIS
+      setSubmitLoading(false);
     }
   };
-  // ===================================================
-  // UPDATE FOLLOW-UP + AUTO STATUS
-  // ===================================================
+
+  // ── UPDATE FOLLOW-UP ──────────────────────────────────────
   const handleUpdate = async () => {
     const newPercent = Number(percentage);
     if (!newPercent || newPercent <= 0) {
@@ -456,16 +854,14 @@ export default function ProformaPage() {
       return;
     }
     try {
-      setUpdateLoading(true); // ✅ ADD THIS
-
+      setUpdateLoading(true);
       await axios.put(
         `${API}/api/pi/update-followup/${selectedPI.pi_id}/${editing.id}`,
         { percentage: newPercent },
       );
-
       await updateStatus(selectedPI.pi_id, newTotal);
       toast.success(
-        newTotal >= 100 ? "Updated & marked as Won 🎉" : "Updated successfully",
+        newTotal >= 100 ? "Updated & marked as Won!" : "Updated successfully",
       );
       setShowModal(false);
       setEditing(null);
@@ -475,13 +871,15 @@ export default function ProformaPage() {
     } catch (err) {
       toast.error(err.response?.data?.message || "Update failed");
     } finally {
-      setUpdateLoading(false); // ✅ ADD THIS
+      setUpdateLoading(false);
     }
   };
+
   const handleEdit = (item) => {
     setEditing(item);
     setPercentage(item.proforma_percentage);
   };
+
   return (
     <>
       <Header />
@@ -565,15 +963,15 @@ export default function ProformaPage() {
         </div>
 
         <div
-  className={`
-    ${
-      showMobileFilters
-        ? "absolute left-6 right-6 top-[170px] bg-white p-5 shadow-2xl rounded-lg grid grid-cols-2 gap-3 mt-1 z-[999] ring-2 ring-orange-300"
-        : "hidden"
-    }
-    md:mx-6 md:flex md:flex-wrap md:items-center md:gap-x-3 md:gap-y-2 md:mt-3 md:mb-5 md:relative md:bg-transparent md:p-0 md:shadow-none md:ring-0
-  `}
->
+          className={`
+            ${
+              showMobileFilters
+                ? "absolute left-6 right-6 top-[170px] bg-white p-5 shadow-2xl rounded-lg grid grid-cols-2 gap-3 mt-1 z-[999] ring-2 ring-orange-300"
+                : "hidden"
+            }
+            md:mx-6 md:flex md:flex-wrap md:items-center md:gap-x-3 md:gap-y-2 md:mt-3 md:mb-5 md:relative md:bg-transparent md:p-0 md:shadow-none md:ring-0
+          `}
+        >
           <input
             name="customer_name"
             value={filters.customer_name}
@@ -586,13 +984,13 @@ export default function ProformaPage() {
             value={filters.quotation_no}
             onChange={handleFilterChange}
             placeholder="Quotation No"
-            className="p-2 w-full md:w-45 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-600 text-sm"
+            className="p-2 w-full md:w-45 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-600 text-sm"
           />
           <select
             name="assignee"
             value={filters.assignee}
             onChange={handleFilterChange}
-            className="p-2 w-full md:w-45 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-400 text-sm"
+            className="p-2 w-full md:w-45 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-400 text-sm"
           >
             <option value="">Assignee</option>
             {assigneeList.map((item) => (
@@ -605,14 +1003,14 @@ export default function ProformaPage() {
             name="status"
             value={filters.status}
             onChange={handleFilterChange}
-            className="p-2 w-full md:w-45 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-400 text-sm"
+            className="p-2 w-full md:w-45 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-400 text-sm"
           >
             <option value="">Status</option>
             <option value="draft">Draft</option>
             <option value="partial">Pending</option>
             <option value="paid">Won</option>
           </select>
-          <div className="flex items-center px-2 w-full md:w-58 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
+          <div className="flex items-center px-2 w-full md:w-58 bg-white border border-orange-300 md:border rounded-sm text-gray-400 text-sm col-span-2 md:col-span-1">
             <span className="mx-1 text-gray-400 whitespace-nowrap">From</span>
             <input
               type="date"
@@ -622,7 +1020,7 @@ export default function ProformaPage() {
               className="p-2 w-full md:w-35 outline-none"
             />
           </div>
-          <div className="flex items-center px-2 w-full md:w-53 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-400 text-sm col-span-2 md:col-span-1">
+          <div className="flex items-center px-2 w-full md:w-53 bg-white border border-orange-300 md:border rounded-sm text-gray-400 text-sm col-span-2 md:col-span-1">
             <span className="mx-1 text-gray-400 whitespace-nowrap">To</span>
             <input
               type="date"
@@ -640,7 +1038,7 @@ export default function ProformaPage() {
             placeholder="Min %"
             min="0"
             max="100"
-            className="p-2 w-full md:w-24 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-600 text-sm"
+            className="p-2 w-full md:w-24 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-600 text-sm"
           />
           <input
             type="number"
@@ -650,23 +1048,23 @@ export default function ProformaPage() {
             placeholder="Max %"
             min="0"
             max="100"
-            className="p-2 w-full md:w-24 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-600 text-sm"
+            className="p-2 w-full md:w-24 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-600 text-sm"
           />
           <input
             type="number"
             name="min_total"
             value={filters.min_total}
             onChange={handleFilterChange}
-            placeholder="Min ₹"
-            className="p-2 w-full md:w-32 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-600 text-sm"
+            placeholder="Min Rs."
+            className="p-2 w-full md:w-32 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-600 text-sm"
           />
           <input
             type="number"
             name="max_total"
             value={filters.max_total}
             onChange={handleFilterChange}
-            placeholder="Max ₹"
-            className="p-2 w-full md:w-32 bg-white border border-orange-300 md:border rounded-sm focus:outline-none  text-gray-600 text-sm"
+            placeholder="Max Rs."
+            className="p-2 w-full md:w-32 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-600 text-sm"
           />
           <div className="flex gap-2 col-span-2 md:col-span-1">
             <button
@@ -693,8 +1091,6 @@ export default function ProformaPage() {
             {loading ? (
               <div className="text-center py-10 text-gray-400">Loading...</div>
             ) : (
-              // <div className="overflow-x-auto">
-              //   <table className="w-full text-sm custom-scroll">
               <div
                 className="overflow-x-auto overflow-y-scroll max-h-[500px] custom-scroll"
                 style={{ overflowX: "scroll" }}
@@ -702,45 +1098,26 @@ export default function ProformaPage() {
                 <table className="w-full text-sm whitespace-nowrap">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-100">
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        #
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        PI No
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        PI Date
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Customer Name
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Quotation No
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Assignee
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Total
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        PI %
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="py-3 px-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Follow-Up
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Created
-                      </th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">#</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">PI No</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">PI Date</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Customer Name</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Quotation No</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Assignee</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Total</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">PI %</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                      <th className="py-3 px-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">Follow-Up</th>
+                      {/* ── NEW: Download column ── */}
+                      <th className="py-3 px-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">Download</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Created</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedData.length > 0 ? (
                       paginatedData.map((item, index) => {
                         const globalIndex = startIndex + index;
+                        const isWon = item.status === "paid";
                         return (
                           <tr
                             key={item.pi_id}
@@ -752,9 +1129,7 @@ export default function ProformaPage() {
                             </td>
                             <td className="py-3 px-3 text-gray-500">
                               {item.pi_date
-                                ? new Date(item.pi_date).toLocaleDateString(
-                                    "en-IN",
-                                  )
+                                ? new Date(item.pi_date).toLocaleDateString("en-IN")
                                 : "-"}
                             </td>
                             <td className="py-3 px-3 text-orange-500">
@@ -783,7 +1158,7 @@ export default function ProformaPage() {
                               )}
                             </td>
                             <td className="py-3 px-3 font-medium text-gray-800">
-                              ₹{Number(item.total).toLocaleString()}
+                              Rs.{Number(item.total).toLocaleString()}
                             </td>
                             <td className="py-3 px-3">
                               <div className="flex items-center gap-2">
@@ -803,22 +1178,22 @@ export default function ProformaPage() {
                             <td className="py-3 px-3">
                               <span
                                 className={`border rounded-sm px-3 py-1 text-xs font-semibold
-                                ${item.status === "paid" ? "border-green-200 bg-green-50 text-green-700" : ""}
-                                ${item.status === "partial" ? "border-orange-200 bg-orange-50 text-orange-700" : ""}
-                                ${item.status === "draft" ? "border-gray-200 bg-gray-50 text-gray-700" : ""}
-                                ${item.status === "sent" ? "border-blue-200 bg-blue-50 text-blue-700" : ""}
-                                ${item.status === "cancelled" ? "border-red-200 bg-red-50 text-red-700" : ""}
-                              `}
+                                  ${item.status === "paid" ? "border-green-200 bg-green-50 text-green-700" : ""}
+                                  ${item.status === "partial" ? "border-orange-200 bg-orange-50 text-orange-700" : ""}
+                                  ${item.status === "draft" ? "border-gray-200 bg-gray-50 text-gray-700" : ""}
+                                  ${item.status === "sent" ? "border-blue-200 bg-blue-50 text-blue-700" : ""}
+                                  ${item.status === "cancelled" ? "border-red-200 bg-red-50 text-red-700" : ""}
+                                `}
                               >
                                 {item.status === "paid"
                                   ? "Won"
                                   : item.status === "partial"
-                                    ? "Pending"
-                                    : item.status === "sent"
-                                      ? "Sent"
-                                      : item.status === "cancelled"
-                                        ? "Cancelled"
-                                        : "Draft"}
+                                  ? "Pending"
+                                  : item.status === "sent"
+                                  ? "Sent"
+                                  : item.status === "cancelled"
+                                  ? "Cancelled"
+                                  : "Draft"}
                               </span>
                             </td>
                             <td className="py-3 px-3 text-center">
@@ -836,11 +1211,31 @@ export default function ProformaPage() {
                                 <i className="bi bi-plus text-lg"></i>
                               </button>
                             </td>
+
+                            {/* ════════════════════════════════════
+                                DOWNLOAD BUTTON — only for Won PIs
+                            ════════════════════════════════════ */}
+                            <td className="py-3 px-3 text-center">
+                              {isWon ? (
+                                <button
+                                  onClick={() => downloadPIPdf(item, globalIndex)}
+                                  title="Download PI PDF"
+                                  className="group relative w-9 h-9 rounded-full border border-green-200 bg-green-50 flex items-center justify-center mx-auto hover:bg-green-500 hover:border-green-500 transition-all cursor-pointer"
+                                >
+                                  <i className="bi bi-file-earmark-pdf text-green-600 group-hover:text-white text-base transition-all"></i>
+                                  {/* Tooltip */}
+                                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-2 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                    Download PDF
+                                  </span>
+                                </button>
+                              ) : (
+                                <span className="text-gray-300 text-xs">—</span>
+                              )}
+                            </td>
+
                             <td className="py-3 px-3 text-gray-500">
                               {item.created_at
-                                ? new Date(item.created_at).toLocaleDateString(
-                                    "en-IN",
-                                  )
+                                ? new Date(item.created_at).toLocaleDateString("en-IN")
                                 : "-"}
                             </td>
                           </tr>
@@ -848,10 +1243,7 @@ export default function ProformaPage() {
                       })
                     ) : (
                       <tr>
-                        <td
-                          colSpan="11"
-                          className="text-center py-10 text-gray-400"
-                        >
+                        <td colSpan="12" className="text-center py-10 text-gray-400">
                           No Data Found
                         </td>
                       </tr>
@@ -862,30 +1254,21 @@ export default function ProformaPage() {
                 {/* ── PAGINATION BAR ────────────────────────── */}
                 {piData.length > 0 && (
                   <div className="flex flex-col sm:flex-row items-center justify-between px-2 py-3 border-t border-gray-100 mt-2 gap-3">
-                    {/* Left: Records info + per-page dropdown */}
                     <div className="flex flex-wrap items-center gap-3 justify-center sm:justify-start">
                       <span className="text-xs text-gray-400">
                         Showing{" "}
-                        <span className="font-semibold text-gray-600">
-                          {startIndex + 1}
-                        </span>
+                        <span className="font-semibold text-gray-600">{startIndex + 1}</span>
                         {" – "}
-                        <span className="font-semibold text-gray-600">
-                          {Math.min(endIndex, totalRecords)}
-                        </span>
+                        <span className="font-semibold text-gray-600">{Math.min(endIndex, totalRecords)}</span>
                         {" of "}
-                        <span className="font-semibold text-gray-600">
-                          {totalRecords}
-                        </span>
+                        <span className="font-semibold text-gray-600">{totalRecords}</span>
                         {hasActiveFilters ? " filtered" : ""} record(s)
                       </span>
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs text-gray-400">Show</span>
                         <select
                           value={recordsPerPage}
-                          onChange={(e) =>
-                            handleRecordsPerPageChange(e.target.value)
-                          }
+                          onChange={(e) => handleRecordsPerPageChange(e.target.value)}
                           className="border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-600 focus:outline-none focus:ring-1 focus:ring-orange-300 bg-white cursor-pointer"
                         >
                           <option value={25}>25</option>
@@ -905,10 +1288,8 @@ export default function ProformaPage() {
                       )}
                     </div>
 
-                    {/* Right: Page navigation */}
                     {totalPages > 1 && (
                       <div className="flex items-center gap-1 mt-3 sm:mt-0">
-                        {/* Prev */}
                         <button
                           onClick={() => handlePageChange(currentPage - 1)}
                           disabled={currentPage === 1}
@@ -918,13 +1299,9 @@ export default function ProformaPage() {
                           <i className="bi bi-chevron-left text-xs"></i>
                         </button>
 
-                        {/* Page numbers */}
                         {getPageNumbers().map((page, i) =>
                           page === "..." ? (
-                            <span
-                              key={`dots-${i}`}
-                              className="w-8 h-8 flex items-center justify-center text-gray-400 text-xs"
-                            >
+                            <span key={`dots-${i}`} className="w-8 h-8 flex items-center justify-center text-gray-400 text-xs">
                               ...
                             </span>
                           ) : (
@@ -932,10 +1309,9 @@ export default function ProformaPage() {
                               key={page}
                               onClick={() => handlePageChange(page)}
                               className={`w-8 h-8 flex items-center justify-center rounded-lg border text-xs font-semibold transition-all
-                                ${
-                                  currentPage === page
-                                    ? "bg-orange-500 border-orange-500 text-white shadow-sm shadow-orange-200"
-                                    : "border-gray-200 text-gray-600 hover:bg-orange-50 hover:border-orange-300 hover:text-orange-500"
+                                ${currentPage === page
+                                  ? "bg-orange-500 border-orange-500 text-white shadow-sm shadow-orange-200"
+                                  : "border-gray-200 text-gray-600 hover:bg-orange-50 hover:border-orange-300 hover:text-orange-500"
                                 }`}
                             >
                               {page}
@@ -943,7 +1319,6 @@ export default function ProformaPage() {
                           ),
                         )}
 
-                        {/* Next */}
                         <button
                           onClick={() => handlePageChange(currentPage + 1)}
                           disabled={currentPage === totalPages}
@@ -970,9 +1345,7 @@ export default function ProformaPage() {
           const basePaidPercentage = editing
             ? (selectedPI.follow_ups || []).reduce(
                 (sum, f) =>
-                  f.id === editing.id
-                    ? sum
-                    : sum + Number(f.proforma_percentage),
+                  f.id === editing.id ? sum : sum + Number(f.proforma_percentage),
                 0,
               )
             : Number(selectedPI.proforma_percentage) || 0;
@@ -1020,30 +1393,17 @@ export default function ProformaPage() {
                     </p>
                     <div className="space-y-1 text-sm mb-4">
                       <div className="flex justify-between py-1.5 border-b border-gray-50">
-                        <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">
-                          Customer
-                        </span>
-                        <span className="font-medium text-gray-700">
-                          {selectedPI.customer_name}
-                        </span>
+                        <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">Customer</span>
+                        <span className="font-medium text-gray-700">{selectedPI.customer_name}</span>
                       </div>
                       <div className="flex justify-between py-1.5 border-b border-gray-50">
-                        <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">
-                          Quotation
-                        </span>
-                        <span className="font-medium text-gray-700">
-                          {selectedPI.quotation_no}
-                        </span>
+                        <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">Quotation</span>
+                        <span className="font-medium text-gray-700">{selectedPI.quotation_no}</span>
                       </div>
                       <div className="flex justify-between py-1.5 border-b border-gray-50">
-                        <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">
-                          Grand Total
-                        </span>
+                        <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">Grand Total</span>
                         <span className="font-semibold text-gray-800">
-                          ₹
-                          {Number(grandTotal).toLocaleString("en-IN", {
-                            maximumFractionDigits: 2,
-                          })}
+                          Rs.{Number(grandTotal).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                         </span>
                       </div>
                       <div className="flex justify-between py-1.5">
@@ -1052,10 +1412,7 @@ export default function ProformaPage() {
                         </span>
                         <span className="font-semibold text-orange-500">
                           {parseFloat(paidPercentage.toFixed(2))}% &nbsp;|&nbsp;
-                          ₹
-                          {Number(basePaidAmount).toLocaleString("en-IN", {
-                            maximumFractionDigits: 2,
-                          })}
+                          Rs.{Number(basePaidAmount).toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                         </span>
                       </div>
                     </div>
@@ -1069,9 +1426,7 @@ export default function ProformaPage() {
                       </p>
                       <div className="flex justify-between items-center">
                         <div className="text-center">
-                          <p
-                            className={`text-xl font-bold ${afterRemainingPct < 0 ? "text-red-600" : afterRemainingPct === 0 && enteredPct > 0 ? "text-green-600" : "text-blue-600"}`}
-                          >
+                          <p className={`text-xl font-bold ${afterRemainingPct < 0 ? "text-red-600" : afterRemainingPct === 0 && enteredPct > 0 ? "text-green-600" : "text-blue-600"}`}>
                             {enteredPct > 0
                               ? afterRemainingPct < 0
                                 ? "Over!"
@@ -1082,14 +1437,12 @@ export default function ProformaPage() {
                         </div>
                         <div className="w-px h-10 bg-gray-200"></div>
                         <div className="text-center">
-                          <p
-                            className={`text-xl font-bold ${afterRemainingPct < 0 ? "text-red-600" : afterRemainingPct === 0 && enteredPct > 0 ? "text-green-600" : "text-blue-600"}`}
-                          >
+                          <p className={`text-xl font-bold ${afterRemainingPct < 0 ? "text-red-600" : afterRemainingPct === 0 && enteredPct > 0 ? "text-green-600" : "text-blue-600"}`}>
                             {enteredPct > 0
                               ? afterRemainingPct < 0
                                 ? "Over!"
-                                : `₹${Number(afterRemainingAmt).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
-                              : `₹${Number(remainingAmount).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
+                                : `Rs.${Number(afterRemainingAmt).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
+                              : `Rs.${Number(remainingAmount).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
                           </p>
                           <p className="text-xs text-gray-400">Amount</p>
                         </div>
@@ -1098,24 +1451,20 @@ export default function ProformaPage() {
                         <div className="w-full bg-white rounded-full h-2 border border-gray-200 overflow-hidden">
                           <div
                             className={`h-2 rounded-full transition-all duration-300 ${afterRemainingPct < 0 ? "bg-red-500" : paidPercentage + enteredPct >= 100 ? "bg-green-500" : "bg-orange-400"}`}
-                            style={{
-                              width: `${Math.min(paidPercentage + enteredPct, 100)}%`,
-                            }}
+                            style={{ width: `${Math.min(paidPercentage + enteredPct, 100)}%` }}
                           ></div>
                         </div>
                         <div className="flex justify-between mt-1">
                           <span className="text-xs text-gray-400">
-                            {editing ? "Others" : "Paid"}:{" "}
-                            {parseFloat(paidPercentage.toFixed(2))}%
-                            {enteredPct > 0 &&
-                              ` + ${parseFloat(enteredPct.toFixed(2))}% ${editing ? "edited" : "new"}`}
+                            {editing ? "Others" : "Paid"}: {parseFloat(paidPercentage.toFixed(2))}%
+                            {enteredPct > 0 && ` + ${parseFloat(enteredPct.toFixed(2))}% ${editing ? "edited" : "new"}`}
                           </span>
                           <span className="text-xs text-gray-400">100%</span>
                         </div>
                       </div>
                     </div>
 
-                    {/* % and ₹ Inputs */}
+                    {/* Inputs */}
                     <div className="flex gap-3">
                       <div className="flex-1">
                         <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -1129,20 +1478,14 @@ export default function ProformaPage() {
                             value={percentage}
                             onChange={(e) => {
                               const val = e.target.value;
-                              if (val === "") {
-                                handlePercentageChange("");
-                                return;
-                              }
+                              if (val === "") { handlePercentageChange(""); return; }
                               const num = Number(val);
-                              if (num >= 0 && num <= 100)
-                                handlePercentageChange(num);
+                              if (num >= 0 && num <= 100) handlePercentageChange(num);
                             }}
                             className="w-full border border-gray-200 rounded-xl pl-3 pr-8 py-2 text-sm focus:ring-1 focus:ring-orange-300 focus:border-transparent outline-none bg-gray-50 transition-all"
                             placeholder="0"
                           />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
-                            %
-                          </span>
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">%</span>
                         </div>
                       </div>
                       <div className="flex-1">
@@ -1150,22 +1493,17 @@ export default function ProformaPage() {
                           Amount <span className="text-orange-500">*</span>
                         </label>
                         <div className="relative mt-1.5">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
-                            ₹
-                          </span>
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">Rs.</span>
                           <input
                             type="number"
                             min="0"
                             value={rupees}
                             onChange={(e) => {
                               const val = e.target.value;
-                              if (val === "") {
-                                handleRupeesChange("");
-                                return;
-                              }
+                              if (val === "") { handleRupeesChange(""); return; }
                               handleRupeesChange(Number(val));
                             }}
-                            className="w-full border border-gray-200 rounded-xl pl-7 pr-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 focus:border-transparent outline-none bg-gray-50 transition-all"
+                            className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 focus:border-transparent outline-none bg-gray-50 transition-all"
                             placeholder="0.00"
                           />
                         </div>
@@ -1173,8 +1511,7 @@ export default function ProformaPage() {
                     </div>
                     {afterRemainingPct < 0 && enteredPct > 0 && (
                       <p className="text-xs text-red-500 mt-2 font-medium">
-                        ⚠ Exceeds remaining by{" "}
-                        {parseFloat(Math.abs(afterRemainingPct).toFixed(2))}%
+                        ⚠ Exceeds remaining by {parseFloat(Math.abs(afterRemainingPct).toFixed(2))}%
                       </p>
                     )}
                   </div>
@@ -1182,16 +1519,13 @@ export default function ProformaPage() {
                   {/* RIGHT - History */}
                   <div className="w-full md:w-1/2 px-6 py-5 flex flex-col bg-gray-50/50">
                     <div className="flex justify-between items-center mb-4">
-                      <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">
-                        Follow-Up History
-                      </p>
+                      <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">Follow-Up History</p>
                       <span className="text-xs bg-orange-50 text-orange-500 px-2.5 py-1 rounded-full font-semibold border border-orange-100">
                         {selectedPI.follow_ups?.length || 0} record(s)
                       </span>
                     </div>
                     <div className="space-y-2 overflow-y-auto max-h-80">
-                      {!selectedPI.follow_ups ||
-                      selectedPI.follow_ups.length === 0 ? (
+                      {!selectedPI.follow_ups || selectedPI.follow_ups.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-8 text-gray-300">
                           <i className="bi bi-clock-history text-3xl mb-2"></i>
                           <p className="text-sm">No history found</p>
@@ -1202,89 +1536,54 @@ export default function ProformaPage() {
                           return (
                             <div key={h.id}>
                               <div
-                                onClick={() =>
-                                  setActiveIndex(
-                                    index === activeIndex ? null : index,
-                                  )
-                                }
+                                onClick={() => setActiveIndex(index === activeIndex ? null : index)}
                                 className={`border rounded-xl p-3 cursor-pointer transition-all select-none ${isLatest ? "border-orange-400 bg-orange-50 shadow-sm" : "hover:bg-gray-50 border-gray-200"}`}
                               >
                                 <div className="flex justify-between items-center">
                                   <div className="flex items-center gap-2">
                                     {isLatest && (
-                                      <span className="text-xs bg-orange-100 text-orange-500 px-2 py-0.5 rounded-full font-semibold">
-                                        Latest
-                                      </span>
+                                      <span className="text-xs bg-orange-100 text-orange-500 px-2 py-0.5 rounded-full font-semibold">Latest</span>
                                     )}
                                     <p className="font-semibold text-sm text-gray-700">
-                                      {h.proforma_percentage}% → ₹
-                                      {Number(h.total).toLocaleString()}
+                                      {h.proforma_percentage}% → Rs.{Number(h.total).toLocaleString()}
                                     </p>
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <span className="text-xs text-gray-400">
-                                      {new Date(
-                                        h.created_at,
-                                      ).toLocaleDateString("en-IN")}
+                                      {new Date(h.created_at).toLocaleDateString("en-IN")}
                                     </span>
                                     {isLatest && (
                                       <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleEdit(h);
-                                        }}
+                                        onClick={(e) => { e.stopPropagation(); handleEdit(h); }}
                                         className="text-gray-400 hover:text-orange-500 transition-all"
                                       >
                                         <i className="bi bi-pencil-square text-xs"></i>
                                       </button>
                                     )}
-                                    <i
-                                      className={`bi ${activeIndex === index ? "bi-chevron-up" : "bi-chevron-down"} text-gray-400 text-xs`}
-                                    ></i>
+                                    <i className={`bi ${activeIndex === index ? "bi-chevron-up" : "bi-chevron-down"} text-gray-400 text-xs`}></i>
                                   </div>
                                 </div>
-                                <p className="text-xs text-gray-400 mt-1 truncate">
-                                  NA
-                                </p>
+                                <p className="text-xs text-gray-400 mt-1 truncate">NA</p>
                               </div>
                               {activeIndex === index && (
                                 <div className="mt-2 border border-orange-200 rounded-xl bg-gradient-to-br from-orange-50 to-white p-4 text-sm shadow-sm">
                                   <div className="flex justify-between items-center mb-3">
-                                    <p className="font-bold text-orange-500 text-xs uppercase tracking-wide">
-                                      Details
-                                    </p>
-                                    <button
-                                      onClick={() => setActiveIndex(null)}
-                                      className="text-gray-400 hover:text-gray-600 text-xs"
-                                    >
-                                      ✕ Close
-                                    </button>
+                                    <p className="font-bold text-orange-500 text-xs uppercase tracking-wide">Details</p>
+                                    <button onClick={() => setActiveIndex(null)} className="text-gray-400 hover:text-gray-600 text-xs">✕ Close</button>
                                   </div>
                                   <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
                                     <div>
-                                      <p className="text-xs text-gray-400 font-medium">
-                                        Percentage
-                                      </p>
-                                      <p className="font-semibold text-gray-700 text-sm mt-0.5">
-                                        {h.proforma_percentage}%
-                                      </p>
+                                      <p className="text-xs text-gray-400 font-medium">Percentage</p>
+                                      <p className="font-semibold text-gray-700 text-sm mt-0.5">{h.proforma_percentage}%</p>
                                     </div>
                                     <div>
-                                      <p className="text-xs text-gray-400 font-medium">
-                                        Amount
-                                      </p>
-                                      <p className="font-semibold text-gray-700 text-sm mt-0.5">
-                                        ₹{Number(h.total).toLocaleString()}
-                                      </p>
+                                      <p className="text-xs text-gray-400 font-medium">Amount</p>
+                                      <p className="font-semibold text-gray-700 text-sm mt-0.5">Rs.{Number(h.total).toLocaleString()}</p>
                                     </div>
                                     <div>
-                                      <p className="text-xs text-gray-400 font-medium">
-                                        Date
-                                      </p>
+                                      <p className="text-xs text-gray-400 font-medium">Date</p>
                                       <p className="font-semibold text-gray-700 text-sm mt-0.5">
-                                        {new Date(
-                                          h.created_at,
-                                        ).toLocaleDateString("en-IN")}
+                                        {new Date(h.created_at).toLocaleDateString("en-IN")}
                                       </p>
                                     </div>
                                   </div>
