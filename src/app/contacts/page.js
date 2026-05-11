@@ -73,7 +73,7 @@ export default function Page() {
     axios
       .get(`${API_BASE}/api/contact/read`, { params: { status: 1 } })
       .then((res) => setDesignations(res.data))
-      .catch(() => { });
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -300,16 +300,25 @@ export default function Page() {
 
         {/* Filters */}
         <div className="mx-6 mb-2 md:hidden mt-3 relative z-40">
-          <button onClick={() => setShowMobileFilters(!showMobileFilters)} className="w-full flex items-center justify-between text-orange-500 font-semibold bg-orange-50 px-4 py-2 rounded-sm border border-orange-200 shadow-sm transition-all">
-            <span className="flex items-center gap-2"><i className="bi bi-funnel"></i> Filters</span>
-            <i className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}></i>
+          <button
+            onClick={() => setShowMobileFilters(!showMobileFilters)}
+            className="w-full flex items-center justify-between text-orange-500 font-semibold bg-orange-50 px-4 py-2 rounded-sm border border-orange-200 shadow-sm transition-all"
+          >
+            <span className="flex items-center gap-2">
+              <i className="bi bi-funnel"></i> Filters
+            </span>
+            <i
+              className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}
+            ></i>
           </button>
         </div>
 
-        <div className={`
+        <div
+          className={`
           ${showMobileFilters ? "absolute left-6 right-6 top-50 bg-white p-5 shadow-2xl border border-gray-100 z-50 rounded-lg grid grid-cols-2 gap-3 mt-1" : "hidden"} 
           md:mx-6 md:mb-3 md:items-center md:gap-2 md:flex-wrap md:flex md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
-        `}>
+        `}
+        >
           <select
             name="company_name"
             value={filters.company_name}
@@ -398,11 +407,14 @@ export default function Page() {
             >
               Clear
             </button>
-            <button onClick={() => setShowMobileFilters(false)} className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-2 bg-orange-100 text-orange-700 hover:bg-orange-200 text-sm text-center font-semibold">
+            <button
+              onClick={() => setShowMobileFilters(false)}
+              className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-2 bg-orange-100 text-orange-700 hover:bg-orange-200 text-sm text-center font-semibold"
+            >
               Apply
             </button>
           </div>
-        </div>    
+        </div>
       </div>
       {/* Table */}
       <form className="p-1 mx-4">
@@ -505,174 +517,149 @@ export default function Page() {
           )}
         </div>
       </form>
-
       {/* Modal remains same */}
-    {showForm && (
+      {/* ── ADD TABLE CONTACTS MODAL ── */}
+      {showForm && (
         <div className="fixed inset-0 bg-gray-900/30 z-50 flex justify-center items-center">
-          <div className="bg-white rounded-xl shadow-lg w-[500px] relative overflow-hidden">
+          <div className="bg-white rounded-xl shadow-lg p-6 w-[500px] relative overflow-hidden">
+            <button
+              type="button"
+              onClick={() => {
+                setShowForm(false);
+              }}
+              className="absolute top-3 right-4 text-xl text-orange-500 hover:text-orange-600"
+            >
+              ✕
+            </button>
 
-            {/* ── NEW HEADER (contact card style) ── */}
-            <div className="flex items-center justify-between px-5 py-4 bg-orange-50 border-b border-orange-100">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                  <i className="bi bi-person text-orange-500 text-lg"></i>
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-800 leading-tight">
-                    {editId ? "Edit" : "Add"} Table Contacts
-                  </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Fill in the contact details below
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="text-orange-400 hover:text-orange-600 transition-colors text-xl leading-none cursor-pointer"
+            <h3 className="text-lg mb-3 text-black">
+              {editId ? "Edit" : "Add"} Table Contacts
+              <hr className="mt-3 mb-5 text-gray-300" />
+            </h3>
+            <form onSubmit={handleSubmit}>
+              <label className="block text-sm  text-gray-500 mb-2">
+                Comapany Name *
+              </label>
+              <select
+                name="company_name"
+                value={formdata.company_name}
+                onChange={handleFormCompanyChange}
+                className="w-full border rounded-sm p-2 mb-5 outline-none border-orange-300 "
               >
-                ✕
-              </button>
-            </div>
+                <option value="">Select Company Name</option>
+                {companyname.map((item) => (
+                  <option key={item.company_name} value={item.company_name}>
+                    {item.company_name}
+                  </option>
+                ))}
+              </select>
 
-            {/* ── FORM BODY ── */}
-            <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto custom-scroll">
+              <label className="block text-sm  text-gray-500 mb-2">
+                Customer Name *
+              </label>
+              <select
+                name="customer_id"
+                value={formdata.customer_id}
+                onChange={(e) => {
+                  const selectedId = Number(e.target.value); // ✅ force INT
+                  const selectedCustomer = customername.find(
+                    (c) => c.id === selectedId,
+                  );
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Company Name <span className="text-red-400">*</span>
-                </label>
-                <select
-                  name="company_name"
-                  value={formdata.company_name}
-                  onChange={handleFormCompanyChange}
-                  className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
-                >
-                  <option value="">Select Company Name</option>
-                  {companyname.map((item) => (
-                    <option key={item.company_name} value={item.company_name}>
-                      {item.company_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  setFormData((p) => ({
+                    ...p,
+                    customer_id: selectedId, // ✅ PRIMARY KEY
+                    customer_name: selectedCustomer?.customer_name || "",
+                  }));
+                }}
+                className="w-full border rounded-sm p-2 mb-5 outline-none border-orange-300 "
+              >
+                <option value="">Select Customer Name</option>
+                {customername.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.customer_name}
+                  </option>
+                ))}
+              </select>
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Customer Name <span className="text-red-400">*</span>
-                </label>
-                <select
-                  name="customer_id"
-                  value={formdata.customer_id}
-                  onChange={(e) => {
-                    const selectedId = Number(e.target.value);
-                    const selectedCustomer = customername.find(
-                      (c) => c.id === selectedId,
-                    );
-                    setFormData((p) => ({
-                      ...p,
-                      customer_id: selectedId,
-                      customer_name: selectedCustomer?.customer_name || "",
-                    }));
-                  }}
-                  className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
-                >
-                  <option value="">Select Customer Name</option>
-                  {customername.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.customer_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <label className="block text-sm  text-gray-500 mb-2">
+                Contact Person *
+              </label>
+              <input
+                type="text"
+                className="border p-2 w-md rounded-sm mb-3  outline-none border-orange-300"
+                name="contact_person"
+                value={formdata.contact_person}
+                onChange={handleChange}
+              />
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Contact Person <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="contact_person"
-                  value={formdata.contact_person}
-                  onChange={handleChange}
-                  className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
-                />
-              </div>
+              <label className="block text-sm  text-gray-500 mb-2">
+                Contact Number *
+              </label>
+              <input
+                type="text"
+                className="border p-2 w-md rounded-sm mb-3  outline-none border-orange-300"
+                name="contact_number"
+                value={formdata.contact_number}
+                onChange={handleChange}
+              />
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Contact Number <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="contact_number"
-                  value={formdata.contact_number}
-                  onChange={handleChange}
-                  className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
-                />
-              </div>
+              <label className="block text-sm  text-gray-500 mb-2">Email</label>
+              <input
+                type="text"
+                className="border p-2 w-md rounded-sm    mb-3 outline-none border-orange-300"
+                name="email"
+                value={formdata.email}
+                onChange={handleChange}
+              />
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Email
-                </label>
-                <input
-                  type="text"
-                  name="email"
-                  value={formdata.email}
-                  onChange={handleChange}
-                  className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
-                />
-              </div>
+              <label className="block text-sm  text-gray-500 mb-2">
+                Contact Designation *
+              </label>
+              <select
+                name="contact_designation"
+                value={formdata.contact_designation}
+                onChange={handleChange}
+                className="w-full border rounded-sm p-2 mb-5 outline-none border-orange-300 "
+              >
+                <option value="">Select Contact Designation</option>
+                {designations.map((item) => (
+                  <option key={item.id || item.name} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                  Contact Designation <span className="text-red-400">*</span>
-                </label>
-                <select
-                  name="contact_designation"
-                  value={formdata.contact_designation}
-                  onChange={handleChange}
-                  className="w-full bg-gray-50 border border-orange-300 rounded-sm px-3 py-2.5 text-sm text-gray-700 outline-none transition-all"
-                >
-                  <option value="">Select Contact Designation</option>
-                  {designations.map((item) => (
-                    <option key={item.id || item.name} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* ── FOOTER BUTTONS ── */}
-              <div className="flex justify-end gap-3 pt-2">
+              <div className="flex justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setShowForm(false)}
-                  className="px-6 py-2.5 text-sm text-gray-500 border border-gray-200 rounded-sm hover:bg-gray-50 cursor-pointer transition-all"
+                  onClick={() => {
+                    setShowForm(false);
+                  }}
+                  className="px-4 py-2 rounded-sm    border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex items-center gap-2 px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-all shadow-sm cursor-pointer"
+                  className="bg-orange-500  hover:bg-orange-600 text-white px-4 py-1.5 rounded-sm"
                 >
-                  <i className="bi bi-check2"></i> Save
+                  Save
                 </button>
               </div>
-
             </form>
           </div>
         </div>
       )}
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-gray-900/40 z-50 flex justify-center items-center">
-          <div className="bg-white rounded-xl shadow-xl w-[380px] relative overflow-hidden">
+        <div className="fixed inset-0 bg-gray-900/30 z-50 flex justify-center items-center">
+          <div className="bg-white rounded-sm shadow-xl w-[380px] relative overflow-hidden">
             {/* Header */}
-            <div className="bg-orange-50 px-5 py-3 flex items-center justify-between border-b border-orange-100">
+            <div className="from-orange-100 to-white bg-gradient-to-r  px-5 py-3 flex items-center justify-between ">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-orange-500 inline-block"></span>
+                <i className="bi bi-trash3 text-orange-500 text-sm"></i>
+
                 <span className="text-xs font-bold tracking-widest text-gray-700 uppercase">
                   Delete Contact
                 </span>
@@ -680,7 +667,7 @@ export default function Page() {
               <button
                 type="button"
                 onClick={handleDeleteCancel}
-                className="text-orange-400 hover:text-orange-600 text-lg font-bold"
+                className="text-orange-500 text-md "
               >
                 ✕
               </button>
@@ -705,18 +692,18 @@ export default function Page() {
               </p>
 
               {/* Buttons */}
-              <div className="flex gap-3 w-full">
+              <div className="flex gap-3 w-full p-x-6">
                 <button
                   type="button"
                   onClick={handleDeleteCancel}
-                  className="flex-1 py-2.5 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50 transition-all text-sm font-medium"
+                  className="flex-1 py-2.5 rounded-md border  border-gray-300 text-gray-600 hover:bg-gray-50 transition-all text-sm font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleDeleteConfirm}
-                  className="flex-1 py-2.5 rounded-md bg-orange-500 text-white hover:bg-orange-600 transition-all text-sm font-bold"
+                  className="flex-1 py-2.5  rounded-md bg-orange-500 text-white hover:bg-orange-600 transition-all text-sm font-medium"
                 >
                   Delete
                 </button>
