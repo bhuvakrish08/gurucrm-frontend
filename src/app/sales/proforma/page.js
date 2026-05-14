@@ -24,8 +24,7 @@ export default function ProformaPage() {
 
   // Standardized Micara IMS Pagination Logic
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-
+  const [itemsPerPage, setItemsPerPage] = useState(25);
 
   // ── FILTER STATE ──────────────────────────────────────────
   const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -53,10 +52,16 @@ export default function ProformaPage() {
   const API = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   // Standardized Pagination Calculations
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const paginatedData = piData.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(piData.length / itemsPerPage);
+  const totalRecords = piData.length;
+  const totalPages = Math.ceil(totalRecords / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedData = piData.slice(startIndex, endIndex);
+
+  const handleRecordsPerPageChange = (value) => {
+    setItemsPerPage(Number(value));
+    setCurrentPage(1);
+  };
 
   const getSlidingPages = () => {
     const visibleCount = 5;
@@ -75,7 +80,6 @@ export default function ProformaPage() {
     }
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   };
-
 
   // ── FETCH ALL PI ─────────────────────────────────────────
   const fetchPI = async () => {
@@ -123,7 +127,6 @@ export default function ProformaPage() {
   useEffect(() => {
     setCurrentPage(1);
   }, [filters, itemsPerPage]);
-
 
   // ── RESET FILTERS ─────────────────────────────────────────
   const resetFilters = () => {
@@ -379,15 +382,389 @@ export default function ProformaPage() {
     }
   };
 
-  // ════════════════════════════════════════════════════════
-  // ── DOWNLOAD SINGLE PI PDF (Won PI) ──────────────────────
-  // ════════════════════════════════════════════════════════
-// ════════════════════════════════════════════════════════════════════
-// ── DOWNLOAD SINGLE PI PDF — MICARA Style (Won PI) ──────────────────
-// ════════════════════════════════════════════════════════════════════
-// Replace the full downloadPIPdf function in your ProformaPage component
-// with this updated version.
-// ════════════════════════════════════════════════════════════════════
+
+  // ════════════════════════════════════════════════════════════════════
+  // ── DOWNLOAD SINGLE PI PDF — Fixed Alignment Version ────────────────
+  // ════════════════════════════════════════════════════════════════════
+  const downloadPIPdf = async (item, globalIndex) => {
+    try {
+      const { default: jsPDF } = await import("jspdf");
+      const { default: autoTable } = await import("jspdf-autotable");
+
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const pageW = doc.internal.pageSize.getWidth();
+      const pageH = doc.internal.pageSize.getHeight();
+
+      // ── Colours ──────────────────────────────────────────────────────
+      const orange = [255, 132, 0];
+      const darkGray = [40, 40, 40];
+      const lightBg = [248, 248, 248];
+      const borderC = [220, 220, 220];
+      const textGray = [100, 100, 100];
+      const white = [255, 255, 255];
+      const green = [22, 163, 74];
+
+      const piNumber = formatPINumber(globalIndex);
+      const grandTotal = getGrandTotal(item);
+      const followUps = item.follow_ups || [];
+
+      // ── Helper: horizontal rule ───────────────────────────────────────
+      const hRule = (y, r = 220, g = 220, b = 220, lw = 0.2) => {
+        doc.setDrawColor(r, g, b);
+        doc.setLineWidth(lw);
+        doc.line(14, y, pageW - 14, y);
+      };
+
+      // ════════════════════════════════════════════════════════════════
+      // 1. HEADER BANNER
+      // ════════════════════════════════════════════════════════════════
+      doc.setFillColor(...white);
+      doc.rect(0, 0, pageW, 30, "F");
+
+      // Company name
+      doc.setTextColor(...orange);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(22);
+      doc.text("Venster Pvt. Ltd.", 14, 13);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(...darkGray);
+      doc.text("A QUALITY BUSINESS SOLUTIONS BRAND", 14, 20);
+
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(7);
+      doc.setTextColor(...darkGray);
+      doc.text("Where Excellence Meets Professionalism", 14, 26);
+
+      // Title right side
+      doc.setTextColor(...orange);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.text("PROFORMA INVOICE", pageW - 14, 13, { align: "right" });
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(...darkGray);
+      const piDateStr = item.pi_date
+        ? new Date(item.pi_date).toLocaleDateString("en-IN")
+        : new Date().toLocaleDateString("en-IN");
+      doc.text(`Date: ${piDateStr}`, pageW - 14, 21, { align: "right" });
+
+      // Accent line
+      doc.setFillColor(...darkGray);
+      doc.rect(0, 30, pageW, 1.2, "F");
+
+      // ════════════════════════════════════════════════════════════════
+      // 2. PI NUMBER + STATUS BADGE STRIP
+      // ════════════════════════════════════════════════════════════════
+      doc.setFillColor(...lightBg);
+      doc.rect(0, 31.2, pageW, 13, "F");
+
+      doc.setTextColor(...darkGray);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text(`PI No: ${piNumber}`, 14, 40);
+
+      // ── WON badge ────────────────────────────────────────────────
+      const badgeW = 32;
+      const badgeH = 8;
+      const badgeX = pageW - 14 - badgeW;
+      const badgeY = 33.5;
+
+      doc.setFillColor(...green);
+      doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 1.5, 1.5, "F");
+
+      doc.setTextColor(...white);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.text("WON / PAID", badgeX + badgeW / 2, badgeY + 5.3, { align: "center" });
+
+      // ════════════════════════════════════════════════════════════════
+      // 3. COMPANY INFO + ORDER DETAILS (two-column card)
+      // ════════════════════════════════════════════════════════════════
+      const cardTop = 48;
+      const cardH = 52;
+      const colLeft = 14;
+      const colMid = pageW / 2 + 2;
+      const colRight = pageW - 14;
+
+      // Card background
+      doc.setFillColor(252, 252, 252);
+      doc.setDrawColor(...borderC);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(colLeft, cardTop, colRight - colLeft, cardH, 2, 2, "FD");
+
+      // Column divider
+      doc.setDrawColor(...borderC);
+      doc.setLineWidth(0.3);
+      doc.line(colMid, cardTop + 5, colMid, cardTop + cardH - 5);
+
+      // ── LEFT: Bill To ─────────────────────────────────────────────
+      doc.setTextColor(...orange);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.text("BILL TO / COMPANY INFO", colLeft + 6, cardTop + 9);
+
+      doc.setDrawColor(...orange);
+      doc.setLineWidth(0.5);
+      doc.line(colLeft + 6, cardTop + 11, colLeft + 55, cardTop + 11);
+
+      const leftLabelX = colLeft + 6;
+      const leftValueX = colLeft + 36;
+
+      const companyRows = [
+        ["Customer:", item.customer_name || "N/A"],
+        ["Assignee:", item.assignee || "N/A"],
+        ["Quotation:", item.quotation_no || "N/A"],
+        ["Created:", item.created_at
+          ? new Date(item.created_at).toLocaleDateString("en-IN")
+          : "N/A"],
+      ];
+
+      let cy = cardTop + 19;
+      companyRows.forEach(([label, val]) => {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.setTextColor(...darkGray);
+        doc.text(label, leftLabelX, cy);
+
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...textGray);
+        doc.text(String(val), leftValueX, cy);
+        cy += 8;
+      });
+
+      // ── RIGHT: Order Details ──────────────────────────────────────
+      const rightLabelX = colMid + 6;
+      const rightValueX = colMid + 40;
+
+      doc.setTextColor(...orange);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.text("ORDER DETAILS", rightLabelX, cardTop + 9);
+
+      doc.setDrawColor(...orange);
+      doc.setLineWidth(0.5);
+      doc.line(rightLabelX, cardTop + 11, rightLabelX + 38, cardTop + 11);
+
+      const orderRows = [
+        ["PI Number:", piNumber],
+        ["PI Date:", piDateStr],
+        ["Grand Total:", `Rs. ${Number(grandTotal).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`],
+        ["Total Paid %:", `${parseFloat(Number(item.proforma_percentage).toFixed(2))}%`],
+      ];
+
+      let oy = cardTop + 19;
+      orderRows.forEach(([label, val]) => {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8);
+        doc.setTextColor(...darkGray);
+        doc.text(label, rightLabelX, oy);
+
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...textGray);
+        doc.text(String(val), rightValueX, oy);
+        oy += 8;
+      });
+
+      // ════════════════════════════════════════════════════════════════
+      // 4. PAYMENT HISTORY TABLE
+      // ════════════════════════════════════════════════════════════════
+      const tableTop = cardTop + cardH + 8;
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(...darkGray);
+      doc.text("PAYMENT HISTORY", 14, tableTop);
+
+      doc.setFillColor(...orange);
+      doc.rect(14, tableTop + 1.5, 40, 0.8, "F");
+
+      // Build rows
+      const tableRows = [];
+
+      const basePct = Number(item.proforma_percentage) || 0;
+      const baseAmt = followUps.length === 0
+        ? Number(item.total || 0)
+        : (grandTotal * basePct) / 100;
+
+      if (basePct > 0) {
+        tableRows.push([
+          "1",
+          item.created_at
+            ? new Date(item.created_at).toLocaleDateString("en-IN")
+            : "-",
+          "Initial Payment",
+          `${basePct}%`,
+          `Rs. ${Number(baseAmt).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`,
+          "Received",
+        ]);
+      }
+
+      followUps.forEach((f, idx) => {
+        const pct = Number(f.proforma_percentage || 0);
+        const amt = Number(f.total || 0);
+        tableRows.push([
+          String(tableRows.length + 1),
+          f.created_at
+            ? new Date(f.created_at).toLocaleDateString("en-IN")
+            : "-",
+          `Follow-Up #${idx + 1}`,
+          `${pct}%`,
+          `Rs. ${Number(amt).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`,
+          idx === followUps.length - 1 ? "Final" : "Received",
+        ]);
+      });
+
+      if (tableRows.length === 0) {
+        tableRows.push(["1", "-", "No payment records found", "-", "-", "-"]);
+      }
+
+      autoTable(doc, {
+        startY: tableTop + 5,
+        head: [["#", "Date", "Description", "Paid %", "Amount", "Status"]],
+        body: tableRows,
+        theme: "grid",
+        styles: {
+          fontSize: 8.5,
+          cellPadding: { top: 4, bottom: 4, left: 4, right: 4 },
+          textColor: darkGray,
+          lineColor: borderC,
+          lineWidth: 0.25,
+          valign: "middle",
+        },
+        headStyles: {
+          fillColor: orange,
+          textColor: white,
+          fontStyle: "bold",
+          fontSize: 8.5,
+          cellPadding: { top: 4, bottom: 4, left: 4, right: 4 },
+          halign: "left",
+        },
+        alternateRowStyles: {
+          fillColor: [255, 250, 244],
+        },
+        columnStyles: {
+          0: { cellWidth: 10, halign: "center" },
+          1: { cellWidth: 28, halign: "left" },
+          2: { cellWidth: "auto", halign: "left" },
+          3: { cellWidth: 18, halign: "center" },
+          4: { cellWidth: 42, halign: "right" },
+          5: { cellWidth: 22, halign: "center", textColor: green, fontStyle: "bold" },
+        },
+        margin: { left: 14, right: 14 },
+      });
+
+      // ════════════════════════════════════════════════════════════════
+      // 5. SUMMARY SECTION
+      // ════════════════════════════════════════════════════════════════
+      const summaryY = doc.lastAutoTable.finalY + 10;
+
+      // ── Left: Thank you note ──────────────────────────────────────
+      doc.setTextColor(...darkGray);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text("Thank you for your business!", 14, summaryY + 8);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...textGray);
+      doc.text("This is a system-generated document.", 14, summaryY + 17);
+      doc.text("No signature is required.", 14, summaryY + 24);
+
+      // ── Right: Summary card ───────────────────────────────────────
+      const sCardW = 80;
+      const sCardX = pageW - 14 - sCardW;
+      const labelX = sCardX + 6;
+      const valueX = sCardX + sCardW - 6;
+
+      const paidAmt = (grandTotal * Number(item.proforma_percentage)) / 100;
+
+      const summaryItems = [
+        ["Grand Total", `Rs. ${Number(grandTotal).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`],
+        ["Total Paid", `Rs. ${Number(paidAmt).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`],
+        ["Follow-ups", `${followUps.length} record(s)`],
+      ];
+
+      const sCardH = summaryItems.length * 10 + 14;
+      doc.setFillColor(252, 252, 252);
+      doc.setDrawColor(...borderC);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(sCardX, summaryY, sCardW, sCardH, 2, 2, "FD");
+
+      let sY = summaryY + 10;
+      summaryItems.forEach(([label, val]) => {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(...darkGray);
+        doc.text(label, labelX, sY);
+
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...darkGray);
+        doc.text(val, valueX, sY, { align: "right" });
+
+        doc.setDrawColor(...borderC);
+        doc.setLineWidth(0.2);
+        doc.line(sCardX + 4, sY + 3, sCardX + sCardW - 4, sY + 3);
+
+        sY += 10;
+      });
+
+      // Final Status row — full orange highlight
+      const finalRowY = summaryY + sCardH - 1;
+      doc.setFillColor(...orange);
+      doc.roundedRect(sCardX, finalRowY - 7, sCardW, 10, 2, 2, "F");
+
+      doc.setTextColor(...white);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.text("Final Status", labelX, finalRowY - 0.5);
+      doc.text("WON / PAID", valueX, finalRowY - 0.5, { align: "right" });
+
+      // ════════════════════════════════════════════════════════════════
+      // 6. FOOTER
+      // ════════════════════════════════════════════════════════════════
+      doc.setFillColor(...orange);
+      doc.rect(0, pageH - 12, 60, 12, "F");
+
+      doc.setFillColor(...darkGray);
+      doc.rect(60, pageH - 12, pageW - 60, 12, "F");
+
+      doc.setTextColor(...white);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.text("Venster Pvt. Ltd.", 8, pageH - 4.5);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(200, 200, 200);
+      doc.text(
+        `© ${new Date().getFullYear()} Venster Pvt. Ltd. — All rights reserved.   |   Generated: ${new Date().toLocaleDateString("en-IN")}`,
+        pageW - 14,
+        pageH - 4.5,
+        { align: "right" }
+      );
+
+      // ════════════════════════════════════════════════════════════════
+      // 7. SAVE
+      // ════════════════════════════════════════════════════════════════
+      const safeName = (item.customer_name || "Invoice")
+        .replace(/[^a-zA-Z0-9]/g, "_")
+        .slice(0, 30);
+
+      doc.save(`${piNumber}_${safeName}.pdf`);
+
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to generate PDF");
+    }
+  };
 
 // ════════════════════════════════════════════════════════════════════
 // ── DOWNLOAD SINGLE PI PDF — Fixed Alignment Version ────────────────
@@ -778,6 +1155,7 @@ const downloadPIPdf = async (item, globalIndex) => {
   }
 };
 
+
   // ── ADD FOLLOW-UP ─────────────────────────────────────────
   const handleSubmitFollowUp = async () => {
     const newPercent = Number(percentage);
@@ -948,10 +1326,9 @@ const downloadPIPdf = async (item, globalIndex) => {
 
         <div
           className={`
-            ${
-              showMobileFilters
-                ? "absolute left-6 right-6 top-[170px] bg-white p-5 shadow-2xl rounded-lg grid grid-cols-2 gap-3 mt-1 z-[999] ring-2 ring-orange-300"
-                : "hidden"
+            ${showMobileFilters
+              ? "absolute left-6 right-6 top-[170px] bg-white p-5 shadow-2xl rounded-lg grid grid-cols-2 gap-3 mt-1 z-[999] ring-2 ring-orange-300"
+              : "hidden"
             }
             md:mx-6 md:flex md:flex-wrap md:items-center md:gap-x-3 md:gap-y-2 md:mt-3 md:mb-5 md:relative md:bg-transparent md:p-0 md:shadow-none md:ring-0
           `}
@@ -1331,35 +1708,73 @@ const downloadPIPdf = async (item, globalIndex) => {
 
                       {/* Page Buttons */}
                       <div className="flex items-center gap-1.5">
-                        {getSlidingPages().map((page) => (
-                          <button
-                            type="button"
-                            key={page}
-                            onClick={() => setCurrentPage(page)}
-                            className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${
-                              currentPage === page
-                                ? "bg-[#212121] text-white shadow-md shadow-black/10"
-                                : "border border-slate-200 text-slate-600 hover:bg-slate-50"
-                            }`}
-                          >
-                            {page}
-                          </button>
-                        ))}
+                        <span className="text-xs text-gray-400">Show</span>
+                        <select
+                          value={itemsPerPage}
+                          onChange={(e) => handleRecordsPerPageChange(e.target.value)}
+                          className="border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-600 focus:outline-none focus:ring-1 focus:ring-orange-300 bg-white cursor-pointer"
+                        >
+                          <option value={25}>25</option>
+                          <option value={50}>50</option>
+                          <option value={100}>100</option>
+                          <option value={200}>200</option>
+                        </select>
+                        <span className="text-xs text-gray-400">per page</span>
                       </div>
-
-                      {/* Next Button */}
-                      <button
-                        type="button"
-                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        <i className="bi bi-chevron-right text-sm"></i>
-                      </button>
+                      {hasActiveFilters && (
+                        <button
+                          onClick={resetFilters}
+                          className="text-xs text-orange-500 hover:text-orange-600 font-semibold"
+                        >
+                          Clear filters ✕
+                        </button>
+                      )}
                     </div>
-                  )}
-                </div>
 
+                    {/* Right side: Navigation buttons (only if totalPages > 1) */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
+                        {/* Previous Button */}
+                        <button
+                          type="button"
+                          onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                          disabled={currentPage === 1}
+                          className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <i className="bi bi-chevron-left text-sm"></i>
+                        </button>
+
+                        {/* Page Buttons */}
+                        <div className="flex items-center gap-1.5">
+                          {getSlidingPages().map((page) => (
+                            <button
+                              type="button"
+                              key={page}
+                              onClick={() => setCurrentPage(page)}
+                              className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${
+                                currentPage === page
+                                  ? "bg-[#212121] text-white shadow-md shadow-black/10"
+                                  : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          ))}
+                        </div>
+
+                        {/* Next Button */}
+                        <button
+                          type="button"
+                          onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                          disabled={currentPage === totalPages}
+                          className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                          <i className="bi bi-chevron-right text-sm"></i>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1448,7 +1863,13 @@ const downloadPIPdf = async (item, globalIndex) => {
 
                     {/* Remaining Card */}
                     <div
-                      className={`rounded-xl p-3 mb-4 border transition-all ${afterRemainingPct < 0 ? "bg-red-50 border-red-200" : afterRemainingPct === 0 && enteredPct > 0 ? "bg-green-50 border-green-200" : "bg-blue-50 border-blue-100"}`}
+                      className={`rounded-xl p-3 mb-4 border transition-all ${
+                        afterRemainingPct < 0
+                          ? "bg-red-50 border-red-200"
+                          : afterRemainingPct === 0 && enteredPct > 0
+                          ? "bg-green-50 border-green-200"
+                          : "bg-blue-50 border-blue-100"
+                      }`}
                     >
                       <p className="text-xs font-bold uppercase tracking-wider mb-2 text-gray-500">
                         Remaining After This Entry
@@ -1643,7 +2064,11 @@ const downloadPIPdf = async (item, globalIndex) => {
                   <button
                     onClick={editing ? handleUpdate : handleSubmitFollowUp}
                     disabled={afterRemainingPct < 0 && enteredPct > 0}
-                    className={`px-6 py-2 rounded-xl text-sm font-semibold text-white transition-all shadow-md ${afterRemainingPct < 0 && enteredPct > 0 ? "bg-gray-300 cursor-not-allowed shadow-none" : "bg-orange-500 hover:bg-orange-600 shadow-orange-200"}`}
+                    className={`px-6 py-2 rounded-xl text-sm font-semibold text-white transition-all shadow-md ${
+                      afterRemainingPct < 0 && enteredPct > 0
+                        ? "bg-gray-300 cursor-not-allowed shadow-none"
+                        : "bg-orange-500 hover:bg-orange-600 shadow-orange-200"
+                    }`}
                   >
                     {editing ? "Update Follow-Up" : "Add Follow-Up"}
                   </button>
