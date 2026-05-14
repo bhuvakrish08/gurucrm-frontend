@@ -315,7 +315,7 @@ export default function Page() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`p-3 rounded-sm text-white flex items-center justify-center gap-2 transition-all duration-300 ${loading
+                  className={`p-3 rounded-sm text-white flex items-center justify-center gap-2 transition-all cursor-pointer duration-300 ${loading
                       ? "bg-orange-400 cursor-not-allowed opacity-80"
                       : "bg-orange-500 hover:bg-orange-600"
                     }`}
