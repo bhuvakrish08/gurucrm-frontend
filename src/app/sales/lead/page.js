@@ -529,7 +529,12 @@ export default function Page() {
     try {
       await axios.put(`${API_BASE}/api/lead/update-status/${selectedLead}`, {
         status: selectedStatus,
-      });
+      },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
 
       setLeads((prev) =>
         prev.map((lead) =>
@@ -1030,8 +1035,8 @@ export default function Page() {
             <button
               onClick={() => setActiveTab("Pending")}
               className={`pb-3 px-3 text-sm font-medium relative cursor-pointer transition-all ${activeTab === "Pending"
-                  ? "text-blue-600"
-                  : "text-gray-400 hover:text-gray-600"
+                ? "text-blue-600"
+                : "text-gray-400 hover:text-gray-600"
                 }`}
             >
               Pending
@@ -1189,8 +1194,8 @@ export default function Page() {
                                   }
                                 }}
                                 className={`${lead.status === "Pending"
-                                    ? "cursor-pointer text-blue-800"
-                                    : "text-gray-400 cursor-not-allowed"
+                                  ? "cursor-pointer text-blue-800"
+                                  : "text-gray-400 cursor-not-allowed"
                                   }`}
                               >
                                 {new Date(
@@ -1357,8 +1362,8 @@ export default function Page() {
                             key={page}
                             onClick={() => setCurrentPage(page)}
                             className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${currentPage === page
-                                ? "bg-[#212121] text-white shadow-md shadow-black/10"
-                                : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                              ? "bg-[#212121] text-white shadow-md shadow-black/10"
+                              : "border border-slate-200 text-slate-600 hover:bg-slate-50"
                               }`}
                           >
                             {page}
