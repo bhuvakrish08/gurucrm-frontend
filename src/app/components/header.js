@@ -192,7 +192,7 @@ export default function Header() {
           <div className="w-full pt-4 border-t border-gray-100 mt-2">
             <button
               onClick={handlelogout}
-              className="flex items-center text-red-500 hover:text-red-600 transition-colors w-full font-bold text-lg"
+              className="flex items-center text-red-500 hover:text-red-600 cursor-pointer transition-colors w-full font-bold text-lg"
             >
               <i className="bi bi-box-arrow-right mr-3 text-2xl"></i>
               Logout
