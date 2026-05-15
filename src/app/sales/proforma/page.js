@@ -426,20 +426,23 @@ export default function ProformaPage() {
       doc.rect(0, 0, pageW, 30, "F");
 
       // Company name
-      doc.setTextColor(...orange);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(22);
-      doc.text("Venster Pvt. Ltd.", 14, 13);
+      const logo = new Image();
+      logo.src = "/venster_logo.png";
 
+      await new Promise((resolve) => {
+        logo.onload = resolve;
+      });
+
+      doc.addImage(logo, "PNG", 14, 6, 38, 18);
       doc.setFont("helvetica", "normal");
       doc.setFontSize(7.5);
       doc.setTextColor(...darkGray);
-      doc.text("A QUALITY BUSINESS SOLUTIONS BRAND", 14, 20);
+      // doc.text("A QUALITY BUSINESS SOLUTIONS BRAND", 14, 27);
 
       doc.setFont("helvetica", "italic");
       doc.setFontSize(7);
       doc.setTextColor(...darkGray);
-      doc.text("Where Excellence Meets Professionalism", 14, 26);
+      // doc.text("Where Excellence Meets Professionalism", 14, 26);
 
       // Title right side
       doc.setTextColor(...orange);
@@ -1274,11 +1277,10 @@ export default function ProformaPage() {
                               type="button"
                               key={page}
                               onClick={() => setCurrentPage(page)}
-                              className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${
-                                currentPage === page
-                                  ? "bg-[#212121] text-white shadow-md shadow-black/10"
-                                  : "border border-slate-200 text-slate-600 hover:bg-slate-50"
-                              }`}
+                              className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${currentPage === page
+                                ? "bg-[#212121] text-white shadow-md shadow-black/10"
+                                : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                                }`}
                             >
                               {page}
                             </button>
@@ -1311,10 +1313,10 @@ export default function ProformaPage() {
           const grandTotal = getGrandTotal(selectedPI);
           const basePaidPercentage = editing
             ? (selectedPI.follow_ups || []).reduce(
-                (sum, f) =>
-                  f.id === editing.id ? sum : sum + Number(f.proforma_percentage),
-                0,
-              )
+              (sum, f) =>
+                f.id === editing.id ? sum : sum + Number(f.proforma_percentage),
+              0,
+            )
             : Number(selectedPI.proforma_percentage) || 0;
           const basePaidAmount = (grandTotal * basePaidPercentage) / 100;
           const baseRemainingPercentage = 100 - basePaidPercentage;
@@ -1386,13 +1388,12 @@ export default function ProformaPage() {
 
                     {/* Remaining Card */}
                     <div
-                      className={`rounded-xl p-3 mb-4 border transition-all ${
-                        afterRemainingPct < 0
-                          ? "bg-red-50 border-red-200"
-                          : afterRemainingPct === 0 && enteredPct > 0
+                      className={`rounded-xl p-3 mb-4 border transition-all ${afterRemainingPct < 0
+                        ? "bg-red-50 border-red-200"
+                        : afterRemainingPct === 0 && enteredPct > 0
                           ? "bg-green-50 border-green-200"
                           : "bg-blue-50 border-blue-100"
-                      }`}
+                        }`}
                     >
                       <p className="text-xs font-bold uppercase tracking-wider mb-2 text-gray-500">
                         Remaining After This Entry
@@ -1400,13 +1401,12 @@ export default function ProformaPage() {
                       <div className="flex justify-between items-center">
                         <div className="text-center">
                           <p
-                            className={`text-xl font-bold ${
-                              afterRemainingPct < 0
-                                ? "text-red-600"
-                                : afterRemainingPct === 0 && enteredPct > 0
+                            className={`text-xl font-bold ${afterRemainingPct < 0
+                              ? "text-red-600"
+                              : afterRemainingPct === 0 && enteredPct > 0
                                 ? "text-green-600"
                                 : "text-blue-600"
-                            }`}
+                              }`}
                           >
                             {enteredPct > 0
                               ? afterRemainingPct < 0
@@ -1419,13 +1419,12 @@ export default function ProformaPage() {
                         <div className="w-px h-10 bg-gray-200"></div>
                         <div className="text-center">
                           <p
-                            className={`text-xl font-bold ${
-                              afterRemainingPct < 0
-                                ? "text-red-600"
-                                : afterRemainingPct === 0 && enteredPct > 0
+                            className={`text-xl font-bold ${afterRemainingPct < 0
+                              ? "text-red-600"
+                              : afterRemainingPct === 0 && enteredPct > 0
                                 ? "text-green-600"
                                 : "text-blue-600"
-                            }`}
+                              }`}
                           >
                             {enteredPct > 0
                               ? afterRemainingPct < 0
@@ -1439,13 +1438,12 @@ export default function ProformaPage() {
                       <div className="mt-3">
                         <div className="w-full bg-white rounded-full h-2 border border-gray-200 overflow-hidden">
                           <div
-                            className={`h-2 rounded-full transition-all duration-300 ${
-                              afterRemainingPct < 0
-                                ? "bg-red-500"
-                                : paidPercentage + enteredPct >= 100
+                            className={`h-2 rounded-full transition-all duration-300 ${afterRemainingPct < 0
+                              ? "bg-red-500"
+                              : paidPercentage + enteredPct >= 100
                                 ? "bg-green-500"
                                 : "bg-orange-400"
-                            }`}
+                              }`}
                             style={{ width: `${Math.min(paidPercentage + enteredPct, 100)}%` }}
                           ></div>
                         </div>
@@ -1532,11 +1530,10 @@ export default function ProformaPage() {
                             <div key={h.id}>
                               <div
                                 onClick={() => setActiveIndex(index === activeIndex ? null : index)}
-                                className={`border rounded-xl p-3 cursor-pointer transition-all select-none ${
-                                  isLatest
-                                    ? "border-orange-400 bg-orange-50 shadow-sm"
-                                    : "hover:bg-gray-50 border-gray-200"
-                                }`}
+                                className={`border rounded-xl p-3 cursor-pointer transition-all select-none ${isLatest
+                                  ? "border-orange-400 bg-orange-50 shadow-sm"
+                                  : "hover:bg-gray-50 border-gray-200"
+                                  }`}
                               >
                                 <div className="flex justify-between items-center">
                                   <div className="flex items-center gap-2">
@@ -1613,11 +1610,10 @@ export default function ProformaPage() {
                   <button
                     onClick={editing ? handleUpdate : handleSubmitFollowUp}
                     disabled={afterRemainingPct < 0 && enteredPct > 0}
-                    className={`px-6 py-2 rounded-xl text-sm font-semibold text-white transition-all shadow-md ${
-                      afterRemainingPct < 0 && enteredPct > 0
-                        ? "bg-gray-300 cursor-not-allowed shadow-none"
-                        : "bg-orange-500 hover:bg-orange-600 shadow-orange-200"
-                    }`}
+                    className={`px-6 py-2 rounded-xl text-sm font-semibold text-white transition-all shadow-md ${afterRemainingPct < 0 && enteredPct > 0
+                      ? "bg-gray-300 cursor-not-allowed shadow-none"
+                      : "bg-orange-500 hover:bg-orange-600 shadow-orange-200"
+                      }`}
                   >
                     {editing ? "Update Follow-Up" : "Add Follow-Up"}
                   </button>

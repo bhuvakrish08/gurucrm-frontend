@@ -5,8 +5,17 @@ import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Image from "next/image";
+import axios from "redaxios";
+import { Bell, Activity, Clock } from "lucide-react";
 
 export default function Header() {
+
+  const [activities, setActivities] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+
+  const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL;
+
   // Remove search
   const router = useRouter();
   const pathname = usePathname();
@@ -27,18 +36,32 @@ export default function Header() {
 
   const salesRef = useRef(null);
   const customerRef = useRef(null);
+  const notificationRef = useRef(null);
+
 
   useEffect(() => {
     function handleClickOutside(event) {
       if (salesRef.current && !salesRef.current.contains(event.target)) {
         setSalesOpen(false);
       }
+
       if (customerRef.current && !customerRef.current.contains(event.target)) {
         setCustomerOpen(false);
       }
+
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
+        setShowNotifications(false);
+      }
     }
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   const handlelogout = () => {
@@ -47,6 +70,68 @@ export default function Header() {
     router.push("/");
   };
 
+
+  // Lead Notification 
+
+  const handleMarkAsRead = async (id) => {
+    try {
+      const currentToken = localStorage.getItem("token");
+      const config = { headers: { Authorization: `Bearer ${currentToken}` } };
+      await axios.patch(
+        `${API_BASE}/api/activities/mark-as-read/${id}`,
+        {},
+        config,
+      );
+      setActivities(
+        activities.map((a) => (a.id === id ? { ...a, is_read: 1 } : a)),
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      const currentToken = localStorage.getItem("token");
+      const config = { headers: { Authorization: `Bearer ${currentToken}` } };
+      await axios.patch(`${API_BASE}/api/activities/mark-all-read`, {}, config);
+      setActivities(activities.map((a) => ({ ...a, is_read: 1 })));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // useEffect(() => {
+  //   fetchData();
+  // }, [fetchData]);
+
+
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        const currentToken = localStorage.getItem("token");
+
+        if (!currentToken) return;
+
+        const config = {
+          headers: {
+            Authorization: `Bearer ${currentToken}`,
+          },
+        };
+
+        const res = await axios.get(
+          `${API_BASE}/api/activities/read`,
+          config
+        );
+
+        setActivities(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchActivities();
+  }, []);
 
 
   return (
@@ -64,13 +149,84 @@ export default function Header() {
         </div>
 
         {/* Hamburger Icon (Mobile) */}
-        <div className="md:hidden flex items-center">
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-gray-800 focus:outline-none p-2">
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="md:hidden flex items-center gap-2">
+
+          {/* Mobile Notification */}
+          <div className="relative" ref={notificationRef}>
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative p-2 text-gray-700"
+            >
+              <Bell className="w-6 h-6" />
+
+              {activities.some((a) => !a.is_read) && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                  {activities.filter((a) => !a.is_read).length}
+                </span>
+              )}
+            </button>
+
+            {showNotifications && (
+              <div className="fixed top-20 left-1/2 -translate-x-1/2 w-[95%] max-w-sm bg-white rounded-2xl shadow-2xl border border-gray-100 z-[9999] overflow-hidden">
+
+                <div className="p-4 bg-orange-500 flex justify-between items-center">
+                  <h3 className="font-bold text-white flex items-center gap-2">
+                    <Bell size={18} />
+                    Notifications
+                  </h3>
+
+                  <button
+                    onClick={handleMarkAllRead}
+                    className="text-xs text-white font-semibold"
+                  >
+                    Mark all
+                  </button>
+                </div>
+
+                <div className="max-h-[400px] overflow-y-auto p-2 bg-gray-50">
+                  {activities.map((activity) => (
+                    <div
+                      key={activity.id}
+                      className={`p-3 rounded-xl mb-2 ${activity.is_read
+                          ? "bg-white opacity-70"
+                          : "bg-orange-50 border border-orange-100"
+                        }`}
+                    >
+                      <p className="text-sm font-medium text-gray-700">
+                        {activity.message}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Hamburger */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="text-gray-800 focus:outline-none p-2"
+          >
+            <svg
+              className="w-8 h-8"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
               {mobileMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
               )}
             </svg>
           </button>
@@ -138,15 +294,115 @@ export default function Header() {
       </nav>
 
 
-      
+
 
       {/* Logout Button (Desktop) */}
-      <button
-        onClick={handlelogout}
-        className="hidden md:flex items-center text-3xl text-gray-600 font-semibold hover:text-orange-500 transition-colors"
-      >
-        <i className="bi bi-box-arrow-right"></i>
-      </button>
+      <div className="hidden md:flex items-center gap-6">
+
+        {/* Notification Bell */}
+        <div className="relative" ref={notificationRef}>
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="relative p-2.5 bg-white rounded-xl border cursor-pointer border-gray-200 hover:shadow-md transition-all"
+          >
+            <Bell
+              className={`w-5 h-5 ${activities.some((a) => !a.is_read)
+                ? "text-orange-500"
+                : "text-gray-500"
+                }`}
+            />
+
+            {activities.some((a) => !a.is_read) && (
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                {activities.filter((a) => !a.is_read).length}
+              </span>
+            )}
+          </button>
+
+          {showNotifications && (
+            <div className="absolute right-0 top-[135%] w-[360px] bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-gray-100 z-[999] overflow-visible animate-in fade-in zoom-in-95 duration-200">
+
+              {/* Arrow */}
+              <div className="absolute top-2 right-5 w-4 h-4 bg-white border-l border-t border-gray-100 rotate-45"></div>
+
+              {/* Header */}
+              <div className="p-4 bg-orange-500 rounded-t-2xl flex justify-between items-center relative z-10">
+                <h3 className="font-bold text-white flex items-center gap-2">
+                  <Bell size={18} />
+                  Notifications
+                </h3>
+
+                <button
+                  onClick={handleMarkAllRead}
+                  className="text-xs text-white font-semibold cursor-pointer"
+                >
+                  Mark all read
+                </button>
+              </div>
+
+              {/* Notifications */}
+              <div className="max-h-[400px] overflow-y-auto p-2 bg-gray-50">
+                {activities.length === 0 ? (
+                  <div className="p-6 text-center text-gray-400">
+                    No notifications found
+                  </div>
+                ) : (
+                  activities.map((activity) => (
+                    <div
+                      key={activity.id}
+                      className={`p-3 rounded-xl mb-2 ${activity.is_read
+                        ? "bg-white opacity-70"
+                        : "bg-orange-50 border border-orange-100"
+                        }`}
+                    >
+                      <div className="flex gap-3">
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center ${activity.is_read
+                            ? "bg-gray-100 text-gray-400"
+                            : "bg-orange-100 text-orange-600"
+                            }`}
+                        >
+                          <Activity size={14} />
+                        </div>
+
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-700">
+                            {activity.message}
+                          </p>
+
+                          <div className="flex justify-between items-center mt-2">
+                            <span className="text-[11px] text-gray-400 flex items-center gap-1">
+                              <Clock size={10} />
+                              {new Date(activity.created_at).toLocaleString()}
+                            </span>
+
+                            {!activity.is_read && (
+                              <button
+                                onClick={() => handleMarkAsRead(activity.id)}
+                                className="text-xs text-orange-600 font-semibold cursor-pointer"
+                              >
+                                Mark Read
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Logout Button */}
+        <button
+          onClick={handlelogout}
+          className="flex items-center text-3xl text-gray-600 font-semibold hover:text-orange-500 transition-colors cursor-pointer"
+        >
+          <i className="bi bi-box-arrow-right"></i>
+        </button>
+      </div>
 
       {/* Mobile Navigation Menu */}
       {mobileMenuOpen && (
@@ -187,6 +443,7 @@ export default function Header() {
           <Link onClick={() => setMobileMenuOpen(false)} href="/setup" className="hover:text-orange-500 w-full py-1">
             Settings
           </Link>
+
 
           {/* Logout Option Inside Menu (Mobile Only) */}
           <div className="w-full pt-4 border-t border-gray-100 mt-2">

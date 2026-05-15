@@ -115,8 +115,6 @@ export default function Dashboard() {
   const [newTodoTitle, setNewTodoTitle] = useState("");
   const [addingTodo, setAddingTodo] = useState(false);
   const [editingTodoId, setEditingTodoId] = useState(null);
-  const [activities, setActivities] = useState([]);
-  const [showNotifications, setShowNotifications] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useAuth();
@@ -138,7 +136,6 @@ export default function Dashboard() {
         piRes,
         contractsRes,
         productsRes,
-        activitiesRes,
       ] = await Promise.all([
         axios
           .get(`${API_BASE}/api/lead/read`, config)
@@ -163,9 +160,6 @@ export default function Dashboard() {
           .catch(() => ({ data: [] })),
         axios
           .get(`${API_BASE}/api/product-master/read`, config)
-          .catch(() => ({ data: [] })),
-        axios
-          .get(`${API_BASE}/api/activities/read`, config)
           .catch(() => ({ data: [] })),
       ]);
 
@@ -199,16 +193,16 @@ export default function Dashboard() {
       const fetchedProducts = productsRes.data?.data || productsRes.data;
       setProducts(Array.isArray(fetchedProducts) ? fetchedProducts : []);
 
-      const fetchedActivities = Array.isArray(activitiesRes.data)
-        ? activitiesRes.data
-        : [];
-      setActivities(fetchedActivities);
     } catch (error) {
       console.error("Dashboard Data Fetch Error:", error);
     } finally {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleAddTodo = async (e) => {
     e.preventDefault();
@@ -335,37 +329,7 @@ export default function Dashboard() {
     }
   };
 
-  const handleMarkAsRead = async (id) => {
-    try {
-      const currentToken = localStorage.getItem("token");
-      const config = { headers: { Authorization: `Bearer ${currentToken}` } };
-      await axios.patch(
-        `${API_BASE}/api/activities/mark-as-read/${id}`,
-        {},
-        config,
-      );
-      setActivities(
-        activities.map((a) => (a.id === id ? { ...a, is_read: 1 } : a)),
-      );
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
-  const handleMarkAllRead = async () => {
-    try {
-      const currentToken = localStorage.getItem("token");
-      const config = { headers: { Authorization: `Bearer ${currentToken}` } };
-      await axios.patch(`${API_BASE}/api/activities/mark-all-read`, {}, config);
-      setActivities(activities.map((a) => ({ ...a, is_read: 1 })));
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
 
   // Date formatting helpers
   const formatTime = (dateString, formatStr = "medium") => {
@@ -545,102 +509,8 @@ export default function Dashboard() {
         }
       `}</style>
       <Header />
-
-      {/* Notification Popover */}
-      {showNotifications && (
-        <div className="fixed top-20 right-4 sm:right-8 w-[320px] sm:w-[400px] bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-gray-100 z-[100] animate-in fade-in zoom-in duration-200 origin-top-right overflow-hidden">
-          <div className="p-4 border-b border-gray-50 flex justify-between items-center bg-gradient-to-r from-orange-500 to-orange-600">
-            <h3 className="font-bold text-white flex items-center gap-2">
-              <Bell size={18} />
-              Recent Activity
-            </h3>
-            <button
-              onClick={handleMarkAllRead}
-              className="text-[10px] font-bold text-orange-100 hover:text-white transition-colors"
-            >
-              Mark all as read
-            </button>
-          </div>
-          <div className="max-h-[400px] overflow-y-auto custom-scrollbar p-2 space-y-1 bg-slate-50/50">
-            {activities.length === 0 ? (
-              <div className="p-8 text-center">
-                <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Activity className="text-orange-500" size={24} />
-                </div>
-                <p className="text-sm text-gray-500 font-medium">
-                  No recent activities found
-                </p>
-              </div>
-            ) : (
-              activities.map((activity) => (
-                <div
-                  key={activity.id}
-                  className={`p-3 rounded-xl transition-all border ${activity.is_read ? "bg-white/50 border-transparent opacity-75" : "bg-white border-orange-100 shadow-sm"}`}
-                >
-                  <div className="flex gap-3">
-                    <div
-                      className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center ${activity.is_read ? "bg-gray-100 text-gray-400" : "bg-orange-100 text-orange-600"}`}
-                    >
-                      <Activity size={14} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className={`text-[12px] leading-relaxed ${activity.is_read ? "text-gray-500" : "text-gray-800 font-semibold"}`}
-                      >
-                        {activity.message}
-                      </p>
-                      <div className="flex justify-between items-center mt-2">
-                        <span className="text-[10px] text-gray-400 font-medium flex items-center gap-1">
-                          <Clock size={10} />
-                          {new Date(activity.created_at).toLocaleString()}
-                        </span>
-                        {!activity.is_read && (
-                          <button
-                            onClick={() => handleMarkAsRead(activity.id)}
-                            className="text-[10px] font-bold text-orange-600 hover:bg-orange-50 px-2 py-0.5 rounded-md transition-all"
-                          >
-                            Mark read
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-          {activities.length > 0 && (
-            <div className="p-3 bg-white border-t border-gray-50 text-center">
-              <button
-                onClick={() => setShowNotifications(false)}
-                className="text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                Close Panel
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
-        <div className="flex justify-between items-center mb-6">
-          {/*<h1 className="text-2xl font-black text-gray-800 tracking-tight">
-            Dashboard <span className="text-orange-500">Overview</span>
-          </h1>*/}
-          <button
-            onClick={() => setShowNotifications(!showNotifications)}
-            className="relative p-2.5 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all group overflow-visible"
-          >
-            <Bell
-              className={`w-5 h-5 transition-colors ${activities.some((a) => !a.is_read) ? "text-orange-500 animate-bounce" : "text-gray-400 group-hover:text-orange-500"}`}
-            />
-            {activities.some((a) => !a.is_read) && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-white shadow-sm scale-100 animate-in zoom-in duration-300">
-                {activities.filter((a) => !a.is_read).length}
-              </span>
-            )}
-          </button>
-        </div>
+
         {/* Top Summary Cards */}
         {loading ? (
           <div className="h-32 flex items-center justify-center bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-100 mb-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
@@ -1203,13 +1073,12 @@ export default function Dashboard() {
                     </div>
                     <div className="mt-4 pt-3 border-t border-orange-50 flex justify-between items-center">
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter ${
-                          lead.status === "Won"
+                        className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter ${lead.status === "Won"
                             ? "bg-green-100 text-green-700"
                             : lead.status === "Lost"
                               ? "bg-red-100 text-red-700"
                               : "bg-orange-100 text-orange-700"
-                        }`}
+                          }`}
                       >
                         {lead.status}
                       </span>
