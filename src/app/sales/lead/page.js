@@ -109,8 +109,7 @@ export default function Page() {
         "No.": index + 1,
         "Company Name": lead.company_name || "",
         "Customer Name": lead.customer_name || "",
-        "Lead Title": lead.lead_title || "",
-        "Product Category": lead.product_category || "",
+        "Lead Title": lead.reference || "",
         Source: lead.source || "",
         Assignee: lead.assignee || "",
         "Next Follow Up": lead.next_follow_up_date
@@ -171,8 +170,7 @@ export default function Page() {
         index + 1,
         lead.company_name || "",
         lead.customer_name || "",
-        lead.lead_title || "",
-        lead.product_category || "",
+        lead.reference || "",
         lead.source || "",
         lead.assignee || "",
         lead.next_follow_up_date
@@ -436,10 +434,9 @@ export default function Page() {
           lead_id: leadData.lead_id,
           company_name: leadData.company_name,
           customer_name: leadData.customer_name,
-          lead_title: leadData.lead_title,
+          reference: leadData.reference,
           source: leadData.source,
           status: leadData.status,
-          product_category: leadData.product_category,
           product_name: leadData.product_name,
           priority: leadData.priority,
           assignee: leadData.assignee,
@@ -514,8 +511,7 @@ export default function Page() {
   const [filters, setFilters] = useState({
     company_name: "",
     customer_name: "",
-    lead_title: "",
-    product_category: "",
+    reference: "",
     source: "",
     assignee: "",
     status: "",
@@ -578,8 +574,7 @@ export default function Page() {
     setFilters({
       company_name: "",
       customer_name: "",
-      lead_title: "",
-      product_category: "",
+      reference: "",
       source: "",
       assignee: "",
       status: "",
@@ -814,14 +809,14 @@ export default function Page() {
           />
 
           <input
-            name="lead_title"
-            value={filters.lead_title}
+            name="reference"
+            value={filters.reference}
             onChange={handleFilterChange}
-            placeholder="Enter Lead Title"
+            placeholder="Enter Reference"
             className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-600 text-sm"
           />
 
-          <select
+          {/* <select
             name="product_category"
             value={filters.product_category}
             onChange={handleFilterChange}
@@ -829,7 +824,7 @@ export default function Page() {
           >
             <option value="">Select Product Category</option>
             {category.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-          </select>
+          </select> */}
 
           <select
             name="source"
@@ -965,7 +960,6 @@ export default function Page() {
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Company Name</th>
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Customer Name</th>
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Lead Title</th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Product Category</th>
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Source</th>
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Assignee</th>
                       <th className="py-3 px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Next Follow Up</th>
@@ -985,9 +979,7 @@ export default function Page() {
 
                           <td className="text-orange-500 cursor-pointer px-3">{lead.customer_name}</td>
 
-                          <td className="py-3 px-2 w-46 max-w-46 truncate">{lead.lead_title}</td>
-
-                          <td className="text-gray-500 px-3">{lead.product_category || "-"}</td>
+                          <td className="py-3 px-2 w-46 max-w-46 truncate">{lead.reference}</td>
 
                           <td className="px-3">{lead.source}</td>
 
@@ -1083,7 +1075,7 @@ export default function Page() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="11" className="text-center py-10 text-gray-400">No Data Found</td>
+                        <td colSpan="10" className="text-center py-10 text-gray-400">No Data Found</td>
                       </tr>
                     )}
                   </tbody>
@@ -1714,8 +1706,6 @@ export default function Page() {
                 { icon: "bi-building", label: "Company", value: viewLead.company_name },
                 { icon: "bi-person-circle", label: "Customer Name", value: viewLead.customer_name },
                 { icon: "bi-flag", label: "Source", value: viewLead.source },
-                { icon: "bi-layers", label: "Product Category", value: viewLead.product_category },
-                { icon: "bi-box-seam", label: "Product Name", value: viewLead.product_name },
                 { icon: "bi-tag", label: "Category", value: viewLead.category },
                 { icon: "bi-person-check", label: "Assignee", value: viewLead.assignee },
                 { icon: "bi-calendar3", label: "Created", value: viewLead.created_at ? new Date(viewLead.created_at).toLocaleDateString() : "—" },
@@ -1733,7 +1723,7 @@ export default function Page() {
                 <i className="bi bi-pencil text-orange-400 text-lg"></i>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">Lead Title</p>
-                  <p className="text-sm font-semibold text-gray-700 break-words whitespace-normal">{viewLead.lead_title || "—"}</p>
+                  <p className="text-sm font-semibold text-gray-700 break-words whitespace-normal">{viewLead.reference || "—"}</p>
                 </div>
               </div>
 

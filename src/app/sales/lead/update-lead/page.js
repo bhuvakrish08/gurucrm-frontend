@@ -28,11 +28,9 @@ export default function Page() {
     lead_id: "",
     company_name: "",
     customer_name: "",
-    lead_title: "",
+    reference: "",
     source: "",
     status: "",
-    product_category: "",
-    product_name: "",
     priority: "",
     assignee: "",
     category: "",
@@ -60,13 +58,9 @@ export default function Page() {
       lead_id: parsedLead.lead_id || "",
       company_name: parsedLead.company_id || parsedLead.company_name || "",
       customer_name: parsedLead.customer_name || "",
-      lead_title: parsedLead.lead_title || "",
+      reference: parsedLead.reference || "",
       source: parsedLead.source_id || parsedLead.source || "",
       status: parsedLead.status || "",
-      product_category:
-        parsedLead.product_category_id || parsedLead.product_category || "",
-      product_name:
-        parsedLead.product_id || parsedLead.product_name || "",
       priority: parsedLead.priority || "",
       assignee: parsedLead.assignee || "",
       category: parsedLead.category_id || parsedLead.category || "",
@@ -109,11 +103,9 @@ export default function Page() {
           body: JSON.stringify({
             company_name: formData.company_name,
             customer_name: formData.customer_name,
-            lead_title: formData.lead_title,
+            reference: formData.reference,
             source: formData.source,
             status: formData.status,
-            product_category: formData.product_category,
-            product_name: formData.product_name,
             priority: formData.priority,
             assignee: formData.assignee,
             category: formData.category,
@@ -170,32 +162,32 @@ export default function Page() {
   }, []);
 
   // ✅ Fetch Product Categories
-  useEffect(() => {
-    const fetchProductCategory = async () => {
-      try {
-        const res = await axios.get(
-          `${API_BASE}/api/product-category/read`,
-          { params: { status: 1 } }
-        );
-        setCategory(res.data);
-      } catch {}
-    };
-    fetchProductCategory();
-  }, []);
+  // useEffect(() => {
+  //   const fetchProductCategory = async () => {
+  //     try {
+  //       const res = await axios.get(
+  //         `${API_BASE}/api/product-category/read`,
+  //         { params: { status: 1 } }
+  //       );
+  //       setCategory(res.data);
+  //     } catch {}
+  //   };
+  //   fetchProductCategory();
+  // }, []);
 
   // ✅ Fetch Products filtered by selected category
-  useEffect(() => {
-    if (!formData.product_category) {
-      setProductList([]);
-      return;
-    }
-    axios
-      .get(`${API_BASE}/api/product-master/read`, {
-        params: { search2: formData.product_category },
-      })
-      .then((res) => setProductList(res.data))
-      .catch(() => setProductList([]));
-  }, [formData.product_category]);
+  // useEffect(() => {
+  //   if (!formData.product_category) {
+  //     setProductList([]);
+  //     return;
+  //   }
+  //   axios
+  //     .get(`${API_BASE}/api/product-master/read`, {
+  //       params: { search2: formData.product_category },
+  //     })
+  //     .then((res) => setProductList(res.data))
+  //     .catch(() => setProductList([]));
+  // }, [formData.product_category]);
 
   // ✅ Fetch Assignees
   useEffect(() => {
@@ -258,7 +250,7 @@ export default function Page() {
               {/* Company Name */}
               <div>
                 <label className="block mb-1 text-xs font-medium text-gray-600">
-                  Company Name *
+                  Company Name 
                 </label>
                 <input
                   name="company_name"
@@ -283,20 +275,6 @@ export default function Page() {
                 />
               </div>
 
-              {/* Lead Title */}
-              <div>
-                <label className="block mb-1 text-xs font-medium text-gray-600">
-                  Lead Title *
-                </label>
-                <input
-                  type="text"
-                  name="lead_title"
-                  value={formData.lead_title}
-                  onChange={handleChange}
-                  className="w-full border border-orange-300 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-none bg-white"
-                />
-              </div>
-
               {/* Source */}
               <div>
                 <label className="block mb-1 text-xs font-medium text-gray-600">
@@ -315,6 +293,20 @@ export default function Page() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Lead Title */}
+              <div>
+                <label className="block mb-1 text-xs font-medium text-gray-600">
+                  Reference
+                </label>
+                <input
+                  type="text"
+                  name="reference"
+                  value={formData.reference}
+                  onChange={handleChange}
+                  className="w-full border border-orange-300 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-none bg-white"
+                />
               </div>
 
               {/* Status */}
@@ -340,7 +332,7 @@ export default function Page() {
               </div>
 
               {/* Product Category */}
-              <div>
+              {/* <div>
                 <label className="block mb-1 text-xs font-medium text-gray-600">
                   Product Category *
                 </label>
@@ -357,10 +349,10 @@ export default function Page() {
                     </option>
                   ))}
                 </select>
-              </div>
+              </div> */}
 
               {/* Product Name */}
-              <div>
+              {/* <div>
                 <label className="block mb-1 text-xs font-medium text-gray-600">
                   Product Name
                 </label>
@@ -377,7 +369,7 @@ export default function Page() {
                     </option>
                   ))}
                 </select>
-              </div>
+              </div> */}
 
               {/* Priority */}
               <div>
