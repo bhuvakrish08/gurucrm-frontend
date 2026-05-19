@@ -42,7 +42,9 @@ export default function Page() {
   // ✅ Helper: get token from localStorage/sessionStorage
   const getToken = () => {
     return (
-      localStorage.getItem("token") || sessionStorage.getItem("token") || ""
+      localStorage.getItem("token") ||
+      sessionStorage.getItem("token") ||
+      ""
     );
   };
 
@@ -63,7 +65,8 @@ export default function Page() {
       status: parsedLead.status || "",
       product_category:
         parsedLead.product_category_id || parsedLead.product_category || "",
-      product_name: parsedLead.product_id || parsedLead.product_name || "",
+      product_name:
+        parsedLead.product_id || parsedLead.product_name || "",
       priority: parsedLead.priority || "",
       assignee: parsedLead.assignee || "",
       category: parsedLead.category_id || parsedLead.category || "",
@@ -116,7 +119,7 @@ export default function Page() {
             category: formData.category,
             description: formData.description,
           }),
-        },
+        }
       );
 
       const data = await response.json();
@@ -144,7 +147,7 @@ export default function Page() {
       try {
         const res = await axios.get(
           `${API_BASE}/api/inquiry-lead-source/read`,
-          { params: { status: 1 } },
+          { params: { status: 1 } }
         );
         setLeadSource(res.data);
       } catch {}
@@ -158,7 +161,7 @@ export default function Page() {
       try {
         const res = await axios.get(
           `${API_BASE}/api/inquiry-lead-category/read`,
-          { params: { status: 1 } },
+          { params: { status: 1 } }
         );
         setLeadCategory(res.data);
       } catch {}
@@ -170,9 +173,10 @@ export default function Page() {
   useEffect(() => {
     const fetchProductCategory = async () => {
       try {
-        const res = await axios.get(`${API_BASE}/api/product-category/read`, {
-          params: { status: 1 },
-        });
+        const res = await axios.get(
+          `${API_BASE}/api/product-category/read`,
+          { params: { status: 1 } }
+        );
         setCategory(res.data);
       } catch {}
     };
@@ -220,38 +224,24 @@ export default function Page() {
 
       <div className="bg-gray-100">
         {/* Breadcrumb */}
-        <div className="bg-white w-full shadow-lg border-gray-100 p-3 mt-1 mb-5 flex justify-between items-center">
-          <div className="flex items-center text-gray-700">
-            <p>
-              <Link
-                href="/dashboard"
-                className="mx-3 text-xl text-gray-400 hover:text-indigo-600"
-              >
-                <i className="bi bi-house"></i>
-              </Link>
-              <i className="bi bi-chevron-right"></i>
-              <Link
-                href="#"
-                className="mx-3 text-md text-gray-700 hover:text-orange-500"
-              >
-                Sales
-              </Link>
-              <i className="bi bi-chevron-right"></i>
-              <Link
-                href="/sales/lead"
-                className="mx-3 text-md text-gray-700 hover:text-orange-500"
-              >
-                Lead
-              </Link>
-              <i className="bi bi-chevron-right"></i>
-              <Link
-                href="/add-lead"
-                className="mx-3 text-md text-gray-700 hover:text-orange-500"
-              >
-                Edit Lead
-              </Link>
-            </p>
-          </div>
+        <div className="bg-white w-full rounded-xl shadow-md p-2 mt-1 mb-2 flex justify-between items-center">
+          <p className="text-gray-700">
+            <Link
+              href="/dashboard"
+              className="mx-3 text-xl text-gray-400 hover:text-indigo-600"
+            >
+              <i className="bi bi-house"></i>
+            </Link>
+            <i className="bi bi-chevron-right"></i> Sales
+            <i className="bi bi-chevron-right"></i>
+            <button
+              onClick={() => router.push("/sales/lead")}
+              className="mx-3 hover:text-indigo-600"
+            >
+              Lead
+            </button>
+            <i className="bi bi-chevron-right"></i> Edit Lead
+          </p>
         </div>
 
         <form
@@ -417,11 +407,13 @@ export default function Page() {
                   instanceId="assignee-select"
                   options={asignee}
                   value={asignee.filter((option) =>
-                    formData.assignee?.split(",").includes(option.value),
+                    formData.assignee?.split(",").includes(option.value)
                   )}
                   onChange={(selectedOptions) => {
                     const values = selectedOptions
-                      ? selectedOptions.map((option) => option.value).join(",")
+                      ? selectedOptions
+                          .map((option) => option.value)
+                          .join(",")
                       : "";
                     setFormData((prev) => ({ ...prev, assignee: values }));
                   }}
@@ -430,7 +422,9 @@ export default function Page() {
                     control: (provided, state) => ({
                       ...provided,
                       borderColor: "#fdba74",
-                      boxShadow: state.isFocused ? "0 0 0 1px #F5C99A" : "none",
+                      boxShadow: state.isFocused
+                        ? "0 0 0 1px #F5C99A"
+                        : "none",
                       "&:hover": { borderColor: "#fdba74" },
                       minHeight: "34px",
                       fontSize: "13px",
@@ -449,8 +443,8 @@ export default function Page() {
                       backgroundColor: state.isSelected
                         ? "#767676"
                         : state.isFocused
-                          ? "#767676"
-                          : "#ffffff",
+                        ? "#767676"
+                        : "#ffffff",
                       color:
                         state.isSelected || state.isFocused
                           ? "#ffffff"
