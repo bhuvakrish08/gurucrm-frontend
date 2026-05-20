@@ -67,7 +67,11 @@ export default function Page() {
 
   const fetchLeads = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/api/lead/read`);
+      const res = await axios.get(`${API_BASE}/api/lead/read`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
+      });
 
       const formatted = (res.data?.result || []).map((item) => {
         let finalStatus = "Pending";

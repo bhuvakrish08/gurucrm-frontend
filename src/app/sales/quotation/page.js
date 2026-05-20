@@ -345,7 +345,7 @@ export default function QuotationPage() {
   // QUOTATION HISTORY MODAL
   // ========================
   const openQuotationModal = async (lead) => {
-    setSelectedLead(lead);
+    setSelectedLead(lead); // lead already has latest_quotation_id from fetchQuotations
     setShowQuotationModal(true);
     setFollowUpHistory([]);
     setEditingId(null);
@@ -366,6 +366,15 @@ export default function QuotationPage() {
         `${API_BASE}/api/quotation/history/${lead.lead_id}`,
       );
       const historyData = res.data?.result || [];
+
+      // ✅ Update selectedLead with latest_quotation_id from history if missing
+      if (historyData.length > 0 && !lead.latest_quotation_id) {
+        setSelectedLead((prev) => ({
+          ...prev,
+          latest_quotation_id: historyData[0].id,
+        }));
+      }
+
       const historyWithFiles = await Promise.all(
         historyData.map(async (hist) => {
           const hf = await axios.get(
@@ -386,7 +395,6 @@ export default function QuotationPage() {
       console.log(err);
     }
   };
-
   const handleEditClick = (item) => {
     // ✅ If already approved, don't allow editing
     if (isApprovedLocked) {
@@ -439,11 +447,42 @@ export default function QuotationPage() {
 
   const handleApproveDecline = async (histId, newStatus) => {
     try {
+      // Step 1: Update the history item status (Approved/Declined)
       await axios.put(`${API_BASE}/api/quotation/update-status/${histId}`, {
         quotation_status: newStatus,
       });
+
+      // Step 2: Map Approved → Won, Declined → Lost
+      const mappedStatus =
+        newStatus === "Approved"
+          ? "Won"
+          : newStatus === "Declined"
+            ? "Lost"
+            : newStatus;
+
+      // Step 3: Update the PARENT quotation row to Won/Lost using histId directly
+      // (because histId IS the quotation id that needs status update)
+      await axios.put(`${API_BASE}/api/quotation/update-status/${histId}`, {
+        quotation_status: mappedStatus,
+      });
+
       toast.success(`Quotation marked as ${newStatus}`);
+
       if (selectedLead) {
+        // Step 4: Update local state immediately so tab moves
+        setQuotations((prev) =>
+          prev.map((q) => {
+            if (q.lead_id !== selectedLead.lead_id) return q;
+            return {
+              ...q,
+              quotation_status: mappedStatus,
+              displayStatus: mappedStatus,
+              wasApprovedOnce: mappedStatus === "Won" || q.wasApprovedOnce,
+            };
+          }),
+        );
+
+        // Step 5: Refresh history panel
         const res = await axios.get(
           `${API_BASE}/api/quotation/history/${selectedLead.lead_id}`,
         );
@@ -457,9 +496,16 @@ export default function QuotationPage() {
           }),
         );
         setFollowUpHistory(historyWithFiles);
-        fetchQuotations();
+
+        // Step 6: Full refresh from server to sync tab counts
+        await fetchQuotations();
+
+        // Step 7: Close modal and switch to correct tab
+        setShowQuotationModal(false);
+        setActiveTab(mappedStatus); // "Won" or "Lost"
       }
     } catch (err) {
+      console.log(err);
       toast.error("Status update failed");
     }
   };
@@ -1029,7 +1075,7 @@ export default function QuotationPage() {
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Assignee</th>
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Proforma %</th>
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Updated By</th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                      {/* <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th> */}
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Action</th>
                     </tr>
                   </thead>
@@ -1139,7 +1185,7 @@ export default function QuotationPage() {
                               <span className="text-gray-300 text-sm">—</span>
                             )}
                           </td>
-
+{/* 
                           <td className="px-3">
                             <select
                               value={q.displayStatus || "Pending"}
@@ -1183,7 +1229,7 @@ export default function QuotationPage() {
                               <option value="Won">Won</option>
                               <option value="Lost">Lost</option>
                             </select>
-                          </td>
+                          </td> */}
 
                           <td className="px-3 text-center">
                             <div className="flex items-center justify-center gap-2">
