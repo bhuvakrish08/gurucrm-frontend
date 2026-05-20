@@ -117,7 +117,7 @@ export default function QuotationPage() {
         "#": index + 1,
         "Company Name": q.company_name || "",
         "Customer Name": q.customer_name || "",
-        "Lead Title": q.lead_title || "",
+        "Reference": q.reference || "",
         "Quotation No": q.quotation_no || "",
         "Created Date": q.first_quotation_date
           ? new Date(q.first_quotation_date).toLocaleDateString()
@@ -182,7 +182,7 @@ export default function QuotationPage() {
         index + 1,
         q.company_name || "",
         q.customer_name || "",
-        q.lead_title || "",
+        q.reference || "",
         q.quotation_no || "",
         q.first_quotation_date
           ? new Date(q.first_quotation_date).toLocaleDateString()
@@ -206,7 +206,7 @@ export default function QuotationPage() {
             "#",
             "Company",
             "Customer",
-            "Lead Title",
+            "Reference",
             "Quot. No",
             "Created",
             "Last Activity",
@@ -252,7 +252,7 @@ export default function QuotationPage() {
   const [filters, setFilters] = useState({
     company_name: "",
     customer_name: "",
-    lead_title: "",
+    reference: "",
     assignee: "",
     quotation_status: "",
     from_date: "",
@@ -309,7 +309,7 @@ export default function QuotationPage() {
     setFilters({
       company_name: "",
       customer_name: "",
-      lead_title: "",
+      reference: "",
       assignee: "",
       quotation_status: "",
       from_date: "",
@@ -633,7 +633,7 @@ export default function QuotationPage() {
         formData.append("lead_id", selectedLead.lead_id);
         formData.append("company_name", selectedLead.company_name);
         formData.append("customer_name", selectedLead.customer_name);
-        formData.append("lead_title", selectedLead.lead_title);
+        formData.append("reference", selectedLead.reference);
         Object.keys(form).forEach((key) => formData.append(key, form[key]));
         if (selectedFiles.length > 0) {
           selectedFiles.forEach((file) => formData.append("files", file));
@@ -890,10 +890,10 @@ export default function QuotationPage() {
             className="p-2 w-full md:w-48 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-600 text-sm"
           />
           <input
-            name="lead_title"
-            value={filters.lead_title}
+            name="reference"
+            value={filters.reference}
             onChange={handleFilterChange}
-            placeholder="Lead Title"
+            placeholder="Reference"
             className="p-2 w-full md:w-48 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-600 text-sm"
           />
           <select
@@ -1020,7 +1020,7 @@ export default function QuotationPage() {
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">#</th>
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Company Name</th>
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Customer Name</th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Lead Title</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Reference</th>
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Create Quotation</th>
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Quotation No</th>
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Created</th>
@@ -1045,7 +1045,7 @@ export default function QuotationPage() {
                           </td>
                           <td className="font-medium px-3">{q.company_name || "-"}</td>
                           <td className="text-orange-500 px-3">{q.customer_name || "-"}</td>
-                          <td className="px-3">{q.lead_title || "-"}</td>
+                          <td className="px-3">{q.reference || "-"}</td>
 
                           <td className="text-lg px-3 text-center">
                             {q.displayStatus === "Won" || q.displayStatus === "Lost" ? (
@@ -2010,8 +2010,8 @@ export default function QuotationPage() {
                   <span className="font-semibold text-gray-700">{selectedPIQuotation.quotation_no || "-"}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Lead Title</span>
-                  <span className="font-semibold text-gray-700">{selectedPIQuotation.lead_title || "-"}</span>
+                  <span className="text-gray-400">Reference</span>
+                  <span className="font-semibold text-gray-700">{selectedPIQuotation.reference || "-"}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Assignee</span>
