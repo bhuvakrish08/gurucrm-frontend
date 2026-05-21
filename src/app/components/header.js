@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -9,10 +8,8 @@ import axios from "redaxios";
 import { Bell, Activity, Clock } from "lucide-react";
 
 export default function Header() {
-
   const [activities, setActivities] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
-
 
   const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -24,6 +21,16 @@ export default function Header() {
   const [mobileSalesOpen, setMobileSalesOpen] = useState(false);
   const [mobileCustomerOpen, setMobileCustomerOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+  const [username, setUsername] = useState("");
+
+  useEffect(() => {
+    const storedUsername = localStorage.getItem("username") || "";
+    setUsername(storedUsername);
+  }, []);
+
+  const userLetter = username?.charAt(0)?.toUpperCase() || "U";
 
   // Close all menus when navigation occurs
   useEffect(() => {
@@ -37,7 +44,7 @@ export default function Header() {
   const salesRef = useRef(null);
   const customerRef = useRef(null);
   const notificationRef = useRef(null);
-
+  const profileRef = useRef(null);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -56,6 +63,13 @@ export default function Header() {
         setShowNotifications(false);
       }
     }
+    if (
+      profileRef.current &&
+      event.target instanceof Node &&
+      !profileRef.current.contains(event.target)
+    ) {
+      setShowProfileMenu(false);
+    }
 
     document.addEventListener("mousedown", handleClickOutside);
 
@@ -67,11 +81,12 @@ export default function Header() {
   const handlelogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
+    localStorage.removeItem("username");
+
     router.push("/");
   };
 
-
-  // Lead Notification 
+  // Lead Notification
 
   const handleMarkAsRead = async (id) => {
     try {
@@ -105,7 +120,6 @@ export default function Header() {
   //   fetchData();
   // }, [fetchData]);
 
-
   useEffect(() => {
     const fetchActivities = async () => {
       try {
@@ -119,10 +133,7 @@ export default function Header() {
           },
         };
 
-        const res = await axios.get(
-          `${API_BASE}/api/activities/read`,
-          config
-        );
+        const res = await axios.get(`${API_BASE}/api/activities/read`, config);
 
         setActivities(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
@@ -132,7 +143,6 @@ export default function Header() {
 
     fetchActivities();
   }, []);
-
 
   return (
     <header className="sticky top-0 z-50 flex flex-col md:flex-row items-center justify-between px-4 sm:px-8 py-4 shadow-sm bg-white">
@@ -150,7 +160,6 @@ export default function Header() {
 
         {/* Hamburger Icon (Mobile) */}
         <div className="md:hidden flex items-center gap-2">
-
           {/* Mobile Notification */}
           <div className="relative" ref={notificationRef}>
             <button
@@ -168,7 +177,6 @@ export default function Header() {
 
             {showNotifications && (
               <div className="fixed top-20 left-1/2 -translate-x-1/2 w-[95%] max-w-sm bg-white rounded-2xl shadow-2xl border border-gray-100 z-[9999] overflow-hidden">
-
                 <div className="p-4 bg-orange-500 flex justify-between items-center">
                   <h3 className="font-bold text-white flex items-center gap-2">
                     <Bell size={18} />
@@ -187,10 +195,11 @@ export default function Header() {
                   {activities.map((activity) => (
                     <div
                       key={activity.id}
-                      className={`p-3 rounded-xl mb-2 ${activity.is_read
+                      className={`p-3 rounded-xl mb-2 ${
+                        activity.is_read
                           ? "bg-white opacity-70"
                           : "bg-orange-50 border border-orange-100"
-                        }`}
+                      }`}
                     >
                       <p className="text-sm font-medium text-gray-700">
                         {activity.message}
@@ -235,7 +244,10 @@ export default function Header() {
 
       {/* Navigation Links (Desktop) */}
       <nav className="hidden md:flex space-x-10 text-gray-800 font-medium">
-        <Link href="/dashboard" className="hover:text-orange-500 transition-colors">
+        <Link
+          href="/dashboard"
+          className="hover:text-orange-500 transition-colors"
+        >
           Dashboard
         </Link>
 
@@ -249,13 +261,22 @@ export default function Header() {
 
           {customerOpen && (
             <div className="absolute left-0 mt-2 w-52 bg-white rounded-md shadow-lg py-2 z-50 border border-gray-100">
-              <Link href="/customer-list" className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors">
+              <Link
+                href="/customer-list"
+                className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
+              >
                 Customers
               </Link>
-              <Link href="/contacts" className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors">
+              <Link
+                href="/contacts"
+                className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
+              >
                 Contact Details
               </Link>
-              <Link href="/contactDesignation" className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors">
+              <Link
+                href="/contactDesignation"
+                className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
+              >
                 Contact Designation
               </Link>
             </div>
@@ -272,13 +293,22 @@ export default function Header() {
 
           {salesOpen && (
             <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-50 border border-gray-100">
-              <Link href="/sales/lead" className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors">
+              <Link
+                href="/sales/lead"
+                className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
+              >
                 Lead
               </Link>
-              <Link href="/sales/quotation" className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors">
+              <Link
+                href="/sales/quotation"
+                className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
+              >
                 Quotation
               </Link>
-              <Link href="/sales/proforma" className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors">
+              <Link
+                href="/sales/proforma"
+                className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
+              >
                 Proforma Invoice
               </Link>
             </div>
@@ -293,12 +323,8 @@ export default function Header() {
         </Link>
       </nav>
 
-
-
-
       {/* Logout Button (Desktop) */}
       <div className="hidden md:flex items-center gap-6">
-
         {/* Notification Bell */}
         <div className="relative" ref={notificationRef}>
           <button
@@ -306,10 +332,11 @@ export default function Header() {
             className="relative p-2.5 bg-white rounded-xl border cursor-pointer border-gray-200 hover:shadow-md transition-all"
           >
             <Bell
-              className={`w-5 h-5 ${activities.some((a) => !a.is_read)
-                ? "text-orange-500"
-                : "text-gray-500"
-                }`}
+              className={`w-5 h-5 ${
+                activities.some((a) => !a.is_read)
+                  ? "text-orange-500"
+                  : "text-gray-500"
+              }`}
             />
 
             {activities.some((a) => !a.is_read) && (
@@ -321,7 +348,6 @@ export default function Header() {
 
           {showNotifications && (
             <div className="absolute right-0 top-[135%] w-[360px] bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.15)] border border-gray-100 z-[999] overflow-visible animate-in fade-in zoom-in-95 duration-200">
-
               {/* Arrow */}
               <div className="absolute top-2 right-5 w-4 h-4 bg-white border-l border-t border-gray-100 rotate-45"></div>
 
@@ -350,17 +376,19 @@ export default function Header() {
                   activities.map((activity) => (
                     <div
                       key={activity.id}
-                      className={`p-3 rounded-xl mb-2 ${activity.is_read
-                        ? "bg-white opacity-70"
-                        : "bg-orange-50 border border-orange-100"
-                        }`}
+                      className={`p-3 rounded-xl mb-2 ${
+                        activity.is_read
+                          ? "bg-white opacity-70"
+                          : "bg-orange-50 border border-orange-100"
+                      }`}
                     >
                       <div className="flex gap-3">
                         <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center ${activity.is_read
-                            ? "bg-gray-100 text-gray-400"
-                            : "bg-orange-100 text-orange-600"
-                            }`}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            activity.is_read
+                              ? "bg-gray-100 text-gray-400"
+                              : "bg-orange-100 text-orange-600"
+                          }`}
                         >
                           <Activity size={14} />
                         </div>
@@ -396,54 +424,135 @@ export default function Header() {
         </div>
 
         {/* Logout Button */}
-        <button
-          onClick={handlelogout}
-          className="flex items-center text-3xl text-gray-600 font-semibold hover:text-orange-500 transition-colors cursor-pointer"
-        >
-          <i className="bi bi-box-arrow-right"></i>
-        </button>
+        {/* User Profile */}
+        <div className="relative" ref={profileRef}>
+          <button
+            onClick={() => setShowProfileMenu(!showProfileMenu)}
+            className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full bg-orange-500 text-white font-bold text-sm flex items-center justify-center leading-none cursor-pointer shadow-sm hover:scale-105 transition-all"
+          >
+            {userLetter}
+          </button>
+
+          {showProfileMenu && (
+            <div className="absolute right-0 top-[120%] w-52 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden z-[999]">
+              {/* User Info */}
+              <div className="px-4 py-4 border-b bg-gray-50">
+                <p className="text-sm text-gray-500">Signed in as</p>
+
+                <p className="font-semibold text-gray-800 mt-1">{username}</p>
+              </div>
+
+              {/* Logout */}
+              <button
+                onClick={handlelogout}
+                className="w-full text-left px-4 py-3 hover:bg-red-50 text-red-500 font-medium transition cursor-pointer"
+              >
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Mobile Navigation Menu */}
       {mobileMenuOpen && (
         <nav className="md:hidden absolute top-full left-0 w-full bg-white shadow-xl flex flex-col items-start px-6 space-y-4 text-gray-800 font-medium pb-8 pt-4 border-t border-gray-100 z-[100] animate-in slide-in-from-top duration-300">
-          <Link onClick={() => setMobileMenuOpen(false)} href="/dashboard" className="hover:text-orange-500 w-full py-1">
+          <Link
+            onClick={() => setMobileMenuOpen(false)}
+            href="/dashboard"
+            className="hover:text-orange-500 w-full py-1"
+          >
             Dashboard
           </Link>
 
           <div className="w-full">
-            <button onClick={() => setMobileCustomerOpen(!mobileCustomerOpen)} className="flex justify-between w-full hover:text-orange-500 py-1">
-              Customer <span className="ml-1 text-gray-400">{mobileCustomerOpen ? '▴' : '▾'}</span>
+            <button
+              onClick={() => setMobileCustomerOpen(!mobileCustomerOpen)}
+              className="flex justify-between w-full hover:text-orange-500 py-1"
+            >
+              Customer{" "}
+              <span className="ml-1 text-gray-400">
+                {mobileCustomerOpen ? "▴" : "▾"}
+              </span>
             </button>
             {mobileCustomerOpen && (
               <div className="flex flex-col pl-4 mt-2 space-y-3 border-l-2 border-orange-100">
-                <Link href="/customer-list" onClick={() => setMobileMenuOpen(false)} className="hover:text-orange-500 text-sm">Customers</Link>
-                <Link href="/contacts" onClick={() => setMobileMenuOpen(false)} className="hover:text-orange-500 text-sm">Contact Details</Link>
-                <Link href="/contactDesignation" onClick={() => setMobileMenuOpen(false)} className="hover:text-orange-500 text-sm">Contact Designation</Link>
+                <Link
+                  href="/customer-list"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="hover:text-orange-500 text-sm"
+                >
+                  Customers
+                </Link>
+                <Link
+                  href="/contacts"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="hover:text-orange-500 text-sm"
+                >
+                  Contact Details
+                </Link>
+                <Link
+                  href="/contactDesignation"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="hover:text-orange-500 text-sm"
+                >
+                  Contact Designation
+                </Link>
               </div>
             )}
           </div>
 
           <div className="w-full">
-            <button onClick={() => setMobileSalesOpen(!mobileSalesOpen)} className="flex justify-between w-full hover:text-orange-500 py-1">
-              Sales <span className="ml-1 text-gray-400">{mobileSalesOpen ? '▴' : '▾'}</span>
+            <button
+              onClick={() => setMobileSalesOpen(!mobileSalesOpen)}
+              className="flex justify-between w-full hover:text-orange-500 py-1"
+            >
+              Sales{" "}
+              <span className="ml-1 text-gray-400">
+                {mobileSalesOpen ? "▴" : "▾"}
+              </span>
             </button>
             {mobileSalesOpen && (
               <div className="flex flex-col pl-4 mt-2 space-y-3 border-l-2 border-orange-100">
-                <Link href="/sales/lead" onClick={() => setMobileMenuOpen(false)} className="hover:text-orange-500 text-sm">Lead</Link>
-                <Link href="/sales/quotation" onClick={() => setMobileMenuOpen(false)} className="hover:text-orange-500 text-sm">Quotation</Link>
-                <Link href="/sales/proforma" onClick={() => setMobileMenuOpen(false)} className="hover:text-orange-500 text-sm">Proforma Invoice</Link>
+                <Link
+                  href="/sales/lead"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="hover:text-orange-500 text-sm"
+                >
+                  Lead
+                </Link>
+                <Link
+                  href="/sales/quotation"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="hover:text-orange-500 text-sm"
+                >
+                  Quotation
+                </Link>
+                <Link
+                  href="/sales/proforma"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="hover:text-orange-500 text-sm"
+                >
+                  Proforma Invoice
+                </Link>
               </div>
             )}
           </div>
 
-          <Link onClick={() => setMobileMenuOpen(false)} href="/tasks" className="hover:text-orange-500 w-full py-1">
+          <Link
+            onClick={() => setMobileMenuOpen(false)}
+            href="/tasks"
+            className="hover:text-orange-500 w-full py-1"
+          >
             Task List
           </Link>
-          <Link onClick={() => setMobileMenuOpen(false)} href="/setup" className="hover:text-orange-500 w-full py-1">
+          <Link
+            onClick={() => setMobileMenuOpen(false)}
+            href="/setup"
+            className="hover:text-orange-500 w-full py-1"
+          >
             Settings
           </Link>
-
 
           {/* Logout Option Inside Menu (Mobile Only) */}
           <div className="w-full pt-4 border-t border-gray-100 mt-2">
