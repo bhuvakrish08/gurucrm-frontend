@@ -48,12 +48,15 @@ export default function QuotationPage() {
     work_description: "",
   });
 
-  // Assignee Popover States
+  // ✅ Assignee Popover States
   const [showAssigneeModal, setShowAssigneeModal] = useState(false);
   const [selectedAssigneeRow, setSelectedAssigneeRow] = useState(null);
   const [newAssigneeValue, setNewAssigneeValue] = useState([]);
   const [isUpdatingAssignee, setIsUpdatingAssignee] = useState(false);
   const [assigneePopoverPos, setAssigneePopoverPos] = useState({ top: 0, left: 0 });
+
+  // ✅ NEW: Assignee Description State
+  const [assigneeDescription, setAssigneeDescription] = useState("");
 
   // Assignee History States
   const [assigneeLog, setAssigneeLog] = useState([]);
@@ -448,7 +451,6 @@ export default function QuotationPage() {
   };
 
   const openAssignModal = (quotation) => {
-    console.log("quotation row data:", quotation); // ← add this
     setSelectedAssignQuotation(quotation);
     setAssignForm({
       assigned_to: "",
@@ -513,66 +515,48 @@ export default function QuotationPage() {
         quotation_status: newStatus,
       });
 
-      // if approved then move main quotation to WON
       if (newStatus === "Approved") {
         await axios.put(
           `${API_BASE}/api/quotation/update-main-status/${selectedLead.latest_quotation_id}`,
-          {
-            quotation_status: "Won",
-          },
+          { quotation_status: "Won" }
         );
       }
 
       toast.success(`Quotation marked as ${newStatus}`);
 
-      // ✅ IMMEDIATE FRONTEND UPDATE
       setQuotations((prev) =>
         prev.map((q) => {
           if (q.lead_id !== selectedLead.lead_id) return q;
-
           return {
             ...q,
-
             quotation_status:
               newStatus === "Approved" ? q.quotation_status : "Pending",
-
             displayStatus: newStatus === "Approved" ? "Won" : "Pending",
-
             wasApprovedOnce: newStatus === "Approved",
           };
-        }),
+        })
       );
 
-      // refresh history
       const res = await axios.get(
-        `${API_BASE}/api/quotation/history/${selectedLead.lead_id}`,
+        `${API_BASE}/api/quotation/history/${selectedLead.lead_id}`
       );
-
       const historyData = res.data?.result || [];
-
       const historyWithFiles = await Promise.all(
         historyData.map(async (hist) => {
           const hf = await axios.get(
-            `${API_BASE}/api/quotation/files/${hist.id}`,
+            `${API_BASE}/api/quotation/files/${hist.id}`
           );
-
-          return {
-            ...hist,
-            files: hf.data?.files || [],
-          };
-        }),
+          return { ...hist, files: hf.data?.files || [] };
+        })
       );
-
       setFollowUpHistory(historyWithFiles);
 
-      // ✅ DIRECT MOVE TAB
       if (newStatus === "Approved") {
         setActiveTab("Won");
       } else if (newStatus === "Declined") {
         setActiveTab("Pending");
       }
 
-      // optional refresh
       await fetchQuotations();
     } catch (err) {
       console.log(err);
@@ -673,7 +657,7 @@ export default function QuotationPage() {
   };
 
   // ========================
-  // HANDLE ASSIGNEE UPDATE
+  // ✅ HANDLE ASSIGNEE UPDATE — with description
   // ========================
   const handleAssigneeUpdate = async () => {
     if (!selectedAssigneeRow) {
@@ -690,7 +674,10 @@ export default function QuotationPage() {
 
       await axios.put(
         `${API_BASE}/api/quotation/update-assignee/${selectedAssigneeRow.lead_id}`,
-        { assignee: assigneeStr },
+        {
+          assignee: assigneeStr,
+          description: assigneeDescription.trim(), // ✅ Send description
+        },
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
@@ -701,6 +688,7 @@ export default function QuotationPage() {
       setSelectedAssigneeRow(null);
       setNewAssigneeValue([]);
       setAssigneeLog([]);
+      setAssigneeDescription(""); // ✅ Reset description
       fetchQuotations();
     } catch (err) {
       console.log(err);
@@ -837,6 +825,7 @@ export default function QuotationPage() {
       setIsSubmitting(false);
     }
   };
+
   const handleAssignQuotation = async () => {
     if (!assignForm.assigned_to) {
       toast.error("Please select a user to assign");
@@ -856,7 +845,7 @@ export default function QuotationPage() {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-        },
+        }
       );
       toast.success("Task Assigned");
       setShowAssignModal(false);
@@ -865,6 +854,7 @@ export default function QuotationPage() {
       toast.error("Assignment failed");
     }
   };
+
   // ========================
   // TAB + FILTER LOGIC
   // ========================
@@ -971,16 +961,15 @@ export default function QuotationPage() {
   };
 
   // ========================
-  // OPEN ASSIGNEE POPOVER — position calculate
+  // ✅ OPEN ASSIGNEE POPOVER
   // ========================
   const openAssigneePopover = (e, q) => {
     const btn = e.currentTarget;
     const rect = btn.getBoundingClientRect();
-    const popoverWidth = 300;
+    const popoverWidth = 340;
     const viewportWidth = window.innerWidth;
 
     let left = rect.left + window.scrollX;
-    // viewport ni bahar na jav
     if (left + popoverWidth > viewportWidth - 10) {
       left = viewportWidth - popoverWidth - 10;
     }
@@ -996,6 +985,7 @@ export default function QuotationPage() {
         : []
     );
     setAssigneeLog([]);
+    setAssigneeDescription(""); // ✅ Reset description on open
     fetchAssigneeLog(q.lead_id);
     setShowAssigneeModal(true);
   };
@@ -1005,6 +995,7 @@ export default function QuotationPage() {
     setSelectedAssigneeRow(null);
     setNewAssigneeValue([]);
     setAssigneeLog([]);
+    setAssigneeDescription(""); // ✅ Reset on close
   };
 
   return (
@@ -1237,48 +1228,20 @@ export default function QuotationPage() {
                 <table className="w-full text-sm whitespace-nowrap">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-100">
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        #
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Company Name
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Customer Name
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Reference
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Create Quotation
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Quotation No
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Created
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Last Activity
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Grand Total
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Assignee
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Proforma %
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Updated By
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Action
-                      </th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">#</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Company Name</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Customer Name</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Reference</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Create Quotation</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Quotation No</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Created</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Last Activity</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Grand Total</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Assignee</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Proforma %</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Updated By</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1291,21 +1254,13 @@ export default function QuotationPage() {
                           <td className="py-3 px-3">
                             {(currentPage - 1) * itemsPerPage + index + 1}
                           </td>
-                          <td className="font-medium px-3">
-                            {q.company_name || "-"}
-                          </td>
-                          <td className="text-orange-500 px-3">
-                            {q.customer_name || "-"}
-                          </td>
+                          <td className="font-medium px-3">{q.company_name || "-"}</td>
+                          <td className="text-orange-500 px-3">{q.customer_name || "-"}</td>
                           <td className="px-3">{q.reference || "-"}</td>
 
                           <td className="text-lg px-3 text-center">
-                            {q.displayStatus === "Won" ||
-                              q.displayStatus === "Lost" ? (
-                              <div
-                                className="w-9 h-9 tracking-widest rounded-full border inline-flex items-center justify-center bg-gray-50 border-gray-300 text-gray-400 cursor-not-allowed mx-auto shadow-sm"
-                                title="Quotation locked"
-                              >
+                            {q.displayStatus === "Won" || q.displayStatus === "Lost" ? (
+                              <div className="w-9 h-9 tracking-widest rounded-full border inline-flex items-center justify-center bg-gray-50 border-gray-300 text-gray-400 cursor-not-allowed mx-auto shadow-sm" title="Quotation locked">
                                 <i className="bi bi-lock text-sm"></i>
                               </div>
                             ) : q.latest_quotation_id ? (
@@ -1329,28 +1284,20 @@ export default function QuotationPage() {
 
                           <td className="px-3 text-gray-600">{q.quotation_no || "-"}</td>
                           <td className="px-3 text-gray-500">
-                            {q.first_quotation_date
-                              ? new Date(
-                                q.first_quotation_date,
-                              ).toLocaleDateString()
-                              : "-"}
+                            {q.first_quotation_date ? new Date(q.first_quotation_date).toLocaleDateString() : "-"}
                           </td>
                           <td className="px-3 text-gray-500">
                             {q.quotation_date
                               ? new Date(q.quotation_date).toLocaleDateString()
                               : q.quotation_created_at
-                                ? new Date(
-                                  q.quotation_created_at,
-                                ).toLocaleDateString()
+                                ? new Date(q.quotation_created_at).toLocaleDateString()
                                 : "-"}
                           </td>
                           <td className="px-3 font-semibold text-gray-700">
-                            {q.grand_total
-                              ? `₹ ${Number(q.grand_total).toLocaleString()}`
-                              : "-"}
+                            {q.grand_total ? `₹ ${Number(q.grand_total).toLocaleString()}` : "-"}
                           </td>
 
-                          {/* ✅ ASSIGNEE CELL — inline popover trigger */}
+                          {/* ✅ ASSIGNEE CELL */}
                           <td className="px-3">
                             {q.displayStatus !== "Won" && q.displayStatus !== "Lost" ? (
                               <button
@@ -1360,17 +1307,15 @@ export default function QuotationPage() {
                               >
                                 {q.assignee ? (
                                   <>
-                                    {String(q.assignee)
-                                      .split(",")
-                                      .map((name, i) => (
-                                        <div
-                                          key={i}
-                                          title={name.trim()}
-                                          className="px-3 py-1.5 bg-blue-800 text-white rounded-full font-semibold text-xs flex justify-center items-center min-w-[28px] select-none"
-                                        >
-                                          {name.trim().charAt(0).toUpperCase()}
-                                        </div>
-                                      ))}
+                                    {String(q.assignee).split(",").map((name, i) => (
+                                      <div
+                                        key={i}
+                                        title={name.trim()}
+                                        className="px-3 py-1.5 bg-blue-800 text-white rounded-full font-semibold text-xs flex justify-center items-center min-w-[28px] select-none"
+                                      >
+                                        {name.trim().charAt(0).toUpperCase()}
+                                      </div>
+                                    ))}
                                     <i className="bi bi-pencil-fill text-[9px] text-gray-300 group-hover:text-blue-500 ml-1 transition-colors"></i>
                                   </>
                                 ) : (
@@ -1383,17 +1328,15 @@ export default function QuotationPage() {
                             ) : (
                               <div className="flex gap-1 items-center">
                                 {q.assignee ? (
-                                  String(q.assignee)
-                                    .split(",")
-                                    .map((name, i) => (
-                                      <div
-                                        key={i}
-                                        title={name.trim()}
-                                        className="px-3 py-1.5 bg-blue-800 text-white rounded-full font-semibold text-xs flex justify-center items-center min-w-[28px] select-none"
-                                      >
-                                        {name.trim().charAt(0).toUpperCase()}
-                                      </div>
-                                    ))
+                                  String(q.assignee).split(",").map((name, i) => (
+                                    <div
+                                      key={i}
+                                      title={name.trim()}
+                                      className="px-3 py-1.5 bg-blue-800 text-white rounded-full font-semibold text-xs flex justify-center items-center min-w-[28px] select-none"
+                                    >
+                                      {name.trim().charAt(0).toUpperCase()}
+                                    </div>
+                                  ))
                                 ) : (
                                   <span className="text-gray-300">—</span>
                                 )}
@@ -1402,8 +1345,7 @@ export default function QuotationPage() {
                           </td>
 
                           <td className="px-3 text-center">
-                            {q.proforma_percentage &&
-                              Number(q.proforma_percentage) > 0 ? (
+                            {q.proforma_percentage && Number(q.proforma_percentage) > 0 ? (
                               <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">
                                 <i className="bi bi-check-circle-fill text-emerald-500 text-[10px]"></i>
                                 {Number(q.proforma_percentage).toFixed(0)}%
@@ -1420,7 +1362,6 @@ export default function QuotationPage() {
                                   <i className="bi bi-person-fill text-indigo-400 text-[10px]"></i>
                                   {q.updated_by}
                                 </span>
-
                                 {q.updated_at && (
                                   <span className="text-[10px] text-gray-400 font-medium">
                                     {formatDateTime(q.updated_at)}
@@ -1435,96 +1376,73 @@ export default function QuotationPage() {
                           <td className="px-3">
                             {q.displayStatus === "Pending" ? (
                               <select
-                                value={
-                                  q.displayStatus === "Declined"
-                                    ? "Declined"
-                                    : "Pending"
-                                }
-                                onChange={(e) =>
-                                  handleTableStatusChange(
-                                    q.latest_quotation_id,
-                                    e.target.value,
-                                  )
-                                }
+                                value={q.displayStatus === "Declined" ? "Declined" : "Pending"}
+                                onChange={(e) => handleTableStatusChange(q.latest_quotation_id, e.target.value)}
                                 className="border rounded-md px-2 py-1 text-xs font-semibold outline-none bg-yellow-50 text-yellow-700 border-yellow-300"
                               >
                                 <option value="Pending">Pending</option>
                                 <option value="Lost">Lost</option>
                               </select>
                             ) : q.displayStatus === "Won" ? (
-                              <span className="bg-green-100 text-green-700 px-2 py-1 rounded-md text-xs font-bold">
-                                Won
-                              </span>
+                              <span className="bg-green-100 text-green-700 px-2 py-1 rounded-md text-xs font-bold">Won</span>
                             ) : q.displayStatus === "Lost" ? (
-                              <span className="bg-red-100 text-red-700 px-2 py-1 rounded-md text-xs font-bold">
-                                Lost
-                              </span>
+                              <span className="bg-red-100 text-red-700 px-2 py-1 rounded-md text-xs font-bold">Lost</span>
                             ) : null}
                           </td>
 
                           <td className="px-3 text-center">
                             <div className="flex items-center justify-center gap-2">
-                              {q.displayStatus === "Won" &&
-                                q.latest_quotation_id &&
-                                (() => {
-                                  const percentage = Number(
-                                    q.proforma_percentage || 0
+                              {q.displayStatus === "Won" && q.latest_quotation_id && (() => {
+                                const percentage = Number(q.proforma_percentage || 0);
+                                if (!q.pi_exists || percentage === 0) {
+                                  return (
+                                    <button
+                                      onClick={() => {
+                                        setSelectedPIQuotation(q);
+                                        setPiPercentage("");
+                                        setPiRupees("");
+                                        setShowPIModal(true);
+                                      }}
+                                      className="flex items-center gap-1 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all shadow-sm whitespace-nowrap"
+                                      title="Create Proforma Invoice"
+                                    >
+                                      <i className="bi bi-file-earmark-plus text-sm"></i>
+                                    </button>
                                   );
-                                  if (!q.pi_exists || percentage === 0) {
-                                    return (
-                                      <button
-                                        onClick={() => {
-                                          setSelectedPIQuotation(q);
-                                          setPiPercentage("");
-                                          setPiRupees("");
-                                          setShowPIModal(true);
-                                        }}
-                                        className="flex items-center gap-1 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all shadow-sm whitespace-nowrap"
-                                        title="Create Proforma Invoice"
-                                      >
-                                        <i className="bi bi-file-earmark-plus text-sm"></i>
-                                      </button>
-                                    );
-                                  }
-                                  if (percentage > 0 && percentage < 100) {
-                                    return (
-                                      <button
-                                        disabled
-                                        className="flex items-center gap-1 bg-gray-300 text-gray-600 text-xs font-semibold px-2.5 py-1.5 rounded-lg cursor-not-allowed whitespace-nowrap"
-                                        title={`PI In Progress (${percentage}%)`}
-                                      >
-                                        <i className="bi bi-hourglass-split text-sm"></i>
-                                        {percentage}%
-                                      </button>
-                                    );
-                                  }
-                                  if (percentage === 100) {
-                                    return (
-                                      <span
-                                        className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap"
-                                        title="Proforma Invoice Completed"
-                                      >
-                                        <i className="bi bi-check-circle-fill text-emerald-500"></i>
-                                        Completed
-                                      </span>
-                                    );
-                                  }
-                                })()}
+                                }
+                                if (percentage > 0 && percentage < 100) {
+                                  return (
+                                    <button
+                                      disabled
+                                      className="flex items-center gap-1 bg-gray-300 text-gray-600 text-xs font-semibold px-2.5 py-1.5 rounded-lg cursor-not-allowed whitespace-nowrap"
+                                      title={`PI In Progress (${percentage}%)`}
+                                    >
+                                      <i className="bi bi-hourglass-split text-sm"></i>
+                                      {percentage}%
+                                    </button>
+                                  );
+                                }
+                                if (percentage === 100) {
+                                  return (
+                                    <span
+                                      className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap"
+                                      title="Proforma Invoice Completed"
+                                    >
+                                      <i className="bi bi-check-circle-fill text-emerald-500"></i>
+                                      Completed
+                                    </span>
+                                  );
+                                }
+                              })()}
 
                               {q.latest_quotation_id ? (
-                                q.displayStatus === "Won" ||
-                                  q.displayStatus === "Lost" ? (
-                                  <div
-                                    className="text-gray-300 w-8 h-8 rounded-full flex items-center justify-center"
-                                    title="Locked"
-                                  >
+                                q.displayStatus === "Won" || q.displayStatus === "Lost" ? (
+                                  <div className="text-gray-300 w-8 h-8 rounded-full flex items-center justify-center" title="Locked">
                                     <i className="bi bi-lock-fill"></i>
                                   </div>
                                 ) : (
                                   <button
-                                    onClick={() =>
-                                      openDeleteModal(q.latest_quotation_id)
-                                    }
+                                    onClick={() => openDeleteModal(q.latest_quotation_id)}
                                     className="text-gray-400 hover:text-red-600 cursor-pointer"
                                   >
                                     <i className="bi bi-trash3 text-lg"></i>
@@ -1537,10 +1455,7 @@ export default function QuotationPage() {
                       ))
                     ) : (
                       <tr>
-                        <td
-                          colSpan="14"
-                          className="text-center py-10 text-gray-400"
-                        >
+                        <td colSpan="14" className="text-center py-10 text-gray-400">
                           No Quotations Found
                         </td>
                       </tr>
@@ -1549,12 +1464,9 @@ export default function QuotationPage() {
                 </table>
 
                 {/* PAGINATION */}
-                {/* ✅ STANDARDIZED MICARA IMS PAGINATION */}
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white rounded-b-lg">
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-slate-500 font-medium">
-                      Rows per page:
-                    </span>
+                    <span className="text-sm text-slate-500 font-medium">Rows per page:</span>
                     <select
                       value={itemsPerPage}
                       onChange={(e) => {
@@ -1564,50 +1476,36 @@ export default function QuotationPage() {
                       className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all cursor-pointer font-medium"
                     >
                       {[10, 20, 100, 200].map((size) => (
-                        <option key={size} value={size}>
-                          {size}
-                        </option>
+                        <option key={size} value={size}>{size}</option>
                       ))}
                     </select>
                   </div>
 
-                  {/* Right side: Navigation buttons (only if totalPages > 1) */}
                   {totalPages > 1 && (
                     <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
                       <button
                         type="button"
-                        onClick={() =>
-                          setCurrentPage((prev) => Math.max(prev - 1, 1))
-                        }
+                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                         disabled={currentPage === 1}
                         className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                       >
                         <i className="bi bi-chevron-left text-sm"></i>
                       </button>
-
                       <div className="flex items-center gap-1.5">
                         {getSlidingPages().map((page) => (
                           <button
                             type="button"
                             key={page}
                             onClick={() => setCurrentPage(page)}
-                            className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${currentPage === page
-                                ? "bg-[#212121] text-white shadow-md shadow-black/10"
-                                : "border border-slate-200 text-slate-600 hover:bg-slate-50"
-                              }`}
+                            className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${currentPage === page ? "bg-[#212121] text-white shadow-md shadow-black/10" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}
                           >
                             {page}
                           </button>
                         ))}
                       </div>
-
                       <button
                         type="button"
-                        onClick={() =>
-                          setCurrentPage((prev) =>
-                            Math.min(prev + 1, totalPages),
-                          )
-                        }
+                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                         disabled={currentPage === totalPages}
                         className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                       >
@@ -1628,9 +1526,7 @@ export default function QuotationPage() {
           <div className="bg-white w-[90vw] max-w-[900px] h-[85vh] rounded-sm shadow-xl overflow-hidden border border-gray-100 flex flex-col">
             <div
               className="flex justify-between items-center px-6 py-4 border-b border-gray-100 shadow-sm z-10"
-              style={{
-                background: "linear-gradient(to right, #f5e0c6, #ffffff)",
-              }}
+              style={{ background: "linear-gradient(to right, #f5e0c6, #ffffff)" }}
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center">
@@ -1640,9 +1536,7 @@ export default function QuotationPage() {
                   <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
                     {selectedLead?.company_name}
                   </h2>
-                  <p className="text-xs text-gray-500 font-medium">
-                    Quotation Management
-                  </p>
+                  <p className="text-xs text-gray-500 font-medium">Quotation Management</p>
                 </div>
               </div>
               <button
@@ -1656,27 +1550,21 @@ export default function QuotationPage() {
             <div className="flex flex-1 overflow-hidden relative">
               {/* Left Side: Form */}
               <div className="w-5/12 bg-white border-r border-gray-100 flex flex-col relative z-10 overflow-y-auto">
-                {/* ✅ APPROVED LOCK BANNER — shows on top of form when locked */}
                 {isApprovedLocked && (
                   <div className="mx-4 mt-4 flex items-start gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3 shadow-sm">
                     <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                       <i className="bi bi-lock-fill text-green-600 text-sm"></i>
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-green-700">
-                        Quotation Approved
-                      </p>
+                      <p className="text-sm font-bold text-green-700">Quotation Approved</p>
                       <p className="text-xs text-green-600 mt-0.5">
-                        This quotation is already approved. You cannot add or
-                        edit any further quotation activities.
+                        This quotation is already approved. You cannot add or edit any further quotation activities.
                       </p>
                     </div>
                   </div>
                 )}
 
-                <div
-                  className={`p-6 flex flex-col gap-4 ${isApprovedLocked ? "opacity-50 pointer-events-none select-none" : ""}`}
-                >
+                <div className={`p-6 flex flex-col gap-4 ${isApprovedLocked ? "opacity-50 pointer-events-none select-none" : ""}`}>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -1720,54 +1608,10 @@ export default function QuotationPage() {
                         className="w-full mt-1 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50"
                       />
                     </div>
-                    {/* <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Assignee
-                      </label>
-                      <Select
-                        isMulti
-                        instanceId="assignee-select"
-                        options={asignee}
-                        placeholder="-- Select --"
-                        value={asignee.filter((option) =>
-                          form.assignee?.split(",").includes(option.value),
-                        )}
-                        onChange={(selectedOptions) => {
-                          const values = selectedOptions
-                            ? selectedOptions
-                                .map((option) => option.value)
-                                .join(",")
-                            : "";
-                          setForm((prev) => ({ ...prev, assignee: values }));
-                        }}
-                        unstyled
-                        classNames={{
-                          control: ({ isFocused }) =>
-                            `w-full mt-1 border rounded-lg px-3 py-2 text-sm bg-gray-50 outline-none ${isFocused ? "border-orange-300 ring-1 ring-orange-300" : "border-gray-200"}`,
-                          valueContainer: () => "p-0 gap-1",
-                          placeholder: () => "text-black",
-                          input: () => "text-sm text-gray-700",
-                          menu: () =>
-                            "mt-1 border border-gray-200 rounded-lg bg-white shadow-md overflow-hidden",
-                          option: ({ isFocused, isSelected }) =>
-                            `px-3 py-2 text-sm cursor-pointer ${isSelected ? "bg-gray-600 text-white" : isFocused ? "bg-gray-100" : "text-gray-700"}`,
-                          multiValue: () =>
-                            "bg-gray-600 text-white rounded-md px-1",
-                          multiValueLabel: () => "text-white text-xs",
-                          multiValueRemove: () =>
-                            "text-white hover:bg-gray-700 rounded",
-                          indicatorsContainer: () => "text-gray-400",
-                          dropdownIndicator: () => "text-black",
-                          clearIndicator: () => "text-gray-400",
-                        }}
-                      />
-                    </div> */}
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Amount (₹)
-                      </label>
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Amount (₹)</label>
                       <input
                         type="number"
                         name="amount"
@@ -1779,9 +1623,7 @@ export default function QuotationPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Discount (%)
-                      </label>
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Discount (%)</label>
                       <input
                         type="number"
                         name="discount"
@@ -1791,9 +1633,7 @@ export default function QuotationPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Tax (%)
-                      </label>
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tax (%)</label>
                       <select
                         name="tax"
                         value={form.tax}
@@ -1809,9 +1649,7 @@ export default function QuotationPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Grand Total (₹)
-                      </label>
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Grand Total (₹)</label>
                       <input
                         type="number"
                         name="grand_total"
@@ -1822,9 +1660,7 @@ export default function QuotationPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                      Description
-                    </label>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Description</label>
                     <textarea
                       name="description"
                       value={form.description}
@@ -1841,28 +1677,18 @@ export default function QuotationPage() {
                           className="text-white px-5 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 mx-auto transition-all"
                           style={{ background: "#f07400" }}
                         >
-                          <i className="bi bi-cloud-upload text-sm"></i> Upload
-                          Files
+                          <i className="bi bi-cloud-upload text-sm"></i> Upload Files
                         </button>
                         {selectedFiles.length > 0 && (
                           <div className="mt-3 space-y-1.5 text-left">
                             {selectedFiles.map((file, idx) => (
-                              <div
-                                key={idx}
-                                className="flex justify-between items-center bg-white px-3 py-1.5 text-xs rounded-lg border border-gray-100 shadow-sm"
-                              >
+                              <div key={idx} className="flex justify-between items-center bg-white px-3 py-1.5 text-xs rounded-lg border border-gray-100 shadow-sm">
                                 <div className="flex items-center gap-2.5 overflow-hidden">
                                   <i className="bi bi-file-earmark-text text-blue-500 text-sm"></i>
-                                  <span className="text-gray-600 font-medium truncate">
-                                    {file.name}
-                                  </span>
+                                  <span className="text-gray-600 font-medium truncate">{file.name}</span>
                                 </div>
                                 <button
-                                  onClick={() =>
-                                    setSelectedFiles(
-                                      selectedFiles.filter((_, i) => i !== idx),
-                                    )
-                                  }
+                                  onClick={() => setSelectedFiles(selectedFiles.filter((_, i) => i !== idx))}
                                   className="text-gray-300 hover:text-red-500 transition-colors ml-2"
                                 >
                                   <i className="bi bi-x-circle text-sm"></i>
@@ -1874,8 +1700,7 @@ export default function QuotationPage() {
                       </>
                     ) : (
                       <p className="text-xs text-gray-500 italic">
-                        File editing is unavailable during updates. Create a new
-                        quotation to attach new files.
+                        File editing is unavailable during updates. Create a new quotation to attach new files.
                       </p>
                     )}
                   </div>
@@ -1897,32 +1722,16 @@ export default function QuotationPage() {
                       >
                         {isSubmitting ? (
                           <>
-                            <svg
-                              className="animate-spin h-4 w-4"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                            >
-                              <circle
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="white"
-                                strokeWidth="4"
-                                opacity="0.25"
-                              />
-                              <path
-                                fill="white"
-                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                              />
+                            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                              <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" opacity="0.25" />
+                              <path fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                             </svg>
                             Processing...
                           </>
                         ) : (
                           <>
                             <i className="bi bi-floppy2-fill"></i>
-                            {editingId
-                              ? "Update Quotation"
-                              : "Save Quotation Activity"}
+                            {editingId ? "Update Quotation" : "Save Quotation Activity"}
                           </>
                         )}
                       </button>
@@ -1932,9 +1741,7 @@ export default function QuotationPage() {
                             setEditingId(null);
                             setForm({
                               quotation_no: form.quotation_no,
-                              quotation_date: new Date()
-                                .toISOString()
-                                .split("T")[0],
+                              quotation_date: new Date().toISOString().split("T")[0],
                               activity_type: "",
                               quotation_status: "Pending",
                               assignee: form.assignee,
@@ -1959,10 +1766,7 @@ export default function QuotationPage() {
               <div className="w-7/12 bg-slate-50 flex flex-col relative z-0">
                 <div className="px-6 py-4 flex justify-between items-center bg-white border-b border-gray-100 sticky top-0 z-20 shadow-sm">
                   <h3 className="text-sm font-bold text-gray-700 uppercase flex items-center gap-2">
-                    <i
-                      className="bi bi-clock-history"
-                      style={{ color: "#f07400" }}
-                    ></i>{" "}
+                    <i className="bi bi-clock-history" style={{ color: "#f07400" }}></i>{" "}
                     Quotation History Data
                   </h3>
                 </div>
@@ -1970,20 +1774,13 @@ export default function QuotationPage() {
                   {followUpHistory.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-gray-400">
                       <i className="bi bi-inbox text-4xl mb-2 text-gray-300"></i>
-                      <p className="text-sm font-medium">
-                        No quotation history found.
-                      </p>
+                      <p className="text-sm font-medium">No quotation history found.</p>
                     </div>
                   ) : (
                     [...followUpHistory]
                       .sort((a, b) =>
-                        a.quotation_status === "Approved"
-                          ? -1
-                          : b.quotation_status === "Approved"
-                            ? 1
-                            : Math.sign(
-                              new Date(b.created_at) - new Date(a.created_at),
-                            ),
+                        a.quotation_status === "Approved" ? -1 : b.quotation_status === "Approved" ? 1 :
+                          Math.sign(new Date(b.created_at) - new Date(a.created_at))
                       )
                       .map((item, index) => (
                         <div
@@ -1992,17 +1789,13 @@ export default function QuotationPage() {
                         >
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex gap-2 items-center">
-                              <div
-                                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-sm ${item.quotation_status === "Approved" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-600"}`}
-                              >
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-sm ${item.quotation_status === "Approved" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-600"}`}>
                                 {item.assignee ? item.assignee.charAt(0) : "U"}
                               </div>
                               <div>
                                 <p className="text-xs text-gray-500 font-medium">
                                   Recorded by{" "}
-                                  <span className="text-gray-800 font-bold">
-                                    {item.assignee || "User"}
-                                  </span>
+                                  <span className="text-gray-800 font-bold">{item.assignee || "User"}</span>
                                 </p>
                                 <p className="text-[10px] text-gray-400 font-medium tracking-wide">
                                   Quotation Date:{" "}
@@ -2015,37 +1808,23 @@ export default function QuotationPage() {
                                 item.quotation_status !== "Lost" &&
                                 item.quotation_status !== "Approved" &&
                                 item.quotation_status !== "Declined" &&
-                                !followUpHistory.find(
-                                  (h) => h.quotation_status === "Approved"
-                                ) && (
+                                !followUpHistory.find((h) => h.quotation_status === "Approved") && (
                                   <>
                                     <button
-                                      onClick={() =>
-                                        handleApproveDecline(
-                                          item.id,
-                                          "Approved",
-                                        )
-                                      }
+                                      onClick={() => handleApproveDecline(item.id, "Approved")}
                                       className="bg-green-500 hover:bg-green-600 text-white text-[10px] px-2 py-1 rounded-md transition-all shadow-sm"
                                     >
                                       Approve
                                     </button>
                                     <button
-                                      onClick={() =>
-                                        handleApproveDecline(
-                                          item.id,
-                                          "Declined",
-                                        )
-                                      }
+                                      onClick={() => handleApproveDecline(item.id, "Declined")}
                                       className="bg-red-500 hover:bg-red-600 text-white text-[10px] px-2 py-1 rounded-md transition-all shadow-sm"
                                     >
                                       Decline
                                     </button>
                                   </>
                                 )}
-                              <span
-                                className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-md ${item.quotation_status === "Approved" ? "bg-green-100 text-green-700" : item.quotation_status === "Declined" ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-700"}`}
-                              >
+                              <span className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-md ${item.quotation_status === "Approved" ? "bg-green-100 text-green-700" : item.quotation_status === "Declined" ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-700"}`}>
                                 {item.quotation_status || "Pending"}
                               </span>
                               {item.quotation_status !== "Approved" &&
@@ -2067,9 +1846,7 @@ export default function QuotationPage() {
                               <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold bg-indigo-50 border border-indigo-100 text-indigo-600 px-2 py-0.5 rounded-md">
                                 <i className="bi bi-pencil-fill text-[9px]"></i>
                                 Last edited by{" "}
-                                <span className="text-indigo-800">
-                                  {item.updated_by}
-                                </span>
+                                <span className="text-indigo-800">{item.updated_by}</span>
                               </span>
                               {item.updated_at && (
                                 <span className="text-[10px] text-gray-400 font-medium">
@@ -2081,75 +1858,41 @@ export default function QuotationPage() {
 
                           <div className="mt-2 grid grid-cols-2 gap-4 bg-gray-50 p-2.5 rounded-lg border border-gray-100 text-sm">
                             <div>
-                              <span className="text-gray-400 text-xs">
-                                Quotation No:
-                              </span>{" "}
-                              <span className="font-semibold">
-                                {item.quotation_no || "-"}
-                              </span>
+                              <span className="text-gray-400 text-xs">Quotation No:</span>{" "}
+                              <span className="font-semibold">{item.quotation_no || "-"}</span>
                             </div>
                             <div>
-                              <span className="text-gray-400 text-xs">
-                                Activity Type:
-                              </span>{" "}
-                              <span className="font-semibold">
-                                {item.activity_type || "-"}
-                              </span>
+                              <span className="text-gray-400 text-xs">Activity Type:</span>{" "}
+                              <span className="font-semibold">{item.activity_type || "-"}</span>
                             </div>
                             <div className="col-span-2 text-gray-700">
-                              <span className="text-gray-400 text-xs block mb-0.5">
-                                Description:
-                              </span>
-                              <p className="whitespace-pre-wrap">
-                                {item.description || "No description provided."}
-                              </p>
+                              <span className="text-gray-400 text-xs block mb-0.5">Description:</span>
+                              <p className="whitespace-pre-wrap">{item.description || "No description provided."}</p>
                             </div>
                           </div>
                           <div className="mt-2 grid grid-cols-4 gap-4 bg-white p-2.5 rounded-lg border border-gray-100 text-sm">
                             <div>
-                              <span className="text-gray-400 text-[10px] uppercase block">
-                                Amount
-                              </span>
+                              <span className="text-gray-400 text-[10px] uppercase block">Amount</span>
+                              <span className="font-semibold text-gray-800">₹{item.amount || "0"}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400 text-[10px] uppercase block">Discount</span>
                               <span className="font-semibold text-gray-800">
-                                ₹{item.amount || "0"}
+                                ₹{item.amount && item.discount ? ((item.amount * item.discount) / 100).toFixed(2) : "0"}
                               </span>
                             </div>
                             <div>
-                              <span className="text-gray-400 text-[10px] uppercase block">
-                                Discount
-                              </span>
-                              <span className="font-semibold text-gray-800">
-                                ₹
-                                {item.amount && item.discount
-                                  ? (
-                                    (item.amount * item.discount) /
-                                    100
-                                  ).toFixed(2)
-                                  : "0"}
-                              </span>
+                              <span className="text-gray-400 text-[10px] uppercase block">Tax</span>
+                              <span className="font-semibold text-gray-800">{item.tax || "0"}%</span>
                             </div>
                             <div>
-                              <span className="text-gray-400 text-[10px] uppercase block">
-                                Tax
-                              </span>
-                              <span className="font-semibold text-gray-800">
-                                {item.tax || "0"}%
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-gray-400 text-[10px] uppercase block">
-                                Grand Total
-                              </span>
-                              <span className="font-bold text-green-600">
-                                ₹{item.grand_total || "0"}
-                              </span>
+                              <span className="text-gray-400 text-[10px] uppercase block">Grand Total</span>
+                              <span className="font-bold text-green-600">₹{item.grand_total || "0"}</span>
                             </div>
                           </div>
                           {item.files?.length > 0 && (
                             <div className="mt-3">
-                              <p className="text-xs font-semibold text-gray-400 uppercase mb-1.5 flex flex-col">
-                                Attached Files
-                              </p>
+                              <p className="text-xs font-semibold text-gray-400 uppercase mb-1.5 flex flex-col">Attached Files</p>
                               <div className="flex flex-wrap gap-2">
                                 {item.files.map((f, i) => (
                                   <a
@@ -2160,9 +1903,7 @@ export default function QuotationPage() {
                                     className="flex items-center gap-1.5 border border-indigo-100 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors shadow-sm"
                                   >
                                     <i className="bi bi-file-earmark-check text-indigo-500"></i>
-                                    <span className="truncate max-w-[120px]">
-                                      {f.file_name}
-                                    </span>
+                                    <span className="truncate max-w-[120px]">{f.file_name}</span>
                                   </a>
                                 ))}
                               </div>
@@ -2185,14 +1926,9 @@ export default function QuotationPage() {
             <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-orange-100 to-white border-b border-gray-100">
               <div className="flex items-center gap-2">
                 <i className="bi bi-cloud-arrow-up text-orange-500 text-lg"></i>
-                <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                  Select Quotation Files
-                </h2>
+                <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Select Quotation Files</h2>
               </div>
-              <button
-                onClick={() => setShowFileModal(false)}
-                className="w-8 h-8 rounded-full transition-colors flex items-center justify-center text-orange-500"
-              >
+              <button onClick={() => setShowFileModal(false)} className="w-8 h-8 rounded-full transition-colors flex items-center justify-center text-orange-500">
                 <i className="bi bi-x-lg"></i>
               </button>
             </div>
@@ -2206,27 +1942,13 @@ export default function QuotationPage() {
                 <div className="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center mb-3">
                   <i className="bi bi-cloud-arrow-up text-orange-500 text-2xl"></i>
                 </div>
-                <p className="font-bold text-gray-700 text-sm">
-                  Click or drag files here
-                </p>
-                <p className="text-xs text-gray-400 mt-2">
-                  JPG, PNG, PDF (Max 2MB per file, Max 5 files)
-                </p>
-                <input
-                  type="file"
-                  id="quotFiles"
-                  multiple
-                  className="hidden"
-                  onChange={handleSelect}
-                  accept=".jpg,.jpeg,.png,.pdf"
-                />
+                <p className="font-bold text-gray-700 text-sm">Click or drag files here</p>
+                <p className="text-xs text-gray-400 mt-2">JPG, PNG, PDF (Max 2MB per file, Max 5 files)</p>
+                <input type="file" id="quotFiles" multiple className="hidden" onChange={handleSelect} accept=".jpg,.jpeg,.png,.pdf" />
               </div>
             </div>
             <div className="px-6 py-3 bg-white flex justify-end gap-3 rounded-b-2xl">
-              <button
-                onClick={() => setShowFileModal(false)}
-                className="px-5 py-2 rounded-sm text-sm font-semibold bg-orange-500 text-white hover:bg-orange-600 transition-all"
-              >
+              <button onClick={() => setShowFileModal(false)} className="px-5 py-2 rounded-sm text-sm font-semibold bg-orange-500 text-white hover:bg-orange-600 transition-all">
                 Done
               </button>
             </div>
@@ -2243,31 +1965,17 @@ export default function QuotationPage() {
                 <i className="bi bi-trash text-orange-500 text-sm"></i>
                 DELETE QUOTATION
               </h3>
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full text-orange-500"
-              >
-                ✕
-              </button>
+              <button onClick={() => setShowDeleteModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full text-orange-500">✕</button>
             </div>
             <div className="flex flex-col items-center py-8 px-6 text-center">
               <div className="w-20 h-20 rounded-full bg-orange-50 flex items-center justify-center mb-4 border border-orange-100">
                 <i className="bi bi-trash text-orange-500 text-3xl"></i>
               </div>
-              <h2 className="text-lg font-semibold text-gray-800">
-                {deleteName}
-              </h2>
-              <p className="text-gray-400 text-sm mt-2">
-                This action cannot be undone. Are you sure?
-              </p>
+              <h2 className="text-lg font-semibold text-gray-800">{deleteName}</h2>
+              <p className="text-gray-400 text-sm mt-2">This action cannot be undone. Are you sure?</p>
             </div>
             <div className="flex justify-end gap-3 px-6 py-3">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="px-5 py-2 rounded-sm text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100"
-              >
-                Cancel
-              </button>
+              <button onClick={() => setShowDeleteModal(false)} className="px-5 py-2 rounded-sm text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100">Cancel</button>
               <button
                 onClick={handleDeleteQuotation}
                 disabled={isDeleting}
@@ -2276,26 +1984,12 @@ export default function QuotationPage() {
                 {isDeleting ? (
                   <>
                     <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="white"
-                        strokeWidth="3"
-                        fill="none"
-                        opacity="0.3"
-                      />
-                      <path
-                        d="M4 12a8 8 0 018-8"
-                        stroke="white"
-                        strokeWidth="3"
-                      />
+                      <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" fill="none" opacity="0.3" />
+                      <path d="M4 12a8 8 0 018-8" stroke="white" strokeWidth="3" />
                     </svg>
                     Deleting...
                   </>
-                ) : (
-                  "Delete"
-                )}
+                ) : "Delete"}
               </button>
             </div>
           </div>
@@ -2317,22 +2011,12 @@ export default function QuotationPage() {
               <button onClick={() => setShowStatusModal(false)} className="text-orange-600 text-sm leading-none">✕</button>
             </div>
             <div className="p-6">
-              <p className="text-gray-500 text-sm mb-6">
-                Are you sure you want to change status?
-              </p>
+              <p className="text-gray-500 text-sm mb-6">Are you sure you want to change status?</p>
               <div className="flex justify-center gap-3">
-                <button
-                  onClick={() => setShowStatusModal(false)}
-                  className="px-5 py-2 rounded-sm text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100"
-                >
-                  Cancel
-                </button>
+                <button onClick={() => setShowStatusModal(false)} className="px-5 py-2 rounded-sm text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100">Cancel</button>
                 <button
                   onClick={() => {
-                    handleTableStatusChange(
-                      statusChangeData.id,
-                      statusChangeData.status,
-                    );
+                    handleTableStatusChange(statusChangeData.id, statusChangeData.status);
                     setShowStatusModal(false);
                   }}
                   className="px-6 py-2 rounded-sm text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white"
@@ -2352,55 +2036,37 @@ export default function QuotationPage() {
             <div className="flex justify-between items-center px-6 py-4 from-orange-100 to-white bg-gradient-to-r">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full flex items-center justify-center">
-                  <i
-                    className="bi bi-file-earmark-arrow-up text-lg"
-                    style={{ color: "#f07400" }}
-                  ></i>
+                  <i className="bi bi-file-earmark-arrow-up text-lg" style={{ color: "#f07400" }}></i>
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">Convert to Proforma Invoice</h2>
                   <p className="text-xs text-gray-400 font-medium">
-                    {selectedPIQuotation.company_name} —{" "}
-                    {selectedPIQuotation.customer_name}
+                    {selectedPIQuotation.company_name} — {selectedPIQuotation.customer_name}
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => { setShowPIModal(false); setPiPercentage(""); }}
-                className="w-8 h-8 flex items-center justify-center rounded-full text-orange-500 transition-all"
-              >
-                ✕
-              </button>
+              <button onClick={() => { setShowPIModal(false); setPiPercentage(""); }} className="w-8 h-8 flex items-center justify-center rounded-full text-orange-500 transition-all">✕</button>
             </div>
 
             <div className="p-6 space-y-4">
               <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Quotation No</span>
-                  <span className="font-semibold text-gray-700">
-                    {selectedPIQuotation.quotation_no || "-"}
-                  </span>
+                  <span className="font-semibold text-gray-700">{selectedPIQuotation.quotation_no || "-"}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Reference</span>
-                  <span className="font-semibold text-gray-700">
-                    {selectedPIQuotation.reference || "-"}
-                  </span>
+                  <span className="font-semibold text-gray-700">{selectedPIQuotation.reference || "-"}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Assignee</span>
-                  <span className="font-semibold text-gray-700">
-                    {selectedPIQuotation.assignee || "-"}
-                  </span>
+                  <span className="font-semibold text-gray-700">{selectedPIQuotation.assignee || "-"}</span>
                 </div>
                 <div className="h-px bg-gray-200"></div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400 text-sm">Grand Total</span>
                   <span className="font-bold text-emerald-600 text-lg">
-                    ₹{" "}
-                    {piGrandTotal
-                      ? Number(piGrandTotal).toLocaleString("en-IN")
-                      : "0"}
+                    ₹ {piGrandTotal ? Number(piGrandTotal).toLocaleString("en-IN") : "0"}
                   </span>
                 </div>
               </div>
@@ -2415,20 +2081,14 @@ export default function QuotationPage() {
                       type="number" min="0" max="100" value={piPercentage}
                       onChange={(e) => {
                         const val = e.target.value;
-                        if (val === "") {
-                          handlePiPercentageChange("");
-                          return;
-                        }
+                        if (val === "") { handlePiPercentageChange(""); return; }
                         const num = Number(val);
-                        if (num >= 0 && num <= 100)
-                          handlePiPercentageChange(num);
+                        if (num >= 0 && num <= 100) handlePiPercentageChange(num);
                       }}
                       className="w-full border border-orange-300 rounded-sm pl-3 pr-8 py-2.5 text-sm outline-none bg-gray-50 transition-all"
                       placeholder="0"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
-                      %
-                    </span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">%</span>
                   </div>
                 </div>
                 <div className="flex-1">
@@ -2436,17 +2096,12 @@ export default function QuotationPage() {
                     Amount <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
-                      ₹
-                    </span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">₹</span>
                     <input
                       type="number" min="0" value={piRupees}
                       onChange={(e) => {
                         const val = e.target.value;
-                        if (val === "") {
-                          handlePiRupeesChange("");
-                          return;
-                        }
+                        if (val === "") { handlePiRupeesChange(""); return; }
                         handlePiRupeesChange(Number(val));
                       }}
                       className="w-full border border-orange-300 rounded-sm pl-7 pr-3 py-2.5 text-sm outline-none bg-gray-50 transition-all"
@@ -2457,44 +2112,21 @@ export default function QuotationPage() {
               </div>
 
               {piGrandTotal > 0 && (
-                <div
-                  className={`rounded-sm p-3 border transition-all ${piIsOver
-                      ? "bg-red-50 border-red-200"
-                      : piEnteredPct === 100
-                        ? "bg-green-50 border-green-200"
-                        : piEnteredPct > 0
-                          ? "bg-green-50 border-green-200"
-                          : "bg-blue-50 border-blue-100"
-                    }`}
-                >
+                <div className={`rounded-sm p-3 border transition-all ${piIsOver ? "bg-red-50 border-red-200" : piEnteredPct === 100 ? "bg-green-50 border-green-200" : piEnteredPct > 0 ? "bg-green-50 border-green-200" : "bg-blue-50 border-blue-100"}`}>
                   <p className="text-xs font-bold uppercase tracking-wider mb-2 text-gray-500">
-                    {piEnteredPct > 0
-                      ? "Remaining After This Entry"
-                      : "Total Available"}
+                    {piEnteredPct > 0 ? "Remaining After This Entry" : "Total Available"}
                   </p>
                   <div className="flex justify-between items-center">
                     <div className="text-center">
-                      <p
-                        className={`text-xl font-bold ${piIsOver ? "text-red-600" : piEnteredPct === 100 ? "text-green-600" : "text-green-700"}`}
-                      >
-                        {piIsOver
-                          ? "Over!"
-                          : piEnteredPct > 0
-                            ? `${parseFloat(piRemainingPct.toFixed(2))}%`
-                            : "100%"}
+                      <p className={`text-xl font-bold ${piIsOver ? "text-red-600" : piEnteredPct === 100 ? "text-green-600" : "text-green-700"}`}>
+                        {piIsOver ? "Over!" : piEnteredPct > 0 ? `${parseFloat(piRemainingPct.toFixed(2))}%` : "100%"}
                       </p>
                       <p className="text-xs text-gray-400">Percentage</p>
                     </div>
                     <div className="w-px h-10 bg-gray-200"></div>
                     <div className="text-center">
-                      <p
-                        className={`text-xl font-bold ${piIsOver ? "text-red-600" : piEnteredPct === 100 ? "text-green-600" : "text-green-700"}`}
-                      >
-                        {piIsOver
-                          ? "Over!"
-                          : piEnteredPct > 0
-                            ? `₹${Number(piRemainingAmt).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
-                            : `₹${Number(piGrandTotal).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
+                      <p className={`text-xl font-bold ${piIsOver ? "text-red-600" : piEnteredPct === 100 ? "text-green-600" : "text-green-700"}`}>
+                        {piIsOver ? "Over!" : piEnteredPct > 0 ? `₹${Number(piRemainingAmt).toLocaleString("en-IN", { maximumFractionDigits: 0 })}` : `₹${Number(piGrandTotal).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
                       </p>
                       <p className="text-xs text-gray-400">Amount</p>
                     </div>
@@ -2508,9 +2140,7 @@ export default function QuotationPage() {
                     </div>
                     <div className="flex justify-between mt-1">
                       <span className="text-xs text-gray-400">
-                        {piEnteredPct > 0
-                          ? `${parseFloat(piEnteredPct.toFixed(2))}% entered`
-                          : "Enter % or ₹ above"}
+                        {piEnteredPct > 0 ? `${parseFloat(piEnteredPct.toFixed(2))}% entered` : "Enter % or ₹ above"}
                       </span>
                       <span className="text-xs text-gray-400">100%</span>
                     </div>
@@ -2519,62 +2149,27 @@ export default function QuotationPage() {
               )}
 
               {piIsOver && (
-                <p className="text-xs text-red-500 font-medium -mt-1">
-                  ⚠ Percentage cannot exceed 100%
-                </p>
+                <p className="text-xs text-red-500 font-medium -mt-1">⚠ Percentage cannot exceed 100%</p>
               )}
             </div>
 
-
-
-
-
             <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex gap-3">
               <button
-                onClick={() => {
-                  setShowPIModal(false);
-                  setPiPercentage("");
-                  setPiRupees("");
-                }}
+                onClick={() => { setShowPIModal(false); setPiPercentage(""); setPiRupees(""); }}
                 className="flex-1 border border-gray-200 text-gray-600 hover:bg-gray-100 rounded-sm py-2.5 text-sm font-semibold transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleCreatePI}
-                disabled={
-                  isCreatingPI ||
-                  !piPercentage ||
-                  Number(piPercentage) <= 0 ||
-                  Number(piPercentage) > 100
-                }
-                className={`flex-1 bg-green-500 hover:bg-green-600 text-white rounded-sm py-2.5 text-sm font-semibold shadow-md shadow-green-200 transition-all flex justify-center items-center gap-2 ${isCreatingPI ||
-                    !piPercentage ||
-                    Number(piPercentage) <= 0 ||
-                    Number(piPercentage) > 100
-                    ? "opacity-60 cursor-not-allowed"
-                    : ""
-                  }`}
+                disabled={isCreatingPI || !piPercentage || Number(piPercentage) <= 0 || Number(piPercentage) > 100}
+                className={`flex-1 bg-green-500 hover:bg-green-600 text-white rounded-sm py-2.5 text-sm font-semibold shadow-md shadow-green-200 transition-all flex justify-center items-center gap-2 ${isCreatingPI || !piPercentage || Number(piPercentage) <= 0 || Number(piPercentage) > 100 ? "opacity-60 cursor-not-allowed" : ""}`}
               >
                 {isCreatingPI ? (
                   <>
-                    <svg
-                      className="animate-spin h-4 w-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="white"
-                        strokeWidth="4"
-                        opacity="0.25"
-                      />
-                      <path
-                        fill="white"
-                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                      />
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" opacity="0.25" />
+                      <path fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                     </svg>
                     Creating PI...
                   </>
@@ -2590,174 +2185,200 @@ export default function QuotationPage() {
         </div>
       )}
 
-      {/* ✅ INLINE ASSIGNEE POPOVER — Image 2 style */}
-      {/* ✅ INLINE ASSIGNEE POPOVER — with history */}
-      {showAssigneeModal && selectedAssigneeRow && (
-        <div
-          className="fixed inset-0 z-[80]"
-          onClick={closeAssigneePopover}
-        >
-          <div
-            className="absolute bg-white rounded-lg border border-gray-200 w-[320px] shadow-2xl"
-            style={{
-              top: assigneePopoverPos.top,
-              left: assigneePopoverPos.left,
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-orange-500 rounded-t-lg">
-              <p className="text-sm font-semibold text-white flex items-center gap-2">
-                <i className="bi bi-person-fill-gear"></i>
-                Change Assignee
-              </p>
-              <button onClick={closeAssigneePopover} className="text-white/80 hover:text-white">
-                <i className="bi bi-x-lg text-sm"></i>
-              </button>
-            </div>
+      {/* ✅ ASSIGNEE POPOVER — UPDATED DESIGN */}
+     {showAssigneeModal && selectedAssigneeRow && (
+  <div className="fixed inset-0 z-[80]" onClick={closeAssigneePopover}>
+    <div
+      className="fixed bg-white rounded-lg border border-gray-200 w-[340px] shadow-2xl flex flex-col"
+      style={{
+        top: Math.min(assigneePopoverPos.top, window.innerHeight - 520),
+        left: Math.min(assigneePopoverPos.left, window.innerWidth - 356),
+        maxHeight: `${window.innerHeight - Math.min(assigneePopoverPos.top, window.innerHeight - 520) - 16}px`,
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Header - FIXED નહીં scroll થાય */}
+      <div className="flex items-center justify-between px-4 py-3 bg-orange-500 rounded-t-lg flex-shrink-0">
+        <p className="text-sm font-semibold text-white flex items-center gap-2">
+          <i className="bi bi-person-fill-gear"></i>
+          Change Assignee
+        </p>
+        <button onClick={closeAssigneePopover} className="text-white/80 hover:text-white">
+          <i className="bi bi-x-lg text-sm"></i>
+        </button>
+      </div>
 
-            {/* Body */}
-            <div className="p-4 space-y-3">
+      {/* Body - SCROLL થશે */}
+      <div className="p-4 space-y-3 overflow-y-auto flex-1 min-h-0">
 
-              {/* Last Assignee */}
-              <div>
-                <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1.5">
-                  Last Assignee
-                </p>
-                <div className="flex gap-1.5 flex-wrap">
-                  {selectedAssigneeRow.assignee ? (
-                    String(selectedAssigneeRow.assignee).split(",").map((name, i) => (
-                      <span key={i} className="bg-blue-800 text-white text-xs font-medium px-3 py-1.5 rounded-full flex items-center gap-1.5">
-                        <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[9px] font-bold">
-                          {name.trim().charAt(0).toUpperCase()}
-                        </span>
-                        {name.trim()}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-gray-400 text-xs italic">None</span>
-                  )}
-                </div>
-              </div>
-
-              {/* New Assignee Dropdown */}
-              <div>
-                <label className="text-[10px] text-gray-400 uppercase font-bold tracking-wider block mb-1.5">
-                  New Assignee <span className="text-red-400">*</span>
-                </label>
-                <Select
-                  isMulti
-                  menuPosition="fixed"
-                  instanceId="inline-assignee-select"
-                  options={asignee}
-                  value={newAssigneeValue}
-                  onChange={(selected) => setNewAssigneeValue(selected || [])}
-                  placeholder="-- Select --"
-                  unstyled
-                  classNames={{
-                    control: ({ isFocused }) =>
-                      `w-full border rounded-md px-2 py-1.5 text-xs bg-gray-50 outline-none cursor-pointer ${isFocused ? "border-orange-400 ring-1 ring-orange-200" : "border-gray-300"}`,
-                    valueContainer: () => "gap-1 flex-wrap",
-                    placeholder: () => "text-gray-400 text-xs",
-                    input: () => "text-xs text-gray-700",
-                    menu: () => "mt-1 border border-gray-200 rounded-md bg-white shadow-lg z-[200]",
-                    option: ({ isFocused, isSelected }) =>
-                      `px-3 py-2 text-xs cursor-pointer ${isSelected ? "bg-blue-800 text-white" : isFocused ? "bg-orange-50 text-orange-700" : "text-gray-700"}`,
-                    multiValue: () => "bg-blue-800 text-white rounded-full px-2 py-0.5 flex items-center gap-1",
-                    multiValueLabel: () => "text-white text-xs font-medium",
-                    multiValueRemove: () => "text-white hover:bg-blue-900 rounded ml-1 cursor-pointer",
-                    dropdownIndicator: () => "text-gray-400 px-1 cursor-pointer hover:text-orange-500",
-                    clearIndicator: () => "text-gray-400 px-1 cursor-pointer hover:text-red-500",
-                  }}
-                />
-              </div>
-
-              {/* Buttons */}
-              <div className="flex gap-2">
-                <button
-                  onClick={closeAssigneePopover}
-                  className="flex-1 py-2 rounded-md text-xs border border-gray-200 text-gray-500 hover:bg-gray-50 font-medium transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleAssigneeUpdate}
-                  disabled={isUpdatingAssignee || newAssigneeValue.length === 0}
-                  className={`flex-[2] py-2 rounded-md text-xs text-white font-semibold flex items-center justify-center gap-1.5 transition-all ${isUpdatingAssignee || newAssigneeValue.length === 0
-                      ? "bg-orange-300 cursor-not-allowed"
-                      : "bg-orange-500 hover:bg-orange-600"
-                    }`}
-                >
-                  {isUpdatingAssignee ? (
-                    <>
-                      <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" opacity="0.25" />
-                        <path fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                      </svg>
-                      Updating...
-                    </>
-                  ) : (
-                    <>
-                      <i className="bi bi-person-check-fill text-xs"></i>
-                      Update
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {/* ✅ ASSIGNEE HISTORY LOG */}
-              {loadingLog ? (
-                <div className="pt-1 text-center text-xs text-gray-400 py-2">
-                  Loading history...
-                </div>
-              ) : assigneeLog.length > 0 ? (
-                <div className="border-t border-gray-100 pt-3">
-                  <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-2 flex items-center gap-1">
-                    <i className="bi bi-clock-history text-gray-300"></i>
-                    Last Change
-                  </p>
-                  <div className="space-y-2 pr-1">
-                    {/* 👇 assigneeLog ની જગ્યાએ assigneeLog.slice(0, 1) */}
-                    {assigneeLog.slice(0, 1).map((log, i) => (
-                      <div key={i} className="flex items-start gap-2.5">
-                        {/* Timeline dot */}
-                        <div className="flex flex-col items-center mt-0.5">
-                          <div className="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0"></div>
-                        </div>
-                        <div className="flex-1 pb-1">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded">
-                              {log.changed_by || "System"}
-                            </span>
-                            <span className="text-[10px] text-gray-400">assigned</span>
-                            <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
-                              {log.new_assignee || "-"}
-                            </span>
-                          </div>
-                          {log.changed_at && (
-                            <p className="text-[9px] text-gray-400 mt-0.5">
-                              {formatDateTime(log.changed_at)}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+        {/* LAST ASSIGNEE + NEW ASSIGNEE */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1.5">
+              Last Assignee
+            </p>
+            <div className="flex gap-1 flex-wrap min-h-[36px] items-center">
+              {selectedAssigneeRow.assignee ? (
+                String(selectedAssigneeRow.assignee).split(",").map((name, i) => (
+                  <span
+                    key={i}
+                    className="bg-blue-800 text-white text-xs font-medium px-2.5 py-1 rounded-full flex items-center gap-1"
+                  >
+                    <span className="w-3.5 h-3.5 rounded-full bg-white/20 flex items-center justify-center text-[8px] font-bold flex-shrink-0">
+                      {name.trim().charAt(0).toUpperCase()}
+                    </span>
+                    {name.trim()}
+                  </span>
+                ))
               ) : (
-                <div className="border-t border-gray-100 pt-3">
-                  <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1 flex items-center gap-1">
-                    <i className="bi bi-clock-history text-gray-300"></i>
-                    Last Change
-                  </p>
-                  <p className="text-xs text-gray-300 italic text-center py-2">No history found</p>
-                </div>
+                <span className="text-gray-400 text-xs italic">None</span>
               )}
-
             </div>
           </div>
+
+          <div>
+            <label className="text-[10px] text-gray-400 uppercase font-bold tracking-wider block mb-1.5">
+              New Assignee <span className="text-red-400">*</span>
+            </label>
+            <Select
+              isMulti
+              menuPosition="fixed"
+              instanceId="inline-assignee-select"
+              options={asignee}
+              value={newAssigneeValue}
+              onChange={(selected) => setNewAssigneeValue(selected || [])}
+              placeholder="Select..."
+              unstyled
+              classNames={{
+                control: ({ isFocused }) =>
+                  `w-full border rounded-md px-2 py-1 text-xs bg-gray-50 outline-none cursor-pointer min-h-[36px] ${isFocused ? "border-orange-400 ring-1 ring-orange-200" : "border-gray-300"}`,
+                valueContainer: () => "gap-1 flex-wrap",
+                placeholder: () => "text-gray-400 text-xs",
+                input: () => "text-xs text-gray-700",
+                menu: () => "mt-1 border border-gray-200 rounded-md bg-white shadow-lg z-[200]",
+                option: ({ isFocused, isSelected }) =>
+                  `px-3 py-2 text-xs cursor-pointer ${isSelected ? "bg-blue-800 text-white" : isFocused ? "bg-orange-50 text-orange-700" : "text-gray-700"}`,
+                multiValue: () => "bg-blue-800 text-white rounded-full px-1.5 py-0.5 flex items-center gap-1 text-[10px]",
+                multiValueLabel: () => "text-white font-medium",
+                multiValueRemove: () => "text-white hover:bg-blue-900 rounded ml-0.5 cursor-pointer",
+                dropdownIndicator: () => "text-gray-400 px-1 cursor-pointer hover:text-orange-500",
+                clearIndicator: () => "text-gray-400 px-1 cursor-pointer hover:text-red-500",
+              }}
+            />
+          </div>
         </div>
-      )}
+
+        {/* DIVIDER */}
+        <div className="h-px bg-gray-100"></div>
+
+        {/* TASK DESCRIPTION */}
+        <div>
+          <label className="text-[10px] text-gray-400 uppercase font-bold tracking-wider block mb-1.5 flex items-center gap-1">
+            <i className="bi bi-pencil-square text-gray-300"></i>
+            Task Description
+            <span className="text-gray-300 font-normal normal-case ml-1">(optional)</span>
+          </label>
+          <textarea
+            value={assigneeDescription}
+            onChange={(e) => setAssigneeDescription(e.target.value)}
+            placeholder="Write task details, instructions or notes..."
+            rows={3}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 text-xs text-gray-700 bg-gray-50 outline-none resize-none focus:border-orange-400 focus:ring-1 focus:ring-orange-200 transition-all placeholder:text-gray-400"
+          />
+        </div>
+
+        {/* Buttons */}
+        <div className="flex gap-2">
+          <button
+            onClick={closeAssigneePopover}
+            className="flex-1 py-2 rounded-md text-xs border border-gray-200 text-gray-500 hover:bg-gray-50 font-medium transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleAssigneeUpdate}
+            disabled={isUpdatingAssignee || newAssigneeValue.length === 0}
+            className={`flex-[2] py-2 rounded-md text-xs text-white font-semibold flex items-center justify-center gap-1.5 transition-all ${
+              isUpdatingAssignee || newAssigneeValue.length === 0
+                ? "bg-orange-300 cursor-not-allowed"
+                : "bg-orange-500 hover:bg-orange-600"
+            }`}
+          >
+            {isUpdatingAssignee ? (
+              <>
+                <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" opacity="0.25" />
+                  <path fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+                Updating...
+              </>
+            ) : (
+              <>
+                <i className="bi bi-person-check-fill text-xs"></i>
+                Update
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* LAST CHANGE */}
+        {loadingLog ? (
+          <div className="border-t border-gray-100 pt-3 text-center text-xs text-gray-400 py-2">
+            Loading history...
+          </div>
+        ) : assigneeLog.length > 0 ? (
+          <div className="border-t border-gray-100 pt-3">
+            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-2 flex items-center gap-1">
+              <i className="bi bi-clock-history text-gray-300"></i>
+              Last Change
+            </p>
+            {assigneeLog.slice(0, 1).map((log, i) => (
+              <div key={i} className="flex items-start gap-2.5">
+                <div className="flex flex-col items-center mt-1">
+                  <div className="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0"></div>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded">
+                      {log.changed_by || "System"}
+                    </span>
+                    <span className="text-[10px] text-gray-400">assigned</span>
+                    <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
+                      {log.new_assignee || "-"}
+                    </span>
+                  </div>
+                  {log.changed_at && (
+                    <p className="text-[9px] text-gray-400 mt-0.5">{formatDateTime(log.changed_at)}</p>
+                  )}
+                  {log.description && log.description.trim() !== "" && (
+                    <div className="mt-1.5 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5">
+                      <p className="text-[10px] font-semibold text-amber-700 flex items-center gap-1 mb-0.5">
+                        <i className="bi bi-chat-text-fill text-[9px]"></i>
+                        Task Note
+                      </p>
+                      <p className="text-[10px] text-amber-800 leading-relaxed whitespace-pre-wrap">
+                        {log.description}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="border-t border-gray-100 pt-3">
+            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1 flex items-center gap-1">
+              <i className="bi bi-clock-history text-gray-300"></i>
+              Last Change
+            </p>
+            <p className="text-xs text-gray-300 italic text-center py-2">No history found</p>
+          </div>
+        )}
+
+      </div>
+    </div>
+  </div>
+)}
 
     </>
   );
