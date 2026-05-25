@@ -1396,7 +1396,6 @@ export default function Page() {
                 </svg>
               </button>
             </div>
-
             <div className="px-7 pt-9 pb-5 text-center">
               <div
                 className="w-[78px] h-[78px] mx-auto rounded-full flex items-center justify-center mb-5"

@@ -48,6 +48,17 @@ export default function QuotationPage() {
     work_description: "",
   });
 
+  // Assignee Popover States
+  const [showAssigneeModal, setShowAssigneeModal] = useState(false);
+  const [selectedAssigneeRow, setSelectedAssigneeRow] = useState(null);
+  const [newAssigneeValue, setNewAssigneeValue] = useState([]);
+  const [isUpdatingAssignee, setIsUpdatingAssignee] = useState(false);
+  const [assigneePopoverPos, setAssigneePopoverPos] = useState({ top: 0, left: 0 });
+
+  // Assignee History States
+  const [assigneeLog, setAssigneeLog] = useState([]);
+  const [loadingLog, setLoadingLog] = useState(false);
+
   const [form, setForm] = useState({
     quotation_no: "",
     quotation_date: new Date().toISOString().split("T")[0],
@@ -64,19 +75,28 @@ export default function QuotationPage() {
 
   useAuth();
 
+<<<<<<< Updated upstream
   // ========================
   // ✅ HELPER: Check if any quotation in history is Approved
   // ========================
 const isApprovedLocked = followUpHistory.some(
   (h) => h.quotation_status === "Approved" || h.quotation_status === "Won",
 );
+=======
+  const isApprovedLocked = followUpHistory.some(
+    (h) => h.quotation_status === "Approved"
+  );
+>>>>>>> Stashed changes
 
   // ========================
   // FETCH
   // ========================
   const fetchQuotations = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/api/quotation/read`);
+      const res = await axios.get(`${API_BASE}/api/quotation/read`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+
       const data = (res.data?.result || []).map((item) => {
        const finalStatus =
          item.quotation_status === "Approved"
@@ -116,6 +136,27 @@ const isApprovedLocked = followUpHistory.some(
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // ========================
+  // FETCH ASSIGNEE LOG
+  // ========================
+  const fetchAssigneeLog = async (lead_id) => {
+    try {
+      setLoadingLog(true);
+      const res = await axios.get(
+        `${API_BASE}/api/quotation/assignee-log/${lead_id}`,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
+      setAssigneeLog(res.data?.log || []);
+    } catch (err) {
+      console.log("Assignee log fetch error:", err);
+      setAssigneeLog([]);
+    } finally {
+      setLoadingLog(false);
+    }
+  };
 
   // ========================
   // EXPORT TO EXCEL
@@ -190,7 +231,7 @@ const isApprovedLocked = followUpHistory.some(
       doc.text(
         `Exported on: ${new Date().toLocaleDateString("en-GB")}   |   Total Records: ${filteredQuotations.length}`,
         14,
-        22,
+        22
       );
       const tableData = filteredQuotations.map((q, index) => [
         index + 1,
@@ -281,7 +322,7 @@ const isApprovedLocked = followUpHistory.some(
   const searchQuotations = async () => {
     try {
       const params = Object.fromEntries(
-        Object.entries(filters).filter(([_, v]) => v !== ""),
+        Object.entries(filters).filter(([_, v]) => v !== "")
       );
       const res = await axios.get(`${API_BASE}/api/quotation/filter`, {
         params,
@@ -332,6 +373,7 @@ const isApprovedLocked = followUpHistory.some(
     fetchQuotations();
   };
 
+<<<<<<< Updated upstream
  const handleTableStatusChange = async (id, newStatus) => {
    try {
      await axios.put(`${API_BASE}/api/quotation/update-status/${id}`, {
@@ -361,12 +403,36 @@ const isApprovedLocked = followUpHistory.some(
      toast.error("Failed to update status");
    }
  };
+=======
+  const handleTableStatusChange = async (id, newStatus) => {
+    try {
+      await axios.put(`${API_BASE}/api/quotation/update-status/${id}`, {
+        quotation_status: newStatus,
+      });
+      toast.success("Status updated");
+      setQuotations((prev) =>
+        prev.map((q) => {
+          if (q.latest_quotation_id !== id) return q;
+          return {
+            ...q,
+            quotation_status: newStatus,
+            displayStatus: newStatus,
+            wasApprovedOnce:
+              q.wasApprovedOnce || newStatus === "Won" || newStatus === "Lost",
+          };
+        })
+      );
+    } catch (err) {
+      toast.error("Failed to update status");
+    }
+  };
+>>>>>>> Stashed changes
 
   // ========================
   // QUOTATION HISTORY MODAL
   // ========================
   const openQuotationModal = async (lead) => {
-    setSelectedLead(lead); // lead already has latest_quotation_id from fetchQuotations
+    setSelectedLead(lead);
     setShowQuotationModal(true);
     setFollowUpHistory([]);
     setEditingId(null);
@@ -384,7 +450,7 @@ const isApprovedLocked = followUpHistory.some(
     });
     try {
       const res = await axios.get(
-        `${API_BASE}/api/quotation/history/${lead.lead_id}`,
+        `${API_BASE}/api/quotation/history/${lead.lead_id}`
       );
       const historyData = res.data?.result || [];
       if (historyData.length > 0) {
@@ -394,7 +460,6 @@ const isApprovedLocked = followUpHistory.some(
         }));
       }
 
-      // ✅ Update selectedLead with latest_quotation_id from history if missing
       if (historyData.length > 0 && !lead.latest_quotation_id) {
         setSelectedLead((prev) => ({
           ...prev,
@@ -405,10 +470,10 @@ const isApprovedLocked = followUpHistory.some(
       const historyWithFiles = await Promise.all(
         historyData.map(async (hist) => {
           const hf = await axios.get(
-            `${API_BASE}/api/quotation/files/${hist.id}`,
+            `${API_BASE}/api/quotation/files/${hist.id}`
           );
           return { ...hist, files: hf.data?.files || [] };
-        }),
+        })
       );
       setFollowUpHistory(historyWithFiles);
       if (historyData.length > 0) {
@@ -423,6 +488,7 @@ const isApprovedLocked = followUpHistory.some(
     }
   };
 
+<<<<<<< Updated upstream
   const openAssignModal = (quotation) => {
     console.log("quotation row data:", quotation); // ← add this
     setSelectedAssignQuotation(quotation);
@@ -434,8 +500,9 @@ const isApprovedLocked = followUpHistory.some(
     setShowAssignModal(true);
   };
   
+=======
+>>>>>>> Stashed changes
   const handleEditClick = (item) => {
-    // ✅ If already approved, don't allow editing
     if (isApprovedLocked) {
       toast.error("Quotation is approved. No changes allowed.");
       return;
@@ -486,11 +553,15 @@ const isApprovedLocked = followUpHistory.some(
 
   const handleApproveDecline = async (histId, newStatus) => {
     try {
+<<<<<<< Updated upstream
       // update history status
+=======
+>>>>>>> Stashed changes
       await axios.put(`${API_BASE}/api/quotation/update-status/${histId}`, {
         quotation_status: newStatus,
       });
 
+<<<<<<< Updated upstream
       // if approved then move main quotation to WON
       if (newStatus === "Approved") {
         await axios.put(
@@ -548,6 +619,51 @@ const isApprovedLocked = followUpHistory.some(
         setActiveTab("Won");
       } else if (newStatus === "Declined") {
         setActiveTab("Pending");
+=======
+      const mappedStatus =
+        newStatus === "Approved"
+          ? "Won"
+          : newStatus === "Declined"
+            ? "Lost"
+            : newStatus;
+
+      await axios.put(`${API_BASE}/api/quotation/update-status/${histId}`, {
+        quotation_status: mappedStatus,
+      });
+
+      toast.success(`Quotation marked as ${newStatus}`);
+
+      if (selectedLead) {
+        setQuotations((prev) =>
+          prev.map((q) => {
+            if (q.lead_id !== selectedLead.lead_id) return q;
+            return {
+              ...q,
+              quotation_status: mappedStatus,
+              displayStatus: mappedStatus,
+              wasApprovedOnce: mappedStatus === "Won" || q.wasApprovedOnce,
+            };
+          })
+        );
+
+        const res = await axios.get(
+          `${API_BASE}/api/quotation/history/${selectedLead.lead_id}`
+        );
+        const historyData = res.data?.result || [];
+        const historyWithFiles = await Promise.all(
+          historyData.map(async (hist) => {
+            const hf = await axios.get(
+              `${API_BASE}/api/quotation/files/${hist.id}`
+            );
+            return { ...hist, files: hf.data?.files || [] };
+          })
+        );
+        setFollowUpHistory(historyWithFiles);
+
+        await fetchQuotations();
+        setShowQuotationModal(false);
+        setActiveTab(mappedStatus);
+>>>>>>> Stashed changes
       }
 
       // optional refresh
@@ -575,7 +691,7 @@ const isApprovedLocked = followUpHistory.some(
       setDeleteId(null);
       if (selectedLead) {
         const res = await axios.get(
-          `${API_BASE}/api/quotation/history/${selectedLead.lead_id}`,
+          `${API_BASE}/api/quotation/history/${selectedLead.lead_id}`
         );
         setFollowUpHistory(res.data?.result || []);
         fetchQuotations();
@@ -588,7 +704,7 @@ const isApprovedLocked = followUpHistory.some(
   };
 
   // ========================
-  // PI MODAL — % ↔ ₹ SYNC
+  // PI MODAL
   // ========================
   const handlePiPercentageChange = (val) => {
     setPiPercentage(val);
@@ -619,9 +735,6 @@ const isApprovedLocked = followUpHistory.some(
     }
   };
 
-  // ========================
-  // CONVERT TO PI
-  // ========================
   const handleCreatePI = async () => {
     if (
       !piPercentage ||
@@ -638,7 +751,7 @@ const isApprovedLocked = followUpHistory.some(
         { percentage: Number(piPercentage) },
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        },
+        }
       );
       toast.success("Proforma Invoice created successfully!");
       setShowPIModal(false);
@@ -653,12 +766,50 @@ const isApprovedLocked = followUpHistory.some(
     }
   };
 
+  // ========================
+  // HANDLE ASSIGNEE UPDATE
+  // ========================
+  const handleAssigneeUpdate = async () => {
+    if (!selectedAssigneeRow) {
+      toast.error("No row selected");
+      return;
+    }
+    if (newAssigneeValue.length === 0) {
+      toast.error("Please select at least one assignee");
+      return;
+    }
+    try {
+      setIsUpdatingAssignee(true);
+      const assigneeStr = newAssigneeValue.map((o) => o.value).join(",");
+
+      await axios.put(
+        `${API_BASE}/api/quotation/update-assignee/${selectedAssigneeRow.lead_id}`,
+        { assignee: assigneeStr },
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
+
+      toast.success("Assignee updated successfully!");
+      setShowAssigneeModal(false);
+      setSelectedAssigneeRow(null);
+      setNewAssigneeValue([]);
+      setAssigneeLog([]);
+      fetchQuotations();
+    } catch (err) {
+      console.log(err);
+      toast.error("Failed to update assignee");
+    } finally {
+      setIsUpdatingAssignee(false);
+    }
+  };
+
   // Multer Constants
   const MAX_FILES = 5;
-  const IMAGE_EXT = ["jpg", "jpeg", "png"];
-  const DOC_EXT = ["pdf"];
+  const IMAGE_EXT_FE = ["jpg", "jpeg", "png"];
+  const DOC_EXT_FE = ["pdf"];
   const MAX_IMG_SIZE = 2 * 1024 * 1024;
-  const MAX_DOC_SIZE = 2 * 1024 * 1024;
+  const MAX_DOC_SIZE_FE = 2 * 1024 * 1024;
 
   const handleSelect = (e) => {
     const files = Array.from(e.target.files);
@@ -673,18 +824,18 @@ const isApprovedLocked = followUpHistory.some(
       if (remainingSlots <= 0) break;
       const ext = file.name.split(".").pop().toLowerCase();
       const isDuplicate = updatedFiles.some(
-        (f) => f.name === file.name && f.size === file.size,
+        (f) => f.name === file.name && f.size === file.size
       );
       if (isDuplicate) continue;
-      if (![...IMAGE_EXT, ...DOC_EXT].includes(ext)) {
+      if (![...IMAGE_EXT_FE, ...DOC_EXT_FE].includes(ext)) {
         toast.error("Only JPG, PNG, PDF allowed");
         continue;
       }
-      if (IMAGE_EXT.includes(ext) && file.size > MAX_IMG_SIZE) {
+      if (IMAGE_EXT_FE.includes(ext) && file.size > MAX_IMG_SIZE) {
         toast.error("Image must be under 2MB");
         continue;
       }
-      if (DOC_EXT.includes(ext) && file.size > MAX_DOC_SIZE) {
+      if (DOC_EXT_FE.includes(ext) && file.size > MAX_DOC_SIZE_FE) {
         toast.error("PDF must be under 2MB");
         continue;
       }
@@ -701,12 +852,13 @@ const isApprovedLocked = followUpHistory.some(
   };
 
   // ========================
-  // ✅ FIXED: handleQuotationSubmit — blocks if approved
+  // QUOTATION SUBMIT
   // ========================
   const handleQuotationSubmit = async () => {
-    // ✅ BLOCK: If any quotation is Approved, don't allow new add OR edit
     if (isApprovedLocked) {
-      toast.error("Quotation is already Approved. You cannot add or edit quotations.");
+      toast.error(
+        "Quotation is already Approved. You cannot add or edit quotations."
+      );
       return;
     }
 
@@ -718,9 +870,15 @@ const isApprovedLocked = followUpHistory.some(
         return;
       }
       if (editingId) {
-        await axios.put(`${API_BASE}/api/quotation/update/${editingId}`, form, {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        });
+        await axios.put(
+          `${API_BASE}/api/quotation/update/${editingId}`,
+          form,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
         toast.success("Quotation updated");
       } else {
         const formData = new FormData();
@@ -738,16 +896,16 @@ const isApprovedLocked = followUpHistory.some(
         toast.success("Quotation activity recorded");
       }
       const res = await axios.get(
-        `${API_BASE}/api/quotation/history/${selectedLead.lead_id}`,
+        `${API_BASE}/api/quotation/history/${selectedLead.lead_id}`
       );
       const historyData = res.data?.result || [];
       const historyWithFiles = await Promise.all(
         historyData.map(async (hist) => {
           const hf = await axios.get(
-            `${API_BASE}/api/quotation/files/${hist.id}`,
+            `${API_BASE}/api/quotation/files/${hist.id}`
           );
           return { ...hist, files: hf.data?.files || [] };
-        }),
+        })
       );
       setFollowUpHistory(historyWithFiles);
       setForm({
@@ -814,15 +972,16 @@ const handleAssignQuotation = async () => {
       });
 
   const pendingCount = quotations.filter(
-    (q) => q.displayStatus !== "Won" && q.displayStatus !== "Lost",
+    (q) => q.displayStatus !== "Won" && q.displayStatus !== "Lost"
   ).length;
   const wonCount = quotations.filter((q) => q.displayStatus === "Won").length;
-  const lostCount = quotations.filter((q) => q.displayStatus === "Lost").length;
+  const lostCount = quotations.filter(
+    (q) => q.displayStatus === "Lost"
+  ).length;
 
   // ========================
   // PAGINATION
   // ========================
-  // Standardized Micara IMS Pagination Logic
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
@@ -832,7 +991,10 @@ const handleAssignQuotation = async () => {
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const paginatedQuotations = filteredQuotations.slice(indexOfFirstItem, indexOfLastItem);
+  const paginatedQuotations = filteredQuotations.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
   const totalPages = Math.ceil(filteredQuotations.length / itemsPerPage);
 
   const getSlidingPages = () => {
@@ -876,9 +1038,6 @@ const handleAssignQuotation = async () => {
 
   const isAdmin = checkRole(["Admin"]);
 
-  // ========================
-  // PI MODAL derived values
-  // ========================
   const piGrandTotal = selectedPIQuotation
     ? Number(selectedPIQuotation.grand_total) || 0
     : 0;
@@ -888,9 +1047,6 @@ const handleAssignQuotation = async () => {
   const piRemainingAmt = piGrandTotal - piEnteredAmt;
   const piIsOver = piEnteredPct > 100;
 
-  // ========================
-  // HELPER: Format date-time
-  // ========================
   const formatDateTime = (dateStr) => {
     if (!dateStr) return null;
     try {
@@ -906,6 +1062,43 @@ const handleAssignQuotation = async () => {
     } catch {
       return null;
     }
+  };
+
+  // ========================
+  // OPEN ASSIGNEE POPOVER — position calculate
+  // ========================
+  const openAssigneePopover = (e, q) => {
+    const btn = e.currentTarget;
+    const rect = btn.getBoundingClientRect();
+    const popoverWidth = 300;
+    const viewportWidth = window.innerWidth;
+
+    let left = rect.left + window.scrollX;
+    // viewport ni bahar na jav
+    if (left + popoverWidth > viewportWidth - 10) {
+      left = viewportWidth - popoverWidth - 10;
+    }
+
+    setAssigneePopoverPos({
+      top: rect.bottom + window.scrollY + 6,
+      left,
+    });
+    setSelectedAssigneeRow(q);
+    setNewAssigneeValue(
+      q.assignee
+        ? q.assignee.split(",").map((n) => ({ value: n.trim(), label: n.trim() }))
+        : []
+    );
+    setAssigneeLog([]);
+    fetchAssigneeLog(q.lead_id);
+    setShowAssigneeModal(true);
+  };
+
+  const closeAssigneePopover = () => {
+    setShowAssigneeModal(false);
+    setSelectedAssigneeRow(null);
+    setNewAssigneeValue([]);
+    setAssigneeLog([]);
   };
 
   return (
@@ -975,7 +1168,7 @@ const handleAssignQuotation = async () => {
           </div>
         </div>
 
-        {/* Filter Section */}
+        {/* Filter Section - Mobile Toggle */}
         <div className="mx-6 md:hidden mt-3 relative z-40">
           <button
             onClick={() => setShowMobileFilters(!showMobileFilters)}
@@ -1138,6 +1331,7 @@ const handleAssignQuotation = async () => {
                 <table className="w-full text-sm whitespace-nowrap">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-100">
+<<<<<<< Updated upstream
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
                         #
                       </th>
@@ -1180,6 +1374,21 @@ const handleAssignQuotation = async () => {
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
                         Action
                       </th>
+=======
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">#</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Company Name</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Customer Name</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Reference</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Create Quotation</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Quotation No</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Created</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Last Activity</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Grand Total</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Assignee</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Proforma %</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Updated By</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Action</th>
+>>>>>>> Stashed changes
                     </tr>
                   </thead>
                   <tbody>
@@ -1227,9 +1436,14 @@ const handleAssignQuotation = async () => {
                               </button>
                             )}
                           </td>
+<<<<<<< Updated upstream
                           <td className="px-3 text-gray-600">
                             {q.quotation_no || "-"}
                           </td>
+=======
+
+                          <td className="px-3 text-gray-600">{q.quotation_no || "-"}</td>
+>>>>>>> Stashed changes
                           <td className="px-3 text-gray-500">
                             {q.first_quotation_date
                               ? new Date(
@@ -1251,23 +1465,55 @@ const handleAssignQuotation = async () => {
                               ? `₹ ${Number(q.grand_total).toLocaleString()}`
                               : "-"}
                           </td>
+
+                          {/* ✅ ASSIGNEE CELL — inline popover trigger */}
                           <td className="px-3">
-                            {q.assignee ? (
-                              <div className="flex gap-1 items-center">
-                                {String(q.assignee)
-                                  .split(",")
-                                  .map((name, i) => (
-                                    <div
-                                      key={i}
-                                      title={name.trim()}
-                                      className="px-3 py-1.5 bg-blue-800 text-white rounded-full font-semibold text-xs flex justify-center items-center min-w-[28px] select-none"
-                                    >
-                                      {name.trim().charAt(0).toUpperCase()}
-                                    </div>
-                                  ))}
-                              </div>
+                            {q.displayStatus !== "Won" && q.displayStatus !== "Lost" ? (
+                              <button
+                                onClick={(e) => openAssigneePopover(e, q)}
+                                className="flex gap-1 items-center group cursor-pointer hover:opacity-80 transition-all"
+                                title="Click to change assignee"
+                              >
+                                {q.assignee ? (
+                                  <>
+                                    {String(q.assignee)
+                                      .split(",")
+                                      .map((name, i) => (
+                                        <div
+                                          key={i}
+                                          title={name.trim()}
+                                          className="px-3 py-1.5 bg-blue-800 text-white rounded-full font-semibold text-xs flex justify-center items-center min-w-[28px] select-none"
+                                        >
+                                          {name.trim().charAt(0).toUpperCase()}
+                                        </div>
+                                      ))}
+                                    <i className="bi bi-pencil-fill text-[9px] text-gray-300 group-hover:text-blue-500 ml-1 transition-colors"></i>
+                                  </>
+                                ) : (
+                                  <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 border border-dashed border-gray-400 rounded-full text-gray-500 text-xs font-medium hover:bg-orange-50 hover:border-orange-400 hover:text-orange-600 transition-all">
+                                    <i className="bi bi-person-plus text-xs"></i>
+                                    <span>Assign</span>
+                                  </div>
+                                )}
+                              </button>
                             ) : (
-                              "-"
+                              <div className="flex gap-1 items-center">
+                                {q.assignee ? (
+                                  String(q.assignee)
+                                    .split(",")
+                                    .map((name, i) => (
+                                      <div
+                                        key={i}
+                                        title={name.trim()}
+                                        className="px-3 py-1.5 bg-blue-800 text-white rounded-full font-semibold text-xs flex justify-center items-center min-w-[28px] select-none"
+                                      >
+                                        {name.trim().charAt(0).toUpperCase()}
+                                      </div>
+                                    ))
+                                ) : (
+                                  <span className="text-gray-300">—</span>
+                                )}
+                              </div>
                             )}
                           </td>
 
@@ -1301,6 +1547,7 @@ const handleAssignQuotation = async () => {
                               <span className="text-gray-300 text-sm">—</span>
                             )}
                           </td>
+<<<<<<< Updated upstream
 
                           <td className="px-3">
                             {q.displayStatus === "Pending" ? (
@@ -1331,6 +1578,8 @@ const handleAssignQuotation = async () => {
                               </span>
                             ) : null}
                           </td>
+=======
+>>>>>>> Stashed changes
 
                           <td className="px-3 text-center">
                             <div className="flex items-center justify-center gap-2">
@@ -1338,7 +1587,11 @@ const handleAssignQuotation = async () => {
                                 q.latest_quotation_id &&
                                 (() => {
                                   const percentage = Number(
+<<<<<<< Updated upstream
                                     q.proforma_percentage || 0,
+=======
+                                    q.proforma_percentage || 0
+>>>>>>> Stashed changes
                                   );
                                   if (!q.pi_exists || percentage === 0) {
                                     return (
@@ -1408,7 +1661,11 @@ const handleAssignQuotation = async () => {
                     ) : (
                       <tr>
                         <td
+<<<<<<< Updated upstream
                           colSpan="14"
+=======
+                          colSpan="13"
+>>>>>>> Stashed changes
                           className="text-center py-10 text-gray-400"
                         >
                           No Quotations Found
@@ -1419,9 +1676,11 @@ const handleAssignQuotation = async () => {
                 </table>
 
                 {/* PAGINATION */}
+<<<<<<< Updated upstream
                 {/* ✅ STANDARDIZED MICARA IMS PAGINATION */}
+=======
+>>>>>>> Stashed changes
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white rounded-b-lg">
-                  {/* Left side: Rows per page selector */}
                   <div className="flex items-center gap-3">
                     <span className="text-sm text-slate-500 font-medium">
                       Rows per page:
@@ -1442,10 +1701,12 @@ const handleAssignQuotation = async () => {
                     </select>
                   </div>
 
+<<<<<<< Updated upstream
                   {/* Right side: Navigation buttons (only if totalPages > 1) */}
+=======
+>>>>>>> Stashed changes
                   {totalPages > 1 && (
                     <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
-                      {/* Previous Button */}
                       <button
                         type="button"
                         onClick={() =>
@@ -1457,7 +1718,6 @@ const handleAssignQuotation = async () => {
                         <i className="bi bi-chevron-left text-sm"></i>
                       </button>
 
-                      {/* Page Buttons */}
                       <div className="flex items-center gap-1.5">
                         {getSlidingPages().map((page) => (
                           <button
@@ -1475,12 +1735,15 @@ const handleAssignQuotation = async () => {
                         ))}
                       </div>
 
-                      {/* Next Button */}
                       <button
                         type="button"
                         onClick={() =>
                           setCurrentPage((prev) =>
+<<<<<<< Updated upstream
                             Math.min(prev + 1, totalPages),
+=======
+                            Math.min(prev + 1, totalPages)
+>>>>>>> Stashed changes
                           )
                         }
                         disabled={currentPage === totalPages}
@@ -1531,7 +1794,10 @@ const handleAssignQuotation = async () => {
             <div className="flex flex-1 overflow-hidden relative">
               {/* Left Side: Form */}
               <div className="w-5/12 bg-white border-r border-gray-100 flex flex-col relative z-10 overflow-y-auto">
+<<<<<<< Updated upstream
                 {/* ✅ APPROVED LOCK BANNER — shows on top of form when locked */}
+=======
+>>>>>>> Stashed changes
                 {isApprovedLocked && (
                   <div className="mx-4 mt-4 flex items-start gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3 shadow-sm">
                     <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -1595,6 +1861,7 @@ const handleAssignQuotation = async () => {
                         className="w-full mt-1 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50"
                       />
                     </div>
+<<<<<<< Updated upstream
                     {/* <div>
                       <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Assignee
@@ -1637,6 +1904,8 @@ const handleAssignQuotation = async () => {
                         }}
                       />
                     </div> */}
+=======
+>>>>>>> Stashed changes
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -1735,7 +2004,11 @@ const handleAssignQuotation = async () => {
                                 <button
                                   onClick={() =>
                                     setSelectedFiles(
+<<<<<<< Updated upstream
                                       selectedFiles.filter((_, i) => i !== idx),
+=======
+                                      selectedFiles.filter((_, i) => i !== idx)
+>>>>>>> Stashed changes
                                     )
                                   }
                                   className="text-gray-300 hover:text-red-500 transition-colors ml-2"
@@ -1756,7 +2029,6 @@ const handleAssignQuotation = async () => {
                   </div>
                 </div>
 
-                {/* ✅ Save button — locked if approved */}
                 <div className="p-4 border-t border-gray-100 bg-gray-50 mt-auto flex gap-3">
                   {isApprovedLocked ? (
                     <div className="flex-1 flex items-center justify-center gap-2 bg-gray-100 border border-gray-200 rounded-xl py-3 text-sm font-semibold text-gray-400 cursor-not-allowed select-none">
@@ -1857,9 +2129,13 @@ const handleAssignQuotation = async () => {
                           ? -1
                           : b.quotation_status === "Approved"
                             ? 1
+<<<<<<< Updated upstream
                             : Math.sign(
                                 new Date(b.created_at) - new Date(a.created_at),
                               ),
+=======
+                            : Math.sign(new Date(b.created_at) - new Date(a.created_at))
+>>>>>>> Stashed changes
                       )
                       .map((item, index) => (
                         <div
@@ -1882,9 +2158,7 @@ const handleAssignQuotation = async () => {
                                 </p>
                                 <p className="text-[10px] text-gray-400 font-medium tracking-wide">
                                   Quotation Date:{" "}
-                                  {new Date(
-                                    item.quotation_date || item.created_at,
-                                  ).toLocaleDateString()}
+                                  {new Date(item.quotation_date || item.created_at).toLocaleDateString()}
                                 </p>
                               </div>
                             </div>
@@ -1894,7 +2168,7 @@ const handleAssignQuotation = async () => {
                                 item.quotation_status !== "Approved" &&
                                 item.quotation_status !== "Declined" &&
                                 !followUpHistory.find(
-                                  (h) => h.quotation_status === "Approved",
+                                  (h) => h.quotation_status === "Approved"
                                 ) && (
                                   <>
                                     <button
@@ -1926,7 +2200,6 @@ const handleAssignQuotation = async () => {
                               >
                                 {item.quotation_status || "Pending"}
                               </span>
-                              {/* ✅ Edit pencil hidden if approved */}
                               {item.quotation_status !== "Approved" &&
                                 item.quotation_status !== "Declined" &&
                                 !isApprovedLocked && (
@@ -2187,29 +2460,13 @@ const handleAssignQuotation = async () => {
           <div className="bg-white rounded-sm shadow-xl w-full max-w-[350px] overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 from-orange-100 to-white bg-gradient-to-r">
               <div className="flex items-center gap-2">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-4 h-4 text-orange-500"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
                   <path d="M12 6v6l4 2" />
                 </svg>
-                <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">
-                  Confirm Status Change
-                </h2>
+                <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wide">Confirm Status Change</h2>
               </div>
-              <button
-                onClick={() => setShowStatusModal(false)}
-                className="text-orange-600 text-sm leading-none"
-              >
-                ✕
-              </button>
+              <button onClick={() => setShowStatusModal(false)} className="text-orange-600 text-sm leading-none">✕</button>
             </div>
             <div className="p-6">
               <p className="text-gray-500 text-sm mb-6">
@@ -2253,9 +2510,7 @@ const handleAssignQuotation = async () => {
                   ></i>
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
-                    Convert to Proforma Invoice
-                  </h2>
+                  <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">Convert to Proforma Invoice</h2>
                   <p className="text-xs text-gray-400 font-medium">
                     {selectedPIQuotation.company_name} —{" "}
                     {selectedPIQuotation.customer_name}
@@ -2263,10 +2518,7 @@ const handleAssignQuotation = async () => {
                 </div>
               </div>
               <button
-                onClick={() => {
-                  setShowPIModal(false);
-                  setPiPercentage("");
-                }}
+                onClick={() => { setShowPIModal(false); setPiPercentage(""); }}
                 className="w-8 h-8 flex items-center justify-center rounded-full text-orange-500 transition-all"
               >
                 ✕
@@ -2312,10 +2564,7 @@ const handleAssignQuotation = async () => {
                   </label>
                   <div className="relative">
                     <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={piPercentage}
+                      type="number" min="0" max="100" value={piPercentage}
                       onChange={(e) => {
                         const val = e.target.value;
                         if (val === "") {
@@ -2343,9 +2592,7 @@ const handleAssignQuotation = async () => {
                       ₹
                     </span>
                     <input
-                      type="number"
-                      min="0"
-                      value={piRupees}
+                      type="number" min="0" value={piRupees}
                       onChange={(e) => {
                         const val = e.target.value;
                         if (val === "") {
@@ -2362,6 +2609,7 @@ const handleAssignQuotation = async () => {
               </div>
 
               {piGrandTotal > 0 && (
+<<<<<<< Updated upstream
                 <div
                   className={`rounded-sm p-3 border transition-all ${
                     piIsOver
@@ -2373,6 +2621,9 @@ const handleAssignQuotation = async () => {
                           : "bg-blue-50 border-blue-100"
                   }`}
                 >
+=======
+                <div className={`rounded-sm p-3 border transition-all ${piIsOver ? "bg-red-50 border-red-200" : piEnteredPct === 100 ? "bg-green-50 border-green-200" : piEnteredPct > 0 ? "bg-green-50 border-green-200" : "bg-blue-50 border-blue-100"}`}>
+>>>>>>> Stashed changes
                   <p className="text-xs font-bold uppercase tracking-wider mb-2 text-gray-500">
                     {piEnteredPct > 0
                       ? "Remaining After This Entry"
@@ -2393,6 +2644,7 @@ const handleAssignQuotation = async () => {
                     </div>
                     <div className="w-px h-10 bg-gray-200"></div>
                     <div className="text-center">
+<<<<<<< Updated upstream
                       <p
                         className={`text-xl font-bold ${piIsOver ? "text-red-600" : piEnteredPct === 100 ? "text-green-600" : "text-green-700"}`}
                       >
@@ -2401,6 +2653,10 @@ const handleAssignQuotation = async () => {
                           : piEnteredPct > 0
                             ? `₹${Number(piRemainingAmt).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
                             : `₹${Number(piGrandTotal).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
+=======
+                      <p className={`text-xl font-bold ${piIsOver ? "text-red-600" : piEnteredPct === 100 ? "text-green-600" : "text-green-700"}`}>
+                        {piIsOver ? "Over!" : piEnteredPct > 0 ? `₹${Number(piRemainingAmt).toLocaleString("en-IN", { maximumFractionDigits: 0 })}` : `₹${Number(piGrandTotal).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
+>>>>>>> Stashed changes
                       </p>
                       <p className="text-xs text-gray-400">Amount</p>
                     </div>
@@ -2431,6 +2687,10 @@ const handleAssignQuotation = async () => {
               )}
             </div>
 
+
+
+            
+
             <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex gap-3">
               <button
                 onClick={() => {
@@ -2444,6 +2704,7 @@ const handleAssignQuotation = async () => {
               </button>
               <button
                 onClick={handleCreatePI}
+<<<<<<< Updated upstream
                 disabled={
                   isCreatingPI ||
                   !piPercentage ||
@@ -2458,6 +2719,10 @@ const handleAssignQuotation = async () => {
                     ? "opacity-60 cursor-not-allowed"
                     : ""
                 }`}
+=======
+                disabled={isCreatingPI || !piPercentage || Number(piPercentage) <= 0 || Number(piPercentage) > 100}
+                className={`flex-1 bg-green-500 hover:bg-green-600 text-white rounded-sm py-2.5 text-sm font-semibold shadow-md shadow-green-200 transition-all flex justify-center items-center gap-2 ${isCreatingPI || !piPercentage || Number(piPercentage) <= 0 || Number(piPercentage) > 100 ? "opacity-60 cursor-not-allowed" : ""}`}
+>>>>>>> Stashed changes
               >
                 {isCreatingPI ? (
                   <>
@@ -2492,6 +2757,177 @@ const handleAssignQuotation = async () => {
           </div>
         </div>
       )}
+
+      {/* ✅ INLINE ASSIGNEE POPOVER — Image 2 style */}
+      {/* ✅ INLINE ASSIGNEE POPOVER — with history */}
+{showAssigneeModal && selectedAssigneeRow && (
+  <div
+    className="fixed inset-0 z-[80]"
+    onClick={closeAssigneePopover}
+  >
+    <div
+      className="absolute bg-white rounded-lg border border-gray-200 w-[320px] shadow-2xl"
+      style={{
+        top: assigneePopoverPos.top,
+        left: assigneePopoverPos.left,
+      }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 bg-orange-500 rounded-t-lg">
+        <p className="text-sm font-semibold text-white flex items-center gap-2">
+          <i className="bi bi-person-fill-gear"></i>
+          Change Assignee
+        </p>
+        <button onClick={closeAssigneePopover} className="text-white/80 hover:text-white">
+          <i className="bi bi-x-lg text-sm"></i>
+        </button>
+      </div>
+
+      {/* Body */}
+      <div className="p-4 space-y-3">
+
+        {/* Last Assignee */}
+        <div>
+          <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1.5">
+            Last Assignee
+          </p>
+          <div className="flex gap-1.5 flex-wrap">
+            {selectedAssigneeRow.assignee ? (
+              String(selectedAssigneeRow.assignee).split(",").map((name, i) => (
+                <span key={i} className="bg-blue-800 text-white text-xs font-medium px-3 py-1.5 rounded-full flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[9px] font-bold">
+                    {name.trim().charAt(0).toUpperCase()}
+                  </span>
+                  {name.trim()}
+                </span>
+              ))
+            ) : (
+              <span className="text-gray-400 text-xs italic">None</span>
+            )}
+          </div>
+        </div>
+
+        {/* New Assignee Dropdown */}
+        <div>
+          <label className="text-[10px] text-gray-400 uppercase font-bold tracking-wider block mb-1.5">
+            New Assignee <span className="text-red-400">*</span>
+          </label>
+          <Select
+            isMulti
+            menuPosition="fixed"
+            instanceId="inline-assignee-select"
+            options={asignee}
+            value={newAssigneeValue}
+            onChange={(selected) => setNewAssigneeValue(selected || [])}
+            placeholder="-- Select --"
+            unstyled
+            classNames={{
+              control: ({ isFocused }) =>
+                `w-full border rounded-md px-2 py-1.5 text-xs bg-gray-50 outline-none cursor-pointer ${isFocused ? "border-orange-400 ring-1 ring-orange-200" : "border-gray-300"}`,
+              valueContainer: () => "gap-1 flex-wrap",
+              placeholder: () => "text-gray-400 text-xs",
+              input: () => "text-xs text-gray-700",
+              menu: () => "mt-1 border border-gray-200 rounded-md bg-white shadow-lg z-[200]",
+              option: ({ isFocused, isSelected }) =>
+                `px-3 py-2 text-xs cursor-pointer ${isSelected ? "bg-blue-800 text-white" : isFocused ? "bg-orange-50 text-orange-700" : "text-gray-700"}`,
+              multiValue: () => "bg-blue-800 text-white rounded-full px-2 py-0.5 flex items-center gap-1",
+              multiValueLabel: () => "text-white text-xs font-medium",
+              multiValueRemove: () => "text-white hover:bg-blue-900 rounded ml-1 cursor-pointer",
+              dropdownIndicator: () => "text-gray-400 px-1 cursor-pointer hover:text-orange-500",
+              clearIndicator: () => "text-gray-400 px-1 cursor-pointer hover:text-red-500",
+            }}
+          />
+        </div>
+
+        {/* Buttons */}
+        <div className="flex gap-2">
+          <button
+            onClick={closeAssigneePopover}
+            className="flex-1 py-2 rounded-md text-xs border border-gray-200 text-gray-500 hover:bg-gray-50 font-medium transition-all"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleAssigneeUpdate}
+            disabled={isUpdatingAssignee || newAssigneeValue.length === 0}
+            className={`flex-[2] py-2 rounded-md text-xs text-white font-semibold flex items-center justify-center gap-1.5 transition-all ${
+              isUpdatingAssignee || newAssigneeValue.length === 0
+                ? "bg-orange-300 cursor-not-allowed"
+                : "bg-orange-500 hover:bg-orange-600"
+            }`}
+          >
+            {isUpdatingAssignee ? (
+              <>
+                <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" opacity="0.25" />
+                  <path fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+                Updating...
+              </>
+            ) : (
+              <>
+                <i className="bi bi-person-check-fill text-xs"></i>
+                Update
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* ✅ ASSIGNEE HISTORY LOG */}
+{loadingLog ? (
+  <div className="pt-1 text-center text-xs text-gray-400 py-2">
+    Loading history...
+  </div>
+) : assigneeLog.length > 0 ? (
+  <div className="border-t border-gray-100 pt-3">
+    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-2 flex items-center gap-1">
+      <i className="bi bi-clock-history text-gray-300"></i>
+      Last Change
+    </p>
+    <div className="space-y-2 pr-1">
+      {/* 👇 assigneeLog ની જગ્યાએ assigneeLog.slice(0, 1) */}
+      {assigneeLog.slice(0, 1).map((log, i) => (
+        <div key={i} className="flex items-start gap-2.5">
+          {/* Timeline dot */}
+          <div className="flex flex-col items-center mt-0.5">
+            <div className="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0"></div>
+          </div>
+          <div className="flex-1 pb-1">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded">
+                {log.changed_by || "System"}
+              </span>
+              <span className="text-[10px] text-gray-400">assigned</span>
+              <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
+                {log.new_assignee || "-"}
+              </span>
+            </div>
+            {log.changed_at && (
+              <p className="text-[9px] text-gray-400 mt-0.5">
+                {formatDateTime(log.changed_at)}
+              </p>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+) : (
+  <div className="border-t border-gray-100 pt-3">
+    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1 flex items-center gap-1">
+      <i className="bi bi-clock-history text-gray-300"></i>
+      Last Change
+    </p>
+    <p className="text-xs text-gray-300 italic text-center py-2">No history found</p>
+  </div>
+)}
+      
+      </div>
+    </div>
+  </div>
+)}
+
     </>
   );
 }
