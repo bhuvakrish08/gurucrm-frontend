@@ -1082,9 +1082,9 @@ export default function QuotationPage() {
         </div>
 
         <div
-          className={`
+         className={`
           ${showMobileFilters ? "absolute left-6 right-6 top-50 bg-white p-5 shadow-2xl border border-gray-100 z-50 rounded-lg grid grid-cols-2 gap-3 mt-1" : "hidden"} 
-          md:mx-6 md:flex md:flex-wrap md:items-center md:gap-x-5 md:gap-y-2 md:mt-3 md:mb-5 md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
+          md:mx-6 md:mb-3 md:items-center md:gap-2 md:flex-wrap md:flex md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
         `}
         >
           <input
@@ -1132,8 +1132,8 @@ export default function QuotationPage() {
             <option value="Lost">Lost</option>
           </select>
 
-          <div className="flex flex-col px-2 w-full md:w-58 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-400 text-sm">
-            <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">
+          <div className="flex p-1 items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-58  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 p-1 text-gray-400 whitespace-nowrap">
               From Date
             </span>
             <input
@@ -1141,12 +1141,12 @@ export default function QuotationPage() {
               name="from_date"
               value={filters.from_date}
               onChange={handleFilterChange}
-              className="p-1 w-full md:w-35 outline-none text-sm"
+              className="p-1 w-full md:w-35 outline-none bg-transparent"
             />
           </div>
 
-          <div className="flex flex-col px-2 w-full md:w-58 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-400 text-sm">
-            <span className="text-[10px] text-gray-400 uppercase font-bold pt-1">
+          <div className="flex p-1 items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-53  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
+            <span className="mx-1 p-1 text-gray-400 whitespace-nowrap">
               To Date
             </span>
             <input
@@ -1154,7 +1154,7 @@ export default function QuotationPage() {
               name="to_date"
               value={filters.to_date}
               onChange={handleFilterChange}
-              className="p-1 w-full md:w-35 outline-none text-sm"
+              className="p-1 w-full md:w-35 outline-none bg-transparent"
             />
           </div>
 
