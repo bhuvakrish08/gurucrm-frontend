@@ -819,6 +819,11 @@ export default function QuotationPage() {
       setEditingId(null);
       fetchQuotations();
     } catch (err) {
+
+
+
+
+      // check NO.
       toast.error("This quotation number is already in use.");     
        console.log(err);
     } finally {
