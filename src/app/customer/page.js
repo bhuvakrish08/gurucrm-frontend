@@ -129,6 +129,9 @@ export default function AddCustomer() {
       console.log("DATA SENT TO BACKEND:", dataToSend);
       console.log("Response:", res.data);
 
+      // Redirect to customer list page
+      router.push("/customer-list");
+
       setFormData({
         customer_type: "",
         company_name: "",

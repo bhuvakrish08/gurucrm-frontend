@@ -715,61 +715,74 @@ export default function Page() {
       )}
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-gray-900/30 z-50 flex justify-center items-center">
-          <div className="bg-white rounded-sm shadow-xl w-[380px] relative overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30">
+          <div className="bg-white rounded-sm shadow-xl w-full max-w-sm border border-gray-100 overflow-hidden">
             {/* Header */}
-            <div className="from-orange-100 to-white bg-gradient-to-r  px-5 py-3 flex items-center justify-between ">
+            <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-orange-100 to-white">
               <div className="flex items-center gap-2">
-                <div className="bg-white rounded-xl shadow-lg p-6 w-[500px] relative overflow-hidden"></div>{" "}
-                <i className="bi bi-trash3 text-orange-500 text-sm"></i>
-                <span className="text-xs font-bold tracking-widest text-gray-700 uppercase">
+                <span className="w-2 h-2 rounded-full bg-orange-500 inline-block"></span>
+
+                <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
                   Delete Contact
                 </span>
               </div>
+
               <button
                 type="button"
                 onClick={handleDeleteCancel}
-                className="text-orange-500 text-md "
+                className="w-7 h-7 flex items-center justify-center text-orange-500 text-md"
               >
                 ✕
               </button>
             </div>
 
             {/* Body */}
-            <div className="px-6 py-6 flex flex-col items-center">
-              {/* Trash Icon */}
-              <div className="bg-orange-100 rounded-full p-4 mb-4">
-                <i className="bi bi-trash3 text-orange-500 text-2xl"></i>
+            <div className="p-6 text-center">
+              {/* Icon */}
+              <div className="w-16 h-16 rounded-full bg-orange-50 flex items-center justify-center mx-auto mb-4">
+                <svg
+                  className="w-8 h-8 text-orange-400"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                  viewBox="0 0 24 24"
+                >
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+                  <path d="M10 11v6M14 11v6" />
+                  <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
+                </svg>
               </div>
 
-              {/* Contact Name */}
-              <h3 className="text-center text-base font-bold text-gray-800 mb-1 uppercase tracking-wide">
+              {/* Name */}
+              <p className="font-semibold text-gray-800 text-base mb-1 uppercase">
                 {contacts.find((c) => c.id === deleteId)?.contact_person ||
                   "This Contact"}
-              </h3>
-
-              {/* Subtext */}
-              <p className="text-center text-sm text-gray-400 mb-6">
-                This action cannot be undone. Are you sure?
               </p>
 
-              {/* Buttons */}
-              <div className="flex gap-3 w-full p-x-6">
-                <button
-                  type="button"
-                  onClick={handleDeleteCancel}
-                  className="flex-1 py-2.5 rounded-md border  border-gray-300 text-gray-600 hover:bg-gray-50 transition-all text-sm font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDeleteConfirm}
-                  className="flex-1 py-2.5  rounded-md bg-orange-500 text-white hover:bg-orange-600 transition-all text-sm font-medium"
-                >
-                  Delete
-                </button>
-              </div>
+              {/* Message */}
+              <p className="text-sm text-gray-400">
+                This action cannot be undone. Are you sure?
+              </p>
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="flex gap-3 px-5 pb-5">
+              <button
+                type="button"
+                onClick={handleDeleteCancel}
+                className="flex-1 px-4 py-2 text-sm text-gray-500 border border-gray-200 rounded-sm hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleDeleteConfirm}
+                className="flex-1 px-4 py-2 text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-sm transition-colors"
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>
