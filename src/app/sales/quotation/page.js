@@ -819,8 +819,8 @@ export default function QuotationPage() {
       setEditingId(null);
       fetchQuotations();
     } catch (err) {
-      toast.error("Failed to add quotation activity");
-      console.log(err);
+      toast.error("This quotation number is already in use.");     
+       console.log(err);
     } finally {
       setIsSubmitting(false);
     }
@@ -858,6 +858,7 @@ export default function QuotationPage() {
   // ========================
   // TAB + FILTER LOGIC
   // ========================
+
   const hasActiveFilters = Object.values(filters).some((v) => v !== "");
   const filteredQuotations = hasActiveFilters
     ? quotations
@@ -1803,6 +1804,7 @@ export default function QuotationPage() {
                                 </p>
                               </div>
                             </div>
+                            
                             <div className="flex gap-2 items-center">
                               {item.quotation_status !== "Won" &&
                                 item.quotation_status !== "Lost" &&
