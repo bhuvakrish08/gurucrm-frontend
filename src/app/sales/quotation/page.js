@@ -914,19 +914,9 @@ export default function QuotationPage() {
       setEditingId(null);
       fetchQuotations();
     } catch (err) {
-<<<<<<< Updated upstream
-
-
-
-
       // check NO.
       toast.error("This quotation number is already in use.");     
        console.log(err);
-=======
-      // check NO.
-      toast.error("This quotation number is already in use.");
-      console.log(err);
->>>>>>> Stashed changes
     } finally {
       setIsSubmitting(false);
     }
@@ -2563,11 +2553,6 @@ export default function QuotationPage() {
                                 </p>
                               </div>
                             </div>
-<<<<<<< Updated upstream
-                            
-=======
-
->>>>>>> Stashed changes
                             <div className="flex gap-2 items-center">
                               {item.quotation_status !== "Won" &&
                                 item.quotation_status !== "Lost" &&
