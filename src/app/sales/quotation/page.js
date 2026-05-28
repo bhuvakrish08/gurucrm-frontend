@@ -33,10 +33,12 @@ export default function QuotationPage() {
   const exportRef = useRef(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
 
-  const [followUpTab, setFollowUpTab] = useState("sales");
+  // BUG FIX #1: Default tab changed from "sales" to "quotation"
+  const [followUpTab, setFollowUpTab] = useState("quotation");
 
   const [previewFollowUp, setPreviewFollowUp] = useState(null);
   const [quotationData, setQuotationData] = useState(null);
+
   // follow-up
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateForm, setUpdateForm] = useState({
@@ -44,16 +46,19 @@ export default function QuotationPage() {
     activity_type: "",
     follow_up_by: "",
     contact_person: "",
+    // BUG FIX #2: Added quotation_no field to updateForm
+    quotation_no: "",
     description: "",
   });
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-
     setUpdateForm((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
+
   // PI Modal States
   const [showPIModal, setShowPIModal] = useState(false);
   const [selectedPIQuotation, setSelectedPIQuotation] = useState(null);
@@ -61,26 +66,19 @@ export default function QuotationPage() {
   const [piRupees, setPiRupees] = useState("");
   const [isCreatingPI, setIsCreatingPI] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
-
   const [selectedAssignQuotation, setSelectedAssignQuotation] = useState(null);
-
   const [assignForm, setAssignForm] = useState({
     assigned_to: "",
     task_datetime: "",
     work_description: "",
   });
 
-  // ✅ Assignee Popover States
+  // Assignee Popover States
   const [showAssigneeModal, setShowAssigneeModal] = useState(false);
   const [selectedAssigneeRow, setSelectedAssigneeRow] = useState(null);
   const [newAssigneeValue, setNewAssigneeValue] = useState([]);
   const [isUpdatingAssignee, setIsUpdatingAssignee] = useState(false);
-  const [assigneePopoverPos, setAssigneePopoverPos] = useState({
-    top: 0,
-    left: 0,
-  });
-
-  // ✅ NEW: Assignee Description State
+  const [assigneePopoverPos, setAssigneePopoverPos] = useState({ top: 0, left: 0 });
   const [assigneeDescription, setAssigneeDescription] = useState("");
 
   // Assignee History States
@@ -104,7 +102,7 @@ export default function QuotationPage() {
   useAuth();
 
   const isApprovedLocked = followUpHistory.some(
-    (h) => h.quotation_status === "Approved",
+    (h) => h.quotation_status === "Approved"
   );
 
   const fetchHistoryData = async (quotationId) => {
@@ -118,8 +116,6 @@ export default function QuotationPage() {
         }
       );
 
-      console.log("FULL HISTORY =", res.data);
-
       const quotationHistory =
         res.data?.data?.revisions?.map((item) => ({
           ...item,
@@ -132,55 +128,73 @@ export default function QuotationPage() {
           module_type: "sales",
         })) || [];
 
-      const mergedHistory = [
-        ...quotationHistory,
-        ...salesHistory,
-      ].sort(
-        (a, b) =>
-          new Date(b.created_at) - new Date(a.created_at)
+      const mergedHistory = [...quotationHistory, ...salesHistory].sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
       );
 
       setFollowUpHistory(mergedHistory);
-
     } catch (err) {
       console.log("HISTORY ERROR =", err);
       toast.error("Failed to load history");
     }
   };
 
-  const handleUpdate = async () => {
+const handleUpdate = async () => {
     try {
       setUpdateLoading(true);
 
-      console.log("selectedQuotation =", selectedQuotation);
-      console.log("updateForm =", updateForm);
+      // FormData બનાવો files સાથે
+      const formData = new FormData();
+      formData.append("quotation_id", selectedQuotation?.id);
+      formData.append("quotation_no", updateForm.quotation_no || selectedQuotation?.quotation_no || "");
+      formData.append("follow_up_date", updateForm.follow_up_date);
+      formData.append("activity_type", updateForm.activity_type);
+      formData.append("follow_up_by", updateForm.follow_up_by);
+      formData.append("contact_person", updateForm.contact_person);
+      formData.append("description", updateForm.description);
+
+      // Files append કરો
+      if (selectedFiles.length > 0) {
+        selectedFiles.forEach((file) => {
+          formData.append("files", file);
+        });
+      }
 
       const res = await axios.post(
         `${API_BASE}/api/quotation-revision/insert`,
-        {
-          quotation_id: selectedQuotation?.id,
-          quotation_no: selectedQuotation?.quotation_no,
-          ...updateForm,
-        },
+        formData,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
+            // Content-Type set ન કરો - axios automatically multipart/form-data set કરે
           },
-        },
+        }
       );
 
-      console.log("SUCCESS =", res.data);
-    } catch (error) {
-      console.log("ERROR STATUS =", error?.response?.status);
-      console.log("ERROR DATA =", error?.response?.data);
-      console.log("FULL ERROR =", error);
+      toast.success("Follow-up added successfully!");
 
+      if (selectedQuotation?.id) {
+        await fetchHistoryData(selectedQuotation.id);
+      }
+
+      setUpdateForm({
+        follow_up_date: new Date().toISOString().split("T")[0],
+        activity_type: "",
+        follow_up_by: "",
+        contact_person: "",
+        quotation_no: updateForm.quotation_no || selectedQuotation?.quotation_no || "",
+        description: "",
+      });
+      setSelectedFiles([]);
+      setPreviewFollowUp(null);
+
+    } catch (error) {
+      console.log("ERROR =", error);
       toast.error(error?.response?.data?.message || "Something went wrong");
     } finally {
       setUpdateLoading(false);
     }
   };
-
   // ========================
   // FETCH
   // ========================
@@ -195,8 +209,8 @@ export default function QuotationPage() {
           item.quotation_status === "Approved"
             ? "Won"
             : item.quotation_status === "Declined"
-              ? "Pending"
-              : item.quotation_status || "Pending";
+            ? "Pending"
+            : item.quotation_status || "Pending";
         return {
           ...item,
           displayStatus: finalStatus,
@@ -240,7 +254,7 @@ export default function QuotationPage() {
         `${API_BASE}/api/quotation/assignee-log/${lead_id}`,
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        },
+        }
       );
       setAssigneeLog(res.data?.log || []);
     } catch (err) {
@@ -273,8 +287,8 @@ export default function QuotationPage() {
         "Last Activity": q.quotation_date
           ? new Date(q.quotation_date).toLocaleDateString()
           : q.quotation_created_at
-            ? new Date(q.quotation_created_at).toLocaleDateString()
-            : "",
+          ? new Date(q.quotation_created_at).toLocaleDateString()
+          : "",
         "Grand Total (₹)": q.grand_total
           ? Number(q.grand_total).toLocaleString()
           : "",
@@ -324,7 +338,7 @@ export default function QuotationPage() {
       doc.text(
         `Exported on: ${new Date().toLocaleDateString("en-GB")}   |   Total Records: ${filteredQuotations.length}`,
         14,
-        22,
+        22
       );
       const tableData = filteredQuotations.map((q, index) => [
         index + 1,
@@ -338,8 +352,8 @@ export default function QuotationPage() {
         q.quotation_date
           ? new Date(q.quotation_date).toLocaleDateString()
           : q.quotation_created_at
-            ? new Date(q.quotation_created_at).toLocaleDateString()
-            : "",
+          ? new Date(q.quotation_created_at).toLocaleDateString()
+          : "",
         q.grand_total ? `Rs.${Number(q.grand_total).toLocaleString()}` : "",
         q.assignee || "",
         q.displayStatus || "",
@@ -415,7 +429,7 @@ export default function QuotationPage() {
   const searchQuotations = async () => {
     try {
       const params = Object.fromEntries(
-        Object.entries(filters).filter(([_, v]) => v !== ""),
+        Object.entries(filters).filter(([_, v]) => v !== "")
       );
       const res = await axios.get(`${API_BASE}/api/quotation/filter`, {
         params,
@@ -482,7 +496,7 @@ export default function QuotationPage() {
             wasApprovedOnce:
               q.wasApprovedOnce || newStatus === "Won" || newStatus === "Lost",
           };
-        }),
+        })
       );
     } catch (err) {
       toast.error("Failed to update status");
@@ -511,7 +525,7 @@ export default function QuotationPage() {
     });
     try {
       const res = await axios.get(
-        `${API_BASE}/api/quotation/history/${lead.lead_id}`,
+        `${API_BASE}/api/quotation/history/${lead.lead_id}`
       );
       const historyData = res.data?.result || [];
       if (historyData.length > 0) {
@@ -531,10 +545,10 @@ export default function QuotationPage() {
       const historyWithFiles = await Promise.all(
         historyData.map(async (hist) => {
           const hf = await axios.get(
-            `${API_BASE}/api/quotation/files/${hist.id}`,
+            `${API_BASE}/api/quotation/files/${hist.id}`
           );
           return { ...hist, files: hf.data?.files || [] };
-        }),
+        })
       );
       setFollowUpHistory(historyWithFiles);
       if (historyData.length > 0) {
@@ -617,7 +631,7 @@ export default function QuotationPage() {
       if (newStatus === "Approved") {
         await axios.put(
           `${API_BASE}/api/quotation/update-main-status/${selectedLead.latest_quotation_id}`,
-          { quotation_status: "Won" },
+          { quotation_status: "Won" }
         );
       }
 
@@ -633,20 +647,20 @@ export default function QuotationPage() {
             displayStatus: newStatus === "Approved" ? "Won" : "Pending",
             wasApprovedOnce: newStatus === "Approved",
           };
-        }),
+        })
       );
 
       const res = await axios.get(
-        `${API_BASE}/api/quotation/history/${selectedLead.lead_id}`,
+        `${API_BASE}/api/quotation/history/${selectedLead.lead_id}`
       );
       const historyData = res.data?.result || [];
       const historyWithFiles = await Promise.all(
         historyData.map(async (hist) => {
           const hf = await axios.get(
-            `${API_BASE}/api/quotation/files/${hist.id}`,
+            `${API_BASE}/api/quotation/files/${hist.id}`
           );
           return { ...hist, files: hf.data?.files || [] };
-        }),
+        })
       );
       setFollowUpHistory(historyWithFiles);
 
@@ -680,7 +694,7 @@ export default function QuotationPage() {
       setDeleteId(null);
       if (selectedLead) {
         const res = await axios.get(
-          `${API_BASE}/api/quotation/history/${selectedLead.lead_id}`,
+          `${API_BASE}/api/quotation/history/${selectedLead.lead_id}`
         );
         setFollowUpHistory(res.data?.result || []);
         fetchQuotations();
@@ -740,7 +754,7 @@ export default function QuotationPage() {
         { percentage: Number(piPercentage) },
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        },
+        }
       );
       toast.success("Proforma Invoice created successfully!");
       setShowPIModal(false);
@@ -756,7 +770,7 @@ export default function QuotationPage() {
   };
 
   // ========================
-  // ✅ HANDLE ASSIGNEE UPDATE — with description
+  // HANDLE ASSIGNEE UPDATE
   // ========================
   const handleAssigneeUpdate = async () => {
     if (!selectedAssigneeRow) {
@@ -775,11 +789,11 @@ export default function QuotationPage() {
         `${API_BASE}/api/quotation/update-assignee/${selectedAssigneeRow.lead_id}`,
         {
           assignee: assigneeStr,
-          description: assigneeDescription.trim(), // ✅ Send description
+          description: assigneeDescription.trim(),
         },
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        },
+        }
       );
 
       toast.success("Assignee updated successfully!");
@@ -787,7 +801,7 @@ export default function QuotationPage() {
       setSelectedAssigneeRow(null);
       setNewAssigneeValue([]);
       setAssigneeLog([]);
-      setAssigneeDescription(""); // ✅ Reset description
+      setAssigneeDescription("");
       fetchQuotations();
     } catch (err) {
       console.log(err);
@@ -817,7 +831,7 @@ export default function QuotationPage() {
       if (remainingSlots <= 0) break;
       const ext = file.name.split(".").pop().toLowerCase();
       const isDuplicate = updatedFiles.some(
-        (f) => f.name === file.name && f.size === file.size,
+        (f) => f.name === file.name && f.size === file.size
       );
       if (isDuplicate) continue;
       if (![...IMAGE_EXT_FE, ...DOC_EXT_FE].includes(ext)) {
@@ -850,7 +864,7 @@ export default function QuotationPage() {
   const handleQuotationSubmit = async () => {
     if (isApprovedLocked) {
       toast.error(
-        "Quotation is already Approved. You cannot add or edit quotations.",
+        "Quotation is already Approved. You cannot add or edit quotations."
       );
       return;
     }
@@ -885,16 +899,16 @@ export default function QuotationPage() {
         toast.success("Quotation activity recorded");
       }
       const res = await axios.get(
-        `${API_BASE}/api/quotation/history/${selectedLead.lead_id}`,
+        `${API_BASE}/api/quotation/history/${selectedLead.lead_id}`
       );
       const historyData = res.data?.result || [];
       const historyWithFiles = await Promise.all(
         historyData.map(async (hist) => {
           const hf = await axios.get(
-            `${API_BASE}/api/quotation/files/${hist.id}`,
+            `${API_BASE}/api/quotation/files/${hist.id}`
           );
           return { ...hist, files: hf.data?.files || [] };
-        }),
+        })
       );
       setFollowUpHistory(historyWithFiles);
       setForm({
@@ -914,9 +928,8 @@ export default function QuotationPage() {
       setEditingId(null);
       fetchQuotations();
     } catch (err) {
-      // check NO.
-      toast.error("This quotation number is already in use.");     
-       console.log(err);
+      toast.error("This quotation number is already in use.");
+      console.log(err);
     } finally {
       setIsSubmitting(false);
     }
@@ -941,7 +954,7 @@ export default function QuotationPage() {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-        },
+        }
       );
       toast.success("Task Assigned");
       setShowAssignModal(false);
@@ -954,18 +967,17 @@ export default function QuotationPage() {
   // ========================
   // TAB + FILTER LOGIC
   // ========================
-
   const hasActiveFilters = Object.values(filters).some((v) => v !== "");
   const filteredQuotations = hasActiveFilters
     ? quotations
     : quotations.filter((q) => {
-      if (activeTab === "Pending")
-        return q.displayStatus !== "Won" && q.displayStatus !== "Lost";
-      return q.displayStatus === activeTab;
-    });
+        if (activeTab === "Pending")
+          return q.displayStatus !== "Won" && q.displayStatus !== "Lost";
+        return q.displayStatus === activeTab;
+      });
 
   const pendingCount = quotations.filter(
-    (q) => q.displayStatus !== "Won" && q.displayStatus !== "Lost",
+    (q) => q.displayStatus !== "Won" && q.displayStatus !== "Lost"
   ).length;
   const wonCount = quotations.filter((q) => q.displayStatus === "Won").length;
   const lostCount = quotations.filter((q) => q.displayStatus === "Lost").length;
@@ -984,7 +996,7 @@ export default function QuotationPage() {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const paginatedQuotations = filteredQuotations.slice(
     indexOfFirstItem,
-    indexOfLastItem,
+    indexOfLastItem
   );
   const totalPages = Math.ceil(filteredQuotations.length / itemsPerPage);
 
@@ -1056,7 +1068,7 @@ export default function QuotationPage() {
   };
 
   // ========================
-  // ✅ OPEN ASSIGNEE POPOVER
+  // OPEN ASSIGNEE POPOVER
   // ========================
   const openAssigneePopover = (e, q) => {
     const btn = e.currentTarget;
@@ -1077,12 +1089,12 @@ export default function QuotationPage() {
     setNewAssigneeValue(
       q.assignee
         ? q.assignee
-          .split(",")
-          .map((n) => ({ value: n.trim(), label: n.trim() }))
-        : [],
+            .split(",")
+            .map((n) => ({ value: n.trim(), label: n.trim() }))
+        : []
     );
     setAssigneeLog([]);
-    setAssigneeDescription(""); // ✅ Reset description on open
+    setAssigneeDescription("");
     fetchAssigneeLog(q.lead_id);
     setShowAssigneeModal(true);
   };
@@ -1092,7 +1104,7 @@ export default function QuotationPage() {
     setSelectedAssigneeRow(null);
     setNewAssigneeValue([]);
     setAssigneeLog([]);
-    setAssigneeDescription(""); // ✅ Reset on close
+    setAssigneeDescription("");
   };
 
   return (
@@ -1228,7 +1240,7 @@ export default function QuotationPage() {
             <option value="Lost">Lost</option>
           </select>
 
-          <div className="flex p-1 items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-58  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
+          <div className="flex p-1 items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-58 outline-none text-gray-400 text-sm col-span-2 md:col-span-1">
             <span className="mx-1 p-1 text-gray-400 whitespace-nowrap">
               From Date
             </span>
@@ -1241,7 +1253,7 @@ export default function QuotationPage() {
             />
           </div>
 
-          <div className="flex p-1 items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-53  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
+          <div className="flex p-1 items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-53 outline-none text-gray-400 text-sm col-span-2 md:col-span-1">
             <span className="mx-1 p-1 text-gray-400 whitespace-nowrap">
               To Date
             </span>
@@ -1325,47 +1337,19 @@ export default function QuotationPage() {
                 <table className="w-full text-sm whitespace-nowrap">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-100">
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        #
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Company Name
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Customer Name
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Reference
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Create Quotation
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Quotation No
-                      </th>
-                      {/* <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Created</th> */}
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Last Activity
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Grand Total
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Assignee
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Follow-up
-                      </th>
-                      {/* <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Proforma %</th> */}
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Updated By
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Action
-                      </th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">#</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Company Name</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Customer Name</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Reference</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Create Quotation</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Quotation No</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Last Activity</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Grand Total</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Assignee</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Follow-up</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Updated By</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1378,17 +1362,12 @@ export default function QuotationPage() {
                           <td className="py-3 px-3">
                             {(currentPage - 1) * itemsPerPage + index + 1}
                           </td>
-                          <td className="font-medium px-3">
-                            {q.company_name || "-"}
-                          </td>
-                          <td className="text-orange-500 px-3">
-                            {q.customer_name || "-"}
-                          </td>
+                          <td className="font-medium px-3">{q.company_name || "-"}</td>
+                          <td className="text-orange-500 px-3">{q.customer_name || "-"}</td>
                           <td className="px-3">{q.reference || "-"}</td>
 
                           <td className="text-lg px-3 text-center">
-                            {q.displayStatus === "Won" ||
-                              q.displayStatus === "Lost" ? (
+                            {q.displayStatus === "Won" || q.displayStatus === "Lost" ? (
                               <div
                                 className="w-9 h-9 tracking-widest rounded-full border inline-flex items-center justify-center bg-gray-50 border-gray-300 text-gray-400 cursor-not-allowed mx-auto shadow-sm"
                                 title="Quotation locked"
@@ -1414,20 +1393,13 @@ export default function QuotationPage() {
                             )}
                           </td>
 
-                          <td className="px-3 text-gray-600">
-                            {q.quotation_no || "-"}
-                          </td>
-                          {/* <td className="px-3 text-gray-500">
-                            {q.first_quotation_date ? new Date(q.first_quotation_date).toLocaleDateString() : "-"}
-                          </td> */}
+                          <td className="px-3 text-gray-600">{q.quotation_no || "-"}</td>
                           <td className="px-3 text-gray-500">
                             {q.quotation_date
                               ? new Date(q.quotation_date).toLocaleDateString()
                               : q.quotation_created_at
-                                ? new Date(
-                                  q.quotation_created_at,
-                                ).toLocaleDateString()
-                                : "-"}
+                              ? new Date(q.quotation_created_at).toLocaleDateString()
+                              : "-"}
                           </td>
                           <td className="px-3 font-semibold text-gray-700">
                             {q.grand_total
@@ -1435,10 +1407,9 @@ export default function QuotationPage() {
                               : "-"}
                           </td>
 
-                          {/* ✅ ASSIGNEE CELL */}
+                          {/* ASSIGNEE CELL */}
                           <td className="px-3">
-                            {q.displayStatus !== "Won" &&
-                              q.displayStatus !== "Lost" ? (
+                            {q.displayStatus !== "Won" && q.displayStatus !== "Lost" ? (
                               <button
                                 onClick={(e) => openAssigneePopover(e, q)}
                                 className="flex gap-1 items-center group cursor-pointer hover:opacity-80 transition-all"
@@ -1486,39 +1457,35 @@ export default function QuotationPage() {
                               </div>
                             )}
                           </td>
+
                           {/* follow-up */}
                           <td className="text-center">
                             <button
                               onClick={async () => {
-
                                 try {
-
                                   setSelectedLead(q);
-
                                   setSelectedQuotation({
                                     id: q.latest_quotation_id,
                                     quotation_no: q.quotation_no,
                                   });
 
-                                  setFollowUpTab("sales");
+                                  // BUG FIX #1: Default to "quotation" tab
+                                  setFollowUpTab("quotation");
 
                                   setUpdateForm({
-                                    follow_up_date: new Date()
-                                      .toISOString()
-                                      .split("T")[0],
+                                    follow_up_date: new Date().toISOString().split("T")[0],
                                     activity_type: "",
                                     follow_up_by: "",
                                     contact_person: "",
+                                    // BUG FIX #2: Pre-fill quotation_no from row data
+                                    quotation_no: q.quotation_no || "",
                                     description: "",
                                   });
 
                                   setSelectedFiles([]);
                                   setPreviewFollowUp(null);
 
-                                  // =========================
-                                  // FETCH HISTORY
-                                  // =========================
-
+                                  // Fetch history
                                   const res = await axios.get(
                                     `${API_BASE}/api/quotation-revision/${q.latest_quotation_id}/full-details`,
                                     {
@@ -1527,8 +1494,6 @@ export default function QuotationPage() {
                                       },
                                     }
                                   );
-
-                                  console.log("FULL DETAILS =", res.data);
 
                                   const quotationHistory =
                                     res.data?.data?.revisions?.map((item) => ({
@@ -1551,13 +1516,9 @@ export default function QuotationPage() {
                                   );
 
                                   setFollowUpHistory(mergedHistory);
-
                                   setShowUpdateModal(true);
-
                                 } catch (err) {
-
                                   console.log(err);
-
                                   toast.error("Failed to load history");
                                 }
                               }}
@@ -1566,17 +1527,6 @@ export default function QuotationPage() {
                               <i className="bi bi-plus text-xl"></i>
                             </button>
                           </td>
-
-                          {/* <td className="px-3 text-center">
-                            {q.proforma_percentage && Number(q.proforma_percentage) > 0 ? (
-                              <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">
-                                <i className="bi bi-check-circle-fill text-emerald-500 text-[10px]"></i>
-                                {Number(q.proforma_percentage).toFixed(0)}%
-                              </span>
-                            ) : (
-                              <span className="text-gray-300 text-sm">—</span>
-                            )}
-                          </td> */}
 
                           <td className="px-3">
                             {q.updated_by ? (
@@ -1599,20 +1549,9 @@ export default function QuotationPage() {
                           <td className="px-3">
                             {q.displayStatus === "Pending" ? (
                               <select
-<<<<<<< Updated upstream
-                                value={
-                                  q.displayStatus === "Declined"
-                                    ? "Declined"
-                                    : "Pending"
-                                }
-=======
                                 value={q.displayStatus === "Declined" ? "Declined" : "Pending"}
->>>>>>> Stashed changes
                                 onChange={(e) =>
-                                  handleTableStatusChange(
-                                    q.latest_quotation_id,
-                                    e.target.value,
-                                  )
+                                  handleTableStatusChange(q.latest_quotation_id, e.target.value)
                                 }
                                 className="border rounded-md px-2 py-1 text-xs font-semibold outline-none bg-yellow-50 text-yellow-700 border-yellow-300"
                               >
@@ -1620,13 +1559,9 @@ export default function QuotationPage() {
                                 <option value="Lost">Lost</option>
                               </select>
                             ) : q.displayStatus === "Won" ? (
-                              <span className="bg-green-100 text-green-700 px-2 py-1 rounded-md text-xs font-bold">
-                                Won
-                              </span>
+                              <span className="bg-green-100 text-green-700 px-2 py-1 rounded-md text-xs font-bold">Won</span>
                             ) : q.displayStatus === "Lost" ? (
-                              <span className="bg-red-100 text-red-700 px-2 py-1 rounded-md text-xs font-bold">
-                                Lost
-                              </span>
+                              <span className="bg-red-100 text-red-700 px-2 py-1 rounded-md text-xs font-bold">Lost</span>
                             ) : null}
                           </td>
 
@@ -1635,9 +1570,7 @@ export default function QuotationPage() {
                               {q.displayStatus === "Won" &&
                                 q.latest_quotation_id &&
                                 (() => {
-                                  const percentage = Number(
-                                    q.proforma_percentage || 0,
-                                  );
+                                  const percentage = Number(q.proforma_percentage || 0);
                                   if (!q.pi_exists || percentage === 0) {
                                     return (
                                       <button
@@ -1680,8 +1613,7 @@ export default function QuotationPage() {
                                 })()}
 
                               {q.latest_quotation_id ? (
-                                q.displayStatus === "Won" ||
-                                  q.displayStatus === "Lost" ? (
+                                q.displayStatus === "Won" || q.displayStatus === "Lost" ? (
                                   <div
                                     className="text-gray-300 w-8 h-8 rounded-full flex items-center justify-center"
                                     title="Locked"
@@ -1690,9 +1622,7 @@ export default function QuotationPage() {
                                   </div>
                                 ) : (
                                   <button
-                                    onClick={() =>
-                                      openDeleteModal(q.latest_quotation_id)
-                                    }
+                                    onClick={() => openDeleteModal(q.latest_quotation_id)}
                                     className="text-gray-400 hover:text-red-600 cursor-pointer"
                                   >
                                     <i className="bi bi-trash3 text-lg"></i>
@@ -1705,10 +1635,7 @@ export default function QuotationPage() {
                       ))
                     ) : (
                       <tr>
-                        <td
-                          colSpan="14"
-                          className="text-center py-10 text-gray-400"
-                        >
+                        <td colSpan="14" className="text-center py-10 text-gray-400">
                           No Quotations Found
                         </td>
                       </tr>
@@ -1719,9 +1646,7 @@ export default function QuotationPage() {
                 {/* PAGINATION */}
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white rounded-b-lg">
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-slate-500 font-medium">
-                      Rows per page:
-                    </span>
+                    <span className="text-sm text-slate-500 font-medium">Rows per page:</span>
                     <select
                       value={itemsPerPage}
                       onChange={(e) => {
@@ -1731,9 +1656,7 @@ export default function QuotationPage() {
                       className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all cursor-pointer font-medium"
                     >
                       {[10, 20, 100, 200].map((size) => (
-                        <option key={size} value={size}>
-                          {size}
-                        </option>
+                        <option key={size} value={size}>{size}</option>
                       ))}
                     </select>
                   </div>
@@ -1742,9 +1665,7 @@ export default function QuotationPage() {
                     <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
                       <button
                         type="button"
-                        onClick={() =>
-                          setCurrentPage((prev) => Math.max(prev - 1, 1))
-                        }
+                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                         disabled={currentPage === 1}
                         className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                       >
@@ -1764,11 +1685,7 @@ export default function QuotationPage() {
                       </div>
                       <button
                         type="button"
-                        onClick={() =>
-                          setCurrentPage((prev) =>
-                            Math.min(prev + 1, totalPages),
-                          )
-                        }
+                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                         disabled={currentPage === totalPages}
                         className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                       >
@@ -1783,14 +1700,14 @@ export default function QuotationPage() {
         </div>
       </div>
 
-      {/* ----------------follow-up---------------- */}
-      {/* ----------------follow-up MODAL---------------- */}
+      {/* ================== FOLLOW-UP MODAL ================== */}
       {showUpdateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30">
-          <div className="bg-white w-full max-w-[800px] rounded-sm shadow-xl border border-gray-100 overflow-hidden">
+        // BUG FIX #6: Full modal is scrollable with overflow-y-auto on inner container
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 p-4">
+          <div className="bg-white w-full max-w-[820px] rounded-sm shadow-xl border border-gray-100 overflow-hidden flex flex-col max-h-[90vh]">
 
             {/* Header */}
-            <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-orange-100 to-white">
+            <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-orange-100 to-white flex-shrink-0">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-orange-500 inline-block"></span>
                 <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
@@ -1802,7 +1719,8 @@ export default function QuotationPage() {
                   setShowUpdateModal(false);
                   setSelectedFiles([]);
                   setPreviewFollowUp(null);
-                  setFollowUpTab("lead");
+                  // BUG FIX #1: Reset to "quotation" tab on close too
+                  setFollowUpTab("quotation");
                 }}
                 className="w-7 h-7 flex items-center justify-center text-orange-500 text-md"
               >
@@ -1810,17 +1728,18 @@ export default function QuotationPage() {
               </button>
             </div>
 
-            {/* Tabs: Lead | Quotation */}
-            <div className="flex border-b border-gray-200">
+            {/* Tabs */}
+            <div className="flex border-b border-gray-200 flex-shrink-0">
               <button
                 onClick={() => {
                   setFollowUpTab("lead");
                   setPreviewFollowUp(null);
                 }}
-                className={`px-6 py-3 text-sm font-semibold transition-all ${followUpTab === "lead"
+                className={`px-6 py-3 text-sm font-semibold transition-all ${
+                  followUpTab === "lead"
                     ? "text-orange-500 border-b-2 border-orange-500 bg-orange-50"
                     : "text-gray-500"
-                  }`}
+                }`}
               >
                 Lead
               </button>
@@ -1830,36 +1749,36 @@ export default function QuotationPage() {
                   setFollowUpTab("quotation");
                   setPreviewFollowUp(null);
                 }}
-                className={`px-6 py-3 text-sm font-semibold transition-all ${followUpTab === "quotation"
+                className={`px-6 py-3 text-sm font-semibold transition-all ${
+                  followUpTab === "quotation"
                     ? "text-orange-500 border-b-2 border-orange-500 bg-orange-50"
                     : "text-gray-500"
-                  }`}
+                }`}
               >
                 Quotation
               </button>
             </div>
 
-            {/* Body */}
-            <div className="flex">
+            {/* Body — scrollable */}
+            {/* BUG FIX #6: overflow-y-auto on this body div makes modal content scroll */}
+            <div className="flex flex-1 overflow-hidden">
 
-              {/* ── LEFT: Form ── */}
-              <div className="w-1/2 px-6 py-5 border-r border-gray-100">
+              {/* LEFT: Form */}
+              <div className="w-1/2 px-6 py-5 border-r border-gray-100 overflow-y-auto">
 
-                {/* Lead tab label */}
                 {followUpTab === "lead" && (
                   <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-4">
                     Lead Follow-Up
                   </p>
                 )}
 
-                {/* Quotation tab label */}
                 {followUpTab === "quotation" && (
                   <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-4">
                     Quotation Follow-Up
                   </p>
                 )}
 
-                {/* ── LEAD TAB: Read-only notice ── */}
+                {/* LEAD TAB: Read-only notice */}
                 {followUpTab === "lead" && (
                   <div className="flex flex-col gap-3">
                     <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
@@ -1874,7 +1793,6 @@ export default function QuotationPage() {
                       </div>
                     </div>
 
-                    {/* Lead info summary */}
                     {selectedLead && (
                       <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 space-y-2">
                         <div className="flex justify-between text-xs">
@@ -1903,7 +1821,7 @@ export default function QuotationPage() {
                   </div>
                 )}
 
-                {/* ── QUOTATION TAB: Editable Form ── */}
+                {/* QUOTATION TAB: Editable Form */}
                 {followUpTab === "quotation" && (
                   <div className="grid grid-cols-2 gap-x-4 gap-y-3">
                     <div>
@@ -1963,6 +1881,21 @@ export default function QuotationPage() {
                         className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50"
                       />
                     </div>
+
+                    {/* BUG FIX #2: Added Quotation No field in follow-up form */}
+                    <div className="col-span-2">
+                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        Quotation No
+                      </label>
+                      <input
+                        name="quotation_no"
+                        value={updateForm.quotation_no}
+                        onChange={handleInputChange}
+                        placeholder="e.g. QT-2025-001"
+                        className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50"
+                      />
+                    </div>
+
                     <div className="col-span-2">
                       <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Description *
@@ -2007,12 +1940,12 @@ export default function QuotationPage() {
                 )}
               </div>
 
-              {/* ── RIGHT: History Panel ── */}
-              <div className="w-1/2 px-6 py-5 flex flex-col">
+              {/* RIGHT: History Panel */}
+              {/* BUG FIX #5 & #6: Proper overflow-y-auto, aligned layout */}
+              <div className="w-1/2 px-6 py-5 flex flex-col overflow-hidden">
 
-                {/* ── LEAD History Header ── */}
                 {followUpTab === "lead" && (
-                  <div className="flex justify-between items-center mb-4">
+                  <div className="flex justify-between items-center mb-4 flex-shrink-0">
                     <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">
                       Lead Follow-Up History
                     </p>
@@ -2022,9 +1955,8 @@ export default function QuotationPage() {
                   </div>
                 )}
 
-                {/* ── QUOTATION History Header ── */}
                 {followUpTab === "quotation" && (
-                  <div className="flex justify-between items-center mb-4">
+                  <div className="flex justify-between items-center mb-4 flex-shrink-0">
                     <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">
                       Quotation Follow-Up History
                     </p>
@@ -2032,12 +1964,10 @@ export default function QuotationPage() {
                       {followUpHistory.filter((h) => h.module_type === "quotation").length} record(s)
                     </span>
                   </div>
-                )}
+                  )}
 
-                {/* ── History List ── */}
-                <div className="space-y-2 overflow-y-auto max-h-[350px] pr-1">
-
-                  {/* Filter history by active tab */}
+                  {/* History List — scrollable */}
+                  <div className="flex-1 overflow-y-auto space-y-2 pr-1">
                   {(() => {
                     const filtered = followUpHistory.filter((h) =>
                       followUpTab === "lead"
@@ -2060,133 +1990,165 @@ export default function QuotationPage() {
                       const isActive = previewId === itemId;
 
                       return (
-                        <div
-                          key={itemId}
-                          onClick={() => setPreviewFollowUp(isActive ? null : item)}
-                          className={`border rounded-xl p-3 cursor-pointer transition-all select-none ${isActive
-                              ? "border-orange-400 bg-orange-50 shadow-sm"
-                              : "hover:bg-gray-50 border-gray-200"
+                        <div key={itemId}>
+                          <div
+                            onClick={() => setPreviewFollowUp(isActive ? null : item)}
+                            className={`border rounded-xl p-3 cursor-pointer transition-all select-none ${
+                              isActive
+                                ? "border-orange-400 bg-orange-50 shadow-sm"
+                                : "hover:bg-gray-50 border-gray-200"
                             }`}
-                        >
-                          <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                              {idx === 0 && (
-                                <span className="text-xs bg-orange-100 text-orange-500 px-2 py-0.5 rounded-full font-semibold">
-                                  Latest
-                                </span>
-                              )}
-                              <div>
-                                <p className="font-semibold text-sm text-gray-700">
-                                  {item.activity_type}
-                                </p>
-                                {/* Module badge */}
-                                <p className={`text-[10px] uppercase font-semibold ${followUpTab === "lead" ? "text-blue-400" : "text-orange-400"
+                          >
+                            <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-2">
+                                {idx === 0 && (
+                                  <span className="text-xs bg-orange-100 text-orange-500 px-2 py-0.5 rounded-full font-semibold">
+                                    Latest
+                                  </span>
+                                )}
+                                <div>
+                                  <p className="font-semibold text-sm text-gray-700">
+                                    {item.activity_type}
+                                  </p>
+                                  <p className={`text-[10px] uppercase font-semibold ${
+                                    followUpTab === "lead" ? "text-blue-400" : "text-orange-400"
                                   }`}>
-                                  {followUpTab === "lead" ? "Lead" : "Quotation"}
-                                </p>
+                                    {followUpTab === "lead" ? "Lead" : "Quotation"}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs text-gray-400">
+                                  {item.follow_up_date
+                                    ? new Date(item.follow_up_date).toLocaleDateString()
+                                    : "—"}
+                                </span>
+                                <i
+                                  className={`bi ${isActive ? "bi-chevron-up" : "bi-chevron-down"} text-gray-400 text-xs`}
+                                ></i>
                               </div>
                             </div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs text-gray-400">
-                                {item.follow_up_date
-                                  ? new Date(item.follow_up_date).toLocaleDateString()
-                                  : "—"}
-                              </span>
-                              <i
-                                className={`bi ${isActive ? "bi-chevron-up" : "bi-chevron-down"} text-gray-400 text-xs`}
-                              ></i>
-                            </div>
+                            <p className="text-xs text-gray-400 mt-1 truncate">
+                              {item.description}
+                            </p>
                           </div>
-                          <p className="text-xs text-gray-400 mt-1 truncate">
-                            {item.description}
-                          </p>
+
+                          {/* BUG FIX #5: Preview panel rendered inline below each card for proper alignment */}
+                          {isActive && (
+                            <div className="mt-1 mb-2 border border-orange-200 rounded-xl bg-gradient-to-br from-orange-50 to-white p-4 text-sm shadow-sm">
+                              <div className="flex justify-between items-center mb-3">
+                                <p className="font-bold text-orange-500 text-xs uppercase tracking-wide">
+                                  Details
+                                </p>
+                                <button
+                                  onClick={() => setPreviewFollowUp(null)}
+                                  className="text-gray-400 hover:text-gray-600 text-xs"
+                                >
+                                  ✕ Close
+                                </button>
+                              </div>
+                              <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                                {[
+                                  { label: "Activity Type", value: previewFollowUp.activity_type },
+                                  {
+                                    label: "Follow-Up Date",
+                                    value: previewFollowUp.follow_up_date
+                                      ? new Date(previewFollowUp.follow_up_date).toLocaleDateString()
+                                      : "—",
+                                  },
+                                  { label: "Contact Person", value: previewFollowUp.contact_person },
+                                  { label: "Follow-Up By", value: previewFollowUp.follow_up_by },
+                                ].map(({ label, value }) => (
+                                  <div key={label}>
+                                    <p className="text-xs text-gray-400 font-medium">{label}</p>
+                                    <p className="font-semibold text-gray-700 text-sm mt-0.5">{value || "—"}</p>
+                                  </div>
+                                ))}
+                                <div>
+                                  <p className="text-xs text-gray-400 font-medium">Status</p>
+                                  <span
+                                    className={`text-xs px-2.5 py-0.5 rounded-full font-semibold mt-0.5 inline-block ${
+                                      previewFollowUp.status === "Completed"
+                                        ? "bg-green-100 text-green-600"
+                                        : previewFollowUp.status === "Cancelled"
+                                        ? "bg-orange-100 text-orange-500"
+                                        : "bg-orange-100 text-orange-600"
+                                    }`}
+                                  >
+                                    {previewFollowUp.status || "—"}
+                                  </span>
+                                </div>
+                                {previewFollowUp.quotation_no && (
+                                  <div>
+                                    <p className="text-xs text-gray-400 font-medium">Quotation No</p>
+                                    <p className="font-semibold text-gray-700 text-sm mt-0.5">{previewFollowUp.quotation_no}</p>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="mt-2.5">
+                                <p className="text-xs text-gray-400 font-medium">Description</p>
+                                <p className="text-gray-700 mt-1 text-sm whitespace-pre-wrap">
+                                  {previewFollowUp.description || "—"}
+                                </p>
+                              </div>
+
+                              {/* BUG FIX #4: File URLs as clickable links that open in new tab */}
+                              {previewFollowUp.files && previewFollowUp.files.length > 0 && (
+                                <div className="mt-3">
+                                  <p className="text-xs text-gray-400 font-medium mb-1.5">Attached Files</p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {previewFollowUp.files.map((f, i) => (
+                                      <a
+                                        key={i}
+                                        href={f.file_path}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-1.5 border border-indigo-100 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors shadow-sm"
+                                      >
+                                        <i className="bi bi-file-earmark-check text-indigo-500"></i>
+                                        <span className="truncate max-w-[120px]">
+                                          {f.filename || f.file_name || "File"}
+                                        </span>
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     });
                   })()}
                 </div>
-
-                {/* ── Preview Panel ── */}
-                {previewFollowUp && (
-                  <div className="mt-4 border border-orange-200 rounded-xl bg-gradient-to-br from-orange-50 to-white p-4 text-sm shadow-sm">
-                    <div className="flex justify-between items-center mb-3">
-                      <p className="font-bold text-orange-500 text-xs uppercase tracking-wide">
-                        Details
-                      </p>
-                      <button
-                        onClick={() => setPreviewFollowUp(null)}
-                        className="text-gray-400 hover:text-gray-600 text-xs"
-                      >
-                        ✕ Close
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
-                      {[
-                        { label: "Activity Type", value: previewFollowUp.activity_type },
-                        {
-                          label: "Follow-Up Date",
-                          value: previewFollowUp.follow_up_date
-                            ? new Date(previewFollowUp.follow_up_date).toLocaleDateString()
-                            : "—",
-                        },
-                        { label: "Contact Person", value: previewFollowUp.contact_person },
-                        { label: "Follow-Up By", value: previewFollowUp.follow_up_by },
-                      ].map(({ label, value }) => (
-                        <div key={label}>
-                          <p className="text-xs text-gray-400 font-medium">{label}</p>
-                          <p className="font-semibold text-gray-700 text-sm mt-0.5">{value || "—"}</p>
-                        </div>
-                      ))}
-                      <div>
-                        <p className="text-xs text-gray-400 font-medium">Status</p>
-                        <span
-                          className={`text-xs px-2.5 py-0.5 rounded-full font-semibold mt-0.5 inline-block ${previewFollowUp.status === "Completed"
-                              ? "bg-green-100 text-green-600"
-                              : previewFollowUp.status === "Cancelled"
-                                ? "bg-orange-100 text-orange-500"
-                                : "bg-orange-100 text-orange-600"
-                            }`}
-                        >
-                          {previewFollowUp.status || "—"}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mt-2.5">
-                      <p className="text-xs text-gray-400 font-medium">Description</p>
-                      <p className="text-gray-700 mt-1 text-sm whitespace-pre-wrap">
-                        {previewFollowUp.description || "—"}
-                      </p>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* ── Footer Buttons ── */}
-            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
+            {/* Footer Buttons */}
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 flex-shrink-0">
               <button
                 onClick={() => {
                   setShowUpdateModal(false);
                   setSelectedFiles([]);
                   setPreviewFollowUp(null);
-                  setFollowUpTab("lead");
+                  setFollowUpTab("quotation");
                 }}
                 className="px-5 py-2 rounded-sm text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
               >
                 Cancel
               </button>
 
-              {/* Save button: DISABLED for Lead tab, ACTIVE for Quotation tab */}
               <button
                 onClick={followUpTab === "quotation" ? handleUpdate : undefined}
                 disabled={followUpTab === "lead" || updateLoading}
                 title={followUpTab === "lead" ? "Lead follow-ups cannot be added here" : ""}
-                className={`px-6 py-2 rounded-sm text-sm font-semibold text-white transition-all shadow-md flex items-center gap-2 ${followUpTab === "lead"
+                className={`px-6 py-2 rounded-sm text-sm font-semibold text-white transition-all shadow-md flex items-center gap-2 ${
+                  followUpTab === "lead"
                     ? "bg-gray-300 cursor-not-allowed shadow-none"
                     : updateLoading
-                      ? "bg-orange-400 cursor-not-allowed shadow-orange-200"
-                      : "bg-orange-500 hover:bg-orange-600 shadow-orange-200"
-                  }`}
+                    ? "bg-orange-400 cursor-not-allowed shadow-orange-200"
+                    : "bg-orange-500 hover:bg-orange-600 shadow-orange-200"
+                }`}
               >
                 {updateLoading ? (
                   <>
@@ -2210,15 +2172,13 @@ export default function QuotationPage() {
         </div>
       )}
 
-      {/* ──────────────────── QUOTATION UPDATE MODAL ──────────────────── */}
+      {/* QUOTATION UPDATE MODAL */}
       {showQuotationModal && selectedLead && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="bg-white w-[90vw] max-w-[900px] h-[85vh] rounded-sm shadow-xl overflow-hidden border border-gray-100 flex flex-col">
             <div
               className="flex justify-between items-center px-6 py-4 border-b border-gray-100 shadow-sm z-10"
-              style={{
-                background: "linear-gradient(to right, #f5e0c6, #ffffff)",
-              }}
+              style={{ background: "linear-gradient(to right, #f5e0c6, #ffffff)" }}
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center">
@@ -2228,9 +2188,7 @@ export default function QuotationPage() {
                   <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
                     {selectedLead?.company_name}
                   </h2>
-                  <p className="text-xs text-gray-500 font-medium">
-                    Quotation Management
-                  </p>
+                  <p className="text-xs text-gray-500 font-medium">Quotation Management</p>
                 </div>
               </div>
               <button
@@ -2250,12 +2208,9 @@ export default function QuotationPage() {
                       <i className="bi bi-lock-fill text-green-600 text-sm"></i>
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-green-700">
-                        Quotation Approved
-                      </p>
+                      <p className="text-sm font-bold text-green-700">Quotation Approved</p>
                       <p className="text-xs text-green-600 mt-0.5">
-                        This quotation is already approved. You cannot add or
-                        edit any further quotation activities.
+                        This quotation is already approved. You cannot add or edit any further quotation activities.
                       </p>
                     </div>
                   </div>
@@ -2386,8 +2341,7 @@ export default function QuotationPage() {
                           className="text-white px-5 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 mx-auto transition-all"
                           style={{ background: "#f07400" }}
                         >
-                          <i className="bi bi-cloud-upload text-sm"></i> Upload
-                          Files
+                          <i className="bi bi-cloud-upload text-sm"></i> Upload Files
                         </button>
                         {selectedFiles.length > 0 && (
                           <div className="mt-3 space-y-1.5 text-left">
@@ -2398,15 +2352,11 @@ export default function QuotationPage() {
                               >
                                 <div className="flex items-center gap-2.5 overflow-hidden">
                                   <i className="bi bi-file-earmark-text text-blue-500 text-sm"></i>
-                                  <span className="text-gray-600 font-medium truncate">
-                                    {file.name}
-                                  </span>
+                                  <span className="text-gray-600 font-medium truncate">{file.name}</span>
                                 </div>
                                 <button
                                   onClick={() =>
-                                    setSelectedFiles(
-                                      selectedFiles.filter((_, i) => i !== idx),
-                                    )
+                                    setSelectedFiles(selectedFiles.filter((_, i) => i !== idx))
                                   }
                                   className="text-gray-300 hover:text-red-500 transition-colors ml-2"
                                 >
@@ -2419,8 +2369,7 @@ export default function QuotationPage() {
                       </>
                     ) : (
                       <p className="text-xs text-gray-500 italic">
-                        File editing is unavailable during updates. Create a new
-                        quotation to attach new files.
+                        File editing is unavailable during updates. Create a new quotation to attach new files.
                       </p>
                     )}
                   </div>
@@ -2442,32 +2391,16 @@ export default function QuotationPage() {
                       >
                         {isSubmitting ? (
                           <>
-                            <svg
-                              className="animate-spin h-4 w-4"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                            >
-                              <circle
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="white"
-                                strokeWidth="4"
-                                opacity="0.25"
-                              />
-                              <path
-                                fill="white"
-                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                              />
+                            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                              <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" opacity="0.25" />
+                              <path fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                             </svg>
                             Processing...
                           </>
                         ) : (
                           <>
                             <i className="bi bi-floppy2-fill"></i>
-                            {editingId
-                              ? "Update Quotation"
-                              : "Save Quotation Activity"}
+                            {editingId ? "Update Quotation" : "Save Quotation Activity"}
                           </>
                         )}
                       </button>
@@ -2477,9 +2410,7 @@ export default function QuotationPage() {
                             setEditingId(null);
                             setForm({
                               quotation_no: form.quotation_no,
-                              quotation_date: new Date()
-                                .toISOString()
-                                .split("T")[0],
+                              quotation_date: new Date().toISOString().split("T")[0],
                               activity_type: "",
                               quotation_status: "Pending",
                               assignee: form.assignee,
@@ -2504,10 +2435,7 @@ export default function QuotationPage() {
               <div className="w-7/12 bg-slate-50 flex flex-col relative z-0">
                 <div className="px-6 py-4 flex justify-between items-center bg-white border-b border-gray-100 sticky top-0 z-20 shadow-sm">
                   <h3 className="text-sm font-bold text-gray-700 uppercase flex items-center gap-2">
-                    <i
-                      className="bi bi-clock-history"
-                      style={{ color: "#f07400" }}
-                    ></i>{" "}
+                    <i className="bi bi-clock-history" style={{ color: "#f07400" }}></i>{" "}
                     Quotation History Data
                   </h3>
                 </div>
@@ -2515,9 +2443,7 @@ export default function QuotationPage() {
                   {followUpHistory.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-gray-400">
                       <i className="bi bi-inbox text-4xl mb-2 text-gray-300"></i>
-                      <p className="text-sm font-medium">
-                        No quotation history found.
-                      </p>
+                      <p className="text-sm font-medium">No quotation history found.</p>
                     </div>
                   ) : (
                     [...followUpHistory]
@@ -2525,35 +2451,37 @@ export default function QuotationPage() {
                         a.quotation_status === "Approved"
                           ? -1
                           : b.quotation_status === "Approved"
-                            ? 1
-                            : Math.sign(
-                              new Date(b.created_at) - new Date(a.created_at),
-                            ),
+                          ? 1
+                          : Math.sign(new Date(b.created_at) - new Date(a.created_at))
                       )
                       .map((item, index) => (
                         <div
                           key={index}
-                          className={`bg-white border rounded-xl p-4 shadow-sm transition-colors ${item.quotation_status === "Approved" ? "border-green-400 bg-green-50/20" : "border-gray-200 hover:border-blue-200"}`}
+                          className={`bg-white border rounded-xl p-4 shadow-sm transition-colors ${
+                            item.quotation_status === "Approved"
+                              ? "border-green-400 bg-green-50/20"
+                              : "border-gray-200 hover:border-blue-200"
+                          }`}
                         >
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex gap-2 items-center">
                               <div
-                                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-sm ${item.quotation_status === "Approved" ? "bg-green-100 text-green-700" : "bg-blue-100 text-blue-600"}`}
+                                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-sm ${
+                                  item.quotation_status === "Approved"
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-blue-100 text-blue-600"
+                                }`}
                               >
                                 {item.assignee ? item.assignee.charAt(0) : "U"}
                               </div>
                               <div>
                                 <p className="text-xs text-gray-500 font-medium">
                                   Recorded by{" "}
-                                  <span className="text-gray-800 font-bold">
-                                    {item.assignee || "User"}
-                                  </span>
+                                  <span className="text-gray-800 font-bold">{item.assignee || "User"}</span>
                                 </p>
                                 <p className="text-[10px] text-gray-400 font-medium tracking-wide">
                                   Quotation Date:{" "}
-                                  {new Date(
-                                    item.quotation_date || item.created_at,
-                                  ).toLocaleDateString()}
+                                  {new Date(item.quotation_date || item.created_at).toLocaleDateString()}
                                 </p>
                               </div>
                             </div>
@@ -2562,28 +2490,16 @@ export default function QuotationPage() {
                                 item.quotation_status !== "Lost" &&
                                 item.quotation_status !== "Approved" &&
                                 item.quotation_status !== "Declined" &&
-                                !followUpHistory.find(
-                                  (h) => h.quotation_status === "Approved",
-                                ) && (
+                                !followUpHistory.find((h) => h.quotation_status === "Approved") && (
                                   <>
                                     <button
-                                      onClick={() =>
-                                        handleApproveDecline(
-                                          item.id,
-                                          "Approved",
-                                        )
-                                      }
+                                      onClick={() => handleApproveDecline(item.id, "Approved")}
                                       className="bg-green-500 hover:bg-green-600 text-white text-[10px] px-2 py-1 rounded-md transition-all shadow-sm"
                                     >
                                       Approve
                                     </button>
                                     <button
-                                      onClick={() =>
-                                        handleApproveDecline(
-                                          item.id,
-                                          "Declined",
-                                        )
-                                      }
+                                      onClick={() => handleApproveDecline(item.id, "Declined")}
                                       className="bg-red-500 hover:bg-red-600 text-white text-[10px] px-2 py-1 rounded-md transition-all shadow-sm"
                                     >
                                       Decline
@@ -2591,7 +2507,13 @@ export default function QuotationPage() {
                                   </>
                                 )}
                               <span
-                                className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-md ${item.quotation_status === "Approved" ? "bg-green-100 text-green-700" : item.quotation_status === "Declined" ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-700"}`}
+                                className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-md ${
+                                  item.quotation_status === "Approved"
+                                    ? "bg-green-100 text-green-700"
+                                    : item.quotation_status === "Declined"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-gray-100 text-gray-700"
+                                }`}
                               >
                                 {item.quotation_status || "Pending"}
                               </span>
@@ -2614,9 +2536,7 @@ export default function QuotationPage() {
                               <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold bg-indigo-50 border border-indigo-100 text-indigo-600 px-2 py-0.5 rounded-md">
                                 <i className="bi bi-pencil-fill text-[9px]"></i>
                                 Last edited by{" "}
-                                <span className="text-indigo-800">
-                                  {item.updated_by}
-                                </span>
+                                <span className="text-indigo-800">{item.updated_by}</span>
                               </span>
                               {item.updated_at && (
                                 <span className="text-[10px] text-gray-400 font-medium">
@@ -2628,25 +2548,15 @@ export default function QuotationPage() {
 
                           <div className="mt-2 grid grid-cols-2 gap-4 bg-gray-50 p-2.5 rounded-lg border border-gray-100 text-sm">
                             <div>
-                              <span className="text-gray-400 text-xs">
-                                Quotation No:
-                              </span>{" "}
-                              <span className="font-semibold">
-                                {item.quotation_no || "-"}
-                              </span>
+                              <span className="text-gray-400 text-xs">Quotation No:</span>{" "}
+                              <span className="font-semibold">{item.quotation_no || "-"}</span>
                             </div>
                             <div>
-                              <span className="text-gray-400 text-xs">
-                                Activity Type:
-                              </span>{" "}
-                              <span className="font-semibold">
-                                {item.activity_type || "-"}
-                              </span>
+                              <span className="text-gray-400 text-xs">Activity Type:</span>{" "}
+                              <span className="font-semibold">{item.activity_type || "-"}</span>
                             </div>
                             <div className="col-span-2 text-gray-700">
-                              <span className="text-gray-400 text-xs block mb-0.5">
-                                Description:
-                              </span>
+                              <span className="text-gray-400 text-xs block mb-0.5">Description:</span>
                               <p className="whitespace-pre-wrap">
                                 {item.description || "No description provided."}
                               </p>
@@ -2654,47 +2564,31 @@ export default function QuotationPage() {
                           </div>
                           <div className="mt-2 grid grid-cols-4 gap-4 bg-white p-2.5 rounded-lg border border-gray-100 text-sm">
                             <div>
-                              <span className="text-gray-400 text-[10px] uppercase block">
-                                Amount
-                              </span>
-                              <span className="font-semibold text-gray-800">
-                                ₹{item.amount || "0"}
-                              </span>
+                              <span className="text-gray-400 text-[10px] uppercase block">Amount</span>
+                              <span className="font-semibold text-gray-800">₹{item.amount || "0"}</span>
                             </div>
                             <div>
-                              <span className="text-gray-400 text-[10px] uppercase block">
-                                Discount
-                              </span>
+                              <span className="text-gray-400 text-[10px] uppercase block">Discount</span>
                               <span className="font-semibold text-gray-800">
-                                ₹
-                                {item.amount && item.discount
-                                  ? (
-                                    (item.amount * item.discount) /
-                                    100
-                                  ).toFixed(2)
+                                ₹{item.amount && item.discount
+                                  ? ((item.amount * item.discount) / 100).toFixed(2)
                                   : "0"}
                               </span>
                             </div>
                             <div>
-                              <span className="text-gray-400 text-[10px] uppercase block">
-                                Tax
-                              </span>
-                              <span className="font-semibold text-gray-800">
-                                {item.tax || "0"}%
-                              </span>
+                              <span className="text-gray-400 text-[10px] uppercase block">Tax</span>
+                              <span className="font-semibold text-gray-800">{item.tax || "0"}%</span>
                             </div>
                             <div>
-                              <span className="text-gray-400 text-[10px] uppercase block">
-                                Grand Total
-                              </span>
-                              <span className="font-bold text-green-600">
-                                ₹{item.grand_total || "0"}
-                              </span>
+                              <span className="text-gray-400 text-[10px] uppercase block">Grand Total</span>
+                              <span className="font-bold text-green-600">₹{item.grand_total || "0"}</span>
                             </div>
                           </div>
+
+                          {/* BUG FIX #4: Files in quotation history cards also open in new tab */}
                           {item.files?.length > 0 && (
                             <div className="mt-3">
-                              <p className="text-xs font-semibold text-gray-400 uppercase mb-1.5 flex flex-col">
+                              <p className="text-xs font-semibold text-gray-400 uppercase mb-1.5">
                                 Attached Files
                               </p>
                               <div className="flex flex-wrap gap-2">
@@ -2707,9 +2601,7 @@ export default function QuotationPage() {
                                     className="flex items-center gap-1.5 border border-indigo-100 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors shadow-sm"
                                   >
                                     <i className="bi bi-file-earmark-check text-indigo-500"></i>
-                                    <span className="truncate max-w-[120px]">
-                                      {f.file_name}
-                                    </span>
+                                    <span className="truncate max-w-[120px]">{f.file_name}</span>
                                   </a>
                                 ))}
                               </div>
@@ -2753,12 +2645,8 @@ export default function QuotationPage() {
                 <div className="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center mb-3">
                   <i className="bi bi-cloud-arrow-up text-orange-500 text-2xl"></i>
                 </div>
-                <p className="font-bold text-gray-700 text-sm">
-                  Click or drag files here
-                </p>
-                <p className="text-xs text-gray-400 mt-2">
-                  JPG, PNG, PDF (Max 2MB per file, Max 5 files)
-                </p>
+                <p className="font-bold text-gray-700 text-sm">Click or drag files here</p>
+                <p className="text-xs text-gray-400 mt-2">JPG, PNG, PDF (Max 2MB per file, Max 5 files)</p>
                 <input
                   type="file"
                   id="quotFiles"
@@ -2801,12 +2689,8 @@ export default function QuotationPage() {
               <div className="w-20 h-20 rounded-full bg-orange-50 flex items-center justify-center mb-4 border border-orange-100">
                 <i className="bi bi-trash text-orange-500 text-3xl"></i>
               </div>
-              <h2 className="text-lg font-semibold text-gray-800">
-                {deleteName}
-              </h2>
-              <p className="text-gray-400 text-sm mt-2">
-                This action cannot be undone. Are you sure?
-              </p>
+              <h2 className="text-lg font-semibold text-gray-800">{deleteName}</h2>
+              <p className="text-gray-400 text-sm mt-2">This action cannot be undone. Are you sure?</p>
             </div>
             <div className="flex justify-end gap-3 px-6 py-3">
               <button
@@ -2823,20 +2707,8 @@ export default function QuotationPage() {
                 {isDeleting ? (
                   <>
                     <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="white"
-                        strokeWidth="3"
-                        fill="none"
-                        opacity="0.3"
-                      />
-                      <path
-                        d="M4 12a8 8 0 018-8"
-                        stroke="white"
-                        strokeWidth="3"
-                      />
+                      <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" fill="none" opacity="0.3" />
+                      <path d="M4 12a8 8 0 018-8" stroke="white" strokeWidth="3" />
                     </svg>
                     Deleting...
                   </>
@@ -2880,9 +2752,7 @@ export default function QuotationPage() {
               </button>
             </div>
             <div className="p-6">
-              <p className="text-gray-500 text-sm mb-6">
-                Are you sure you want to change status?
-              </p>
+              <p className="text-gray-500 text-sm mb-6">Are you sure you want to change status?</p>
               <div className="flex justify-center gap-3">
                 <button
                   onClick={() => setShowStatusModal(false)}
@@ -2892,14 +2762,7 @@ export default function QuotationPage() {
                 </button>
                 <button
                   onClick={() => {
-<<<<<<< Updated upstream
-                    handleTableStatusChange(
-                      statusChangeData.id,
-                      statusChangeData.status,
-                    );
-=======
                     handleTableStatusChange(statusChangeData.id, statusChangeData.status);
->>>>>>> Stashed changes
                     setShowStatusModal(false);
                   }}
                   className="px-6 py-2 rounded-sm text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white"
@@ -2919,18 +2782,14 @@ export default function QuotationPage() {
             <div className="flex justify-between items-center px-6 py-4 from-orange-100 to-white bg-gradient-to-r">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full flex items-center justify-center">
-                  <i
-                    className="bi bi-file-earmark-arrow-up text-lg"
-                    style={{ color: "#f07400" }}
-                  ></i>
+                  <i className="bi bi-file-earmark-arrow-up text-lg" style={{ color: "#f07400" }}></i>
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
                     Convert to Proforma Invoice
                   </h2>
                   <p className="text-xs text-gray-400 font-medium">
-                    {selectedPIQuotation.company_name} —{" "}
-                    {selectedPIQuotation.customer_name}
+                    {selectedPIQuotation.company_name} — {selectedPIQuotation.customer_name}
                   </p>
                 </div>
               </div>
@@ -2949,30 +2808,21 @@ export default function QuotationPage() {
               <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Quotation No</span>
-                  <span className="font-semibold text-gray-700">
-                    {selectedPIQuotation.quotation_no || "-"}
-                  </span>
+                  <span className="font-semibold text-gray-700">{selectedPIQuotation.quotation_no || "-"}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Reference</span>
-                  <span className="font-semibold text-gray-700">
-                    {selectedPIQuotation.reference || "-"}
-                  </span>
+                  <span className="font-semibold text-gray-700">{selectedPIQuotation.reference || "-"}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Assignee</span>
-                  <span className="font-semibold text-gray-700">
-                    {selectedPIQuotation.assignee || "-"}
-                  </span>
+                  <span className="font-semibold text-gray-700">{selectedPIQuotation.assignee || "-"}</span>
                 </div>
                 <div className="h-px bg-gray-200"></div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400 text-sm">Grand Total</span>
                   <span className="font-bold text-emerald-600 text-lg">
-                    ₹{" "}
-                    {piGrandTotal
-                      ? Number(piGrandTotal).toLocaleString("en-IN")
-                      : "0"}
+                    ₹ {piGrandTotal ? Number(piGrandTotal).toLocaleString("en-IN") : "0"}
                   </span>
                 </div>
               </div>
@@ -2990,20 +2840,14 @@ export default function QuotationPage() {
                       value={piPercentage}
                       onChange={(e) => {
                         const val = e.target.value;
-                        if (val === "") {
-                          handlePiPercentageChange("");
-                          return;
-                        }
+                        if (val === "") { handlePiPercentageChange(""); return; }
                         const num = Number(val);
-                        if (num >= 0 && num <= 100)
-                          handlePiPercentageChange(num);
+                        if (num >= 0 && num <= 100) handlePiPercentageChange(num);
                       }}
                       className="w-full border border-orange-300 rounded-sm pl-3 pr-8 py-2.5 text-sm outline-none bg-gray-50 transition-all"
                       placeholder="0"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
-                      %
-                    </span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">%</span>
                   </div>
                 </div>
                 <div className="flex-1">
@@ -3011,19 +2855,14 @@ export default function QuotationPage() {
                     Amount <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
-                      ₹
-                    </span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">₹</span>
                     <input
                       type="number"
                       min="0"
                       value={piRupees}
                       onChange={(e) => {
                         const val = e.target.value;
-                        if (val === "") {
-                          handlePiRupeesChange("");
-                          return;
-                        }
+                        if (val === "") { handlePiRupeesChange(""); return; }
                         handlePiRupeesChange(Number(val));
                       }}
                       className="w-full border border-orange-300 rounded-sm pl-7 pr-3 py-2.5 text-sm outline-none bg-gray-50 transition-all"
@@ -3035,36 +2874,34 @@ export default function QuotationPage() {
 
               {piGrandTotal > 0 && (
                 <div
-                  className={`rounded-sm p-3 border transition-all ${piIsOver ? "bg-red-50 border-red-200" : piEnteredPct === 100 ? "bg-green-50 border-green-200" : piEnteredPct > 0 ? "bg-green-50 border-green-200" : "bg-blue-50 border-blue-100"}`}
+                  className={`rounded-sm p-3 border transition-all ${
+                    piIsOver
+                      ? "bg-red-50 border-red-200"
+                      : piEnteredPct === 100
+                      ? "bg-green-50 border-green-200"
+                      : piEnteredPct > 0
+                      ? "bg-green-50 border-green-200"
+                      : "bg-blue-50 border-blue-100"
+                  }`}
                 >
                   <p className="text-xs font-bold uppercase tracking-wider mb-2 text-gray-500">
-                    {piEnteredPct > 0
-                      ? "Remaining After This Entry"
-                      : "Total Available"}
+                    {piEnteredPct > 0 ? "Remaining After This Entry" : "Total Available"}
                   </p>
                   <div className="flex justify-between items-center">
                     <div className="text-center">
-                      <p
-                        className={`text-xl font-bold ${piIsOver ? "text-red-600" : piEnteredPct === 100 ? "text-green-600" : "text-green-700"}`}
-                      >
-                        {piIsOver
-                          ? "Over!"
-                          : piEnteredPct > 0
-                            ? `${parseFloat(piRemainingPct.toFixed(2))}%`
-                            : "100%"}
+                      <p className={`text-xl font-bold ${piIsOver ? "text-red-600" : piEnteredPct === 100 ? "text-green-600" : "text-green-700"}`}>
+                        {piIsOver ? "Over!" : piEnteredPct > 0 ? `${parseFloat(piRemainingPct.toFixed(2))}%` : "100%"}
                       </p>
                       <p className="text-xs text-gray-400">Percentage</p>
                     </div>
                     <div className="w-px h-10 bg-gray-200"></div>
                     <div className="text-center">
-                      <p
-                        className={`text-xl font-bold ${piIsOver ? "text-red-600" : piEnteredPct === 100 ? "text-green-600" : "text-green-700"}`}
-                      >
+                      <p className={`text-xl font-bold ${piIsOver ? "text-red-600" : piEnteredPct === 100 ? "text-green-600" : "text-green-700"}`}>
                         {piIsOver
                           ? "Over!"
                           : piEnteredPct > 0
-                            ? `₹${Number(piRemainingAmt).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
-                            : `₹${Number(piGrandTotal).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
+                          ? `₹${Number(piRemainingAmt).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
+                          : `₹${Number(piGrandTotal).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
                       </p>
                       <p className="text-xs text-gray-400">Amount</p>
                     </div>
@@ -3072,15 +2909,15 @@ export default function QuotationPage() {
                   <div className="mt-3">
                     <div className="w-full bg-white rounded-full h-2 border border-gray-200 overflow-hidden">
                       <div
-                        className={`h-2 rounded-full transition-all duration-300 ${piIsOver ? "bg-red-500" : piEnteredPct >= 100 ? "bg-green-500" : "bg-green-400"}`}
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          piIsOver ? "bg-red-500" : piEnteredPct >= 100 ? "bg-green-500" : "bg-green-400"
+                        }`}
                         style={{ width: `${Math.min(piEnteredPct, 100)}%` }}
                       ></div>
                     </div>
                     <div className="flex justify-between mt-1">
                       <span className="text-xs text-gray-400">
-                        {piEnteredPct > 0
-                          ? `${parseFloat(piEnteredPct.toFixed(2))}% entered`
-                          : "Enter % or ₹ above"}
+                        {piEnteredPct > 0 ? `${parseFloat(piEnteredPct.toFixed(2))}% entered` : "Enter % or ₹ above"}
                       </span>
                       <span className="text-xs text-gray-400">100%</span>
                     </div>
@@ -3108,33 +2945,18 @@ export default function QuotationPage() {
               </button>
               <button
                 onClick={handleCreatePI}
-                disabled={
-                  isCreatingPI ||
-                  !piPercentage ||
-                  Number(piPercentage) <= 0 ||
-                  Number(piPercentage) > 100
-                }
-                className={`flex-1 bg-green-500 hover:bg-green-600 text-white rounded-sm py-2.5 text-sm font-semibold shadow-md shadow-green-200 transition-all flex justify-center items-center gap-2 ${isCreatingPI || !piPercentage || Number(piPercentage) <= 0 || Number(piPercentage) > 100 ? "opacity-60 cursor-not-allowed" : ""}`}
+                disabled={isCreatingPI || !piPercentage || Number(piPercentage) <= 0 || Number(piPercentage) > 100}
+                className={`flex-1 bg-green-500 hover:bg-green-600 text-white rounded-sm py-2.5 text-sm font-semibold shadow-md shadow-green-200 transition-all flex justify-center items-center gap-2 ${
+                  isCreatingPI || !piPercentage || Number(piPercentage) <= 0 || Number(piPercentage) > 100
+                    ? "opacity-60 cursor-not-allowed"
+                    : ""
+                }`}
               >
                 {isCreatingPI ? (
                   <>
-                    <svg
-                      className="animate-spin h-4 w-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="white"
-                        strokeWidth="4"
-                        opacity="0.25"
-                      />
-                      <path
-                        fill="white"
-                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                      />
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" opacity="0.25" />
+                      <path fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                     </svg>
                     Creating PI...
                   </>
@@ -3150,7 +2972,7 @@ export default function QuotationPage() {
         </div>
       )}
 
-      {/* ✅ ASSIGNEE POPOVER — UPDATED DESIGN */}
+      {/* ASSIGNEE POPOVER */}
       {showAssigneeModal && selectedAssigneeRow && (
         <div className="fixed inset-0 z-[80]" onClick={closeAssigneePopover}>
           <div
@@ -3162,43 +2984,35 @@ export default function QuotationPage() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header - FIXED નહીં scroll થાય */}
+            {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 bg-orange-500 rounded-t-lg flex-shrink-0">
               <p className="text-sm font-semibold text-white flex items-center gap-2">
                 <i className="bi bi-person-fill-gear"></i>
                 Change Assignee
               </p>
-              <button
-                onClick={closeAssigneePopover}
-                className="text-white/80 hover:text-white"
-              >
+              <button onClick={closeAssigneePopover} className="text-white/80 hover:text-white">
                 <i className="bi bi-x-lg text-sm"></i>
               </button>
             </div>
 
-            {/* Body - SCROLL થશે */}
+            {/* Body */}
             <div className="p-4 space-y-3 overflow-y-auto flex-1 min-h-0">
-              {/* LAST ASSIGNEE + NEW ASSIGNEE */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1.5">
-                    Last Assignee
-                  </p>
+                  <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1.5">Last Assignee</p>
                   <div className="flex gap-1 flex-wrap min-h-[36px] items-center">
                     {selectedAssigneeRow.assignee ? (
-                      String(selectedAssigneeRow.assignee)
-                        .split(",")
-                        .map((name, i) => (
-                          <span
-                            key={i}
-                            className="bg-blue-800 text-white text-xs font-medium px-2.5 py-1 rounded-full flex items-center gap-1"
-                          >
-                            <span className="w-3.5 h-3.5 rounded-full bg-white/20 flex items-center justify-center text-[8px] font-bold flex-shrink-0">
-                              {name.trim().charAt(0).toUpperCase()}
-                            </span>
-                            {name.trim()}
+                      String(selectedAssigneeRow.assignee).split(",").map((name, i) => (
+                        <span
+                          key={i}
+                          className="bg-blue-800 text-white text-xs font-medium px-2.5 py-1 rounded-full flex items-center gap-1"
+                        >
+                          <span className="w-3.5 h-3.5 rounded-full bg-white/20 flex items-center justify-center text-[8px] font-bold flex-shrink-0">
+                            {name.trim().charAt(0).toUpperCase()}
                           </span>
-                        ))
+                          {name.trim()}
+                        </span>
+                      ))
                     ) : (
                       <span className="text-gray-400 text-xs italic">None</span>
                     )}
@@ -3224,35 +3038,26 @@ export default function QuotationPage() {
                       valueContainer: () => "gap-1 flex-wrap",
                       placeholder: () => "text-gray-400 text-xs",
                       input: () => "text-xs text-gray-700",
-                      menu: () =>
-                        "mt-1 border border-gray-200 rounded-md bg-white shadow-lg z-[200]",
+                      menu: () => "mt-1 border border-gray-200 rounded-md bg-white shadow-lg z-[200]",
                       option: ({ isFocused, isSelected }) =>
                         `px-3 py-2 text-xs cursor-pointer ${isSelected ? "bg-blue-800 text-white" : isFocused ? "bg-orange-50 text-orange-700" : "text-gray-700"}`,
-                      multiValue: () =>
-                        "bg-blue-800 text-white rounded-full px-1.5 py-0.5 flex items-center gap-1 text-[10px]",
+                      multiValue: () => "bg-blue-800 text-white rounded-full px-1.5 py-0.5 flex items-center gap-1 text-[10px]",
                       multiValueLabel: () => "text-white font-medium",
-                      multiValueRemove: () =>
-                        "text-white hover:bg-blue-900 rounded ml-0.5 cursor-pointer",
-                      dropdownIndicator: () =>
-                        "text-gray-400 px-1 cursor-pointer hover:text-orange-500",
-                      clearIndicator: () =>
-                        "text-gray-400 px-1 cursor-pointer hover:text-red-500",
+                      multiValueRemove: () => "text-white hover:bg-blue-900 rounded ml-0.5 cursor-pointer",
+                      dropdownIndicator: () => "text-gray-400 px-1 cursor-pointer hover:text-orange-500",
+                      clearIndicator: () => "text-gray-400 px-1 cursor-pointer hover:text-red-500",
                     }}
                   />
                 </div>
               </div>
 
-              {/* DIVIDER */}
               <div className="h-px bg-gray-100"></div>
 
-              {/* TASK DESCRIPTION */}
               <div>
                 <label className="text-[10px] text-gray-400 uppercase font-bold tracking-wider block mb-1.5 flex items-center gap-1">
                   <i className="bi bi-pencil-square text-gray-300"></i>
                   Task Description
-                  <span className="text-gray-300 font-normal normal-case ml-1">
-                    (optional)
-                  </span>
+                  <span className="text-gray-300 font-normal normal-case ml-1">(optional)</span>
                 </label>
                 <textarea
                   value={assigneeDescription}
@@ -3263,7 +3068,6 @@ export default function QuotationPage() {
                 />
               </div>
 
-              {/* Buttons */}
               <div className="flex gap-2">
                 <button
                   onClick={closeAssigneePopover}
@@ -3274,30 +3078,17 @@ export default function QuotationPage() {
                 <button
                   onClick={handleAssigneeUpdate}
                   disabled={isUpdatingAssignee || newAssigneeValue.length === 0}
-                  className={`flex-[2] py-2 rounded-md text-xs text-white font-semibold flex items-center justify-center gap-1.5 transition-all ${isUpdatingAssignee || newAssigneeValue.length === 0
-                    ? "bg-orange-300 cursor-not-allowed"
-                    : "bg-orange-500 hover:bg-orange-600"
-                    }`}
+                  className={`flex-[2] py-2 rounded-md text-xs text-white font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                    isUpdatingAssignee || newAssigneeValue.length === 0
+                      ? "bg-orange-300 cursor-not-allowed"
+                      : "bg-orange-500 hover:bg-orange-600"
+                  }`}
                 >
                   {isUpdatingAssignee ? (
                     <>
-                      <svg
-                        className="animate-spin h-3 w-3"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                      >
-                        <circle
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="white"
-                          strokeWidth="4"
-                          opacity="0.25"
-                        />
-                        <path
-                          fill="white"
-                          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                        />
+                      <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" opacity="0.25" />
+                        <path fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                       </svg>
                       Updating...
                     </>
@@ -3310,7 +3101,6 @@ export default function QuotationPage() {
                 </button>
               </div>
 
-              {/* LAST CHANGE */}
               {loadingLog ? (
                 <div className="border-t border-gray-100 pt-3 text-center text-xs text-gray-400 py-2">
                   Loading history...
@@ -3331,17 +3121,13 @@ export default function QuotationPage() {
                           <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded">
                             {log.changed_by || "System"}
                           </span>
-                          <span className="text-[10px] text-gray-400">
-                            assigned
-                          </span>
+                          <span className="text-[10px] text-gray-400">assigned</span>
                           <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
                             {log.new_assignee || "-"}
                           </span>
                         </div>
                         {log.changed_at && (
-                          <p className="text-[9px] text-gray-400 mt-0.5">
-                            {formatDateTime(log.changed_at)}
-                          </p>
+                          <p className="text-[9px] text-gray-400 mt-0.5">{formatDateTime(log.changed_at)}</p>
                         )}
                         {log.description && log.description.trim() !== "" && (
                           <div className="mt-1.5 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5">
@@ -3349,9 +3135,7 @@ export default function QuotationPage() {
                               <i className="bi bi-chat-text-fill text-[9px]"></i>
                               Task Note
                             </p>
-                            <p className="text-[10px] text-amber-800 leading-relaxed whitespace-pre-wrap">
-                              {log.description}
-                            </p>
+                            <p className="text-[10px] text-amber-800 leading-relaxed whitespace-pre-wrap">{log.description}</p>
                           </div>
                         )}
                       </div>
@@ -3364,9 +3148,7 @@ export default function QuotationPage() {
                     <i className="bi bi-clock-history text-gray-300"></i>
                     Last Change
                   </p>
-                  <p className="text-xs text-gray-300 italic text-center py-2">
-                    No history found
-                  </p>
+                  <p className="text-xs text-gray-300 italic text-center py-2">No history found</p>
                 </div>
               )}
             </div>
