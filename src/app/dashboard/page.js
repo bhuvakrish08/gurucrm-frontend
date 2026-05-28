@@ -202,6 +202,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchData();
+    setRole(localStorage.getItem("role") || "");
   }, [fetchData]);
 
   const handleAddTodo = async (e) => {
@@ -376,6 +377,35 @@ export default function Dashboard() {
     });
   };
 
+  const processEstimationTimeframeData = () => {
+    const dataMap = {};
+    const safeQuotations = Array.isArray(quotations) ? quotations : [];
+
+    safeQuotations.forEach((q) => {
+      const dateStr = q.created_at || q.quotation_date || q.quotation_created_at;
+      if (!dateStr) return;
+
+      const d = new Date(dateStr);
+      const key = d.toLocaleDateString("en-US", {
+        month: "short",
+        year: "numeric",
+      });
+
+      if (!dataMap[key]) {
+        dataMap[key] = { name: key, Draft: 0, Approved: 0 };
+      }
+
+      const val = Math.round(Number(q.grand_total) || 0);
+      if (q.quotation_status === "Approved") {
+        dataMap[key].Approved += val;
+      } else {
+        dataMap[key].Draft += val;
+      }
+    });
+
+    return Object.values(dataMap).sort((a, b) => new Date(a.name) - new Date(b.name));
+  };
+
   const processLeadsDonut = () => {
     let pending = 0,
       won = 0,
@@ -479,6 +509,50 @@ export default function Dashboard() {
   const quotationStatusData = processQuotationStatus();
   const paymentProgressData = processPaymentProgress();
 
+  const processLeadsTrend = () => {
+    const safeLeads = Array.isArray(leads) ? leads : [];
+    const trendMap = {};
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const mName = months[d.getMonth()];
+      trendMap[mName] = 0;
+    }
+
+    safeLeads.forEach((lead) => {
+      try {
+        const d = new Date(lead.created_at);
+        const mName = months[d.getMonth()];
+        if (trendMap[mName] !== undefined) {
+          trendMap[mName] += 1;
+        }
+      } catch (e) {}
+    });
+
+    return Object.keys(trendMap).map((mName) => ({
+      name: mName,
+      leads: trendMap[mName],
+    }));
+  };
+
+  const processLeadsBySource = () => {
+    const sourceCount = {};
+    const safeLeads = Array.isArray(leads) ? leads : [];
+    safeLeads.forEach((lead) => {
+      const src = lead.source || "Unknown";
+      sourceCount[src] = (sourceCount[src] || 0) + 1;
+    });
+
+    const colors = ["#f97316", "#fbbf24", "#ea580c", "#fb923c", "#fde047", "#f97316"];
+    return Object.keys(sourceCount).map((src, index) => ({
+      name: src,
+      value: sourceCount[src],
+      color: colors[index % colors.length],
+    }));
+  };
+
   // Safety fallbacks to guarantee array variables
   const safeTasks = Array.isArray(tasks) ? tasks : [];
   const safeTodos = Array.isArray(todos) ? todos : [];
@@ -518,6 +592,68 @@ export default function Dashboard() {
               Loading amazing metrics...
             </span>
           </div>
+        ) : role === 'Estimation' ? (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+            <DashboardCard
+              onClick={() => router.push("/sales/quotation")}
+              title="Total Estimations"
+              value={quotations.length}
+              icon={Activity}
+              colorClass="bg-orange-50 text-orange-500 border border-orange-100/50 group-hover:bg-orange-500 group-hover:text-white"
+            />
+            <DashboardCard
+              onClick={() => router.push("/sales/quotation")}
+              title="Pending Estimations"
+              value={quotations.filter((q) => { const st = (q.quotation_status || "").toLowerCase(); return st !== "won" && st !== "approved" && st !== "lost"; }).length}
+              icon={Clock}
+              colorClass="bg-orange-50 text-orange-500 border border-orange-100/50 group-hover:bg-orange-500 group-hover:text-white"
+            />
+            <DashboardCard
+              onClick={() => router.push("/sales/quotation")}
+              title="Approved Estimations"
+              value={quotations.filter((q) => { const st = (q.quotation_status || "").toLowerCase(); return st === "won" || st === "approved"; }).length}
+              icon={CheckCircle2}
+              colorClass="bg-orange-50 text-orange-500 border border-orange-100/50 group-hover:bg-orange-500 group-hover:text-white"
+            />
+            <DashboardCard
+              onClick={() => router.push("/sales/quotation")}
+              title="Lost Estimations"
+              value={quotations.filter((q) => (q.quotation_status || "").toLowerCase() === "lost").length}
+              icon={Trash2}
+              colorClass="bg-orange-50 text-orange-500 border border-orange-100/50 group-hover:bg-orange-500 group-hover:text-white"
+            />
+          </div>
+        ) : role === 'Leads Management' ? (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+            <DashboardCard
+              onClick={() => router.push("/sales/lead")}
+              title="Total Leads"
+              value={leads.length}
+              icon={UserPlus}
+              colorClass="bg-orange-50 text-orange-500 border border-orange-100/50 group-hover:bg-orange-500 group-hover:text-white"
+            />
+            <DashboardCard
+              onClick={() => router.push("/sales/lead")}
+              title="Pending Leads"
+              value={leads.filter((l) => l.status !== "Won" && l.status !== "Lost").length}
+              icon={Clock}
+              colorClass="bg-orange-50 text-orange-500 border border-orange-100/50 group-hover:bg-orange-500 group-hover:text-white"
+            />
+            <DashboardCard
+              onClick={() => router.push("/sales/lead")}
+              title="Won Leads"
+              value={leads.filter((l) => l.status === "Won").length}
+              icon={CheckCircle2}
+              colorClass="bg-orange-50 text-orange-500 border border-orange-100/50 group-hover:bg-orange-500 group-hover:text-white"
+            />
+            <DashboardCard
+              onClick={() => router.push("/sales/lead")}
+              title="Lost Leads"
+              value={leads.filter((l) => l.status === "Lost").length}
+              icon={Trash2}
+              colorClass="bg-orange-50 text-orange-500 border border-orange-100/50 group-hover:bg-orange-500 group-hover:text-white"
+            />
+          </div>
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
             <DashboardCard
@@ -552,7 +688,284 @@ export default function Dashboard() {
         )}
 
         {/* Dashboard Analytics & Widgets */}
-        {!loading && (
+        {!loading && role === 'Leads Management' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-6">
+            {/* ROW 1: Charts & Recent Leads (3 Columns) */}
+            {/* Leads by Source Donut Chart (Span 4) */}
+            <div
+              className="lg:col-span-4 bg-gradient-to-br from-white to-orange-50/40 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col justify-between animate-fade-in-up"
+              style={{ animationDelay: "0.1s" }}
+            >
+              <div className="mb-2">
+                <h3 className="text-sm font-extrabold text-gray-800">
+                  Leads by Source
+                </h3>
+                <p className="text-[10px] text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
+                  Lead source distribution
+                </p>
+              </div>
+              <div className="h-[210px] flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={processLeadsBySource()}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={45}
+                      outerRadius={68}
+                      paddingAngle={4}
+                      dataKey="value"
+                      animationDuration={2000}
+                    >
+                      {processLeadsBySource().map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} stroke="transparent" />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" }}
+                      itemStyle={{ fontWeight: "bold", fontSize: "11px" }}
+                    />
+                    <Legend
+                      layout="horizontal"
+                      verticalAlign="bottom"
+                      align="center"
+                      iconType="circle"
+                      wrapperStyle={{ fontSize: "10px", fontWeight: 600, color: "#475569" }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Lead Status Donut Chart (Span 4) */}
+            <div
+              className="lg:col-span-4 bg-gradient-to-br from-white to-orange-50/40 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col justify-between animate-fade-in-up"
+              style={{ animationDelay: "0.2s" }}
+            >
+              <div className="mb-2">
+                <h3 className="text-sm font-extrabold text-gray-800">
+                  Lead Status
+                </h3>
+                <p className="text-[10px] text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
+                  CRM leads distribution
+                </p>
+              </div>
+              <div className="h-[210px] flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={leadsDonutData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={45}
+                      outerRadius={68}
+                      paddingAngle={4}
+                      dataKey="value"
+                      animationDuration={2000}
+                    >
+                      {leadsDonutData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} stroke="transparent" />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)" }}
+                      itemStyle={{ fontWeight: "bold", fontSize: "11px" }}
+                    />
+                    <Legend
+                      layout="horizontal"
+                      verticalAlign="bottom"
+                      align="center"
+                      iconType="circle"
+                      wrapperStyle={{ fontSize: "10px", fontWeight: 600, color: "#475569" }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Recent Leads List (Span 4) */}
+            <div
+              className="lg:col-span-4 bg-gradient-to-br from-white to-orange-50/40 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col justify-between animate-fade-in-up"
+              style={{ animationDelay: "0.3s" }}
+            >
+              <div className="flex justify-between items-center mb-2">
+                <div>
+                  <h3 className="text-sm font-extrabold text-gray-800">Recent Leads</h3>
+                  <p className="text-[10px] text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">Your last 4 leads</p>
+                </div>
+                <button
+                  onClick={() => router.push("/sales/lead")}
+                  className="text-[10px] text-orange-600 hover:text-white bg-orange-50 hover:bg-orange-500 px-2.5 py-1.5 rounded-lg font-bold transition-all uppercase tracking-wider"
+                >
+                  View All
+                </button>
+              </div>
+              <div className="space-y-2 overflow-y-auto max-h-[145px] pr-1 custom-scrollbar">
+                {safeLeads.slice(0, 4).map((lead, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-white/80 backdrop-blur-sm border border-orange-100 p-2.5 rounded-xl shadow-sm hover:shadow-md transition-all flex justify-between items-center group animate-fade-in"
+                  >
+                    <div className="truncate flex-1 mr-3">
+                      <h4 className="font-bold text-gray-800 text-[11px] mb-0.5 truncate">{lead.reference || "Untitled Lead"}</h4>
+                      <p className="text-orange-600 text-[9px] font-extrabold truncate">{lead.company_name}</p>
+                      <div className="flex gap-2 text-[8px] text-gray-400 font-semibold mt-0.5">
+                        <span className="truncate">{lead.customer_name}</span>
+                        <span>•</span>
+                        <span>{new Date(lead.created_at).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-tighter ${lead.status === "Won" ? "bg-green-100 text-green-700" : lead.status === "Lost" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>
+                        {lead.status}
+                      </span>
+                      <button onClick={() => router.push(`/sales/lead?id=${lead.lead_id}`)} className="text-[9px] font-bold text-gray-400 hover:text-orange-500 transition-colors">Details →</button>
+                    </div>
+                  </div>
+                ))}
+                {safeLeads.length === 0 && (
+                  <div className="py-8 text-center bg-white/40 rounded-xl border border-dashed border-gray-200 w-full">
+                    <p className="text-gray-400 text-[10px] font-semibold">No leads found yet</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ROW 2: Full Width To-Do Split View (Span 12) */}
+            <div
+              className="lg:col-span-12 bg-gradient-to-br from-white to-orange-50/40 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col animate-fade-in-up"
+              style={{ animationDelay: "0.4s" }}
+            >
+              <div className="flex flex-col md:flex-row justify-between md:items-center gap-3 mb-4">
+                <div>
+                  <h3 className="text-md font-extrabold text-gray-800">
+                    Todo List
+                  </h3>
+                  <p className="text-[10px] text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
+                    Productivity Checklist
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2 w-full md:w-auto">
+                  <form
+                    onSubmit={handleAddTodo}
+                    className="flex relative flex-1 md:w-56"
+                  >
+                    <input
+                      type="text"
+                      value={newTodoTitle}
+                      onChange={(e) => setNewTodoTitle(e.target.value)}
+                      placeholder={
+                        editingTodoId ? "Update task..." : "Quick add a new task..."
+                      }
+                      className="w-full bg-white border border-gray-200 rounded-lg py-[7px] pl-3 pr-8 text-[12px] focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all text-gray-800 font-medium placeholder-gray-400"
+                      disabled={addingTodo}
+                    />
+                    <button
+                      type="submit"
+                      disabled={addingTodo || !newTodoTitle.trim()}
+                      className="absolute right-1 top-1/2 transform -translate-y-1/2 p-1.5 text-white bg-orange-500 rounded-md hover:bg-orange-600 disabled:opacity-50 transition-all"
+                    >
+                      <Plus size={12} strokeWidth={3} />
+                    </button>
+                  </form>
+                  <button
+                    onClick={() => router.push("/todolist")}
+                    className="text-[10px] text-orange-600 hover:text-white bg-orange-50 hover:bg-orange-500 px-3 py-1.5 rounded-lg font-bold transition-all uppercase tracking-wider"
+                  >
+                    View All
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-auto">
+                <div className="bg-white/60 backdrop-blur-sm border border-gray-100 p-3 rounded-xl shadow-sm flex flex-col">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+                    <h3 className="text-[11px] font-bold uppercase tracking-widest text-gray-500">
+                      Unfinished Tasks
+                    </h3>
+                  </div>
+                  <div className="space-y-1.5 overflow-y-auto h-[120px] custom-scrollbar">
+                    {unfinishedTodos.map((todo) => (
+                      <div
+                        key={todo.id}
+                        className="group flex justify-between items-center bg-orange-50/50 rounded-md px-2.5 py-1.5 animate-fade-in"
+                      >
+                        <div className="flex items-center gap-2 flex-1 truncate">
+                          <input
+                            type="checkbox"
+                            onChange={() => handleToggleTodo(todo.id)}
+                            className="w-3.5 h-3.5 accent-orange-500 cursor-pointer"
+                          />
+                          <p className="text-[12px] font-semibold text-gray-700 truncate">
+                            {todo.title}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <button
+                            onClick={() => startEditTodo(todo)}
+                            className="text-blue-500 hover:text-blue-700 transition-colors"
+                          >
+                            <Pencil size={12} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTodo(todo.id)}
+                            className="text-red-500 hover:text-red-700 transition-colors"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {unfinishedTodos.length === 0 && (
+                      <p className="text-gray-400 text-xs text-center py-8">No unfinished tasks</p>
+                    )}
+                  </div>
+                </div>
+                <div className="bg-white/60 backdrop-blur-sm border border-gray-100 p-3 rounded-xl shadow-sm flex flex-col">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                    <h3 className="text-[11px] font-bold uppercase tracking-widest text-gray-500">
+                      Finished Tasks
+                    </h3>
+                  </div>
+                  <div className="space-y-1.5 overflow-y-auto h-[120px] custom-scrollbar">
+                    {finishedTodos.map((todo) => (
+                      <div
+                        key={todo.id}
+                        className="group flex justify-between items-center bg-green-50/50 rounded-md px-2.5 py-1.5 animate-fade-in"
+                      >
+                        <div className="flex items-center gap-2 flex-1 truncate">
+                          <input
+                            type="checkbox"
+                            checked
+                            onChange={() => handleToggleTodo(todo.id)}
+                            className="w-3.5 h-3.5 accent-green-500 cursor-pointer"
+                          />
+                          <p className="text-[12px] font-semibold text-gray-400 line-through truncate">
+                            {todo.title}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <button
+                            onClick={() => handleDeleteTodo(todo.id)}
+                            className="text-red-500"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {finishedTodos.length === 0 && (
+                      <p className="text-gray-400 text-xs text-center py-8">No finished tasks yet</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!loading && role !== 'Leads Management' && role !== 'Estimation' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-6">
             {/* ROW 1 */}
             {/* Sales Chart (Span 8) */}
@@ -1074,10 +1487,10 @@ export default function Dashboard() {
                     <div className="mt-4 pt-3 border-t border-orange-50 flex justify-between items-center">
                       <span
                         className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter ${lead.status === "Won"
-                            ? "bg-green-100 text-green-700"
-                            : lead.status === "Lost"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-orange-100 text-orange-700"
+                          ? "bg-green-100 text-green-700"
+                          : lead.status === "Lost"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-orange-100 text-orange-700"
                           }`}
                       >
                         {lead.status}
@@ -1100,6 +1513,415 @@ export default function Dashboard() {
                     </p>
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!loading && role === 'Estimation' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-6">
+            {/* ROW 1: Charts & Recent Estimations (3 Columns) */}
+            {/* Quotation Status Distribution Donut Chart (Span 4) */}
+            <div
+              className="lg:col-span-4 bg-gradient-to-br from-white to-orange-50/40 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col justify-between animate-fade-in-up"
+              style={{ animationDelay: "0.1s" }}
+            >
+              <div className="mb-2">
+                <h3 className="text-sm font-extrabold text-gray-800">
+                  Estimation Distribution
+                </h3>
+                <p className="text-[10px] text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
+                  Success vs Draft status
+                </p>
+              </div>
+              <div className="h-[210px] flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={processQuotationStatus()}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={45}
+                      outerRadius={68}
+                      paddingAngle={4}
+                      dataKey="value"
+                      animationDuration={2000}
+                    >
+                      {processQuotationStatus().map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.color}
+                          stroke="transparent"
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: "12px",
+                        border: "none",
+                        boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+                      }}
+                      itemStyle={{ fontWeight: "bold", fontSize: "11px" }}
+                    />
+                    <Legend
+                      layout="horizontal"
+                      verticalAlign="bottom"
+                      align="center"
+                      iconType="circle"
+                      wrapperStyle={{
+                        fontSize: "10px",
+                        fontWeight: 600,
+                        color: "#475569",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Quotation Payment Breakdown Donut Chart (Span 4) */}
+            <div
+              className="lg:col-span-4 bg-gradient-to-br from-white to-orange-50/40 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col justify-between animate-fade-in-up"
+              style={{ animationDelay: "0.2s" }}
+            >
+              <div className="mb-2">
+                <h3 className="text-sm font-extrabold text-gray-800">
+                  Payment Status
+                </h3>
+                <p className="text-[10px] text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
+                  Paid vs Due breakdown
+                </p>
+              </div>
+              <div className="h-[210px] flex items-center justify-center">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    {(() => {
+                      const pData = [
+                        { name: "Paid Value", value: paymentProgressData.totalPaid || 0, color: "#10B981" },
+                        { name: "Due Value", value: paymentProgressData.paymentDue || 0, color: "#f97316" }
+                      ].filter(item => item.value > 0);
+                      if (pData.length === 0) {
+                        pData.push({ name: "No Payments", value: 1, color: "#cbd5e1" });
+                      }
+                      return (
+                        <Pie
+                          data={pData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={45}
+                          outerRadius={68}
+                          paddingAngle={4}
+                          dataKey="value"
+                          animationDuration={2000}
+                        >
+                          {pData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={entry.color}
+                              stroke="transparent"
+                            />
+                          ))}
+                        </Pie>
+                      );
+                    })()}
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: "12px",
+                        border: "none",
+                        boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+                      }}
+                      itemStyle={{ fontWeight: "bold", fontSize: "11px" }}
+                    />
+                    <Legend
+                      layout="horizontal"
+                      verticalAlign="bottom"
+                      align="center"
+                      iconType="circle"
+                      wrapperStyle={{
+                        fontSize: "10px",
+                        fontWeight: 600,
+                        color: "#475569",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Recent Estimations List (Span 4) */}
+            <div
+              className="lg:col-span-4 bg-gradient-to-br from-white to-orange-50/40 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col justify-between animate-fade-in-up"
+              style={{ animationDelay: "0.3s" }}
+            >
+              <div className="flex justify-between items-center mb-2">
+                <div>
+                  <h3 className="text-sm font-extrabold text-gray-800">
+                    Recent Estimations
+                  </h3>
+                  <p className="text-[10px] text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
+                    Your last 4 active quotations
+                  </p>
+                </div>
+                <button
+                  onClick={() => router.push("/sales/quotation")}
+                  className="text-[10px] text-orange-600 hover:text-white bg-orange-50 hover:bg-orange-500 px-2.5 py-1.5 rounded-lg font-bold transition-all uppercase tracking-wider"
+                >
+                  View All
+                </button>
+              </div>
+              <div className="space-y-2 overflow-y-auto max-h-[145px] pr-1 custom-scrollbar">
+                {quotations.slice(0, 4).map((q, idx) => (
+                  <div
+                    key={idx}
+                    className="bg-white/80 backdrop-blur-sm border border-orange-100 p-2.5 rounded-xl shadow-sm hover:shadow-md transition-all flex justify-between items-center group animate-fade-in"
+                  >
+                    <div className="truncate flex-1 mr-3">
+                      <h4 className="font-bold text-gray-800 text-[11px] mb-0.5 truncate">
+                        {q.reference || "Untitled Quotation"}
+                      </h4>
+                      <p className="text-orange-600 text-[9px] font-extrabold truncate">
+                        {q.company_name}
+                      </p>
+                      <div className="flex gap-2 text-[8px] text-gray-400 font-semibold mt-0.5">
+                        <span>₹{Number(q.grand_total || 0).toLocaleString("en-IN")}</span>
+                        <span>•</span>
+                        <span>{new Date(q.created_at || q.quotation_created_at).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-tighter ${
+                          q.quotation_status === "Approved"
+                            ? "bg-green-100 text-green-700"
+                            : q.quotation_status === "Lost"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {q.quotation_status || "Pending"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {quotations.length === 0 && (
+                  <div className="py-8 text-center bg-white/40 rounded-xl border border-dashed border-gray-200 w-full">
+                    <p className="text-gray-400 text-[10px] font-semibold">
+                      No estimations created yet
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ROW 2: Balanced Layout (Chart Span 7 + Todo List Span 5) */}
+            {/* Estimation Performance Area Chart (Span 7) */}
+            <div
+              className="lg:col-span-7 bg-gradient-to-br from-white to-orange-50/40 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col justify-between animate-fade-in-up"
+              style={{ animationDelay: "0.4s" }}
+            >
+              <div>
+                <h3 className="text-sm font-extrabold text-gray-800">
+                  Estimation Performance Trend
+                </h3>
+                <p className="text-[10px] text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
+                  Monthly Draft vs Approved Estimation Value
+                </p>
+              </div>
+              <div className="h-[210px] w-full mt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={processEstimationTimeframeData()}
+                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorApproved" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorDraft" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor="#F59E0B" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis
+                      dataKey="name"
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fontSize: 10, fontWeight: 600, fill: "#64748b" }}
+                    />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(val) => `₹${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`}
+                      tick={{ fontSize: 10, fontWeight: 600, fill: "#64748b" }}
+                    />
+                    <Tooltip
+                      formatter={(value) => [`₹${Number(value).toLocaleString("en-IN")}`]}
+                      contentStyle={{
+                        borderRadius: "12px",
+                        border: "none",
+                        boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+                      }}
+                    />
+                    <Legend
+                      verticalAlign="top"
+                      height={36}
+                      iconType="circle"
+                      wrapperStyle={{
+                        fontSize: "10px",
+                        fontWeight: 600,
+                        color: "#475569",
+                      }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="Approved"
+                      stroke="#10B981"
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#colorApproved)"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="Draft"
+                      stroke="#F59E0B"
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#colorDraft)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Todo List Card (Span 5) */}
+            <div
+              className="lg:col-span-5 bg-gradient-to-br from-white to-orange-50/40 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col justify-between animate-fade-in-up"
+              style={{ animationDelay: "0.5s" }}
+            >
+              <div className="flex flex-col md:flex-row justify-between md:items-center gap-2 mb-4">
+                <div>
+                  <h3 className="text-sm font-extrabold text-gray-800">
+                    Todo List
+                  </h3>
+                  <p className="text-[10px] text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
+                    Checklist
+                  </p>
+                </div>
+                <div className="flex items-center space-x-1.5 w-full md:w-auto">
+                  <form
+                    onSubmit={handleAddTodo}
+                    className="flex relative flex-1 md:w-40"
+                  >
+                    <input
+                      type="text"
+                      value={newTodoTitle}
+                      onChange={(e) => setNewTodoTitle(e.target.value)}
+                      placeholder="Add task..."
+                      className="w-full bg-white border border-gray-200 rounded-lg py-[6px] pl-2 pr-6 text-[10px] focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all text-gray-800 font-medium placeholder-gray-400"
+                      disabled={addingTodo}
+                    />
+                    <button
+                      type="submit"
+                      disabled={addingTodo || !newTodoTitle.trim()}
+                      className="absolute right-0.5 top-1/2 transform -translate-y-1/2 p-1 text-white bg-orange-500 rounded-md hover:bg-orange-600 disabled:opacity-50 transition-all"
+                    >
+                      <Plus size={10} strokeWidth={3} />
+                    </button>
+                  </form>
+                  <button
+                    onClick={() => router.push("/todolist")}
+                    className="text-[9px] text-orange-600 hover:text-white bg-orange-50 hover:bg-orange-500 px-2.5 py-1 rounded-md font-bold transition-all uppercase tracking-wider"
+                  >
+                    View All
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-auto">
+                <div className="bg-white/60 backdrop-blur-sm border border-gray-100 p-2.5 rounded-xl shadow-sm flex flex-col">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                    <h3 className="text-[9px] font-bold uppercase tracking-widest text-gray-500">
+                      Unfinished
+                    </h3>
+                  </div>
+                  <div className="space-y-1 overflow-y-auto h-[110px] custom-scrollbar">
+                    {unfinishedTodos.map((todo) => (
+                      <div
+                        key={todo.id}
+                        className="group flex justify-between items-center bg-orange-50/50 rounded-md px-2 py-1 animate-fade-in"
+                      >
+                        <div className="flex items-center gap-1.5 flex-1 truncate">
+                          <input
+                            type="checkbox"
+                            onChange={() => handleToggleTodo(todo.id)}
+                            className="w-3 h-3 accent-orange-500 cursor-pointer"
+                          />
+                          <p className="text-[11px] font-semibold text-gray-700 truncate">
+                            {todo.title}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <button
+                            onClick={() => startEditTodo(todo)}
+                            className="text-blue-500 hover:text-blue-700 transition-colors"
+                          >
+                            <Pencil size={10} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTodo(todo.id)}
+                            className="text-red-500 hover:text-red-700 transition-colors"
+                          >
+                            <Trash2 size={10} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {unfinishedTodos.length === 0 && (
+                      <p className="text-gray-400 text-[10px] text-center py-6">No unfinished tasks</p>
+                    )}
+                  </div>
+                </div>
+                <div className="bg-white/60 backdrop-blur-sm border border-gray-100 p-2.5 rounded-xl shadow-sm flex flex-col">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                    <h3 className="text-[9px] font-bold uppercase tracking-widest text-gray-500">
+                      Finished
+                    </h3>
+                  </div>
+                  <div className="space-y-1 overflow-y-auto h-[110px] custom-scrollbar">
+                    {finishedTodos.map((todo) => (
+                      <div
+                        key={todo.id}
+                        className="group flex justify-between items-center bg-green-50/50 rounded-md px-2 py-1 animate-fade-in"
+                      >
+                        <div className="flex items-center gap-1.5 flex-1 truncate">
+                          <input
+                            type="checkbox"
+                            checked
+                            onChange={() => handleToggleTodo(todo.id)}
+                            className="w-3 h-3 accent-green-500 cursor-pointer"
+                          />
+                          <p className="text-[11px] font-semibold text-gray-400 line-through truncate">
+                            {todo.title}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <button
+                            onClick={() => handleDeleteTodo(todo.id)}
+                            className="text-red-500"
+                          >
+                            <Trash2 size={10} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {finishedTodos.length === 0 && (
+                      <p className="text-gray-400 text-[10px] text-center py-6">No finished tasks</p>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

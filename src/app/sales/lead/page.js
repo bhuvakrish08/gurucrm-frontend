@@ -45,6 +45,13 @@ export default function Page() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewLead, setViewLead] = useState(null);
 
+  // Forward to Estimation
+  const [showForwardModal, setShowForwardModal] = useState(false);
+  const [forwardLead, setForwardLead] = useState(null);
+  const [estimationUsers, setEstimationUsers] = useState([]);
+  const [selectedEstimationUser, setSelectedEstimationUser] = useState("");
+  const [forwardLoading, setForwardLoading] = useState(false);
+
   const [updateForm, setUpdateForm] = useState({
     follow_up_date: "",
     activity_type: "",
@@ -484,6 +491,32 @@ export default function Page() {
   };
 
   // ===================================================
+  // FORWARD / WON LEAD PROCESS
+  // ===================================================
+  const handleForward = async () => {
+    if (!selectedEstimationUser) {
+      toast.error("Please select an estimation user");
+      return;
+    }
+    setForwardLoading(true);
+    try {
+      await axios.put(
+        `${API_BASE}/api/lead/update/${forwardLead.lead_id}`,
+        { ...forwardLead, assignee: selectedEstimationUser, status: "Won" },
+        { headers: { Authorization: `Bearer ${getToken()}` } }
+      );
+      toast.success("Lead marked as Won and assigned to Estimation");
+      setShowForwardModal(false);
+      fetchLeads();
+    } catch (err) {
+      console.log(err);
+      toast.error("Failed to forward lead");
+    } finally {
+      setForwardLoading(false);
+    }
+  };
+
+  // ===================================================
   // VIEW LEAD
   // ===================================================
   const handleView = async (lead) => {
@@ -503,7 +536,55 @@ export default function Page() {
   // ===================================================
   // ✅ FIXED: STATUS CHANGE — now sends Authorization header
   // ===================================================
-  const handleStatusChange = (lead_id, newStatus) => {
+  const handleStatusChange = async (lead_id, newStatus) => {
+    if (newStatus === "Won") {
+      const lead = leads.find((l) => l.lead_id === lead_id);
+      if (!lead) return;
+
+      try {
+        const res = await axios.get(`${API_BASE}/api/manage-user/read`, {
+          params: { search5: "Estimation" },
+          headers: { Authorization: `Bearer ${getToken()}` }
+        });
+        const users = Array.isArray(res.data) ? res.data : [];
+        
+        if (users.length === 1) {
+          // Direct assignment to the single Estimation user
+          const singleUser = users[0].name;
+          toast.info(`Directly assigning lead to estimation user: ${singleUser}`);
+          await axios.put(
+            `${API_BASE}/api/lead/update/${lead_id}`,
+            { ...lead, assignee: singleUser, status: "Won" },
+            { headers: { Authorization: `Bearer ${getToken()}` } }
+          );
+          setLeads((prev) =>
+            prev.map((l) =>
+              l.lead_id === lead_id
+                ? { ...l, status: "Won", assignee: singleUser }
+                : l
+            )
+          );
+          toast.success("Lead marked as Won and assigned to Estimation");
+        } else if (users.length > 1) {
+          // Show modal to ask which user
+          setForwardLead(lead);
+          setEstimationUsers(users);
+          setSelectedEstimationUser("");
+          setShowForwardModal(true);
+        } else {
+          // No estimation users found, mark as Won with a warning
+          toast.warn("No Estimation team member found to assign this lead to!");
+          setStatusChangeLeadId(lead_id);
+          setSelectedStatus("Won");
+          setShowPopup(true);
+        }
+      } catch (err) {
+        console.log(err);
+        toast.error("Failed to process Won status");
+      }
+      return;
+    }
+
     setStatusChangeLeadId(lead_id); // ✅ separate state — no conflict with selectedLead
     setSelectedStatus(newStatus);
     setShowPopup(true);
@@ -658,7 +739,7 @@ export default function Page() {
         return l.status === activeTab;
       });
 
-  const pendingCount = leads.filter((l) => l.status === "Pending").length;
+  const pendingCount = leads.filter((l) => l.status !== "Won" && l.status !== "Lost").length;
   const wonCount = leads.filter((l) => l.status === "Won").length;
   const lostCount = leads.filter((l) => l.status === "Lost").length;
 
@@ -1031,6 +1112,8 @@ export default function Page() {
                 <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>
               )}
             </button>
+
+
 
             <button
               onClick={() => setActiveTab("Won")}
@@ -1457,6 +1540,70 @@ export default function Page() {
                 style={{ background: "#f07400" }}
               >
                 {deleteLoading ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FORWARD TO ESTIMATION MODAL */}
+      {showForwardModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="bg-white w-full max-w-md rounded-[20px] shadow-xl overflow-hidden">
+            <div
+              className="flex justify-between items-center px-6 py-4"
+              style={{ background: "#f5e6d8" }}
+            >
+              <div className="flex items-center gap-2">
+                <span
+                  className="w-2.5 h-2.5 rounded-full"
+                  style={{ background: "#f07400" }}
+                ></span>
+                <h2 className="text-[13px] font-bold text-gray-600 tracking-widest uppercase">
+                  Forward to Estimation
+                </h2>
+              </div>
+              <button
+                onClick={() => setShowForwardModal(false)}
+                className="text-[#f07400] hover:text-orange-800"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="px-7 pt-6 pb-5 text-center">
+              <h3 className="text-[17px] font-bold text-gray-800 uppercase mb-2">
+                {forwardLead?.customer_name || "Forward Lead"}
+              </h3>
+              <p className="text-[13px] text-gray-500 mb-4">
+                Select an Estimation team member to forward this lead.
+              </p>
+              
+              <select
+                value={selectedEstimationUser}
+                onChange={(e) => setSelectedEstimationUser(e.target.value)}
+                className="w-full border border-orange-200 rounded-lg px-4 py-2.5 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+              >
+                <option value="">-- Select Estimation User --</option>
+                {estimationUsers.map(u => (
+                  <option key={u.id} value={u.name}>{u.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex gap-3.5 px-7 pb-8 pt-2">
+              <button
+                onClick={() => setShowForwardModal(false)}
+                className="flex-1 border border-gray-200 py-3 rounded-sm text-gray-500 bg-gray-50 hover:bg-gray-100 transition text-[15px] font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleForward}
+                disabled={forwardLoading}
+                className="flex-1 py-3 rounded-xl text-white text-[15px] font-semibold hover:opacity-90 transition"
+                style={{ background: "#f07400" }}
+              >
+                {forwardLoading ? "Forwarding..." : "Forward Lead"}
               </button>
             </div>
           </div>

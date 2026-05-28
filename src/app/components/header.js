@@ -24,10 +24,13 @@ export default function Header() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const [username, setUsername] = useState("");
+  const [userRole, setUserRole] = useState("");
 
   useEffect(() => {
     const storedUsername = localStorage.getItem("username") || "";
     setUsername(storedUsername);
+    const storedRole = localStorage.getItem("role") || "";
+    setUserRole(storedRole);
   }, []);
 
   const userLetter = username?.charAt(0)?.toUpperCase() || "U";
@@ -251,6 +254,7 @@ export default function Header() {
           Dashboard
         </Link>
 
+        {userRole !== "Leads Management" && userRole !== "Estimation" && (
         <div className="relative" ref={customerRef}>
           <button
             onClick={() => setCustomerOpen(!customerOpen)}
@@ -282,6 +286,7 @@ export default function Header() {
             </div>
           )}
         </div>
+        )}
 
         <div className="relative" ref={salesRef}>
           <button
@@ -293,34 +298,44 @@ export default function Header() {
 
           {salesOpen && (
             <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-50 border border-gray-100">
-              <Link
-                href="/sales/lead"
-                className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
-              >
-                Lead
-              </Link>
-              <Link
-                href="/sales/quotation"
-                className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
-              >
-                Quotation
-              </Link>
-              <Link
-                href="/sales/proforma"
-                className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
-              >
-                Proforma Invoice
-              </Link>
+              {userRole !== "Estimation" && (
+                <Link
+                  href="/sales/lead"
+                  className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
+                >
+                  Lead
+                </Link>
+              )}
+              {userRole !== "Leads Management" && (
+                <Link
+                  href="/sales/quotation"
+                  className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
+                >
+                  Quotation
+                </Link>
+              )}
+              {userRole !== "Leads Management" && userRole !== "Estimation" && (
+                <Link
+                  href="/sales/proforma"
+                  className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
+                >
+                  Proforma Invoice
+                </Link>
+              )}
             </div>
           )}
         </div>
 
-        <Link href="/tasks" className="hover:text-orange-500 transition-colors">
-          Task List
-        </Link>
-        <Link href="/setup" className="hover:text-orange-500 transition-colors">
-          Settings
-        </Link>
+        {userRole !== "Leads Management" && userRole !== "Estimation" && (
+          <>
+            <Link href="/tasks" className="hover:text-orange-500 transition-colors">
+              Task List
+            </Link>
+            <Link href="/setup" className="hover:text-orange-500 transition-colors">
+              Settings
+            </Link>
+          </>
+        )}
       </nav>
 
       {/* Logout Button (Desktop) */}
@@ -465,6 +480,7 @@ export default function Header() {
             Dashboard
           </Link>
 
+          {userRole !== "Leads Management" && userRole !== "Estimation" && (
           <div className="w-full">
             <button
               onClick={() => setMobileCustomerOpen(!mobileCustomerOpen)}
@@ -501,6 +517,7 @@ export default function Header() {
               </div>
             )}
           </div>
+          )}
 
           <div className="w-full">
             <button
@@ -514,45 +531,55 @@ export default function Header() {
             </button>
             {mobileSalesOpen && (
               <div className="flex flex-col pl-4 mt-2 space-y-3 border-l-2 border-orange-100">
-                <Link
-                  href="/sales/lead"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="hover:text-orange-500 text-sm"
-                >
-                  Lead
-                </Link>
-                <Link
-                  href="/sales/quotation"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="hover:text-orange-500 text-sm"
-                >
-                  Quotation
-                </Link>
-                <Link
-                  href="/sales/proforma"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="hover:text-orange-500 text-sm"
-                >
-                  Proforma Invoice
-                </Link>
+                {userRole !== "Estimation" && (
+                  <Link
+                    href="/sales/lead"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="hover:text-orange-500 text-sm"
+                  >
+                    Lead
+                  </Link>
+                )}
+                {userRole !== "Leads Management" && (
+                  <Link
+                    href="/sales/quotation"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="hover:text-orange-500 text-sm"
+                  >
+                    Quotation
+                  </Link>
+                )}
+                {userRole !== "Leads Management" && userRole !== "Estimation" && (
+                  <Link
+                    href="/sales/proforma"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="hover:text-orange-500 text-sm"
+                  >
+                    Proforma Invoice
+                  </Link>
+                )}
               </div>
             )}
           </div>
 
-          <Link
-            onClick={() => setMobileMenuOpen(false)}
-            href="/tasks"
-            className="hover:text-orange-500 w-full py-1"
-          >
-            Task List
-          </Link>
-          <Link
-            onClick={() => setMobileMenuOpen(false)}
-            href="/setup"
-            className="hover:text-orange-500 w-full py-1"
-          >
-            Settings
-          </Link>
+          {userRole !== "Leads Management" && userRole !== "Estimation" && (
+            <>
+              <Link
+                onClick={() => setMobileMenuOpen(false)}
+                href="/tasks"
+                className="hover:text-orange-500 w-full py-1"
+              >
+                Task List
+              </Link>
+              <Link
+                onClick={() => setMobileMenuOpen(false)}
+                href="/setup"
+                className="hover:text-orange-500 w-full py-1"
+              >
+                Settings
+              </Link>
+            </>
+          )}
 
           {/* Logout Option Inside Menu (Mobile Only) */}
           <div className="w-full pt-4 border-t border-gray-100 mt-2">

@@ -45,7 +45,7 @@ export default function Page() {
     const newErrors = {};
     if (!formData.customer_name.trim()) newErrors.customer_name = "Customer Name is required";
     if (!formData.reference.trim()) newErrors.reference = "Lead Title is required";
-    if (!formData.assignee.trim()) newErrors.assignee = "Assignee is required";
+    if (!formData.source) newErrors.source = "Source is required";
     return newErrors;
   };
 
@@ -255,7 +255,7 @@ export default function Page() {
 
             {/* Source */}
             <div>
-              <label className="block mb-1 text-sm font-medium text-gray-600">Source</label>
+              <label className="block mb-1 text-sm font-medium text-gray-600">Source *</label>
               <select
                 name="source"
                 value={formData.source}
@@ -267,6 +267,7 @@ export default function Page() {
                   <option key={item.id} value={item.id}>{item.name}</option>
                 ))}
               </select>
+              {errors.source && <p className="text-red-500 text-xs mt-1">{errors.source}</p>}
             </div>
 
             {/* reference */}
@@ -346,62 +347,6 @@ export default function Page() {
               </select>
             </div>
 
-            {/* Assignee */}
-            <div>
-              <label className="block mb-1 text-sm font-medium  ">
-                Assignee *
-              </label>
-
-              <Select
-                isMulti
-                placeholder="-- Select --"
-                instanceId="assignee-select"
-                options={asignee}
-                value={asignee.filter((option) => {
-                  if (!formData.assignee) return false;
-                  return formData.assignee.split(",").includes(option.value);
-                })}
-                onChange={(selectedOptions) => {
-                  const values = selectedOptions
-                    ? selectedOptions.map((o) => o.value).join(",")
-                    : "";
-                  setFormData((prev) => ({ ...prev, assignee: values }));
-                  if (errors.assignee) setErrors((prev) => ({ ...prev, assignee: "" }));
-                }}
-                className="w-full"
-                styles={{
-                  control: (provided, state) => ({
-                    ...provided,
-                    borderColor: state.isFocused ? "border-orange-300" : "border-orange-300",
-                    boxShadow: state.isFocused ? "0 0 0 1px #F5C99A" : "none",
-                    "&:hover": {
-                      borderColor: "border-orange-300",
-                    },
-                    minHeight: "40px",
-                    borderRadius: "6px",
-                  }),
-                  menu: (provided) => ({ ...provided, borderRadius: "6px", overflow: "hidden" }),
-                  option: (provided, state) => ({
-                    ...provided,
-                    fontSize: "14px",
-                    backgroundColor: state.isSelected || state.isFocused ? "#767676" : "#ffffff",
-                    color: state.isSelected || state.isFocused ? "#ffffff" : "#000000",
-                    cursor: "pointer",
-                    padding: "5px 6px",
-                    ":active": { ...provided[":active"], backgroundColor: "#767676" },
-                  }),
-                  placeholder: (provided) => ({ ...provided, color: "#767676" }),
-                  multiValue: (provided) => ({ ...provided, backgroundColor: "#767676" }),
-                  multiValueLabel: (provided) => ({ ...provided, color: "#fff" }),
-                  multiValueRemove: (provided) => ({
-                    ...provided,
-                    color: "#fff",
-                    "&:hover": { backgroundColor: "#767676", color: "#fff" },
-                  }),
-                }}
-              />
-              {errors.assignee && <p className="text-red-500 text-xs mt-1">{errors.assignee}</p>}
-            </div>
 
             {/* Category */}
             <div>

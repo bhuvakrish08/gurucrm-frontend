@@ -466,8 +466,22 @@ export default function QuotationPage() {
     fetchQuotations();
   };
 
-  const handleTableStatusChange = async (id, newStatus) => {
+  const handleTableStatusChange = async (id, newStatus, leadId, leadItem) => {
     try {
+      if (!id) {
+        if (newStatus === "Lost") {
+          await axios.put(
+            `${API_BASE}/api/lead/update/${leadId}`,
+            { ...leadItem, status: "Lost" },
+            { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+          );
+          toast.success("Lead marked as Lost");
+          fetchQuotations();
+        } else {
+          toast.info("Status is already Pending");
+        }
+        return;
+      }
       await axios.put(`${API_BASE}/api/quotation/update-status/${id}`, {
         quotation_status: newStatus,
       });
@@ -1599,6 +1613,7 @@ export default function QuotationPage() {
                           <td className="px-3">
                             {q.displayStatus === "Pending" ? (
                               <select
+<<<<<<< Updated upstream
                                 value={
                                   q.displayStatus === "Declined"
                                     ? "Declined"
@@ -1610,6 +1625,10 @@ export default function QuotationPage() {
                                     e.target.value,
                                   )
                                 }
+=======
+                                value={q.displayStatus === "Declined" ? "Declined" : "Pending"}
+                                onChange={(e) => handleTableStatusChange(q.latest_quotation_id, e.target.value, q.lead_id, q)}
+>>>>>>> Stashed changes
                                 className="border rounded-md px-2 py-1 text-xs font-semibold outline-none bg-yellow-50 text-yellow-700 border-yellow-300"
                               >
                                 <option value="Pending">Pending</option>
@@ -2888,10 +2907,14 @@ export default function QuotationPage() {
                 </button>
                 <button
                   onClick={() => {
+<<<<<<< Updated upstream
                     handleTableStatusChange(
                       statusChangeData.id,
                       statusChangeData.status,
                     );
+=======
+                    handleTableStatusChange(statusChangeData.id, statusChangeData.status, statusChangeData.leadId, statusChangeData.leadItem);
+>>>>>>> Stashed changes
                     setShowStatusModal(false);
                   }}
                   className="px-6 py-2 rounded-sm text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white"
