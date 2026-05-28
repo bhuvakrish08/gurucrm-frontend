@@ -1599,11 +1599,15 @@ export default function QuotationPage() {
                           <td className="px-3">
                             {q.displayStatus === "Pending" ? (
                               <select
+<<<<<<< Updated upstream
                                 value={
                                   q.displayStatus === "Declined"
                                     ? "Declined"
                                     : "Pending"
                                 }
+=======
+                                value={q.displayStatus === "Declined" ? "Declined" : "Pending"}
+>>>>>>> Stashed changes
                                 onChange={(e) =>
                                   handleTableStatusChange(
                                     q.latest_quotation_id,
@@ -2888,10 +2892,14 @@ export default function QuotationPage() {
                 </button>
                 <button
                   onClick={() => {
+<<<<<<< Updated upstream
                     handleTableStatusChange(
                       statusChangeData.id,
                       statusChangeData.status,
                     );
+=======
+                    handleTableStatusChange(statusChangeData.id, statusChangeData.status);
+>>>>>>> Stashed changes
                     setShowStatusModal(false);
                   }}
                   className="px-6 py-2 rounded-sm text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white"
