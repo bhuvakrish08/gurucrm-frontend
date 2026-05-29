@@ -1567,7 +1567,7 @@ const handleUpdate = async () => {
 
                           <td className="px-3 text-center">
                             <div className="flex items-center justify-center gap-2">
-                              {q.displayStatus === "Won" &&
+                              {/* {q.displayStatus === "Won" &&
                                 q.latest_quotation_id &&
                                 (() => {
                                   const percentage = Number(q.proforma_percentage || 0);
@@ -1610,7 +1610,7 @@ const handleUpdate = async () => {
                                       </span>
                                     );
                                   }
-                                })()}
+                                })()} */}
 
                               {q.latest_quotation_id ? (
                                 q.displayStatus === "Won" || q.displayStatus === "Lost" ? (
@@ -1631,6 +1631,7 @@ const handleUpdate = async () => {
                               ) : null}
                             </div>
                           </td>
+                          
                         </tr>
                       ))
                     ) : (
