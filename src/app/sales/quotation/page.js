@@ -90,10 +90,12 @@ export default function QuotationPage() {
   const [isUpdatingAssignee, setIsUpdatingAssignee] = useState(false);
   const [assigneePopoverPos, setAssigneePopoverPos] = useState({ top: 0, left: 0 });
   const [assigneeDescription, setAssigneeDescription] = useState("");
+  const [assigneeFiles, setAssigneeFiles] = useState([]);
 
   // Assignee History States
   const [assigneeLog, setAssigneeLog] = useState([]);
   const [loadingLog, setLoadingLog] = useState(false);
+  const [showAllHistory, setShowAllHistory] = useState(false);
 
   // PI Assignee Selection Modal States
   const [showPiUserSelectModal, setShowPiUserSelectModal] = useState(false);
@@ -965,6 +967,45 @@ export default function QuotationPage() {
   // ========================
   // HANDLE ASSIGNEE UPDATE
   // ========================
+  const handleAssigneeFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    let updatedFiles = [...assigneeFiles];
+    let remainingSlots = MAX_FILES - updatedFiles.length;
+    if (remainingSlots <= 0) {
+      toast.error("You can upload only 5 files");
+      e.target.value = "";
+      return;
+    }
+    for (let file of files) {
+      if (remainingSlots <= 0) break;
+      const ext = file.name.split(".").pop().toLowerCase();
+      const isDuplicate = updatedFiles.some(
+        (f) => f.name === file.name && f.size === file.size
+      );
+      if (isDuplicate) continue;
+      if (![...IMAGE_EXT_FE, ...DOC_EXT_FE].includes(ext)) {
+        toast.error("Only JPG, PNG, PDF allowed");
+        continue;
+      }
+      if (IMAGE_EXT_FE.includes(ext) && file.size > MAX_IMG_SIZE) {
+        toast.error("Image must be under 2MB");
+        continue;
+      }
+      if (DOC_EXT_FE.includes(ext) && file.size > MAX_DOC_SIZE_FE) {
+        toast.error("PDF must be under 2MB");
+        continue;
+      }
+      updatedFiles.push(file);
+      remainingSlots--;
+    }
+    setAssigneeFiles(updatedFiles);
+    e.target.value = "";
+  };
+
+  const removeAssigneeFile = (index) => {
+    setAssigneeFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleAssigneeUpdate = async () => {
     if (!selectedAssigneeRow) {
       toast.error("No row selected");
@@ -978,14 +1019,23 @@ export default function QuotationPage() {
       setIsUpdatingAssignee(true);
       const assigneeStr = newAssigneeValue.value;
 
+      const formData = new FormData();
+      formData.append("assignee", assigneeStr);
+      formData.append("description", assigneeDescription.trim());
+
+      if (assigneeFiles.length > 0) {
+        assigneeFiles.forEach((file) => {
+          formData.append("files", file);
+        });
+      }
+
       await axios.put(
         `${API_BASE}/api/quotation/update-assignee/${selectedAssigneeRow.lead_id}`,
+        formData,
         {
-          assignee: assigneeStr,
-          description: assigneeDescription.trim(),
-        },
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
       );
 
@@ -995,6 +1045,8 @@ export default function QuotationPage() {
       setNewAssigneeValue(null);
       setAssigneeLog([]);
       setAssigneeDescription("");
+      setAssigneeFiles([]);
+      setShowAllHistory(false);
       fetchQuotations();
     } catch (err) {
       console.log(err);
@@ -1308,6 +1360,8 @@ export default function QuotationPage() {
     setNewAssigneeValue(null);
     setAssigneeLog([]);
     setAssigneeDescription("");
+    setAssigneeFiles([]);
+    setShowAllHistory(false);
   };
 
   return (
@@ -1821,20 +1875,47 @@ export default function QuotationPage() {
                           <td className="px-3">
                             {q.displayStatus === "Pending" ? (
                               <select
-                                value={
-                                  q.displayStatus === "Declined"
-                                    ? "Declined"
-                                    : "Pending"
-                                }
+                                value="Pending"
                                 onChange={(e) =>
                                   handleTableStatusChange(
                                     q.latest_quotation_id,
                                     e.target.value,
                                   )
                                 }
-                                className="border rounded-md px-2 py-1 text-xs font-semibold outline-none bg-yellow-50 text-yellow-700 border-yellow-300"
+                                className="border rounded-md px-2 py-1 text-xs font-semibold outline-none bg-blue-50 text-blue-700 border-blue-300 cursor-pointer"
                               >
                                 <option value="Pending">Pending</option>
+                                <option value="Sent">Sent</option>
+                                <option value="Lost">Lost</option>
+                              </select>
+                            ) : q.displayStatus === "Sent" ? (
+                              <select
+                                value="Sent"
+                                onChange={(e) =>
+                                  handleTableStatusChange(
+                                    q.latest_quotation_id,
+                                    e.target.value,
+                                  )
+                                }
+                                className="border rounded-md px-2 py-1 text-xs font-semibold outline-none bg-sky-50 text-sky-700 border-sky-300 cursor-pointer"
+                              >
+                                <option value="Sent">Sent</option>
+                                <option value="Revision">Revision</option>
+                                <option value="Lost">Lost</option>
+                              </select>
+                            ) : q.displayStatus === "Revision" ? (
+                              <select
+                                value="Revision"
+                                onChange={(e) =>
+                                  handleTableStatusChange(
+                                    q.latest_quotation_id,
+                                    e.target.value,
+                                  )
+                                }
+                                className="border rounded-md px-2 py-1 text-xs font-semibold outline-none bg-purple-50 text-purple-700 border-purple-300 cursor-pointer"
+                              >
+                                <option value="Revision">Revision</option>
+                                <option value="Sent">Sent</option>
                                 <option value="Lost">Lost</option>
                               </select>
                             ) : q.displayStatus === "Won" ? (
@@ -3281,25 +3362,20 @@ export default function QuotationPage() {
         </div>
       )}
 
-      {/* ASSIGNEE POPOVER */}
+      {/* ASSIGNEE MODAL */}
       {showAssigneeModal && selectedAssigneeRow && (
-        <div className="fixed inset-0 z-[80]" onClick={closeAssigneePopover}>
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={closeAssigneePopover}>
           <div
-            className="fixed bg-white rounded-lg border border-gray-200 w-[340px] shadow-2xl flex flex-col"
-            style={{
-              top: Math.min(assigneePopoverPos.top, window.innerHeight - 520),
-              left: Math.min(assigneePopoverPos.left, window.innerWidth - 356),
-              maxHeight: `${window.innerHeight - Math.min(assigneePopoverPos.top, window.innerHeight - 520) - 16}px`,
-            }}
+            className="bg-white rounded-xl border border-gray-100 w-[460px] max-w-[95vw] shadow-2xl flex flex-col overflow-hidden max-h-[90vh] transition-all duration-300"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-orange-500 rounded-t-lg flex-shrink-0">
-              <p className="text-sm font-semibold text-white flex items-center gap-2">
-                <i className="bi bi-person-fill-gear"></i>
+            <div className="flex items-center justify-between px-5 py-4 bg-orange-500 flex-shrink-0">
+              <p className="text-sm font-bold text-white flex items-center gap-2 tracking-wide">
+                <i className="bi bi-person-fill-gear text-base"></i>
                 Change Assignee
               </p>
-              <button onClick={closeAssigneePopover} className="text-white/80 hover:text-white">
+              <button onClick={closeAssigneePopover} className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors cursor-pointer">
                 <i className="bi bi-x-lg text-sm"></i>
               </button>
             </div>
@@ -3376,36 +3452,40 @@ export default function QuotationPage() {
                 />
               </div>
 
-              <div className="flex gap-2">
-                <button
-                  onClick={closeAssigneePopover}
-                  className="flex-1 py-2 rounded-md text-xs border border-gray-200 text-gray-500 hover:bg-gray-50 font-medium transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleAssigneeUpdate}
-                  disabled={isUpdatingAssignee || !newAssigneeValue}
-                  className={`flex-[2] py-2 rounded-md text-xs text-white font-semibold flex items-center justify-center gap-1.5 transition-all ${isUpdatingAssignee || !newAssigneeValue
-                    ? "bg-orange-300 cursor-not-allowed"
-                    : "bg-orange-500 hover:bg-orange-600"
-                    }`}
-                >
-                  {isUpdatingAssignee ? (
-                    <>
-                      <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" opacity="0.25" />
-                        <path fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                      </svg>
-                      Updating...
-                    </>
-                  ) : (
-                    <>
-                      <i className="bi bi-person-check-fill text-xs"></i>
-                      Update
-                    </>
-                  )}
-                </button>
+              <div>
+                <label className="text-[10px] text-gray-400 uppercase font-bold tracking-wider block mb-1.5 flex items-center gap-1">
+                  <i className="bi bi-paperclip text-gray-300"></i>
+                  Attach Files
+                  <span className="text-gray-300 font-normal normal-case ml-1">
+                    (optional, max 5)
+                  </span>
+                </label>
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleAssigneeFileChange}
+                  accept=".jpg,.jpeg,.png,.pdf"
+                  className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[10px] file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer outline-none border border-gray-300 rounded-md p-1 bg-gray-50"
+                />
+                {assigneeFiles.length > 0 && (
+                  <div className="mt-2 space-y-1 max-h-[100px] overflow-y-auto pr-1">
+                    {assigneeFiles.map((file, i) => (
+                      <div
+                        key={i}
+                        className="flex justify-between items-center bg-gray-50 border border-gray-200 rounded px-2 py-1 text-[10px] text-gray-600"
+                      >
+                        <span className="truncate max-w-[200px]">{file.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeAssigneeFile(i)}
+                          className="text-red-500 hover:text-red-700 font-bold ml-1 text-xs"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {loadingLog ? (
@@ -3413,51 +3493,135 @@ export default function QuotationPage() {
                   Loading history...
                 </div>
               ) : assigneeLog.length > 0 ? (
-                <div className="border-t border-gray-100 pt-3">
-                  <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-2 flex items-center gap-1">
-                    <i className="bi bi-clock-history text-gray-300"></i>
-                    Last Change
-                  </p>
-                  {assigneeLog.slice(0, 1).map((log, i) => (
-                    <div key={i} className="flex items-start gap-2.5">
-                      <div className="flex flex-col items-center mt-1">
-                        <div className="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0"></div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded">
-                            {log.changed_by || "System"}
-                          </span>
-                          <span className="text-[10px] text-gray-400">assigned</span>
-                          <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
-                            {log.new_assignee || "-"}
-                          </span>
-                        </div>
-                        {log.changed_at && (
-                          <p className="text-[9px] text-gray-400 mt-0.5">{formatDateTime(log.changed_at)}</p>
-                        )}
-                        {log.description && log.description.trim() !== "" && (
-                          <div className="mt-1.5 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5">
-                            <p className="text-[10px] font-semibold text-amber-700 flex items-center gap-1 mb-0.5">
-                              <i className="bi bi-chat-text-fill text-[9px]"></i>
-                              Task Note
-                            </p>
-                            <p className="text-[10px] text-amber-800 leading-relaxed whitespace-pre-wrap">{log.description}</p>
+                (() => {
+                  const sortedLogs = [...assigneeLog].sort(
+                    (a, b) => new Date(b.changed_at) - new Date(a.changed_at)
+                  );
+                  const displayedLogs = isAdmin || showAllHistory
+                    ? sortedLogs
+                    : sortedLogs.slice(0, 1);
+
+                  return (
+                    <div className="border-t border-gray-100 pt-3">
+                      <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-2 flex items-center gap-1">
+                        <i className="bi bi-clock-history text-gray-300"></i>
+                        {isAdmin ? "History Log" : "Last Change"}
+                      </p>
+                      <div className="space-y-3.5 max-h-[220px] overflow-y-auto pr-1">
+                        {displayedLogs.map((log, i) => (
+                          <div key={i} className="flex items-start gap-2.5">
+                            <div className="flex flex-col items-center mt-1">
+                              <div className="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0"></div>
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded">
+                                  {log.changed_by || "System"}
+                                </span>
+                                <span className="text-[10px] text-gray-400">assigned</span>
+                                <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
+                                  {log.new_assignee || "-"}
+                                </span>
+                              </div>
+                              {log.changed_at && (
+                                <p className="text-[9px] text-gray-400 mt-0.5">
+                                  {formatDateTime(log.changed_at)}
+                                </p>
+                              )}
+                              {log.description && log.description.trim() !== "" && (
+                                <div className="mt-1.5 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5">
+                                  <p className="text-[10px] font-semibold text-amber-700 flex items-center gap-1 mb-0.5">
+                                    <i className="bi bi-chat-text-fill text-[9px]"></i>
+                                    Task Note
+                                  </p>
+                                  <p className="text-[10px] text-amber-800 leading-relaxed whitespace-pre-wrap">
+                                    {log.description}
+                                  </p>
+                                </div>
+                              )}
+                              {log.files && log.files.length > 0 && (
+                                <div className="mt-1.5">
+                                  <p className="text-[9px] font-semibold text-gray-400 uppercase mb-1 flex items-center gap-1">
+                                    <i className="bi bi-paperclip"></i> Attached Files
+                                  </p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {log.files.map((file, fileIdx) => (
+                                      <a
+                                        key={fileIdx}
+                                        href={file.file_path}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 text-indigo-700 rounded text-[9px] font-medium transition-colors"
+                                      >
+                                        <i className="bi bi-file-earmark-arrow-down"></i>
+                                        <span className="truncate max-w-[100px]" title={file.file_name}>
+                                          {file.file_name}
+                                        </span>
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        )}
+                        ))}
                       </div>
+                      {!isAdmin && sortedLogs.length > 1 && (
+                        <button
+                          onClick={() => setShowAllHistory(!showAllHistory)}
+                          className="mt-3 w-full py-1.5 bg-gray-50 border border-gray-200 hover:bg-gray-100 rounded text-[10px] text-gray-500 font-semibold flex items-center justify-center gap-1 transition-all"
+                        >
+                          <i className={`bi ${showAllHistory ? "bi-chevron-up" : "bi-chevron-down"}`}></i>
+                          {showAllHistory ? "Hide History" : `Show History (${sortedLogs.length - 1} more)`}
+                        </button>
+                      )}
                     </div>
-                  ))}
-                </div>
+                  );
+                })()
               ) : (
                 <div className="border-t border-gray-100 pt-3">
                   <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1 flex items-center gap-1">
                     <i className="bi bi-clock-history text-gray-300"></i>
                     Last Change
                   </p>
-                  <p className="text-xs text-gray-300 italic text-center py-2">No history found</p>
+                  <p className="text-xs text-gray-300 italic text-center py-2">
+                    No history found
+                  </p>
                 </div>
               )}
+            </div>
+
+            {/* Footer sticky buttons */}
+            <div className="px-5 py-4 bg-gray-50 border-t border-gray-100 flex gap-3 flex-shrink-0">
+              <button
+                onClick={closeAssigneePopover}
+                className="flex-1 py-2.5 rounded-lg text-xs border border-gray-200 text-gray-600 hover:bg-gray-100 font-bold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAssigneeUpdate}
+                disabled={isUpdatingAssignee || !newAssigneeValue}
+                className={`flex-[2] py-2.5 rounded-lg text-xs text-white font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${isUpdatingAssignee || !newAssigneeValue
+                  ? "bg-orange-300 cursor-not-allowed"
+                  : "bg-orange-500 hover:bg-orange-600 shadow-md shadow-orange-100"
+                  }`}
+              >
+                {isUpdatingAssignee ? (
+                  <>
+                    <svg className="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" opacity="0.25" />
+                      <path fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                    </svg>
+                    Updating...
+                  </>
+                ) : (
+                  <>
+                    <i className="bi bi-person-check-fill text-xs"></i>
+                    Update Assignee
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>

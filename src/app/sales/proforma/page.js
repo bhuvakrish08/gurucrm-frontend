@@ -1080,7 +1080,7 @@ export default function ProformaPage() {
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
                       <th className="py-3 px-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">Follow-Up</th>
                       <th className="py-3 px-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">Download</th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Created</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Source</th>
                     </tr>
                   </thead>
                   <tbody>
