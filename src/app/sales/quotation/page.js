@@ -9,6 +9,11 @@ import { checkRole } from "@/utils/checkRole";
 import useAuth from "@/app/components/useAuth";
 
 export default function QuotationPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
@@ -38,11 +43,6 @@ export default function QuotationPage() {
 
   const [previewFollowUp, setPreviewFollowUp] = useState(null);
   const [quotationData, setQuotationData] = useState(null);
-
-  //view
-  const [showViewModal, setShowViewModal] = useState(false);
-  const [viewQuotation, setViewQuotation] = useState(null);
-  const [viewLoading, setViewLoading] = useState(false);
 
   // follow-up
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -81,7 +81,7 @@ export default function QuotationPage() {
   // Assignee Popover States
   const [showAssigneeModal, setShowAssigneeModal] = useState(false);
   const [selectedAssigneeRow, setSelectedAssigneeRow] = useState(null);
-  const [newAssigneeValue, setNewAssigneeValue] = useState([]);
+  const [newAssigneeValue, setNewAssigneeValue] = useState(null);
   const [isUpdatingAssignee, setIsUpdatingAssignee] = useState(false);
   const [assigneePopoverPos, setAssigneePopoverPos] = useState({ top: 0, left: 0 });
   const [assigneeDescription, setAssigneeDescription] = useState("");
@@ -89,6 +89,12 @@ export default function QuotationPage() {
   // Assignee History States
   const [assigneeLog, setAssigneeLog] = useState([]);
   const [loadingLog, setLoadingLog] = useState(false);
+
+  // PI Assignee Selection Modal States
+  const [showPiUserSelectModal, setShowPiUserSelectModal] = useState(false);
+  const [availablePiUsers, setAvailablePiUsers] = useState([]);
+  const [selectedPiUserForApproval, setSelectedPiUserForApproval] = useState("");
+  const [approveTargetHistId, setApproveTargetHistId] = useState(null);
 
   const [form, setForm] = useState({
     quotation_no: "",
@@ -104,11 +110,25 @@ export default function QuotationPage() {
     description: "",
   });
 
-  useAuth();
+  useAuth(["Admin", "Super Admin", "Sales", "Estimation"]);
 
   const isApprovedLocked = followUpHistory.some(
     (h) => h.quotation_status === "Approved"
   );
+
+  const isQuotationNoLocked = (() => {
+    const hasHistoryNo = followUpHistory && followUpHistory.some(
+      (item) => item.quotation_no && String(item.quotation_no).trim() !== ""
+    );
+    if (hasHistoryNo) return true;
+    if (selectedLead?.quotation_no && String(selectedLead.quotation_no).trim() !== "") {
+      return true;
+    }
+    if (selectedQuotation?.quotation_no && String(selectedQuotation.quotation_no).trim() !== "") {
+      return true;
+    }
+    return false;
+  })();
 
   const fetchHistoryData = async (quotationId) => {
     try {
@@ -144,7 +164,7 @@ export default function QuotationPage() {
     }
   };
 
-const handleUpdate = async () => {
+  const handleUpdate = async () => {
     try {
       setUpdateLoading(true);
 
@@ -200,29 +220,6 @@ const handleUpdate = async () => {
       setUpdateLoading(false);
     }
   };
-  //view
-  const handleViewQuotation = async (quotationId) => {
-    try {
-      setViewLoading(true);
-
-      const res = await axios.get(
-        `${API_BASE}/api/quotation/full-details/${quotationId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        },
-      );
-
-      setViewQuotation(res.data.data);
-      setShowViewModal(true);
-    } catch (err) {
-      console.log(err);
-      toast.error("Failed to load quotation details");
-    } finally {
-      setViewLoading(false);
-    }
-  };
   // ========================
   // FETCH
   // ========================
@@ -237,8 +234,8 @@ const handleUpdate = async () => {
           item.quotation_status === "Approved"
             ? "Won"
             : item.quotation_status === "Declined"
-            ? "Pending"
-            : item.quotation_status || "Pending";
+              ? "Pending"
+              : item.quotation_status || "Pending";
         return {
           ...item,
           displayStatus: finalStatus,
@@ -250,7 +247,56 @@ const handleUpdate = async () => {
             item.proforma_percentage && Number(item.proforma_percentage) > 0,
         };
       });
-      setQuotations(data);
+
+      const userRole = localStorage.getItem("role") || "";
+      const userFirstName = (localStorage.getItem("username") || "").split(" ")[0].toLowerCase();
+      let filteredData = data;
+      if (userRole.toLowerCase() === "sales") {
+        filteredData = data.filter((q) => {
+          const qAssignees = q.assignee
+            ? q.assignee.split(",").map((name) => name.trim().toLowerCase())
+            : [];
+          const lAssignees = q.lead_assignee
+            ? q.lead_assignee.split(",").map((name) => name.trim().toLowerCase())
+            : [];
+          const hasBeenAssigned =
+            qAssignees.some(name => name.includes(userFirstName)) ||
+            lAssignees.some(name => name.includes(userFirstName));
+
+          let inLog = false;
+          if (q.assignee_log) {
+            try {
+              const logs = JSON.parse(q.assignee_log);
+              inLog = logs.some(
+                (log) =>
+                  (log.previous_assignee &&
+                    log.previous_assignee.toLowerCase().includes(userFirstName)) ||
+                  (log.new_assignee &&
+                    log.new_assignee.toLowerCase().includes(userFirstName))
+              );
+            } catch { }
+          }
+          return hasBeenAssigned || inLog;
+        });
+      } else if (userRole.toLowerCase() === "estimation") {
+        filteredData = data.filter((q) => {
+          const qAssignees = q.assignee
+            ? q.assignee.split(",").map((name) => name.trim().toLowerCase())
+            : [];
+          const lAssignees = q.lead_assignee
+            ? q.lead_assignee.split(",").map((name) => name.trim().toLowerCase())
+            : [];
+
+          const matchesQuotation = qAssignees.some(name => name.includes(userFirstName));
+          const matchesLead = lAssignees.some(name => name.includes(userFirstName));
+
+          if (qAssignees.length === 0) {
+            return matchesLead;
+          }
+          return matchesQuotation;
+        });
+      }
+      setQuotations(filteredData);
     } catch (err) {
       console.log(err);
     } finally {
@@ -315,8 +361,8 @@ const handleUpdate = async () => {
         "Last Activity": q.quotation_date
           ? new Date(q.quotation_date).toLocaleDateString()
           : q.quotation_created_at
-          ? new Date(q.quotation_created_at).toLocaleDateString()
-          : "",
+            ? new Date(q.quotation_created_at).toLocaleDateString()
+            : "",
         "Grand Total (₹)": q.grand_total
           ? Number(q.grand_total).toLocaleString()
           : "",
@@ -380,8 +426,8 @@ const handleUpdate = async () => {
         q.quotation_date
           ? new Date(q.quotation_date).toLocaleDateString()
           : q.quotation_created_at
-          ? new Date(q.quotation_created_at).toLocaleDateString()
-          : "",
+            ? new Date(q.quotation_created_at).toLocaleDateString()
+            : "",
         q.grand_total ? `Rs.${Number(q.grand_total).toLocaleString()}` : "",
         q.assignee || "",
         q.displayStatus || "",
@@ -476,7 +522,56 @@ const handleUpdate = async () => {
             item.proforma_percentage && Number(item.proforma_percentage) > 0,
         };
       });
-      setQuotations(data);
+
+      const userRole = localStorage.getItem("role") || "";
+      const userFirstName = (localStorage.getItem("username") || "").split(" ")[0].toLowerCase();
+      let filteredData = data;
+      if (userRole.toLowerCase() === "sales") {
+        filteredData = data.filter((q) => {
+          const qAssignees = q.assignee
+            ? q.assignee.split(",").map((name) => name.trim().toLowerCase())
+            : [];
+          const lAssignees = q.lead_assignee
+            ? q.lead_assignee.split(",").map((name) => name.trim().toLowerCase())
+            : [];
+          const hasBeenAssigned =
+            qAssignees.some(name => name.includes(userFirstName)) ||
+            lAssignees.some(name => name.includes(userFirstName));
+
+          let inLog = false;
+          if (q.assignee_log) {
+            try {
+              const logs = JSON.parse(q.assignee_log);
+              inLog = logs.some(
+                (log) =>
+                  (log.previous_assignee &&
+                    log.previous_assignee.toLowerCase().includes(userFirstName)) ||
+                  (log.new_assignee &&
+                    log.new_assignee.toLowerCase().includes(userFirstName))
+              );
+            } catch { }
+          }
+          return hasBeenAssigned || inLog;
+        });
+      } else if (userRole.toLowerCase() === "estimation") {
+        filteredData = data.filter((q) => {
+          const qAssignees = q.assignee
+            ? q.assignee.split(",").map((name) => name.trim().toLowerCase())
+            : [];
+          const lAssignees = q.lead_assignee
+            ? q.lead_assignee.split(",").map((name) => name.trim().toLowerCase())
+            : [];
+
+          const matchesQuotation = qAssignees.some(name => name.includes(userFirstName));
+          const matchesLead = lAssignees.some(name => name.includes(userFirstName));
+
+          if (qAssignees.length === 0) {
+            return matchesLead;
+          }
+          return matchesQuotation;
+        });
+      }
+      setQuotations(filteredData);
     } catch (err) {
       console.log(err);
     }
@@ -510,9 +605,11 @@ const handleUpdate = async () => {
 
   const handleTableStatusChange = async (id, newStatus) => {
     try {
-      await axios.put(`${API_BASE}/api/quotation/update-status/${id}`, {
-        quotation_status: newStatus,
-      });
+      await axios.put(
+        `${API_BASE}/api/quotation/update-status/${id}`,
+        { quotation_status: newStatus },
+        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+      );
       toast.success("Status updated");
       setQuotations((prev) =>
         prev.map((q) => {
@@ -543,7 +640,7 @@ const handleUpdate = async () => {
       quotation_no: "",
       quotation_date: new Date().toISOString().split("T")[0],
       activity_type: "",
-      quotation_status: "Pending",
+      quotation_status: lead.displayStatus === "Revision" ? "Revision" : "Pending",
       assignee: lead.assignee || "",
       discount: "",
       tax: "",
@@ -650,20 +747,27 @@ const handleUpdate = async () => {
     setForm(newForm);
   };
 
-  const handleApproveDecline = async (histId, newStatus) => {
+  const proceedStatusUpdate = async (histId, status, assignedPiUser = null) => {
     try {
-      await axios.put(`${API_BASE}/api/quotation/update-status/${histId}`, {
-        quotation_status: newStatus,
-      });
+      const payload = { quotation_status: status };
+      if (assignedPiUser) {
+        payload.assigned_pi_user = assignedPiUser;
+      }
+      
+      await axios.put(
+        `${API_BASE}/api/quotation/update-status/${histId}`,
+        payload,
+        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+      );
 
-      if (newStatus === "Approved") {
+      if (status === "Approved") {
         await axios.put(
           `${API_BASE}/api/quotation/update-main-status/${selectedLead.latest_quotation_id}`,
           { quotation_status: "Won" }
         );
       }
 
-      toast.success(`Quotation marked as ${newStatus}`);
+      toast.success(`Quotation marked as ${status}`);
 
       setQuotations((prev) =>
         prev.map((q) => {
@@ -671,9 +775,9 @@ const handleUpdate = async () => {
           return {
             ...q,
             quotation_status:
-              newStatus === "Approved" ? q.quotation_status : "Pending",
-            displayStatus: newStatus === "Approved" ? "Won" : "Pending",
-            wasApprovedOnce: newStatus === "Approved",
+              status === "Approved" ? q.quotation_status : "Pending",
+            displayStatus: status === "Approved" ? "Won" : "Pending",
+            wasApprovedOnce: status === "Approved",
           };
         })
       );
@@ -692,16 +796,47 @@ const handleUpdate = async () => {
       );
       setFollowUpHistory(historyWithFiles);
 
-      if (newStatus === "Approved") {
+      if (status === "Approved") {
         setActiveTab("Won");
-      } else if (newStatus === "Declined") {
+      } else if (status === "Declined") {
         setActiveTab("Pending");
       }
 
       await fetchQuotations();
     } catch (err) {
       console.log(err);
-      toast.error("Status update failed");
+      const errMsg = err.response?.data?.message || err.message || "Status update failed";
+      toast.error(errMsg);
+    }
+  };
+
+  const handleApproveDecline = async (histId, newStatus) => {
+    try {
+      if (newStatus === "Approved") {
+        const usersRes = await axios.get(
+          `${API_BASE}/api/manage-user/read`,
+          {
+            params: { search5: "Proforma invoices", search8: "1" },
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          }
+        );
+        const piUsersList = usersRes.data || [];
+        if (piUsersList.length > 1) {
+          setApproveTargetHistId(histId);
+          setAvailablePiUsers(piUsersList);
+          setSelectedPiUserForApproval("");
+          setShowPiUserSelectModal(true);
+          return;
+        } else if (piUsersList.length === 1) {
+          await proceedStatusUpdate(histId, "Approved", piUsersList[0].name);
+          return;
+        }
+      }
+      await proceedStatusUpdate(histId, newStatus);
+    } catch (err) {
+      console.log(err);
+      const errMsg = err.response?.data?.message || err.message || "Failed to initiate status update";
+      toast.error(errMsg);
     }
   };
 
@@ -805,13 +940,13 @@ const handleUpdate = async () => {
       toast.error("No row selected");
       return;
     }
-    if (newAssigneeValue.length === 0) {
-      toast.error("Please select at least one assignee");
+    if (!newAssigneeValue) {
+      toast.error("Please select an assignee");
       return;
     }
     try {
       setIsUpdatingAssignee(true);
-      const assigneeStr = newAssigneeValue.map((o) => o.value).join(",");
+      const assigneeStr = newAssigneeValue.value;
 
       await axios.put(
         `${API_BASE}/api/quotation/update-assignee/${selectedAssigneeRow.lead_id}`,
@@ -827,7 +962,7 @@ const handleUpdate = async () => {
       toast.success("Assignee updated successfully!");
       setShowAssigneeModal(false);
       setSelectedAssigneeRow(null);
-      setNewAssigneeValue([]);
+      setNewAssigneeValue(null);
       setAssigneeLog([]);
       setAssigneeDescription("");
       fetchQuotations();
@@ -943,7 +1078,7 @@ const handleUpdate = async () => {
         quotation_no: "",
         quotation_date: new Date().toISOString().split("T")[0],
         activity_type: "",
-        quotation_status: "Pending",
+        quotation_status: selectedLead.displayStatus === "Revision" ? "Revision" : "Pending",
         assignee: form.assignee || "",
         amount: "",
         discount: "",
@@ -956,7 +1091,8 @@ const handleUpdate = async () => {
       setEditingId(null);
       fetchQuotations();
     } catch (err) {
-      toast.error("This quotation number is already in use.");
+      const errMsg = err?.response?.data?.sqlMessage || err?.response?.data?.message || err?.message || "Something went wrong";
+      toast.error(errMsg);
       console.log(err);
     } finally {
       setIsSubmitting(false);
@@ -968,24 +1104,25 @@ const handleUpdate = async () => {
       toast.error("Please select a user to assign");
       return;
     }
+    if (!selectedAssignQuotation?.latest_quotation_id) {
+      toast.error("No quotation selected for assignment");
+      return;
+    }
     try {
-      await axios.post(
-        `${API_BASE}/api/quotation/assign`,
-        {
-          quotation_id: selectedAssignQuotation?.latest_quotation_id || null,
-          lead_id: selectedAssignQuotation?.lead_id,
-          assigned_to: assignForm.assigned_to,
-          task_datetime: assignForm.task_datetime,
-          work_description: assignForm.work_description,
-        },
+      // Use the backend assign route to update assignee and set status to Pending
+      await axios.put(
+        `${API_BASE}/api/quotation/assign/${selectedAssignQuotation.latest_quotation_id}`,
+        { assignee: assignForm.assigned_to },
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
-      toast.success("Task Assigned");
+      toast.success("Quotation assigned successfully");
       setShowAssignModal(false);
+      // Refresh data to reflect changes in both Estimation and Sales views
+      await fetchQuotations();
     } catch (err) {
       console.log(err);
       toast.error("Assignment failed");
@@ -999,14 +1136,12 @@ const handleUpdate = async () => {
   const filteredQuotations = hasActiveFilters
     ? quotations
     : quotations.filter((q) => {
-        if (activeTab === "Pending")
-          return q.displayStatus !== "Won" && q.displayStatus !== "Lost";
-        return q.displayStatus === activeTab;
-      });
+      return q.displayStatus === activeTab;
+    });
 
-  const pendingCount = quotations.filter(
-    (q) => q.displayStatus !== "Won" && q.displayStatus !== "Lost"
-  ).length;
+  const pendingCount = quotations.filter((q) => q.displayStatus === "Pending").length;
+  const sentCount = quotations.filter((q) => q.displayStatus === "Sent").length;
+  const revisionCount = quotations.filter((q) => q.displayStatus === "Revision").length;
   const wonCount = quotations.filter((q) => q.displayStatus === "Won").length;
   const lostCount = quotations.filter((q) => q.displayStatus === "Lost").length;
 
@@ -1050,10 +1185,20 @@ const handleUpdate = async () => {
   useEffect(() => {
     const fetchAssignee = async () => {
       try {
-        const res = await axios.get(`${API_BASE}/api/manage-user/asignee`, {
-          params: { status: 1 },
-        });
-        const data = res.data.data || res.data || [];
+        let data = [];
+        const userRole = localStorage.getItem("role") || "";
+        if (userRole.toLowerCase() === "estimation") {
+          const res = await axios.get(`${API_BASE}/api/manage-user/read`, {
+            params: { search5: "Sales", search8: "1" },
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+          });
+          data = res.data || [];
+        } else {
+          const res = await axios.get(`${API_BASE}/api/manage-user/asignee`, {
+            params: { status: 1 },
+          });
+          data = res.data.data || res.data || [];
+        }
         const formatted = data.map((item) => {
           const firstName = item.name.split(" ")[0];
           return { value: firstName, label: firstName };
@@ -1067,7 +1212,9 @@ const handleUpdate = async () => {
     fetchAssignee();
   }, []);
 
-  const isAdmin = checkRole(["Admin"]);
+  const isAdmin = mounted ? checkRole(["Admin", "Super Admin"]) : false;
+  const isSales = mounted ? checkRole(["Sales"]) : false;
+  const isEstimation = mounted ? checkRole(["Estimation"]) : false;
 
   const piGrandTotal = selectedPIQuotation
     ? Number(selectedPIQuotation.grand_total) || 0
@@ -1116,10 +1263,8 @@ const handleUpdate = async () => {
     setSelectedAssigneeRow(q);
     setNewAssigneeValue(
       q.assignee
-        ? q.assignee
-            .split(",")
-            .map((n) => ({ value: n.trim(), label: n.trim() }))
-        : []
+        ? { value: q.assignee.split(",")[0].trim(), label: q.assignee.split(",")[0].trim() }
+        : null
     );
     setAssigneeLog([]);
     setAssigneeDescription("");
@@ -1130,17 +1275,10 @@ const handleUpdate = async () => {
   const closeAssigneePopover = () => {
     setShowAssigneeModal(false);
     setSelectedAssigneeRow(null);
-    setNewAssigneeValue([]);
+    setNewAssigneeValue(null);
     setAssigneeLog([]);
     setAssigneeDescription("");
   };
-  const Card = ({ title, children }) => (
-    <div className="bg-gray-50 p-4 rounded-lg">
-      <p className="text-sm text-gray-500 mb-1">{title}</p>
-
-      <p className="font-semibold break-words">{children}</p>
-    </div>
-  );
 
   return (
     <>
@@ -1335,30 +1473,60 @@ const handleUpdate = async () => {
                 <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>
               )}
             </button>
+            {!isEstimation && (
+              <button
+                onClick={() => setActiveTab("Sent")}
+                className={`pb-3 px-3 text-sm font-medium relative transition-all ${activeTab === "Sent" ? "text-sky-600" : "text-gray-400 hover:text-gray-600"}`}
+              >
+                Sent{" "}
+                <span className="ml-2 bg-sky-100 text-sky-600 text-xs px-2 py-0.5 rounded-full">
+                  {sentCount}
+                </span>
+                {activeTab === "Sent" && (
+                  <div className="absolute bottom-0 left-0 w-full h-0.5 bg-sky-600"></div>
+                )}
+              </button>
+            )}
             <button
-              onClick={() => setActiveTab("Won")}
-              className={`pb-3 text-sm font-medium relative ${activeTab === "Won" ? "text-green-600" : "text-gray-500"}`}
+              onClick={() => setActiveTab("Revision")}
+              className={`pb-3 px-3 text-sm font-medium relative transition-all ${activeTab === "Revision" ? "text-purple-600" : "text-gray-400 hover:text-gray-600"}`}
             >
-              Won{" "}
-              <span className="ml-2 bg-green-100 text-green-600 text-xs px-2 py-0.5 rounded-full">
-                {wonCount}
+              Revision{" "}
+              <span className="ml-2 bg-purple-100 text-purple-600 text-xs px-2 py-0.5 rounded-full">
+                {revisionCount}
               </span>
-              {activeTab === "Won" && (
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600"></div>
+              {activeTab === "Revision" && (
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-purple-600"></div>
               )}
             </button>
-            <button
-              onClick={() => setActiveTab("Lost")}
-              className={`pb-3 text-sm font-medium relative ${activeTab === "Lost" ? "text-red-600" : "text-gray-500"}`}
-            >
-              Lost{" "}
-              <span className="ml-2 bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full">
-                {lostCount}
-              </span>
-              {activeTab === "Lost" && (
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-red-600"></div>
-              )}
-            </button>
+            {!isEstimation && (
+              <>
+                <button
+                  onClick={() => setActiveTab("Won")}
+                  className={`pb-3 text-sm font-medium relative ${activeTab === "Won" ? "text-green-600" : "text-gray-500"}`}
+                >
+                  Won{" "}
+                  <span className="ml-2 bg-green-100 text-green-600 text-xs px-2 py-0.5 rounded-full">
+                    {wonCount}
+                  </span>
+                  {activeTab === "Won" && (
+                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600"></div>
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveTab("Lost")}
+                  className={`pb-3 text-sm font-medium relative ${activeTab === "Lost" ? "text-red-600" : "text-gray-500"}`}
+                >
+                  Lost{" "}
+                  <span className="ml-2 bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full">
+                    {lostCount}
+                  </span>
+                  {activeTab === "Lost" && (
+                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-red-600"></div>
+                  )}
+                </button>
+              </>
+            )}
           </div>
 
           <div className="p-4">
@@ -1372,68 +1540,79 @@ const handleUpdate = async () => {
                 <table className="w-full text-sm whitespace-nowrap">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-100">
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        #
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Company Name
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Customer Name
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Reference
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Create Quotation
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Quotation No
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Last Activity
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Grand Total
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Assignee
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Follow-up
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Updated By
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Action
-                      </th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">#</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Company Name</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Customer Name</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Reference</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Source</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Create Quotation</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Quotation No</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Last Activity</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Grand Total</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Assignee</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Follow-up</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Updated By</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Action</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredQuotations.length > 0 ? (
-                      paginatedQuotations.map((q, index) => (
-                        <tr
-                          key={q.lead_id}
-                          className="border-b border-gray-50 hover:bg-indigo-50/30 transition-colors"
-                        >
-                          <td className="py-3 px-3">
-                            {(currentPage - 1) * itemsPerPage + index + 1}
-                          </td>
-                          <td className="font-medium px-3">
-                            {q.company_name || "-"}
-                          </td>
-                          <td className="text-orange-500 px-3">
-                            {q.customer_name || "-"}
-                          </td>
+                      paginatedQuotations.map((q, index) => {
+                        const isRevisionTab = q.displayStatus === "Revision";
+                        const isAssignedToEstimation = q.assignee && q.assignee.toLowerCase().includes("khushali");
+                        const isAssignedToSales = q.assignee && q.assignee.toLowerCase().includes("darshil");
+
+                        let rowClassName = "border-b border-gray-50 hover:bg-indigo-50/30 transition-colors";
+                        if (isRevisionTab) {
+                          if (isAssignedToEstimation) {
+                            if (isEstimation || isAdmin) {
+                              rowClassName = "border-b border-red-100 bg-red-50/40 hover:bg-red-100/50 transition-colors";
+                            } else if (isSales) {
+                              rowClassName = "border-b border-blue-100 bg-blue-50/40 hover:bg-blue-100/50 transition-colors";
+                            }
+                          } else if (isAssignedToSales && (isSales || isAdmin)) {
+                            rowClassName = "border-b border-green-100 bg-green-50/40 hover:bg-green-100/50 transition-colors";
+                          }
+                        }
+
+                        return (
+                          <tr
+                            key={q.lead_id}
+                            className={rowClassName}
+                          >
+                            <td className="py-3 px-3">
+                              {(currentPage - 1) * itemsPerPage + index + 1}
+                            </td>
+                            <td className="font-medium px-3">
+                              <div className="flex items-center gap-2">
+                                <span>{q.company_name || "-"}</span>
+                                {isRevisionTab && isAssignedToEstimation && (isEstimation || isAdmin) && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-800 animate-blink shadow-sm border border-red-200">
+                                    <span className="w-1.5 h-1.5 mr-1 rounded-full bg-red-500"></span>
+                                    Work Not Done
+                                  </span>
+                                )}
+                                {isRevisionTab && isAssignedToEstimation && isSales && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-800 animate-blink shadow-sm border border-blue-200">
+                                    <span className="w-1.5 h-1.5 mr-1 rounded-full bg-blue-500"></span>
+                                    Sent for Revision
+                                  </span>
+                                )}
+                                {isRevisionTab && isAssignedToSales && (isSales || isAdmin) && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-800 shadow-sm border border-green-200">
+                                    <span className="w-1.5 h-1.5 mr-1 rounded-full bg-green-500"></span>
+                                    Updated
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                          <td className="text-orange-500 px-3">{q.customer_name || "-"}</td>
                           <td className="px-3">{q.reference || "-"}</td>
+                          <td className="px-3">{q.source || "-"}</td>
 
                           <td className="text-lg px-3 text-center">
-                            {q.displayStatus === "Won" ||
-                            q.displayStatus === "Lost" ? (
+                            {q.displayStatus === "Won" || q.displayStatus === "Lost" ? (
                               <div
                                 className="w-9 h-9 tracking-widest rounded-full border inline-flex items-center justify-center bg-gray-50 border-gray-300 text-gray-400 cursor-not-allowed mx-auto shadow-sm"
                                 title="Quotation locked"
@@ -1459,16 +1638,12 @@ const handleUpdate = async () => {
                             )}
                           </td>
 
-                          <td className="px-3 text-gray-600">
-                            {q.quotation_no || "-"}
-                          </td>
+                          <td className="px-3 text-gray-600">{q.quotation_no || "-"}</td>
                           <td className="px-3 text-gray-500">
                             {q.quotation_date
                               ? new Date(q.quotation_date).toLocaleDateString()
                               : q.quotation_created_at
-                                ? new Date(
-                                    q.quotation_created_at,
-                                  ).toLocaleDateString()
+                                ? new Date(q.quotation_created_at).toLocaleDateString()
                                 : "-"}
                           </td>
                           <td className="px-3 font-semibold text-gray-700">
@@ -1479,8 +1654,7 @@ const handleUpdate = async () => {
 
                           {/* ASSIGNEE CELL */}
                           <td className="px-3">
-                            {q.displayStatus !== "Won" &&
-                            q.displayStatus !== "Lost" ? (
+                            {q.displayStatus !== "Won" && q.displayStatus !== "Lost" ? (
                               <button
                                 onClick={(e) => openAssigneePopover(e, q)}
                                 className="flex gap-1 items-center group cursor-pointer hover:opacity-80 transition-all"
@@ -1544,9 +1718,7 @@ const handleUpdate = async () => {
                                   setFollowUpTab("quotation");
 
                                   setUpdateForm({
-                                    follow_up_date: new Date()
-                                      .toISOString()
-                                      .split("T")[0],
+                                    follow_up_date: new Date().toISOString().split("T")[0],
                                     activity_type: "",
                                     follow_up_by: "",
                                     contact_person: "",
@@ -1565,7 +1737,7 @@ const handleUpdate = async () => {
                                       headers: {
                                         Authorization: `Bearer ${localStorage.getItem("token")}`,
                                       },
-                                    },
+                                    }
                                   );
 
                                   const quotationHistory =
@@ -1585,8 +1757,7 @@ const handleUpdate = async () => {
                                     ...salesHistory,
                                   ].sort(
                                     (a, b) =>
-                                      new Date(b.created_at) -
-                                      new Date(a.created_at),
+                                      new Date(b.created_at) - new Date(a.created_at)
                                   );
 
                                   setFollowUpHistory(mergedHistory);
@@ -1621,43 +1792,54 @@ const handleUpdate = async () => {
                           </td>
 
                           <td className="px-3">
-                            {q.displayStatus === "Pending" ? (
+                            {q.displayStatus !== "Won" && q.displayStatus !== "Lost" ? (
                               <select
-                                value={
-                                  q.displayStatus === "Declined"
-                                    ? "Declined"
-                                    : "Pending"
-                                }
+                                value={q.displayStatus}
+                                disabled={isEstimation && !q.assignee}
                                 onChange={(e) =>
-                                  handleTableStatusChange(
-                                    q.latest_quotation_id,
-                                    e.target.value,
-                                  )
+                                  handleTableStatusChange(q.latest_quotation_id, e.target.value)
                                 }
-                                className="border rounded-md px-2 py-1 text-xs font-semibold outline-none bg-yellow-50 text-yellow-700 border-yellow-300"
+                                className={`border rounded-md px-2 py-1 text-xs font-semibold outline-none cursor-pointer transition-all
+                                  ${q.displayStatus === "Pending" ? "bg-yellow-50 text-yellow-700 border-yellow-300" : ""}
+                                  ${q.displayStatus === "Sent" ? "bg-blue-50 text-blue-700 border-blue-300" : ""}
+                                  ${q.displayStatus === "Revision" ? "bg-purple-50 text-purple-700 border-purple-300" : ""}
+                                  ${q.displayStatus === "Lost" ? "bg-red-50 text-red-700 border-red-300" : ""}
+                                `}
                               >
-                                <option value="Pending">Pending</option>
-                                <option value="Lost">Lost</option>
+                                {isEstimation ? (
+                                  <>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Revision">Revision</option>
+                                  </>
+                                ) : (
+                                  <>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Sent">Sent</option>
+                                    <option value="Revision">Revision</option>
+                                    {isSales || isAdmin ? (
+                                      <>
+                                        <option value="Won">Won</option>
+                                        <option value="Lost">Lost</option>
+                                      </>
+                                    ) : (
+                                      <option value="Lost">Lost</option>
+                                    )}
+                                  </>
+                                )}
                               </select>
                             ) : q.displayStatus === "Won" ? (
-                              <span className="bg-green-100 text-green-700 px-2 py-1 rounded-md text-xs font-bold">
-                                Won
-                              </span>
+                              <span className="bg-green-100 text-green-700 px-2 py-1 rounded-md text-xs font-bold">Won</span>
                             ) : q.displayStatus === "Lost" ? (
-                              <span className="bg-red-100 text-red-700 px-2 py-1 rounded-md text-xs font-bold">
-                                Lost
-                              </span>
+                              <span className="bg-red-100 text-red-700 px-2 py-1 rounded-md text-xs font-bold">Lost</span>
                             ) : null}
                           </td>
 
                           <td className="px-3 text-center">
                             <div className="flex items-center justify-center gap-2">
-                              {/* {q.displayStatus === "Won" &&
+                              {q.displayStatus === "Won" &&
                                 q.latest_quotation_id &&
                                 (() => {
-                                  const percentage = Number(
-                                    q.proforma_percentage || 0,
-                                  );
+                                  const percentage = Number(q.proforma_percentage || 0);
                                   if (!q.pi_exists || percentage === 0) {
                                     return (
                                       <button
@@ -1697,33 +1879,10 @@ const handleUpdate = async () => {
                                       </span>
                                     );
                                   }
-                                })()} */}
-
-                              {/* VIEW BUTTON */}
-
-                              {q.latest_quotation_id && (
-                                <button
-                                  onClick={() =>
-                                    handleViewQuotation(q.latest_quotation_id)
-                                  }
-                                  className="text-slate-500 hover:text-blue-600 transition-all"
-                                  title="View Quotation"
-                                >
-                                  <i className="bi bi-eye text-lg"></i>
-                                </button>
-                              )}
-
-                              {/* PI BUTTON */}
-
-                              {q.displayStatus === "Won" &&
-                                q.latest_quotation_id &&
-                                (() => {
-                                  // existing PI logic
                                 })()}
 
                               {q.latest_quotation_id ? (
-                                q.displayStatus === "Won" ||
-                                q.displayStatus === "Lost" ? (
+                                q.displayStatus === "Won" || q.displayStatus === "Lost" ? (
                                   <div
                                     className="text-gray-300 w-8 h-8 rounded-full flex items-center justify-center"
                                     title="Locked"
@@ -1732,9 +1891,7 @@ const handleUpdate = async () => {
                                   </div>
                                 ) : (
                                   <button
-                                    onClick={() =>
-                                      openDeleteModal(q.latest_quotation_id)
-                                    }
+                                    onClick={() => openDeleteModal(q.latest_quotation_id)}
                                     className="text-gray-400 hover:text-red-600 cursor-pointer"
                                   >
                                     <i className="bi bi-trash3 text-lg"></i>
@@ -1743,15 +1900,12 @@ const handleUpdate = async () => {
                               ) : null}
                             </div>
                           </td>
-                          
                         </tr>
-                      ))
-                    ) : (
+                      );
+                    })
+                  ) : (
                       <tr>
-                        <td
-                          colSpan="14"
-                          className="text-center py-10 text-gray-400"
-                        >
+                        <td colSpan="14" className="text-center py-10 text-gray-400">
                           No Quotations Found
                         </td>
                       </tr>
@@ -1762,9 +1916,7 @@ const handleUpdate = async () => {
                 {/* PAGINATION */}
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white rounded-b-lg">
                   <div className="flex items-center gap-3">
-                    <span className="text-sm text-slate-500 font-medium">
-                      Rows per page:
-                    </span>
+                    <span className="text-sm text-slate-500 font-medium">Rows per page:</span>
                     <select
                       value={itemsPerPage}
                       onChange={(e) => {
@@ -1774,9 +1926,7 @@ const handleUpdate = async () => {
                       className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all cursor-pointer font-medium"
                     >
                       {[10, 20, 100, 200].map((size) => (
-                        <option key={size} value={size}>
-                          {size}
-                        </option>
+                        <option key={size} value={size}>{size}</option>
                       ))}
                     </select>
                   </div>
@@ -1785,9 +1935,7 @@ const handleUpdate = async () => {
                     <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
                       <button
                         type="button"
-                        onClick={() =>
-                          setCurrentPage((prev) => Math.max(prev - 1, 1))
-                        }
+                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                         disabled={currentPage === 1}
                         className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                       >
@@ -1807,11 +1955,7 @@ const handleUpdate = async () => {
                       </div>
                       <button
                         type="button"
-                        onClick={() =>
-                          setCurrentPage((prev) =>
-                            Math.min(prev + 1, totalPages),
-                          )
-                        }
+                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                         disabled={currentPage === totalPages}
                         className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                       >
@@ -1831,6 +1975,7 @@ const handleUpdate = async () => {
         // BUG FIX #6: Full modal is scrollable with overflow-y-auto on inner container
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 p-4">
           <div className="bg-white w-full max-w-[820px] rounded-sm shadow-xl border border-gray-100 overflow-hidden flex flex-col max-h-[90vh]">
+
             {/* Header */}
             <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-orange-100 to-white flex-shrink-0">
               <div className="flex items-center gap-2">
@@ -1860,11 +2005,10 @@ const handleUpdate = async () => {
                   setFollowUpTab("lead");
                   setPreviewFollowUp(null);
                 }}
-                className={`px-6 py-3 text-sm font-semibold transition-all ${
-                  followUpTab === "lead"
-                    ? "text-orange-500 border-b-2 border-orange-500 bg-orange-50"
-                    : "text-gray-500"
-                }`}
+                className={`px-6 py-3 text-sm font-semibold transition-all ${followUpTab === "lead"
+                  ? "text-orange-500 border-b-2 border-orange-500 bg-orange-50"
+                  : "text-gray-500"
+                  }`}
               >
                 Lead
               </button>
@@ -1874,11 +2018,10 @@ const handleUpdate = async () => {
                   setFollowUpTab("quotation");
                   setPreviewFollowUp(null);
                 }}
-                className={`px-6 py-3 text-sm font-semibold transition-all ${
-                  followUpTab === "quotation"
-                    ? "text-orange-500 border-b-2 border-orange-500 bg-orange-50"
-                    : "text-gray-500"
-                }`}
+                className={`px-6 py-3 text-sm font-semibold transition-all ${followUpTab === "quotation"
+                  ? "text-orange-500 border-b-2 border-orange-500 bg-orange-50"
+                  : "text-gray-500"
+                  }`}
               >
                 Quotation
               </button>
@@ -1887,8 +2030,10 @@ const handleUpdate = async () => {
             {/* Body — scrollable */}
             {/* BUG FIX #6: overflow-y-auto on this body div makes modal content scroll */}
             <div className="flex flex-1 overflow-hidden">
+
               {/* LEFT: Form */}
               <div className="w-1/2 px-6 py-5 border-r border-gray-100 overflow-y-auto">
+
                 {followUpTab === "lead" && (
                   <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-4">
                     Lead Follow-Up
@@ -1909,12 +2054,9 @@ const handleUpdate = async () => {
                         <i className="bi bi-info-circle-fill text-blue-500 text-sm"></i>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-blue-700">
-                          Lead Follow-Up History
-                        </p>
+                        <p className="text-sm font-semibold text-blue-700">Lead Follow-Up History</p>
                         <p className="text-xs text-blue-600 mt-0.5">
-                          Lead follow-ups are managed from the Leads section.
-                          You can view the history on the right panel.
+                          Lead follow-ups are managed from the Leads section. You can view the history on the right panel.
                         </p>
                       </div>
                     </div>
@@ -1922,36 +2064,20 @@ const handleUpdate = async () => {
                     {selectedLead && (
                       <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 space-y-2">
                         <div className="flex justify-between text-xs">
-                          <span className="text-gray-400 font-medium">
-                            Company
-                          </span>
-                          <span className="font-semibold text-gray-700">
-                            {selectedLead.company_name || "—"}
-                          </span>
+                          <span className="text-gray-400 font-medium">Company</span>
+                          <span className="font-semibold text-gray-700">{selectedLead.company_name || "—"}</span>
                         </div>
                         <div className="flex justify-between text-xs">
-                          <span className="text-gray-400 font-medium">
-                            Customer
-                          </span>
-                          <span className="font-semibold text-gray-700">
-                            {selectedLead.customer_name || "—"}
-                          </span>
+                          <span className="text-gray-400 font-medium">Customer</span>
+                          <span className="font-semibold text-gray-700">{selectedLead.customer_name || "—"}</span>
                         </div>
                         <div className="flex justify-between text-xs">
-                          <span className="text-gray-400 font-medium">
-                            Reference
-                          </span>
-                          <span className="font-semibold text-gray-700">
-                            {selectedLead.reference || "—"}
-                          </span>
+                          <span className="text-gray-400 font-medium">Reference</span>
+                          <span className="font-semibold text-gray-700">{selectedLead.reference || "—"}</span>
                         </div>
                         <div className="flex justify-between text-xs">
-                          <span className="text-gray-400 font-medium">
-                            Assignee
-                          </span>
-                          <span className="font-semibold text-gray-700">
-                            {selectedLead.assignee || "—"}
-                          </span>
+                          <span className="text-gray-400 font-medium">Assignee</span>
+                          <span className="font-semibold text-gray-700">{selectedLead.assignee || "—"}</span>
                         </div>
                       </div>
                     )}
@@ -2034,7 +2160,12 @@ const handleUpdate = async () => {
                         value={updateForm.quotation_no}
                         onChange={handleInputChange}
                         placeholder="e.g. QT-2025-001"
-                        className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50"
+                        disabled={!!selectedQuotation?.quotation_no || !!selectedLead?.quotation_no}
+                        className={`w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50 ${
+                          (selectedQuotation?.quotation_no || selectedLead?.quotation_no)
+                            ? "opacity-75 cursor-not-allowed"
+                            : ""
+                        }`}
                       />
                     </div>
 
@@ -2049,7 +2180,7 @@ const handleUpdate = async () => {
                         className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50 h-20 resize-none"
                       />
                     </div>
-                    {/* <div className="col-span-2 border-2 border-dashed border-orange-300 rounded-xl p-3 text-center bg-orange-50/40">
+                    <div className="col-span-2 border-2 border-dashed border-orange-300 rounded-xl p-3 text-center bg-orange-50/40">
                       <button
                         onClick={() => setShowFileModal(true)}
                         className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 mx-auto transition-all shadow-md shadow-orange-200"
@@ -2077,7 +2208,7 @@ const handleUpdate = async () => {
                         </div>
                       )}
                       <p className="text-xs text-gray-400 mt-1.5">Max 2MB · JPG, PNG, PDF</p>
-                    </div> */}
+                    </div>
                   </div>
                 )}
               </div>
@@ -2085,17 +2216,14 @@ const handleUpdate = async () => {
               {/* RIGHT: History Panel */}
               {/* BUG FIX #5 & #6: Proper overflow-y-auto, aligned layout */}
               <div className="w-1/2 px-6 py-5 flex flex-col overflow-hidden">
+
                 {followUpTab === "lead" && (
                   <div className="flex justify-between items-center mb-4 flex-shrink-0">
                     <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">
                       Lead Follow-Up History
                     </p>
                     <span className="text-xs bg-blue-50 text-blue-500 px-2.5 py-1 rounded-full font-semibold border border-blue-100">
-                      {
-                        followUpHistory.filter((h) => h.module_type === "sales")
-                          .length
-                      }{" "}
-                      record(s)
+                      {followUpHistory.filter((h) => h.module_type === "sales").length} record(s)
                     </span>
                   </div>
                 )}
@@ -2106,12 +2234,7 @@ const handleUpdate = async () => {
                       Quotation Follow-Up History
                     </p>
                     <span className="text-xs bg-orange-50 text-orange-500 px-2.5 py-1 rounded-full font-semibold border border-orange-100">
-                      {
-                        followUpHistory.filter(
-                          (h) => h.module_type === "quotation",
-                        ).length
-                      }{" "}
-                      record(s)
+                      {followUpHistory.filter((h) => h.module_type === "quotation").length} record(s)
                     </span>
                   </div>
                 )}
@@ -2122,7 +2245,7 @@ const handleUpdate = async () => {
                     const filtered = followUpHistory.filter((h) =>
                       followUpTab === "lead"
                         ? h.module_type === "sales"
-                        : h.module_type === "quotation",
+                        : h.module_type === "quotation"
                     );
 
                     if (filtered.length === 0) {
@@ -2136,21 +2259,17 @@ const handleUpdate = async () => {
 
                     return filtered.map((item, idx) => {
                       const itemId = item.follow_up_id || item.id;
-                      const previewId =
-                        previewFollowUp?.follow_up_id || previewFollowUp?.id;
+                      const previewId = previewFollowUp?.follow_up_id || previewFollowUp?.id;
                       const isActive = previewId === itemId;
 
                       return (
                         <div key={itemId}>
                           <div
-                            onClick={() =>
-                              setPreviewFollowUp(isActive ? null : item)
-                            }
-                            className={`border rounded-xl p-3 cursor-pointer transition-all select-none ${
-                              isActive
-                                ? "border-orange-400 bg-orange-50 shadow-sm"
-                                : "hover:bg-gray-50 border-gray-200"
-                            }`}
+                            onClick={() => setPreviewFollowUp(isActive ? null : item)}
+                            className={`border rounded-xl p-3 cursor-pointer transition-all select-none ${isActive
+                              ? "border-orange-400 bg-orange-50 shadow-sm"
+                              : "hover:bg-gray-50 border-gray-200"
+                              }`}
                           >
                             <div className="flex justify-between items-center">
                               <div className="flex items-center gap-2">
@@ -2163,25 +2282,16 @@ const handleUpdate = async () => {
                                   <p className="font-semibold text-sm text-gray-700">
                                     {item.activity_type}
                                   </p>
-                                  <p
-                                    className={`text-[10px] uppercase font-semibold ${
-                                      followUpTab === "lead"
-                                        ? "text-blue-400"
-                                        : "text-orange-400"
-                                    }`}
-                                  >
-                                    {followUpTab === "lead"
-                                      ? "Lead"
-                                      : "Quotation"}
+                                  <p className={`text-[10px] uppercase font-semibold ${followUpTab === "lead" ? "text-blue-400" : "text-orange-400"
+                                    }`}>
+                                    {followUpTab === "lead" ? "Lead" : "Quotation"}
                                   </p>
                                 </div>
                               </div>
                               <div className="flex items-center gap-1.5">
                                 <span className="text-xs text-gray-400">
                                   {item.follow_up_date
-                                    ? new Date(
-                                        item.follow_up_date,
-                                      ).toLocaleDateString()
+                                    ? new Date(item.follow_up_date).toLocaleDateString()
                                     : "—"}
                                 </span>
                                 <i
@@ -2210,99 +2320,70 @@ const handleUpdate = async () => {
                               </div>
                               <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
                                 {[
-                                  {
-                                    label: "Activity Type",
-                                    value: previewFollowUp.activity_type,
-                                  },
+                                  { label: "Activity Type", value: previewFollowUp.activity_type },
                                   {
                                     label: "Follow-Up Date",
                                     value: previewFollowUp.follow_up_date
-                                      ? new Date(
-                                          previewFollowUp.follow_up_date,
-                                        ).toLocaleDateString()
+                                      ? new Date(previewFollowUp.follow_up_date).toLocaleDateString()
                                       : "—",
                                   },
-                                  {
-                                    label: "Contact Person",
-                                    value: previewFollowUp.contact_person,
-                                  },
-                                  {
-                                    label: "Follow-Up By",
-                                    value: previewFollowUp.follow_up_by,
-                                  },
+                                  { label: "Contact Person", value: previewFollowUp.contact_person },
+                                  { label: "Follow-Up By", value: previewFollowUp.follow_up_by },
                                 ].map(({ label, value }) => (
                                   <div key={label}>
-                                    <p className="text-xs text-gray-400 font-medium">
-                                      {label}
-                                    </p>
-                                    <p className="font-semibold text-gray-700 text-sm mt-0.5">
-                                      {value || "—"}
-                                    </p>
+                                    <p className="text-xs text-gray-400 font-medium">{label}</p>
+                                    <p className="font-semibold text-gray-700 text-sm mt-0.5">{value || "—"}</p>
                                   </div>
                                 ))}
                                 <div>
-                                  <p className="text-xs text-gray-400 font-medium">
-                                    Status
-                                  </p>
+                                  <p className="text-xs text-gray-400 font-medium">Status</p>
                                   <span
-                                    className={`text-xs px-2.5 py-0.5 rounded-full font-semibold mt-0.5 inline-block ${
-                                      previewFollowUp.status === "Completed"
-                                        ? "bg-green-100 text-green-600"
-                                        : previewFollowUp.status === "Cancelled"
-                                          ? "bg-orange-100 text-orange-500"
-                                          : "bg-orange-100 text-orange-600"
-                                    }`}
+                                    className={`text-xs px-2.5 py-0.5 rounded-full font-semibold mt-0.5 inline-block ${previewFollowUp.status === "Completed"
+                                      ? "bg-green-100 text-green-600"
+                                      : previewFollowUp.status === "Cancelled"
+                                        ? "bg-orange-100 text-orange-500"
+                                        : "bg-orange-100 text-orange-600"
+                                      }`}
                                   >
                                     {previewFollowUp.status || "—"}
                                   </span>
                                 </div>
                                 {previewFollowUp.quotation_no && (
                                   <div>
-                                    <p className="text-xs text-gray-400 font-medium">
-                                      Quotation No
-                                    </p>
-                                    <p className="font-semibold text-gray-700 text-sm mt-0.5">
-                                      {previewFollowUp.quotation_no}
-                                    </p>
+                                    <p className="text-xs text-gray-400 font-medium">Quotation No</p>
+                                    <p className="font-semibold text-gray-700 text-sm mt-0.5">{previewFollowUp.quotation_no}</p>
                                   </div>
                                 )}
                               </div>
                               <div className="mt-2.5">
-                                <p className="text-xs text-gray-400 font-medium">
-                                  Description
-                                </p>
+                                <p className="text-xs text-gray-400 font-medium">Description</p>
                                 <p className="text-gray-700 mt-1 text-sm whitespace-pre-wrap">
                                   {previewFollowUp.description || "—"}
                                 </p>
                               </div>
 
                               {/* BUG FIX #4: File URLs as clickable links that open in new tab */}
-                              {previewFollowUp.files &&
-                                previewFollowUp.files.length > 0 && (
-                                  <div className="mt-3">
-                                    <p className="text-xs text-gray-400 font-medium mb-1.5">
-                                      Attached Files
-                                    </p>
-                                    <div className="flex flex-wrap gap-2">
-                                      {previewFollowUp.files.map((f, i) => (
-                                        <a
-                                          key={i}
-                                          href={f.file_path}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="flex items-center gap-1.5 border border-indigo-100 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors shadow-sm"
-                                        >
-                                          <i className="bi bi-file-earmark-check text-indigo-500"></i>
-                                          <span className="truncate max-w-[120px]">
-                                            {f.filename ||
-                                              f.file_name ||
-                                              "File"}
-                                          </span>
-                                        </a>
-                                      ))}
-                                    </div>
+                              {previewFollowUp.files && previewFollowUp.files.length > 0 && (
+                                <div className="mt-3">
+                                  <p className="text-xs text-gray-400 font-medium mb-1.5">Attached Files</p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {previewFollowUp.files.map((f, i) => (
+                                      <a
+                                        key={i}
+                                        href={f.file_path}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-1.5 border border-indigo-100 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors shadow-sm"
+                                      >
+                                        <i className="bi bi-file-earmark-check text-indigo-500"></i>
+                                        <span className="truncate max-w-[120px]">
+                                          {f.filename || f.file_name || "File"}
+                                        </span>
+                                      </a>
+                                    ))}
                                   </div>
-                                )}
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
@@ -2330,38 +2411,19 @@ const handleUpdate = async () => {
               <button
                 onClick={followUpTab === "quotation" ? handleUpdate : undefined}
                 disabled={followUpTab === "lead" || updateLoading}
-                title={
-                  followUpTab === "lead"
-                    ? "Lead follow-ups cannot be added here"
-                    : ""
-                }
-                className={`px-6 py-2 rounded-sm text-sm font-semibold text-white transition-all shadow-md flex items-center gap-2 ${
-                  followUpTab === "lead"
-                    ? "bg-gray-300 cursor-not-allowed shadow-none"
-                    : updateLoading
-                      ? "bg-orange-400 cursor-not-allowed shadow-orange-200"
-                      : "bg-orange-500 hover:bg-orange-600 shadow-orange-200"
-                }`}
+                title={followUpTab === "lead" ? "Lead follow-ups cannot be added here" : ""}
+                className={`px-6 py-2 rounded-sm text-sm font-semibold text-white transition-all shadow-md flex items-center gap-2 ${followUpTab === "lead"
+                  ? "bg-gray-300 cursor-not-allowed shadow-none"
+                  : updateLoading
+                    ? "bg-orange-400 cursor-not-allowed shadow-orange-200"
+                    : "bg-orange-500 hover:bg-orange-600 shadow-orange-200"
+                  }`}
               >
                 {updateLoading ? (
                   <>
-                    <svg
-                      className="animate-spin h-4 w-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="white"
-                        strokeWidth="4"
-                        opacity="0.25"
-                      />
-                      <path
-                        fill="white"
-                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                      />
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" opacity="0.25" />
+                      <path fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                     </svg>
                     Saving...
                   </>
@@ -2385,9 +2447,7 @@ const handleUpdate = async () => {
           <div className="bg-white w-[90vw] max-w-[900px] h-[85vh] rounded-sm shadow-xl overflow-hidden border border-gray-100 flex flex-col">
             <div
               className="flex justify-between items-center px-6 py-4 border-b border-gray-100 shadow-sm z-10"
-              style={{
-                background: "linear-gradient(to right, #f5e0c6, #ffffff)",
-              }}
+              style={{ background: "linear-gradient(to right, #f5e0c6, #ffffff)" }}
             >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full flex items-center justify-center">
@@ -2397,9 +2457,7 @@ const handleUpdate = async () => {
                   <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
                     {selectedLead?.company_name}
                   </h2>
-                  <p className="text-xs text-gray-500 font-medium">
-                    Quotation Management
-                  </p>
+                  <p className="text-xs text-gray-500 font-medium">Quotation Management</p>
                 </div>
               </div>
               <button
@@ -2419,12 +2477,9 @@ const handleUpdate = async () => {
                       <i className="bi bi-lock-fill text-green-600 text-sm"></i>
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-green-700">
-                        Quotation Approved
-                      </p>
+                      <p className="text-sm font-bold text-green-700">Quotation Approved</p>
                       <p className="text-xs text-green-600 mt-0.5">
-                        This quotation is already approved. You cannot add or
-                        edit any further quotation activities.
+                        This quotation is already approved. You cannot add or edit any further quotation activities.
                       </p>
                     </div>
                   </div>
@@ -2469,11 +2524,14 @@ const handleUpdate = async () => {
                       <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Quotation No <span className="text-red-400">*</span>
                       </label>
-                      <input
+                       <input
                         name="quotation_no"
                         value={form.quotation_no}
                         onChange={handleChange}
-                        className="w-full mt-1 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50"
+                        disabled={isQuotationNoLocked}
+                        className={`w-full mt-1 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50 ${
+                          isQuotationNoLocked ? "opacity-75 cursor-not-allowed" : ""
+                        }`}
                       />
                     </div>
                   </div>
@@ -2555,8 +2613,7 @@ const handleUpdate = async () => {
                           className="text-white px-5 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 mx-auto transition-all"
                           style={{ background: "#f07400" }}
                         >
-                          <i className="bi bi-cloud-upload text-sm"></i> Upload
-                          Files
+                          <i className="bi bi-cloud-upload text-sm"></i> Upload Files
                         </button>
                         {selectedFiles.length > 0 && (
                           <div className="mt-3 space-y-1.5 text-left">
@@ -2567,15 +2624,11 @@ const handleUpdate = async () => {
                               >
                                 <div className="flex items-center gap-2.5 overflow-hidden">
                                   <i className="bi bi-file-earmark-text text-blue-500 text-sm"></i>
-                                  <span className="text-gray-600 font-medium truncate">
-                                    {file.name}
-                                  </span>
+                                  <span className="text-gray-600 font-medium truncate">{file.name}</span>
                                 </div>
                                 <button
                                   onClick={() =>
-                                    setSelectedFiles(
-                                      selectedFiles.filter((_, i) => i !== idx),
-                                    )
+                                    setSelectedFiles(selectedFiles.filter((_, i) => i !== idx))
                                   }
                                   className="text-gray-300 hover:text-red-500 transition-colors ml-2"
                                 >
@@ -2588,8 +2641,7 @@ const handleUpdate = async () => {
                       </>
                     ) : (
                       <p className="text-xs text-gray-500 italic">
-                        File editing is unavailable during updates. Create a new
-                        quotation to attach new files.
+                        File editing is unavailable during updates. Create a new quotation to attach new files.
                       </p>
                     )}
                   </div>
@@ -2611,32 +2663,16 @@ const handleUpdate = async () => {
                       >
                         {isSubmitting ? (
                           <>
-                            <svg
-                              className="animate-spin h-4 w-4"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                            >
-                              <circle
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="white"
-                                strokeWidth="4"
-                                opacity="0.25"
-                              />
-                              <path
-                                fill="white"
-                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                              />
+                            <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                              <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" opacity="0.25" />
+                              <path fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                             </svg>
                             Processing...
                           </>
                         ) : (
                           <>
                             <i className="bi bi-floppy2-fill"></i>
-                            {editingId
-                              ? "Update Quotation"
-                              : "Save Quotation Activity"}
+                            {editingId ? "Update Quotation" : "Save Quotation Activity"}
                           </>
                         )}
                       </button>
@@ -2646,11 +2682,9 @@ const handleUpdate = async () => {
                             setEditingId(null);
                             setForm({
                               quotation_no: form.quotation_no,
-                              quotation_date: new Date()
-                                .toISOString()
-                                .split("T")[0],
+                              quotation_date: new Date().toISOString().split("T")[0],
                               activity_type: "",
-                              quotation_status: "Pending",
+                              quotation_status: selectedLead.displayStatus === "Revision" ? "Revision" : "Pending",
                               assignee: form.assignee,
                               amount: "",
                               discount: "",
@@ -2673,10 +2707,7 @@ const handleUpdate = async () => {
               <div className="w-7/12 bg-slate-50 flex flex-col relative z-0">
                 <div className="px-6 py-4 flex justify-between items-center bg-white border-b border-gray-100 sticky top-0 z-20 shadow-sm">
                   <h3 className="text-sm font-bold text-gray-700 uppercase flex items-center gap-2">
-                    <i
-                      className="bi bi-clock-history"
-                      style={{ color: "#f07400" }}
-                    ></i>{" "}
+                    <i className="bi bi-clock-history" style={{ color: "#f07400" }}></i>{" "}
                     Quotation History Data
                   </h3>
                 </div>
@@ -2684,9 +2715,7 @@ const handleUpdate = async () => {
                   {followUpHistory.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-gray-400">
                       <i className="bi bi-inbox text-4xl mb-2 text-gray-300"></i>
-                      <p className="text-sm font-medium">
-                        No quotation history found.
-                      </p>
+                      <p className="text-sm font-medium">No quotation history found.</p>
                     </div>
                   ) : (
                     [...followUpHistory]
@@ -2695,42 +2724,34 @@ const handleUpdate = async () => {
                           ? -1
                           : b.quotation_status === "Approved"
                             ? 1
-                            : Math.sign(
-                                new Date(b.created_at) - new Date(a.created_at),
-                              ),
+                            : Math.sign(new Date(b.created_at) - new Date(a.created_at))
                       )
                       .map((item, index) => (
                         <div
                           key={index}
-                          className={`bg-white border rounded-xl p-4 shadow-sm transition-colors ${
-                            item.quotation_status === "Approved"
-                              ? "border-green-400 bg-green-50/20"
-                              : "border-gray-200 hover:border-blue-200"
-                          }`}
+                          className={`bg-white border rounded-xl p-4 shadow-sm transition-colors ${item.quotation_status === "Approved"
+                            ? "border-green-400 bg-green-50/20"
+                            : "border-gray-200 hover:border-blue-200"
+                            }`}
                         >
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex gap-2 items-center">
                               <div
-                                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-sm ${
-                                  item.quotation_status === "Approved"
-                                    ? "bg-green-100 text-green-700"
-                                    : "bg-blue-100 text-blue-600"
-                                }`}
+                                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-sm ${item.quotation_status === "Approved"
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-blue-100 text-blue-600"
+                                  }`}
                               >
                                 {item.assignee ? item.assignee.charAt(0) : "U"}
                               </div>
                               <div>
                                 <p className="text-xs text-gray-500 font-medium">
                                   Recorded by{" "}
-                                  <span className="text-gray-800 font-bold">
-                                    {item.assignee || "User"}
-                                  </span>
+                                  <span className="text-gray-800 font-bold">{item.assignee || "User"}</span>
                                 </p>
                                 <p className="text-[10px] text-gray-400 font-medium tracking-wide">
                                   Quotation Date:{" "}
-                                  {new Date(
-                                    item.quotation_date || item.created_at,
-                                  ).toLocaleDateString()}
+                                  {new Date(item.quotation_date || item.created_at).toLocaleDateString()}
                                 </p>
                               </div>
                             </div>
@@ -2739,28 +2760,17 @@ const handleUpdate = async () => {
                                 item.quotation_status !== "Lost" &&
                                 item.quotation_status !== "Approved" &&
                                 item.quotation_status !== "Declined" &&
-                                !followUpHistory.find(
-                                  (h) => h.quotation_status === "Approved",
-                                ) && (
+                                !followUpHistory.find((h) => h.quotation_status === "Approved") &&
+                                (!isSales || item.quotation_status === "Sent") && (
                                   <>
                                     <button
-                                      onClick={() =>
-                                        handleApproveDecline(
-                                          item.id,
-                                          "Approved",
-                                        )
-                                      }
+                                      onClick={() => handleApproveDecline(item.id, "Approved")}
                                       className="bg-green-500 hover:bg-green-600 text-white text-[10px] px-2 py-1 rounded-md transition-all shadow-sm"
                                     >
                                       Approve
                                     </button>
                                     <button
-                                      onClick={() =>
-                                        handleApproveDecline(
-                                          item.id,
-                                          "Declined",
-                                        )
-                                      }
+                                      onClick={() => handleApproveDecline(item.id, "Declined")}
                                       className="bg-red-500 hover:bg-red-600 text-white text-[10px] px-2 py-1 rounded-md transition-all shadow-sm"
                                     >
                                       Decline
@@ -2768,13 +2778,12 @@ const handleUpdate = async () => {
                                   </>
                                 )}
                               <span
-                                className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-md ${
-                                  item.quotation_status === "Approved"
-                                    ? "bg-green-100 text-green-700"
-                                    : item.quotation_status === "Declined"
-                                      ? "bg-red-100 text-red-700"
-                                      : "bg-gray-100 text-gray-700"
-                                }`}
+                                className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-md ${item.quotation_status === "Approved"
+                                  ? "bg-green-100 text-green-700"
+                                  : item.quotation_status === "Declined"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-gray-100 text-gray-700"
+                                  }`}
                               >
                                 {item.quotation_status || "Pending"}
                               </span>
@@ -2797,9 +2806,7 @@ const handleUpdate = async () => {
                               <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold bg-indigo-50 border border-indigo-100 text-indigo-600 px-2 py-0.5 rounded-md">
                                 <i className="bi bi-pencil-fill text-[9px]"></i>
                                 Last edited by{" "}
-                                <span className="text-indigo-800">
-                                  {item.updated_by}
-                                </span>
+                                <span className="text-indigo-800">{item.updated_by}</span>
                               </span>
                               {item.updated_at && (
                                 <span className="text-[10px] text-gray-400 font-medium">
@@ -2811,25 +2818,15 @@ const handleUpdate = async () => {
 
                           <div className="mt-2 grid grid-cols-2 gap-4 bg-gray-50 p-2.5 rounded-lg border border-gray-100 text-sm">
                             <div>
-                              <span className="text-gray-400 text-xs">
-                                Quotation No:
-                              </span>{" "}
-                              <span className="font-semibold">
-                                {item.quotation_no || "-"}
-                              </span>
+                              <span className="text-gray-400 text-xs">Quotation No:</span>{" "}
+                              <span className="font-semibold">{item.quotation_no || "-"}</span>
                             </div>
                             <div>
-                              <span className="text-gray-400 text-xs">
-                                Activity Type:
-                              </span>{" "}
-                              <span className="font-semibold">
-                                {item.activity_type || "-"}
-                              </span>
+                              <span className="text-gray-400 text-xs">Activity Type:</span>{" "}
+                              <span className="font-semibold">{item.activity_type || "-"}</span>
                             </div>
                             <div className="col-span-2 text-gray-700">
-                              <span className="text-gray-400 text-xs block mb-0.5">
-                                Description:
-                              </span>
+                              <span className="text-gray-400 text-xs block mb-0.5">Description:</span>
                               <p className="whitespace-pre-wrap">
                                 {item.description || "No description provided."}
                               </p>
@@ -2837,42 +2834,24 @@ const handleUpdate = async () => {
                           </div>
                           <div className="mt-2 grid grid-cols-4 gap-4 bg-white p-2.5 rounded-lg border border-gray-100 text-sm">
                             <div>
-                              <span className="text-gray-400 text-[10px] uppercase block">
-                                Amount
-                              </span>
-                              <span className="font-semibold text-gray-800">
-                                ₹{item.amount || "0"}
-                              </span>
+                              <span className="text-gray-400 text-[10px] uppercase block">Amount</span>
+                              <span className="font-semibold text-gray-800">₹{item.amount || "0"}</span>
                             </div>
                             <div>
-                              <span className="text-gray-400 text-[10px] uppercase block">
-                                Discount
-                              </span>
+                              <span className="text-gray-400 text-[10px] uppercase block">Discount</span>
                               <span className="font-semibold text-gray-800">
-                                ₹
-                                {item.amount && item.discount
-                                  ? (
-                                      (item.amount * item.discount) /
-                                      100
-                                    ).toFixed(2)
+                                ₹{item.amount && item.discount
+                                  ? ((item.amount * item.discount) / 100).toFixed(2)
                                   : "0"}
                               </span>
                             </div>
                             <div>
-                              <span className="text-gray-400 text-[10px] uppercase block">
-                                Tax
-                              </span>
-                              <span className="font-semibold text-gray-800">
-                                {item.tax || "0"}%
-                              </span>
+                              <span className="text-gray-400 text-[10px] uppercase block">Tax</span>
+                              <span className="font-semibold text-gray-800">{item.tax || "0"}%</span>
                             </div>
                             <div>
-                              <span className="text-gray-400 text-[10px] uppercase block">
-                                Grand Total
-                              </span>
-                              <span className="font-bold text-green-600">
-                                ₹{item.grand_total || "0"}
-                              </span>
+                              <span className="text-gray-400 text-[10px] uppercase block">Grand Total</span>
+                              <span className="font-bold text-green-600">₹{item.grand_total || "0"}</span>
                             </div>
                           </div>
 
@@ -2892,9 +2871,7 @@ const handleUpdate = async () => {
                                     className="flex items-center gap-1.5 border border-indigo-100 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors shadow-sm"
                                   >
                                     <i className="bi bi-file-earmark-check text-indigo-500"></i>
-                                    <span className="truncate max-w-[120px]">
-                                      {f.file_name}
-                                    </span>
+                                    <span className="truncate max-w-[120px]">{f.file_name}</span>
                                   </a>
                                 ))}
                               </div>
@@ -2938,12 +2915,8 @@ const handleUpdate = async () => {
                 <div className="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center mb-3">
                   <i className="bi bi-cloud-arrow-up text-orange-500 text-2xl"></i>
                 </div>
-                <p className="font-bold text-gray-700 text-sm">
-                  Click or drag files here
-                </p>
-                <p className="text-xs text-gray-400 mt-2">
-                  JPG, PNG, PDF (Max 2MB per file, Max 5 files)
-                </p>
+                <p className="font-bold text-gray-700 text-sm">Click or drag files here</p>
+                <p className="text-xs text-gray-400 mt-2">JPG, PNG, PDF (Max 2MB per file, Max 5 files)</p>
                 <input
                   type="file"
                   id="quotFiles"
@@ -2986,12 +2959,8 @@ const handleUpdate = async () => {
               <div className="w-20 h-20 rounded-full bg-orange-50 flex items-center justify-center mb-4 border border-orange-100">
                 <i className="bi bi-trash text-orange-500 text-3xl"></i>
               </div>
-              <h2 className="text-lg font-semibold text-gray-800">
-                {deleteName}
-              </h2>
-              <p className="text-gray-400 text-sm mt-2">
-                This action cannot be undone. Are you sure?
-              </p>
+              <h2 className="text-lg font-semibold text-gray-800">{deleteName}</h2>
+              <p className="text-gray-400 text-sm mt-2">This action cannot be undone. Are you sure?</p>
             </div>
             <div className="flex justify-end gap-3 px-6 py-3">
               <button
@@ -3008,20 +2977,8 @@ const handleUpdate = async () => {
                 {isDeleting ? (
                   <>
                     <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="white"
-                        strokeWidth="3"
-                        fill="none"
-                        opacity="0.3"
-                      />
-                      <path
-                        d="M4 12a8 8 0 018-8"
-                        stroke="white"
-                        strokeWidth="3"
-                      />
+                      <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="3" fill="none" opacity="0.3" />
+                      <path d="M4 12a8 8 0 018-8" stroke="white" strokeWidth="3" />
                     </svg>
                     Deleting...
                   </>
@@ -3065,9 +3022,7 @@ const handleUpdate = async () => {
               </button>
             </div>
             <div className="p-6">
-              <p className="text-gray-500 text-sm mb-6">
-                Are you sure you want to change status?
-              </p>
+              <p className="text-gray-500 text-sm mb-6">Are you sure you want to change status?</p>
               <div className="flex justify-center gap-3">
                 <button
                   onClick={() => setShowStatusModal(false)}
@@ -3077,10 +3032,7 @@ const handleUpdate = async () => {
                 </button>
                 <button
                   onClick={() => {
-                    handleTableStatusChange(
-                      statusChangeData.id,
-                      statusChangeData.status,
-                    );
+                    handleTableStatusChange(statusChangeData.id, statusChangeData.status);
                     setShowStatusModal(false);
                   }}
                   className="px-6 py-2 rounded-sm text-sm font-semibold bg-orange-500 hover:bg-orange-600 text-white"
@@ -3100,18 +3052,14 @@ const handleUpdate = async () => {
             <div className="flex justify-between items-center px-6 py-4 from-orange-100 to-white bg-gradient-to-r">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full flex items-center justify-center">
-                  <i
-                    className="bi bi-file-earmark-arrow-up text-lg"
-                    style={{ color: "#f07400" }}
-                  ></i>
+                  <i className="bi bi-file-earmark-arrow-up text-lg" style={{ color: "#f07400" }}></i>
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
                     Convert to Proforma Invoice
                   </h2>
                   <p className="text-xs text-gray-400 font-medium">
-                    {selectedPIQuotation.company_name} —{" "}
-                    {selectedPIQuotation.customer_name}
+                    {selectedPIQuotation.company_name} — {selectedPIQuotation.customer_name}
                   </p>
                 </div>
               </div>
@@ -3130,30 +3078,21 @@ const handleUpdate = async () => {
               <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Quotation No</span>
-                  <span className="font-semibold text-gray-700">
-                    {selectedPIQuotation.quotation_no || "-"}
-                  </span>
+                  <span className="font-semibold text-gray-700">{selectedPIQuotation.quotation_no || "-"}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Reference</span>
-                  <span className="font-semibold text-gray-700">
-                    {selectedPIQuotation.reference || "-"}
-                  </span>
+                  <span className="font-semibold text-gray-700">{selectedPIQuotation.reference || "-"}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-400">Assignee</span>
-                  <span className="font-semibold text-gray-700">
-                    {selectedPIQuotation.assignee || "-"}
-                  </span>
+                  <span className="font-semibold text-gray-700">{selectedPIQuotation.assignee || "-"}</span>
                 </div>
                 <div className="h-px bg-gray-200"></div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-400 text-sm">Grand Total</span>
                   <span className="font-bold text-emerald-600 text-lg">
-                    ₹{" "}
-                    {piGrandTotal
-                      ? Number(piGrandTotal).toLocaleString("en-IN")
-                      : "0"}
+                    ₹ {piGrandTotal ? Number(piGrandTotal).toLocaleString("en-IN") : "0"}
                   </span>
                 </div>
               </div>
@@ -3171,20 +3110,14 @@ const handleUpdate = async () => {
                       value={piPercentage}
                       onChange={(e) => {
                         const val = e.target.value;
-                        if (val === "") {
-                          handlePiPercentageChange("");
-                          return;
-                        }
+                        if (val === "") { handlePiPercentageChange(""); return; }
                         const num = Number(val);
-                        if (num >= 0 && num <= 100)
-                          handlePiPercentageChange(num);
+                        if (num >= 0 && num <= 100) handlePiPercentageChange(num);
                       }}
                       className="w-full border border-orange-300 rounded-sm pl-3 pr-8 py-2.5 text-sm outline-none bg-gray-50 transition-all"
                       placeholder="0"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
-                      %
-                    </span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">%</span>
                   </div>
                 </div>
                 <div className="flex-1">
@@ -3192,19 +3125,14 @@ const handleUpdate = async () => {
                     Amount <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
-                      ₹
-                    </span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">₹</span>
                     <input
                       type="number"
                       min="0"
                       value={piRupees}
                       onChange={(e) => {
                         const val = e.target.value;
-                        if (val === "") {
-                          handlePiRupeesChange("");
-                          return;
-                        }
+                        if (val === "") { handlePiRupeesChange(""); return; }
                         handlePiRupeesChange(Number(val));
                       }}
                       className="w-full border border-orange-300 rounded-sm pl-7 pr-3 py-2.5 text-sm outline-none bg-gray-50 transition-all"
@@ -3216,39 +3144,28 @@ const handleUpdate = async () => {
 
               {piGrandTotal > 0 && (
                 <div
-                  className={`rounded-sm p-3 border transition-all ${
-                    piIsOver
-                      ? "bg-red-50 border-red-200"
-                      : piEnteredPct === 100
+                  className={`rounded-sm p-3 border transition-all ${piIsOver
+                    ? "bg-red-50 border-red-200"
+                    : piEnteredPct === 100
+                      ? "bg-green-50 border-green-200"
+                      : piEnteredPct > 0
                         ? "bg-green-50 border-green-200"
-                        : piEnteredPct > 0
-                          ? "bg-green-50 border-green-200"
-                          : "bg-blue-50 border-blue-100"
-                  }`}
+                        : "bg-blue-50 border-blue-100"
+                    }`}
                 >
                   <p className="text-xs font-bold uppercase tracking-wider mb-2 text-gray-500">
-                    {piEnteredPct > 0
-                      ? "Remaining After This Entry"
-                      : "Total Available"}
+                    {piEnteredPct > 0 ? "Remaining After This Entry" : "Total Available"}
                   </p>
                   <div className="flex justify-between items-center">
                     <div className="text-center">
-                      <p
-                        className={`text-xl font-bold ${piIsOver ? "text-red-600" : piEnteredPct === 100 ? "text-green-600" : "text-green-700"}`}
-                      >
-                        {piIsOver
-                          ? "Over!"
-                          : piEnteredPct > 0
-                            ? `${parseFloat(piRemainingPct.toFixed(2))}%`
-                            : "100%"}
+                      <p className={`text-xl font-bold ${piIsOver ? "text-red-600" : piEnteredPct === 100 ? "text-green-600" : "text-green-700"}`}>
+                        {piIsOver ? "Over!" : piEnteredPct > 0 ? `${parseFloat(piRemainingPct.toFixed(2))}%` : "100%"}
                       </p>
                       <p className="text-xs text-gray-400">Percentage</p>
                     </div>
                     <div className="w-px h-10 bg-gray-200"></div>
                     <div className="text-center">
-                      <p
-                        className={`text-xl font-bold ${piIsOver ? "text-red-600" : piEnteredPct === 100 ? "text-green-600" : "text-green-700"}`}
-                      >
+                      <p className={`text-xl font-bold ${piIsOver ? "text-red-600" : piEnteredPct === 100 ? "text-green-600" : "text-green-700"}`}>
                         {piIsOver
                           ? "Over!"
                           : piEnteredPct > 0
@@ -3261,21 +3178,14 @@ const handleUpdate = async () => {
                   <div className="mt-3">
                     <div className="w-full bg-white rounded-full h-2 border border-gray-200 overflow-hidden">
                       <div
-                        className={`h-2 rounded-full transition-all duration-300 ${
-                          piIsOver
-                            ? "bg-red-500"
-                            : piEnteredPct >= 100
-                              ? "bg-green-500"
-                              : "bg-green-400"
-                        }`}
+                        className={`h-2 rounded-full transition-all duration-300 ${piIsOver ? "bg-red-500" : piEnteredPct >= 100 ? "bg-green-500" : "bg-green-400"
+                          }`}
                         style={{ width: `${Math.min(piEnteredPct, 100)}%` }}
                       ></div>
                     </div>
                     <div className="flex justify-between mt-1">
                       <span className="text-xs text-gray-400">
-                        {piEnteredPct > 0
-                          ? `${parseFloat(piEnteredPct.toFixed(2))}% entered`
-                          : "Enter % or ₹ above"}
+                        {piEnteredPct > 0 ? `${parseFloat(piEnteredPct.toFixed(2))}% entered` : "Enter % or ₹ above"}
                       </span>
                       <span className="text-xs text-gray-400">100%</span>
                     </div>
@@ -3303,40 +3213,17 @@ const handleUpdate = async () => {
               </button>
               <button
                 onClick={handleCreatePI}
-                disabled={
-                  isCreatingPI ||
-                  !piPercentage ||
-                  Number(piPercentage) <= 0 ||
-                  Number(piPercentage) > 100
-                }
-                className={`flex-1 bg-green-500 hover:bg-green-600 text-white rounded-sm py-2.5 text-sm font-semibold shadow-md shadow-green-200 transition-all flex justify-center items-center gap-2 ${
-                  isCreatingPI ||
-                  !piPercentage ||
-                  Number(piPercentage) <= 0 ||
-                  Number(piPercentage) > 100
-                    ? "opacity-60 cursor-not-allowed"
-                    : ""
-                }`}
+                disabled={isCreatingPI || !piPercentage || Number(piPercentage) <= 0 || Number(piPercentage) > 100}
+                className={`flex-1 bg-green-500 hover:bg-green-600 text-white rounded-sm py-2.5 text-sm font-semibold shadow-md shadow-green-200 transition-all flex justify-center items-center gap-2 ${isCreatingPI || !piPercentage || Number(piPercentage) <= 0 || Number(piPercentage) > 100
+                  ? "opacity-60 cursor-not-allowed"
+                  : ""
+                  }`}
               >
                 {isCreatingPI ? (
                   <>
-                    <svg
-                      className="animate-spin h-4 w-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="white"
-                        strokeWidth="4"
-                        opacity="0.25"
-                      />
-                      <path
-                        fill="white"
-                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                      />
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" opacity="0.25" />
+                      <path fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                     </svg>
                     Creating PI...
                   </>
@@ -3370,10 +3257,7 @@ const handleUpdate = async () => {
                 <i className="bi bi-person-fill-gear"></i>
                 Change Assignee
               </p>
-              <button
-                onClick={closeAssigneePopover}
-                className="text-white/80 hover:text-white"
-              >
+              <button onClick={closeAssigneePopover} className="text-white/80 hover:text-white">
                 <i className="bi bi-x-lg text-sm"></i>
               </button>
             </div>
@@ -3382,24 +3266,20 @@ const handleUpdate = async () => {
             <div className="p-4 space-y-3 overflow-y-auto flex-1 min-h-0">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1.5">
-                    Last Assignee
-                  </p>
+                  <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1.5">Last Assignee</p>
                   <div className="flex gap-1 flex-wrap min-h-[36px] items-center">
                     {selectedAssigneeRow.assignee ? (
-                      String(selectedAssigneeRow.assignee)
-                        .split(",")
-                        .map((name, i) => (
-                          <span
-                            key={i}
-                            className="bg-blue-800 text-white text-xs font-medium px-2.5 py-1 rounded-full flex items-center gap-1"
-                          >
-                            <span className="w-3.5 h-3.5 rounded-full bg-white/20 flex items-center justify-center text-[8px] font-bold flex-shrink-0">
-                              {name.trim().charAt(0).toUpperCase()}
-                            </span>
-                            {name.trim()}
+                      String(selectedAssigneeRow.assignee).split(",").map((name, i) => (
+                        <span
+                          key={i}
+                          className="bg-blue-800 text-white text-xs font-medium px-2.5 py-1 rounded-full flex items-center gap-1"
+                        >
+                          <span className="w-3.5 h-3.5 rounded-full bg-white/20 flex items-center justify-center text-[8px] font-bold flex-shrink-0">
+                            {name.trim().charAt(0).toUpperCase()}
                           </span>
-                        ))
+                          {name.trim()}
+                        </span>
+                      ))
                     ) : (
                       <span className="text-gray-400 text-xs italic">None</span>
                     )}
@@ -3411,12 +3291,11 @@ const handleUpdate = async () => {
                     New Assignee <span className="text-red-400">*</span>
                   </label>
                   <Select
-                    isMulti
                     menuPosition="fixed"
                     instanceId="inline-assignee-select"
                     options={asignee}
                     value={newAssigneeValue}
-                    onChange={(selected) => setNewAssigneeValue(selected || [])}
+                    onChange={(selected) => setNewAssigneeValue(selected || null)}
                     placeholder="Select..."
                     unstyled
                     classNames={{
@@ -3425,19 +3304,14 @@ const handleUpdate = async () => {
                       valueContainer: () => "gap-1 flex-wrap",
                       placeholder: () => "text-gray-400 text-xs",
                       input: () => "text-xs text-gray-700",
-                      menu: () =>
-                        "mt-1 border border-gray-200 rounded-md bg-white shadow-lg z-[200]",
+                      menu: () => "mt-1 border border-gray-200 rounded-md bg-white shadow-lg z-[200]",
                       option: ({ isFocused, isSelected }) =>
                         `px-3 py-2 text-xs cursor-pointer ${isSelected ? "bg-blue-800 text-white" : isFocused ? "bg-orange-50 text-orange-700" : "text-gray-700"}`,
-                      multiValue: () =>
-                        "bg-blue-800 text-white rounded-full px-1.5 py-0.5 flex items-center gap-1 text-[10px]",
+                      multiValue: () => "bg-blue-800 text-white rounded-full px-1.5 py-0.5 flex items-center gap-1 text-[10px]",
                       multiValueLabel: () => "text-white font-medium",
-                      multiValueRemove: () =>
-                        "text-white hover:bg-blue-900 rounded ml-0.5 cursor-pointer",
-                      dropdownIndicator: () =>
-                        "text-gray-400 px-1 cursor-pointer hover:text-orange-500",
-                      clearIndicator: () =>
-                        "text-gray-400 px-1 cursor-pointer hover:text-red-500",
+                      multiValueRemove: () => "text-white hover:bg-blue-900 rounded ml-0.5 cursor-pointer",
+                      dropdownIndicator: () => "text-gray-400 px-1 cursor-pointer hover:text-orange-500",
+                      clearIndicator: () => "text-gray-400 px-1 cursor-pointer hover:text-red-500",
                     }}
                   />
                 </div>
@@ -3449,9 +3323,7 @@ const handleUpdate = async () => {
                 <label className="text-[10px] text-gray-400 uppercase font-bold tracking-wider block mb-1.5 flex items-center gap-1">
                   <i className="bi bi-pencil-square text-gray-300"></i>
                   Task Description
-                  <span className="text-gray-300 font-normal normal-case ml-1">
-                    (optional)
-                  </span>
+                  <span className="text-gray-300 font-normal normal-case ml-1">(optional)</span>
                 </label>
                 <textarea
                   value={assigneeDescription}
@@ -3471,32 +3343,17 @@ const handleUpdate = async () => {
                 </button>
                 <button
                   onClick={handleAssigneeUpdate}
-                  disabled={isUpdatingAssignee || newAssigneeValue.length === 0}
-                  className={`flex-[2] py-2 rounded-md text-xs text-white font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                    isUpdatingAssignee || newAssigneeValue.length === 0
-                      ? "bg-orange-300 cursor-not-allowed"
-                      : "bg-orange-500 hover:bg-orange-600"
-                  }`}
+                  disabled={isUpdatingAssignee || !newAssigneeValue}
+                  className={`flex-[2] py-2 rounded-md text-xs text-white font-semibold flex items-center justify-center gap-1.5 transition-all ${isUpdatingAssignee || !newAssigneeValue
+                    ? "bg-orange-300 cursor-not-allowed"
+                    : "bg-orange-500 hover:bg-orange-600"
+                    }`}
                 >
                   {isUpdatingAssignee ? (
                     <>
-                      <svg
-                        className="animate-spin h-3 w-3"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                      >
-                        <circle
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="white"
-                          strokeWidth="4"
-                          opacity="0.25"
-                        />
-                        <path
-                          fill="white"
-                          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                        />
+                      <svg className="animate-spin h-3 w-3" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" opacity="0.25" />
+                        <path fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                       </svg>
                       Updating...
                     </>
@@ -3529,17 +3386,13 @@ const handleUpdate = async () => {
                           <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded">
                             {log.changed_by || "System"}
                           </span>
-                          <span className="text-[10px] text-gray-400">
-                            assigned
-                          </span>
+                          <span className="text-[10px] text-gray-400">assigned</span>
                           <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
                             {log.new_assignee || "-"}
                           </span>
                         </div>
                         {log.changed_at && (
-                          <p className="text-[9px] text-gray-400 mt-0.5">
-                            {formatDateTime(log.changed_at)}
-                          </p>
+                          <p className="text-[9px] text-gray-400 mt-0.5">{formatDateTime(log.changed_at)}</p>
                         )}
                         {log.description && log.description.trim() !== "" && (
                           <div className="mt-1.5 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5">
@@ -3547,9 +3400,7 @@ const handleUpdate = async () => {
                               <i className="bi bi-chat-text-fill text-[9px]"></i>
                               Task Note
                             </p>
-                            <p className="text-[10px] text-amber-800 leading-relaxed whitespace-pre-wrap">
-                              {log.description}
-                            </p>
+                            <p className="text-[10px] text-amber-800 leading-relaxed whitespace-pre-wrap">{log.description}</p>
                           </div>
                         )}
                       </div>
@@ -3562,148 +3413,74 @@ const handleUpdate = async () => {
                     <i className="bi bi-clock-history text-gray-300"></i>
                     Last Change
                   </p>
-                  <p className="text-xs text-gray-300 italic text-center py-2">
-                    No history found
-                  </p>
+                  <p className="text-xs text-gray-300 italic text-center py-2">No history found</p>
                 </div>
               )}
             </div>
           </div>
         </div>
       )}
-      {showViewModal && viewQuotation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 p-5">
-          <div className="bg-white w-full max-w-2xl max-h-[88vh] overflow-y-auto border border-gray-100 rounded-lg shadow-2xl">
-            {/* HEADER */}
-            <div className="from-orange-100 to-white px-5 py-3.5 flex items-center justify-between bg-gradient-to-r sticky top-0 z-10">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 flex items-center justify-center">
-                  <i className="bi bi-person text-base text-orange-500"></i>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    {viewQuotation.customer_name || "—"}
-                  </p>
-                  <p className="text-gray-400 text-xs">Quotation Details</p>
-                </div>
+
+      {/* Proforma Invoice Assignee Selection Modal */}
+      {showPiUserSelectModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-white w-[90vw] max-w-[450px] rounded-lg shadow-2xl border border-gray-100 overflow-hidden flex flex-col p-6 transition-all duration-300">
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                <i className="bi bi-person-badge text-lg text-orange-600"></i>
               </div>
-              <button
-                onClick={() => setShowViewModal(false)}
-                className="w-7 h-7 flex items-center justify-center text-orange-500"
+              <div>
+                <h3 className="text-base font-bold text-gray-800">
+                  Select Proforma Invoice Assignee
+                </h3>
+                <p className="text-xs text-gray-500">
+                  Multiple Proforma Invoice users found. Please select one to assign.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3.5 my-2">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Assignee User
+              </label>
+              <select
+                value={selectedPiUserForApproval}
+                onChange={(e) => setSelectedPiUserForApproval(e.target.value)}
+                className="w-full border border-orange-300 rounded-lg px-3.5 py-2.5 text-sm outline-none bg-gray-50 focus:border-orange-500 focus:bg-white transition-all font-medium text-gray-700"
               >
-                <i className="bi bi-x-lg text-sm"></i>
+                <option value="">-- Choose User --</option>
+                {availablePiUsers.map((user) => (
+                  <option key={user.id} value={user.name}>
+                    {user.name} ({user.email})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowPiUserSelectModal(false);
+                  setApproveTargetHistId(null);
+                }}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg py-2.5 text-sm font-semibold transition-all"
+              >
+                Cancel
               </button>
-            </div>
-
-            {/* BODY */}
-            <div className="p-5 grid grid-cols-2 gap-3">
-              {[
-                {
-                  icon: "bi-building",
-                  label: "Company Name",
-                  value: viewQuotation.company_name,
-                },
-                {
-                  icon: "bi-percent",
-                  label: "Tax",
-                  value: `${viewQuotation.tax || 0} %`,
-                },
-                {
-                  icon: "bi-person-circle",
-                  label: "Customer Name",
-                  value: viewQuotation.customer_name,
-                },
-                {
-                  icon: "bi-tag",
-                  label: "Discount",
-                  value: `${viewQuotation.discount || 0} %`,
-                },
-                {
-                  icon: "bi-file-text",
-                  label: "Reference",
-                  value: viewQuotation.reference,
-                },
-                {
-                  icon: "bi-receipt",
-                  label: "Amount",
-                  value: `₹ ${Number(viewQuotation.amount || 0).toLocaleString()}`,
-                },
-                {
-                  icon: "bi-flag",
-                  label: "Source",
-                  value: viewQuotation.source,
-                },
-                {
-                  icon: "bi-currency-rupee",
-                  label: "Grand Total",
-                  value: `₹ ${Number(viewQuotation.grand_total || 0).toLocaleString()}`,
-                },
-                {
-                  icon: "bi-hash",
-                  label: "Quotation No",
-                  value: viewQuotation.quotation_no,
-                },
-                {
-                  icon: "bi-calendar3",
-                  label: "Created At",
-                  value: viewQuotation.created_at
-                    ? new Date(viewQuotation.created_at).toLocaleDateString(
-                        "en-GB",
-                      )
-                    : "—",
-                },
-                {
-                  icon: "bi-clock-history",
-                  label: "Updated At",
-                  value: viewQuotation.updated_at
-                    ? new Date(viewQuotation.updated_at).toLocaleString("en-GB")
-                    : "—",
-                },
-                {
-                  icon: "bi-person-check",
-                  label: "Updated By",
-                  value: viewQuotation.updated_by,
-                },
-              ].map(({ icon, label, value }) => (
-                <div
-                  key={label}
-                  className="bg-gray-50 rounded-sm px-4 py-2.5 flex items-center gap-3"
-                >
-                  <i
-                    className={`bi ${icon} text-orange-400 text-lg flex-shrink-0`}
-                  ></i>
-                  <div>
-                    <p className="text-[11px] text-gray-400 uppercase tracking-wider font-semibold">
-                      {label}
-                    </p>
-                    <p className="text-sm font-semibold text-gray-700">
-                      {value || "—"}
-                    </p>
-                  </div>
-                </div>
-              ))}
-
-              {/* Description — full width */}
-              <div className="col-span-2 bg-gray-50 rounded-sm px-4 py-2.5 flex items-start gap-3">
-                <i className="bi bi-chat-left-text text-orange-400 text-lg flex-shrink-0"></i>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] text-gray-400 uppercase tracking-wider font-semibold">
-                    Description
-                  </p>
-                  <p className="text-sm font-semibold text-gray-700 break-words whitespace-normal">
-                    {viewQuotation.description || "—"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* FOOTER */}
-            <div className="flex justify-end px-5 py-3.5 border-t border-gray-100">
               <button
-                onClick={() => setShowViewModal(false)}
-                className="px-6 py-1.5 text-sm font-medium border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-100 transition-all"
+                onClick={async () => {
+                  if (!selectedPiUserForApproval) {
+                    toast.error("Please select an assignee!");
+                    return;
+                  }
+                  setShowPiUserSelectModal(false);
+                  await proceedStatusUpdate(approveTargetHistId, "Approved", selectedPiUserForApproval);
+                  setApproveTargetHistId(null);
+                }}
+                className="flex-1 text-white rounded-lg py-2.5 text-sm font-semibold transition-all shadow-md hover:opacity-90"
+                style={{ background: "#f07400" }}
               >
-                Close
+                Approve & Assign
               </button>
             </div>
           </div>
@@ -3711,5 +3488,4 @@ const handleUpdate = async () => {
       )}
     </>
   );
-
 }

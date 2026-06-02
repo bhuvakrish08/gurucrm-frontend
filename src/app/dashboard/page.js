@@ -178,11 +178,61 @@ export default function Dashboard() {
         todosRes.data?.result || todosRes.data?.data || todosRes.data;
       setTodos(Array.isArray(fetchedTodos) ? fetchedTodos : []);
 
-      const fetchedQuotations =
+      let fetchedQuotations =
         quotationsRes.data?.result ||
         quotationsRes.data?.data ||
         quotationsRes.data;
-      setQuotations(Array.isArray(fetchedQuotations) ? fetchedQuotations : []);
+      if (!Array.isArray(fetchedQuotations)) {
+        fetchedQuotations = [];
+      }
+      const userRole = localStorage.getItem("role") || "";
+      const userFirstName = (localStorage.getItem("username") || "").split(" ")[0].toLowerCase();
+      if (userRole.toLowerCase() === "sales") {
+        fetchedQuotations = fetchedQuotations.filter((q) => {
+          const qAssignees = q.assignee
+            ? q.assignee.split(",").map((name) => name.trim().toLowerCase())
+            : [];
+          const lAssignees = q.lead_assignee
+            ? q.lead_assignee.split(",").map((name) => name.trim().toLowerCase())
+            : [];
+          const hasBeenAssigned =
+            qAssignees.some(name => name.includes(userFirstName)) ||
+            lAssignees.some(name => name.includes(userFirstName));
+
+          let inLog = false;
+          if (q.assignee_log) {
+            try {
+              const logs = JSON.parse(q.assignee_log);
+              inLog = logs.some(
+                (log) =>
+                  (log.previous_assignee &&
+                    log.previous_assignee.toLowerCase().includes(userFirstName)) ||
+                  (log.new_assignee &&
+                    log.new_assignee.toLowerCase().includes(userFirstName))
+              );
+            } catch { }
+          }
+          return hasBeenAssigned || inLog;
+        });
+      } else if (userRole.toLowerCase() === "estimation") {
+        fetchedQuotations = fetchedQuotations.filter((q) => {
+          const qAssignees = q.assignee
+            ? q.assignee.split(",").map((name) => name.trim().toLowerCase())
+            : [];
+          const lAssignees = q.lead_assignee
+            ? q.lead_assignee.split(",").map((name) => name.trim().toLowerCase())
+            : [];
+
+          const matchesQuotation = qAssignees.some(name => name.includes(userFirstName));
+          const matchesLead = lAssignees.some(name => name.includes(userFirstName));
+
+          if (qAssignees.length === 0) {
+            return matchesLead;
+          }
+          return matchesQuotation;
+        });
+      }
+      setQuotations(fetchedQuotations);
 
       const fetchedPis = piRes.data?.data || piRes.data?.result || piRes.data;
       setPis(Array.isArray(fetchedPis) ? fetchedPis : []);
@@ -623,6 +673,37 @@ export default function Dashboard() {
               colorClass="bg-orange-50 text-orange-500 border border-orange-100/50 group-hover:bg-orange-500 group-hover:text-white"
             />
           </div>
+        ) : role === 'Sales' ? (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+            <DashboardCard
+              onClick={() => router.push("/sales/lead")}
+              title="Total Leads"
+              value={leads.length}
+              icon={UserPlus}
+              colorClass="bg-orange-50 text-orange-500 border border-orange-100/50 group-hover:bg-orange-500 group-hover:text-white"
+            />
+            <DashboardCard
+              onClick={() => router.push("/sales/lead")}
+              title="Won Leads"
+              value={leads.filter((l) => l.status === "Won").length}
+              icon={CheckCircle2}
+              colorClass="bg-orange-50 text-orange-500 border border-orange-100/50 group-hover:bg-orange-500 group-hover:text-white"
+            />
+            <DashboardCard
+              onClick={() => router.push("/sales/quotation")}
+              title="Total Estimations"
+              value={quotations.length}
+              icon={Activity}
+              colorClass="bg-orange-50 text-orange-500 border border-orange-100/50 group-hover:bg-orange-500 group-hover:text-white"
+            />
+            <DashboardCard
+              onClick={() => router.push("/sales/quotation")}
+              title="Approved Estimations"
+              value={quotations.filter((q) => { const st = (q.quotation_status || "").toLowerCase(); return st === "won" || st === "approved"; }).length}
+              icon={TrendingUp}
+              colorClass="bg-orange-50 text-orange-500 border border-orange-100/50 group-hover:bg-orange-500 group-hover:text-white"
+            />
+          </div>
         ) : role === 'Leads Management' ? (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
             <DashboardCard
@@ -965,7 +1046,452 @@ export default function Dashboard() {
           </div>
         )}
 
-        {!loading && role !== 'Leads Management' && role !== 'Estimation' && (
+        {!loading && role === 'Sales' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              {/* ROW 1: Symmetrical 3-Column Charts & Recent List */}
+              
+              {/* Leads Status Donut Chart (Span 4) */}
+              <div
+                className="lg:col-span-4 bg-gradient-to-br from-white to-orange-50/40 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col justify-between animate-fade-in-up"
+                style={{ animationDelay: "0.1s" }}
+              >
+                <div className="mb-2">
+                  <h3 className="text-sm font-extrabold text-gray-800">
+                    Lead Status Distribution
+                  </h3>
+                  <p className="text-[10px] text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
+                    Won vs Pending vs Lost leads
+                  </p>
+                </div>
+                <div className="h-[210px] flex items-center justify-center">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={processLeadsDonut()}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={45}
+                        outerRadius={68}
+                        paddingAngle={4}
+                        dataKey="value"
+                        animationDuration={2000}
+                      >
+                        {processLeadsDonut().map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={entry.color}
+                            stroke="transparent"
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: "12px",
+                          border: "none",
+                          boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+                        }}
+                        itemStyle={{ fontWeight: "bold", fontSize: "11px" }}
+                      />
+                      <Legend
+                        layout="horizontal"
+                        verticalAlign="bottom"
+                        align="center"
+                        iconType="circle"
+                        wrapperStyle={{
+                          fontSize: "10px",
+                          fontWeight: 600,
+                          color: "#475569",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Quotation Status Donut Chart (Span 4) */}
+              <div
+                className="lg:col-span-4 bg-gradient-to-br from-white to-orange-50/40 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col justify-between animate-fade-in-up"
+                style={{ animationDelay: "0.2s" }}
+              >
+                <div className="mb-2">
+                  <h3 className="text-sm font-extrabold text-gray-800">
+                    Estimation Distribution
+                  </h3>
+                  <p className="text-[10px] text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
+                    Success vs Pending status
+                  </p>
+                </div>
+                <div className="h-[210px] flex items-center justify-center">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={processQuotationStatus()}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={45}
+                        outerRadius={68}
+                        paddingAngle={4}
+                        dataKey="value"
+                        animationDuration={2000}
+                      >
+                        {processQuotationStatus().map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={entry.color}
+                            stroke="transparent"
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          borderRadius: "12px",
+                          border: "none",
+                          boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+                        }}
+                        itemStyle={{ fontWeight: "bold", fontSize: "11px" }}
+                      />
+                      <Legend
+                        layout="horizontal"
+                        verticalAlign="bottom"
+                        align="center"
+                        iconType="circle"
+                        wrapperStyle={{
+                          fontSize: "10px",
+                          fontWeight: 600,
+                          color: "#475569",
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Recent Sales Activities List (Span 4) */}
+              <div
+                className="lg:col-span-4 bg-gradient-to-br from-white to-orange-50/40 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-100 p-5 flex flex-col justify-between animate-fade-in-up"
+                style={{ animationDelay: "0.3s" }}
+              >
+                <div className="mb-3">
+                  <h3 className="text-sm font-extrabold text-gray-800">
+                    Recent Sales Actions
+                  </h3>
+                  <p className="text-[10px] text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
+                    Combined activity logs
+                  </p>
+                </div>
+
+                <div className="space-y-2 flex-1 overflow-y-auto max-h-[200px] pr-1 custom-scrollbar">
+                  {(() => {
+                    const activities = [];
+                    const safeLeads = Array.isArray(leads) ? leads : [];
+                    const safeQuotations = Array.isArray(quotations) ? quotations : [];
+
+                    safeLeads.forEach(l => {
+                      activities.push({
+                        id: `lead-${l.lead_id}`,
+                        type: "Lead",
+                        title: l.company_name || l.customer_name || "New Lead",
+                        subtitle: l.reference || "No Reference",
+                        date: l.created_at || l.updated_at,
+                        status: l.status,
+                      });
+                    });
+
+                    safeQuotations.forEach(q => {
+                      activities.push({
+                        id: `quote-${q.latest_quotation_id || q.id}`,
+                        type: "Estimation",
+                        title: q.company_name || q.customer_name || "New Quotation",
+                        subtitle: q.quotation_no || "No Quote No.",
+                        date: q.quotation_created_at || q.quotation_date,
+                        status: q.quotation_status,
+                        amount: q.grand_total || q.amount,
+                      });
+                    });
+
+                    const sorted = activities
+                      .filter(act => act.date)
+                      .sort((a, b) => new Date(b.date) - new Date(a.date))
+                      .slice(0, 4);
+
+                    if (sorted.length === 0) {
+                      return <p className="text-gray-400 text-xs text-center py-10">No recent activity</p>;
+                    }
+
+                    return sorted.map((act) => (
+                      <div
+                        key={act.id}
+                        className="flex items-center justify-between p-2.5 rounded-xl bg-white/70 hover:bg-white border border-slate-100 hover:border-orange-100 transition-all duration-300 shadow-sm"
+                      >
+                        <div className="flex flex-col min-w-0 pr-2">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter ${
+                              act.type === "Lead"
+                                ? "bg-orange-100 text-orange-600 border border-orange-200/50"
+                                : "bg-emerald-100 text-emerald-600 border border-emerald-200/50"
+                            }`}>
+                              {act.type}
+                            </span>
+                            <span className="text-[10px] text-gray-400 font-bold">
+                              {act.date ? new Date(act.date).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : ""}
+                            </span>
+                          </div>
+                          <span className="text-xs font-bold text-gray-700 truncate max-w-[130px] sm:max-w-[170px]">
+                            {act.title}
+                          </span>
+                          <span className="text-[9px] text-gray-400 truncate max-w-[130px] sm:max-w-[170px] font-semibold">
+                            {act.subtitle}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-col items-end shrink-0">
+                          {act.amount !== undefined && (
+                            <span className="text-[11px] font-black text-gray-800">
+                              ₹{Math.round(act.amount).toLocaleString("en-IN")}
+                            </span>
+                          )}
+                          <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-tight mt-1 ${
+                            act.status === "Won" || act.status === "Approved"
+                              ? "bg-green-100 text-green-700"
+                              : act.status === "Lost"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-orange-100 text-orange-700"
+                          }`}>
+                            {act.status}
+                          </span>
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </div>
+            </div>
+
+            {/* ROW 2: Sales Area Chart & Checklist */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              {/* Monthly Estimation Performance Trend (Area Chart) (Span 7) */}
+              <div
+                className="lg:col-span-7 bg-gradient-to-br from-white to-orange-50/40 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col justify-between animate-fade-in-up"
+                style={{ animationDelay: "0.4s" }}
+              >
+                <div>
+                  <h3 className="text-sm font-extrabold text-gray-800">
+                    Estimation Performance Trend
+                  </h3>
+                  <p className="text-[10px] text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
+                    Monthly Approved vs Draft quotation amounts
+                  </p>
+                </div>
+                <div className="h-[210px] mt-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={processEstimationTimeframeData()}
+                      margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="colorSalesApproved" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.25} />
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="colorSalesDraft" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.25} />
+                          <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                      <XAxis
+                        dataKey="name"
+                        stroke="#94a3b8"
+                        fontSize={10}
+                        fontWeight={600}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        stroke="#94a3b8"
+                        fontSize={9}
+                        fontWeight={600}
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(value) => {
+                          if (value >= 100000) return `₹${(value / 100000).toFixed(1)}L`;
+                          if (value >= 1000) return `₹${(value / 1000).toFixed(0)}k`;
+                          return `₹${value}`;
+                        }}
+                      />
+                      <Tooltip
+                        cursor={{ stroke: "#e2e8f0", strokeWidth: 1 }}
+                        contentStyle={{
+                          borderRadius: "12px",
+                          border: "none",
+                          boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+                        }}
+                        itemStyle={{ fontWeight: "bold", fontSize: "11px" }}
+                        formatter={(value) => [`₹${Math.round(value).toLocaleString("en-IN")}`]}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="Approved"
+                        stroke="#10b981"
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#colorSalesApproved)"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="Draft"
+                        stroke="#f59e0b"
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#colorSalesDraft)"
+                      />
+                      <Legend
+                        verticalAlign="top"
+                        height={36}
+                        align="right"
+                        iconType="circle"
+                        wrapperStyle={{ fontSize: "10px", fontWeight: 600, color: "#475569" }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Todo split list (Span 5) */}
+              <div
+                className="lg:col-span-5 bg-gradient-to-br from-white to-orange-50/40 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-100 p-5 flex flex-col justify-between animate-fade-in-up"
+                style={{ animationDelay: "0.5s" }}
+              >
+                <div>
+                  <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-4">
+                    <div>
+                      <h3 className="text-sm font-extrabold text-gray-800">
+                        Sales checklist
+                      </h3>
+                      <p className="text-[10px] text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
+                        Productivity Checklist
+                      </p>
+                    </div>
+                    <form
+                      onSubmit={handleAddTodo}
+                      className="flex relative w-full sm:w-44"
+                    >
+                      <input
+                        type="text"
+                        value={newTodoTitle}
+                        onChange={(e) => setNewTodoTitle(e.target.value)}
+                        placeholder={
+                          editingTodoId ? "Update task..." : "Quick add task..."
+                        }
+                        className="w-full bg-white border border-gray-200 rounded-lg py-[5px] pl-2 pr-7 text-[11px] focus:outline-none focus:ring-2 focus:ring-orange-500/20 transition-all text-gray-800 font-semibold placeholder-gray-400"
+                      />
+                      <button
+                        type="submit"
+                        disabled={addingTodo}
+                        className="absolute right-1 top-1/2 -translate-y-1/2 text-orange-500 hover:text-orange-600 transition-colors p-1"
+                      >
+                        <Plus size={14} strokeWidth={3} />
+                      </button>
+                    </form>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Unfinished checklist */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between pb-1.5 border-b border-gray-100">
+                        <span className="text-[10px] font-black text-amber-600 uppercase tracking-wider flex items-center gap-1.5">
+                          <Circle size={8} fill="#d97706" stroke="transparent" />
+                          Pending ({unfinishedTodos.length})
+                        </span>
+                      </div>
+                      <div className="space-y-1.5 overflow-y-auto h-[120px] custom-scrollbar pr-1">
+                        {unfinishedTodos.map((todo) => (
+                          <div
+                            key={todo.id}
+                            className="group flex justify-between items-center bg-amber-50/50 rounded-md px-2 py-1 border border-amber-100/50 hover:border-amber-200/80 transition-all animate-fade-in"
+                          >
+                            <div className="flex items-center gap-2 flex-1 truncate">
+                              <input
+                                type="checkbox"
+                                checked={false}
+                                onChange={() => handleToggleTodo(todo.id)}
+                                className="w-3.5 h-3.5 accent-orange-500 cursor-pointer"
+                              />
+                              <p className="text-[11px] font-bold text-gray-700 truncate">
+                                {todo.title}
+                              </p>
+                            </div>
+                            <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => startEditTodo(todo)}
+                                className="text-gray-400 hover:text-orange-500 transition-colors"
+                              >
+                                <Pencil size={10} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteTodo(todo.id)}
+                                className="text-gray-400 hover:text-red-500 transition-colors"
+                              >
+                                <Trash2 size={10} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                        {unfinishedTodos.length === 0 && (
+                          <p className="text-gray-400 text-xs text-center py-8">All caught up!</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Finished checklist */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between pb-1.5 border-b border-gray-100">
+                        <span className="text-[10px] font-black text-green-600 uppercase tracking-wider flex items-center gap-1.5">
+                          <CheckCircle2 size={10} className="text-green-500" />
+                          Completed ({finishedTodos.length})
+                        </span>
+                      </div>
+                      <div className="space-y-1.5 overflow-y-auto h-[120px] custom-scrollbar pr-1">
+                        {finishedTodos.map((todo) => (
+                          <div
+                            key={todo.id}
+                            className="group flex justify-between items-center bg-green-50/50 rounded-md px-2 py-1 border border-green-100/50 transition-all animate-fade-in"
+                          >
+                            <div className="flex items-center gap-2 flex-1 truncate">
+                              <input
+                                type="checkbox"
+                                checked
+                                onChange={() => handleToggleTodo(todo.id)}
+                                className="w-3.5 h-3.5 accent-green-500 cursor-pointer"
+                              />
+                              <p className="text-[11px] font-bold text-gray-400 line-through truncate">
+                                {todo.title}
+                              </p>
+                            </div>
+                            <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => handleDeleteTodo(todo.id)}
+                                className="text-gray-400 hover:text-red-500 transition-colors"
+                              >
+                                <Trash2 size={10} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                        {finishedTodos.length === 0 && (
+                          <p className="text-gray-400 text-xs text-center py-8">No completed tasks yet</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!loading && role !== 'Leads Management' && role !== 'Estimation' && role !== 'Sales' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-6">
             {/* ROW 1 */}
             {/* Sales Chart (Span 8) */}

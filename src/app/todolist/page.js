@@ -20,7 +20,7 @@ export default function Page() {
   const [currentTodo, setCurrentTodo] = useState({ id: null, title: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useAuth();
+  useAuth(["Admin", "Super Admin", "Sales", "Estimation", "Leads Management"]);
 
   const router = useRouter();
 

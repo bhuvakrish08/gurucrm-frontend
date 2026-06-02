@@ -68,3 +68,11 @@ html, body {
   scrollbar-width: thin;
   scrollbar-color: #c1c1c1 transparent;
 }
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.animate-blink {
+  animation: blink 1.2s infinite;
+}

@@ -43,7 +43,7 @@ export default function ProformaPage() {
 
   const [assigneeList, setAssigneeList] = useState([]);
 
-  useAuth();
+  useAuth(["Admin", "Super Admin", "Proforma invoices"]);
 
   const API = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -89,6 +89,11 @@ export default function ProformaPage() {
     return () => clearTimeout(debounceRef.current);
   }, [filters]);
 
+<<<<<<< Updated upstream
+=======
+ 
+
+>>>>>>> Stashed changes
   // ── RESET FILTERS ─────────────────────────────────────────
   const resetFilters = () => {
     setFilters({
@@ -673,12 +678,21 @@ export default function ProformaPage() {
       toast.error("Please enter percentage");
       return;
     }
+<<<<<<< Updated upstream
 
     // ✅ FIX: Only use proforma_percentage from PI — single source of truth
     // Do NOT add followUps.reduce() — that was causing double-counting
     const alreadyPaid = Number(selectedPI.proforma_percentage || 0);
     const newTotal = alreadyPaid + newPercent;
 
+=======
+    const followUps = selectedPI.follow_ups || [];
+    const existingTotal = followUps.reduce(
+      (sum, f) => sum + Number(f.proforma_percentage),
+      0,
+    );
+    const newTotal = existingTotal + newPercent;
+>>>>>>> Stashed changes
     if (newTotal > 100) {
       toast.error(`Only ${100 - alreadyPaid}% remaining`);
       return;
@@ -930,7 +944,7 @@ export default function ProformaPage() {
                         const isWon = item.status === "paid";
                         return (
                           <tr
-                            key={item.pi_id || item.quotation_id}
+                            key={item.pi_id}
                             className="border-b border-gray-50 hover:bg-indigo-50/30 transition-colors"
                           >
                             <td className="py-3 px-3">{globalIndex + 1}</td>
@@ -980,6 +994,7 @@ export default function ProformaPage() {
                             </td>
                             <td className="py-3 px-3 text-center">
                               <button
+<<<<<<< Updated upstream
                                 onClick={async () => {
                                   try {
                                     if (!item.pi_id) {
@@ -1004,6 +1019,15 @@ export default function ProformaPage() {
                                   } catch (err) {
                                     toast.error(err.response?.data?.message || "Unable to create PI");
                                   }
+=======
+                                onClick={() => {
+                                  setSelectedPI(item);
+                                  setEditing(null);
+                                  setPercentage("");
+                                  setRupees("");
+                                  setActiveIndex(null);
+                                  setShowModal(true);
+>>>>>>> Stashed changes
                                 }}
                                 className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center mx-auto hover:bg-gray-100 cursor-pointer"
                               >
