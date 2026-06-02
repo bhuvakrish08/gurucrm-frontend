@@ -1201,9 +1201,7 @@ export default function ProformaPage() {
                             </td>
 
                             <td className="py-3 px-3 text-gray-500">
-                              {item.created_at
-                                ? new Date(item.created_at).toLocaleDateString("en-IN")
-                                : "-"}
+                              {item.source}
                             </td>
                           </tr>
                         );

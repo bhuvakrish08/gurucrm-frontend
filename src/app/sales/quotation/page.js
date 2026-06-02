@@ -2223,7 +2223,7 @@ export default function QuotationPage() {
                         className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50 h-20 resize-none"
                       />
                     </div>
-                    <div className="col-span-2 border-2 border-dashed border-orange-300 rounded-xl p-3 text-center bg-orange-50/40">
+                    {/* <div className="col-span-2 border-2 border-dashed border-orange-300 rounded-xl p-3 text-center bg-orange-50/40">
                       <button
                         onClick={() => setShowFileModal(true)}
                         className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 mx-auto transition-all shadow-md shadow-orange-200"
@@ -2251,7 +2251,7 @@ export default function QuotationPage() {
                         </div>
                       )}
                       <p className="text-xs text-gray-400 mt-1.5">Max 2MB · JPG, PNG, PDF</p>
-                    </div>
+                    </div> */}
                   </div>
                 )}
               </div>
