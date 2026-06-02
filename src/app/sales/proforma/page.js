@@ -89,6 +89,7 @@ export default function ProformaPage() {
     return () => clearTimeout(debounceRef.current);
   }, [filters]);
 
+ 
 
   // ── RESET FILTERS ─────────────────────────────────────────
   const resetFilters = () => {
@@ -1167,44 +1168,13 @@ export default function ProformaPage() {
                             </td>
                             <td className="py-3 px-3 text-center">
                               <button
-                                onClick={async () => {
-                                  try {
-
-                                    if (!item.pi_id) {
-
-                                      await axios.post(
-                                        `${API}/api/pi/create-from-quotation/${item.quotation_id}`,
-                                        {
-                                          percentage: 0,
-                                        }
-                                      );
-
-                                      await fetchPI();
-
-                                      const refresh = await axios.get(`${API}/api/pi/list`);
-
-                                      const latestItem = refresh.data.data.find(
-                                        (x) => x.quotation_id === item.quotation_id
-                                      );
-
-                                      setSelectedPI(latestItem);
-
-                                    } else {
-                                      setSelectedPI(item);
-                                    }
-
-                                    setEditing(null);
-                                    setPercentage("");
-                                    setRupees("");
-                                    setActiveIndex(null);
-                                    setShowModal(true);
-
-                                  } catch (err) {
-                                    toast.error(
-                                      err.response?.data?.message ||
-                                      "Unable to create PI"
-                                    );
-                                  }
+                                onClick={() => {
+                                  setSelectedPI(item);
+                                  setEditing(null);
+                                  setPercentage("");
+                                  setRupees("");
+                                  setActiveIndex(null);
+                                  setShowModal(true);
                                 }}
                                 className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center mx-auto hover:bg-gray-100 cursor-pointer"
                               >
