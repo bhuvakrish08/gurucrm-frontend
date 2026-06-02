@@ -12,7 +12,7 @@ import useAuth from "../components/useAuth";
 export default function Page() {
   const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-  useAuth();
+  useAuth(["Admin", "Super Admin", "Sales", "Estimation", "Leads Management"]);
 
   const exportRef = useRef(null);
   const [formData, setFormData] = useState({

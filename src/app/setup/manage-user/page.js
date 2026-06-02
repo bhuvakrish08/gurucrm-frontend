@@ -10,6 +10,11 @@ import useAuth from "@/app/components/useAuth";
 import { hasRoleAccess } from "@/utils/roleAccess";
 
 export default function Page() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [users, setUsers] = useState([]);
   const [scrollOffsets, setScrollOffsets] = useState({});
   const [roles, setRoles] = useState([]);
@@ -184,6 +189,8 @@ export default function Page() {
     });
   };
 
+  const isSuperAdmin = mounted ? hasRoleAccess(["Super Admin"]) : false;
+
   return (
     <>
       <Header />
@@ -216,7 +223,7 @@ export default function Page() {
           </div>
 
           <div className="w-full sm:w-auto">
-            {hasRoleAccess(["Super Admin"]) && (
+            {isSuperAdmin && (
               <Link
                 href="/setup/manage-user/add-user"
                 className="block text-center bg-blue-800 text-white px-5 py-2 rounded-sm shadow hover:bg-blue-900 font-bold text-sm"
@@ -377,10 +384,10 @@ export default function Page() {
                     <th className="py-3 px-4">Role</th>
                     <th className="py-3 px-4">Designation</th>
                     <th className="py-3 px-4">Date of Joining</th>
-                    {hasRoleAccess(["Super Admin"]) && (
+                    {isSuperAdmin && (
                       <th className="py-3 px-4">Status</th>
                     )}
-                    {hasRoleAccess(["Super Admin"]) && (
+                    {isSuperAdmin && (
                       <th className="py-3 px-4">Action</th>
                     )}
                   </tr>
@@ -419,7 +426,7 @@ export default function Page() {
                           {formatDate(item.date_of_joining)}
                         </td>
                         {/* Role Validation */}
-                        {hasRoleAccess(["Super Admin"]) && (
+                        {isSuperAdmin && (
                           <td className="py-2 px-4">
                             <label className="inline-flex items-center cursor-pointer">
                               <input
@@ -441,7 +448,7 @@ export default function Page() {
                           </td>
                         )}
                         {/* Role Validation */}
-                        {hasRoleAccess(["Super Admin"]) && (
+                        {isSuperAdmin && (
                           <td className="py-2 px-4 text-lg">
                             <button
                               type="button"

@@ -9,6 +9,11 @@ import { checkRole } from "@/utils/checkRole";
 import useAuth from "@/app/components/useAuth";
 
 export default function Page() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [btnLoading, setBtnLoading] = useState(false);
   const [updateLoading, setUpdateLoading] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -68,7 +73,7 @@ export default function Page() {
     description: "",
   });
 
-  useAuth();
+  useAuth(["Admin", "Super Admin", "Sales", "Leads Management"]);
 
   const getToken = () => localStorage.getItem("token");
 
@@ -850,7 +855,9 @@ export default function Page() {
     fetchProductCategory();
   }, []);
 
-  const isAdmin = checkRole(["Admin"]);
+  const isAdmin = mounted ? checkRole(["Admin", "Super Admin"]) : false;
+  const isSales = mounted ? checkRole(["Sales"]) : false;
+  const isLeadsManagement = mounted ? checkRole(["Leads Management"]) : false;
 
   return (
     <>
@@ -1295,13 +1302,17 @@ export default function Page() {
                             <select
                               value={lead.status}
                               onMouseDown={(e) => {
-                                if (
+                                if (lead.status === "Won" && !isAdmin) {
+                                  e.preventDefault();
+                                  toast.error("Only Admin can change Status after Lead is Won");
+                                } else if (
                                   !isAdmin &&
-                                  (lead.status === "Won" ||
-                                    lead.status === "Lost")
+                                  !isSales &&
+                                  !isLeadsManagement &&
+                                  lead.status === "Lost"
                                 ) {
                                   e.preventDefault();
-                                  toast.error("Only Admin can change Status");
+                                  toast.error("Only Admin, Sales or Leads Management can change Status");
                                 }
                               }}
                               onChange={(e) =>

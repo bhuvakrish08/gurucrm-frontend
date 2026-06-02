@@ -254,7 +254,7 @@ export default function Header() {
           Dashboard
         </Link>
 
-        {userRole !== "Leads Management" && userRole !== "Estimation" && (
+        {userRole !== "Leads Management" && userRole !== "Estimation" && userRole !== "Sales" && userRole !== "Proforma invoices" && (
         <div className="relative" ref={customerRef}>
           <button
             onClick={() => setCustomerOpen(!customerOpen)}
@@ -298,7 +298,7 @@ export default function Header() {
 
           {salesOpen && (
             <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-50 border border-gray-100">
-              {userRole !== "Estimation" && (
+              {userRole !== "Estimation" && userRole !== "Proforma invoices" && (
                 <Link
                   href="/sales/lead"
                   className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
@@ -306,7 +306,7 @@ export default function Header() {
                   Lead
                 </Link>
               )}
-              {userRole !== "Leads Management" && (
+              {userRole !== "Leads Management" && userRole !== "Proforma invoices" && (
                 <Link
                   href="/sales/quotation"
                   className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
@@ -314,7 +314,7 @@ export default function Header() {
                   Quotation
                 </Link>
               )}
-              {userRole !== "Leads Management" && userRole !== "Estimation" && (
+              {userRole !== "Leads Management" && userRole !== "Estimation" && userRole !== "Sales" && (
                 <Link
                   href="/sales/proforma"
                   className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
@@ -326,15 +326,15 @@ export default function Header() {
           )}
         </div>
 
-        {userRole !== "Leads Management" && userRole !== "Estimation" && (
-          <>
-            <Link href="/tasks" className="hover:text-orange-500 transition-colors">
-              Task List
-            </Link>
-            <Link href="/setup" className="hover:text-orange-500 transition-colors">
-              Settings
-            </Link>
-          </>
+        {userRole !== "Leads Management" && userRole !== "Estimation" && userRole !== "Sales" && userRole !== "Proforma invoices" && (
+          <Link href="/tasks" className="hover:text-orange-500 transition-colors">
+            Task List
+          </Link>
+        )}
+        {["Admin", "Super Admin"].includes(userRole) && (
+          <Link href="/setup" className="hover:text-orange-500 transition-colors">
+            Settings
+          </Link>
         )}
       </nav>
 
@@ -480,7 +480,7 @@ export default function Header() {
             Dashboard
           </Link>
 
-          {userRole !== "Leads Management" && userRole !== "Estimation" && (
+          {userRole !== "Leads Management" && userRole !== "Estimation" && userRole !== "Sales" && userRole !== "Proforma invoices" && (
           <div className="w-full">
             <button
               onClick={() => setMobileCustomerOpen(!mobileCustomerOpen)}
@@ -531,7 +531,7 @@ export default function Header() {
             </button>
             {mobileSalesOpen && (
               <div className="flex flex-col pl-4 mt-2 space-y-3 border-l-2 border-orange-100">
-                {userRole !== "Estimation" && (
+                {userRole !== "Estimation" && userRole !== "Proforma invoices" && (
                   <Link
                     href="/sales/lead"
                     onClick={() => setMobileMenuOpen(false)}
@@ -540,7 +540,7 @@ export default function Header() {
                     Lead
                   </Link>
                 )}
-                {userRole !== "Leads Management" && (
+                {userRole !== "Leads Management" && userRole !== "Proforma invoices" && (
                   <Link
                     href="/sales/quotation"
                     onClick={() => setMobileMenuOpen(false)}
@@ -549,7 +549,7 @@ export default function Header() {
                     Quotation
                   </Link>
                 )}
-                {userRole !== "Leads Management" && userRole !== "Estimation" && (
+                {userRole !== "Leads Management" && userRole !== "Estimation" && userRole !== "Sales" && (
                   <Link
                     href="/sales/proforma"
                     onClick={() => setMobileMenuOpen(false)}
@@ -562,23 +562,23 @@ export default function Header() {
             )}
           </div>
 
-          {userRole !== "Leads Management" && userRole !== "Estimation" && (
-            <>
-              <Link
-                onClick={() => setMobileMenuOpen(false)}
-                href="/tasks"
-                className="hover:text-orange-500 w-full py-1"
-              >
-                Task List
-              </Link>
-              <Link
-                onClick={() => setMobileMenuOpen(false)}
-                href="/setup"
-                className="hover:text-orange-500 w-full py-1"
-              >
-                Settings
-              </Link>
-            </>
+          {userRole !== "Leads Management" && userRole !== "Estimation" && userRole !== "Sales" && userRole !== "Proforma invoices" && (
+            <Link
+              onClick={() => setMobileMenuOpen(false)}
+              href="/tasks"
+              className="hover:text-orange-500 w-full py-1"
+            >
+              Task List
+            </Link>
+          )}
+          {["Admin", "Super Admin"].includes(userRole) && (
+            <Link
+              onClick={() => setMobileMenuOpen(false)}
+              href="/setup"
+              className="hover:text-orange-500 w-full py-1"
+            >
+              Settings
+            </Link>
           )}
 
           {/* Logout Option Inside Menu (Mobile Only) */}

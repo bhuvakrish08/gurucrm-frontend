@@ -43,7 +43,7 @@ export default function ProformaPage() {
 
   const [assigneeList, setAssigneeList] = useState([]);
 
-  useAuth();
+  useAuth(["Admin", "Super Admin", "Proforma invoices"]);
 
   const API = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -88,7 +88,6 @@ export default function ProformaPage() {
     debounceRef.current = setTimeout(() => searchPI(), 200);
     return () => clearTimeout(debounceRef.current);
   }, [filters]);
-
 
 
   // ── RESET FILTERS ─────────────────────────────────────────
@@ -739,12 +738,10 @@ export default function ProformaPage() {
       return;
     }
     const followUps = selectedPI.follow_ups || [];
-    const existingTotal =
-      Number(selectedPI.proforma_percentage || 0) +
-      followUps.reduce(
-        (sum, f) => sum + Number(f.proforma_percentage),
-        0,
-      );
+    const existingTotal = followUps.reduce(
+      (sum, f) => sum + Number(f.proforma_percentage),
+      0,
+    );
     const newTotal = existingTotal + newPercent;
     if (newTotal > 100) {
       toast.error("Total percentage cannot exceed 100%");
@@ -1092,7 +1089,7 @@ export default function ProformaPage() {
                         const isWon = item.status === "paid";
                         return (
                           <tr
-                            key={item.pi_id || item.quotation_id}
+                            key={item.pi_id}
                             className="border-b border-gray-50 hover:bg-indigo-50/30 transition-colors"
                           >
                             <td className="py-3 px-3">{globalIndex + 1}</td>

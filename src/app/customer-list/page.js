@@ -12,7 +12,7 @@ export default function CustomerList() {
   const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL;
   const router = useRouter();
 
-  useAuth();
+  useAuth(["Admin", "Super Admin"]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
