@@ -122,6 +122,10 @@ export default function QuotationPage() {
   const isApprovedLocked = followUpHistory.some(
     (h) => h.quotation_status === "Approved"
   );
+  const isWonOrLostLocked =
+    selectedLead?.displayStatus === "Won" ||
+    selectedLead?.displayStatus === "Lost";
+  const isModalLocked = isApprovedLocked || isWonOrLostLocked;
 
   const isQuotationNoLocked = (() => {
     const hasHistoryNo = followUpHistory && followUpHistory.some(
@@ -731,8 +735,8 @@ export default function QuotationPage() {
   };
 
   const handleEditClick = (item) => {
-    if (isApprovedLocked) {
-      toast.error("Quotation is approved. No changes allowed.");
+    if (isModalLocked) {
+      toast.error("Quotation is locked. No changes allowed.");
       return;
     }
     setEditingId(item.id);
@@ -1050,7 +1054,7 @@ export default function QuotationPage() {
       fetchQuotations();
     } catch (err) {
       console.log(err);
-      toast.error("Failed to update assignee");
+      toast.error(err?.response?.data?.message || "Failed to update assignee");
     } finally {
       setIsUpdatingAssignee(false);
     }
@@ -1107,9 +1111,9 @@ export default function QuotationPage() {
   // QUOTATION SUBMIT
   // ========================
   const handleQuotationSubmit = async () => {
-    if (isApprovedLocked) {
+    if (isModalLocked) {
       toast.error(
-        "Quotation is already Approved. You cannot add or edit quotations."
+        "Quotation is locked. You cannot add or edit quotations."
       );
       return;
     }
@@ -1122,7 +1126,12 @@ export default function QuotationPage() {
         return;
       }
       if (editingId) {
-        await axios.put(`${API_BASE}/api/quotation/update/${editingId}`, form, {
+        const formData = new FormData();
+        Object.keys(form).forEach((key) => formData.append(key, form[key]));
+        if (selectedFiles.length > 0) {
+          selectedFiles.forEach((file) => formData.append("files", file));
+        }
+        await axios.put(`${API_BASE}/api/quotation/update/${editingId}`, formData, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -1264,6 +1273,7 @@ export default function QuotationPage() {
   };
 
   const [asignee, setAsignee] = useState([]);
+  const [followUpUsers, setFollowUpUsers] = useState([]);
   useEffect(() => {
     const fetchAssignee = async () => {
       try {
@@ -1272,6 +1282,12 @@ export default function QuotationPage() {
         if (userRole.toLowerCase() === "estimation") {
           const res = await axios.get(`${API_BASE}/api/manage-user/read`, {
             params: { search5: "Sales", search8: "1" },
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+          });
+          data = res.data || [];
+        } else if (userRole.toLowerCase() === "sales") {
+          const res = await axios.get(`${API_BASE}/api/manage-user/read`, {
+            params: { search5: "Estimation", search8: "1" },
             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
           });
           data = res.data || [];
@@ -1286,9 +1302,21 @@ export default function QuotationPage() {
           return { value: firstName, label: firstName };
         });
         setAsignee(formatted);
+
+        // Fetch all role users (exclude super admin) for follow up dropdown
+        const resFollowUp = await axios.get(`${API_BASE}/api/manage-user/asignee`, {
+          params: { status: 1 },
+        });
+        const followUpData = resFollowUp.data.data || resFollowUp.data || [];
+        const formattedFollowUp = followUpData.map((item) => {
+          const firstName = item.name.split(" ")[0];
+          return { value: firstName, label: firstName };
+        });
+        setFollowUpUsers(formattedFollowUp);
       } catch (error) {
         console.log(error);
         setAsignee([]);
+        setFollowUpUsers([]);
       }
     };
     fetchAssignee();
@@ -1297,6 +1325,7 @@ export default function QuotationPage() {
   const isAdmin = mounted ? checkRole(["Admin", "Super Admin"]) : false;
   const isSales = mounted ? checkRole(["Sales"]) : false;
   const isEstimation = mounted ? checkRole(["Estimation"]) : false;
+  const isKhushaliEstimation = isEstimation && (localStorage.getItem("username") || "").split(" ")[0].toLowerCase() === "khushali";
 
   const piGrandTotal = selectedPIQuotation
     ? Number(selectedPIQuotation.grand_total) || 0
@@ -1667,16 +1696,56 @@ export default function QuotationPage() {
                   </thead>
                   <tbody>
                     {filteredQuotations.length > 0 ? (
-                      paginatedQuotations.map((q, index) => (
-                        <tr
-                          key={q.lead_id}
-                          className="border-b border-gray-50 hover:bg-indigo-50/30 transition-colors"
-                        >
+                      paginatedQuotations.map((q, index) => {
+                        let rowBgClass = "border-b border-gray-50 hover:bg-indigo-50/30 transition-colors";
+                        let customLabelBadge = null;
+
+                        if (q.displayStatus === "Revision") {
+                          const assignees = q.assignee ? q.assignee.split(",").map(name => name.trim().toLowerCase()) : [];
+                          const hasKhushali = assignees.includes("khushali");
+                          const hasDarshil = assignees.includes("darshil");
+
+                          if (hasKhushali) {
+                            if (isSales) {
+                              rowBgClass = "border-b border-blue-100 bg-blue-50/50 hover:bg-blue-100/80 transition-colors";
+                              customLabelBadge = (
+                                <span className="text-blue-600 text-[11px] font-bold whitespace-nowrap animate-pulse">
+                                  Sent for Revision
+                                </span>
+                              );
+                            } else if (isKhushaliEstimation) {
+                              rowBgClass = "border-b border-red-100 bg-red-50/50 hover:bg-red-100/80 transition-colors";
+                              customLabelBadge = (
+                                <span className="text-red-600 text-[11px] font-bold whitespace-nowrap animate-pulse">
+                                  Revision (Assigned to Khushali)
+                                </span>
+                              );
+                            }
+                          } else if (hasDarshil) {
+                            if (isSales) {
+                              rowBgClass = "border-b border-green-100 bg-green-50/50 hover:bg-green-100/80 transition-colors";
+                              customLabelBadge = (
+                                <span className="text-green-600 text-[11px] font-bold whitespace-nowrap animate-pulse">
+                                  Revision (Updated/Assigned to Darshil)
+                                </span>
+                              );
+                            }
+                          }
+                        }
+
+                        return (
+                          <tr
+                            key={q.lead_id}
+                            className={rowBgClass}
+                          >
                           <td className="py-3 px-3">
                             {(currentPage - 1) * itemsPerPage + index + 1}
                           </td>
                           <td className="font-medium px-3">
-                            {q.company_name || "-"}
+                            <div className="flex items-center gap-2">
+                              <span>{q.company_name || "-"}</span>
+                              {customLabelBadge}
+                            </div>
                           </td>
                           <td className="text-orange-500 px-3">
                             {q.customer_name || "-"}
@@ -1684,15 +1753,7 @@ export default function QuotationPage() {
                           <td className="px-3">{q.reference || "-"}</td>
 
                           <td className="text-lg px-3 text-center">
-                            {q.displayStatus === "Won" ||
-                              q.displayStatus === "Lost" ? (
-                              <div
-                                className="w-9 h-9 tracking-widest rounded-full border inline-flex items-center justify-center bg-gray-50 border-gray-300 text-gray-400 cursor-not-allowed mx-auto shadow-sm"
-                                title="Quotation locked"
-                              >
-                                <i className="bi bi-lock text-sm"></i>
-                              </div>
-                            ) : q.latest_quotation_id ? (
+                            {q.latest_quotation_id ? (
                               <button
                                 onClick={() => openQuotationModal(q)}
                                 className="w-9 h-9 tracking-widest rounded-full border inline-flex items-center justify-center transition-all hover:bg-blue-50 border-blue-400 text-blue-600 cursor-pointer shadow-sm mx-auto"
@@ -1874,50 +1935,68 @@ export default function QuotationPage() {
 
                           <td className="px-3">
                             {q.displayStatus === "Pending" ? (
-                              <select
-                                value="Pending"
-                                onChange={(e) =>
-                                  handleTableStatusChange(
-                                    q.latest_quotation_id,
-                                    e.target.value,
-                                  )
-                                }
-                                className="border rounded-md px-2 py-1 text-xs font-semibold outline-none bg-blue-50 text-blue-700 border-blue-300 cursor-pointer"
-                              >
-                                <option value="Pending">Pending</option>
-                                <option value="Sent">Sent</option>
-                                <option value="Lost">Lost</option>
-                              </select>
+                              isKhushaliEstimation ? (
+                                <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-xs font-bold">
+                                  Pending
+                                </span>
+                              ) : (
+                                <select
+                                  value="Pending"
+                                  onChange={(e) =>
+                                    handleTableStatusChange(
+                                      q.latest_quotation_id,
+                                      e.target.value,
+                                    )
+                                  }
+                                  className="border rounded-md px-2 py-1 text-xs font-semibold outline-none bg-blue-50 text-blue-700 border-blue-300 cursor-pointer"
+                                >
+                                  <option value="Pending">Pending</option>
+                                  <option value="Sent">Sent</option>
+                                  <option value="Lost">Lost</option>
+                                </select>
+                              )
                             ) : q.displayStatus === "Sent" ? (
-                              <select
-                                value="Sent"
-                                onChange={(e) =>
-                                  handleTableStatusChange(
-                                    q.latest_quotation_id,
-                                    e.target.value,
-                                  )
-                                }
-                                className="border rounded-md px-2 py-1 text-xs font-semibold outline-none bg-sky-50 text-sky-700 border-sky-300 cursor-pointer"
-                              >
-                                <option value="Sent">Sent</option>
-                                <option value="Revision">Revision</option>
-                                <option value="Lost">Lost</option>
-                              </select>
+                              isKhushaliEstimation ? (
+                                <span className="bg-sky-100 text-sky-700 px-2 py-1 rounded-md text-xs font-bold">
+                                  Sent
+                                </span>
+                              ) : (
+                                <select
+                                  value="Sent"
+                                  onChange={(e) =>
+                                    handleTableStatusChange(
+                                      q.latest_quotation_id,
+                                      e.target.value,
+                                    )
+                                  }
+                                  className="border rounded-md px-2 py-1 text-xs font-semibold outline-none bg-sky-50 text-sky-700 border-sky-300 cursor-pointer"
+                                >
+                                  <option value="Sent">Sent</option>
+                                  <option value="Revision">Revision</option>
+                                  <option value="Lost">Lost</option>
+                                </select>
+                              )
                             ) : q.displayStatus === "Revision" ? (
-                              <select
-                                value="Revision"
-                                onChange={(e) =>
-                                  handleTableStatusChange(
-                                    q.latest_quotation_id,
-                                    e.target.value,
-                                  )
-                                }
-                                className="border rounded-md px-2 py-1 text-xs font-semibold outline-none bg-purple-50 text-purple-700 border-purple-300 cursor-pointer"
-                              >
-                                <option value="Revision">Revision</option>
-                                <option value="Sent">Sent</option>
-                                <option value="Lost">Lost</option>
-                              </select>
+                              isKhushaliEstimation ? (
+                                <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-md text-xs font-bold">
+                                  Revision
+                                </span>
+                              ) : (
+                                <select
+                                  value="Revision"
+                                  onChange={(e) =>
+                                    handleTableStatusChange(
+                                      q.latest_quotation_id,
+                                      e.target.value,
+                                    )
+                                  }
+                                  className="border rounded-md px-2 py-1 text-xs font-semibold outline-none bg-purple-50 text-purple-700 border-purple-300 cursor-pointer"
+                                >
+                                  <option value="Revision">Revision</option>
+                                  <option value="Sent">Sent</option>
+                                  <option value="Lost">Lost</option>
+                                </select>
+                              )
                             ) : q.displayStatus === "Won" ? (
                               <span className="bg-green-100 text-green-700 px-2 py-1 rounded-md text-xs font-bold">
                                 Won
@@ -2024,7 +2103,8 @@ export default function QuotationPage() {
                           </td>
 
                         </tr>
-                      ))
+                      );
+                    })
                     ) : (
                       <tr>
                         <td
@@ -2256,7 +2336,7 @@ export default function QuotationPage() {
                         className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50"
                       >
                         <option value="">Select User</option>
-                        {asignee.map((item) => (
+                        {followUpUsers.map((item) => (
                           <option key={item.value} value={item.value}>
                             {item.label}
                           </option>
@@ -2595,22 +2675,60 @@ export default function QuotationPage() {
             <div className="flex flex-1 overflow-hidden relative">
               {/* Left Side: Form */}
               <div className="w-5/12 bg-white border-r border-gray-100 flex flex-col relative z-10 overflow-y-auto">
-                {isApprovedLocked && (
-                  <div className="mx-4 mt-4 flex items-start gap-3 bg-green-50 border border-green-200 rounded-xl px-4 py-3 shadow-sm">
-                    <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <i className="bi bi-lock-fill text-green-600 text-sm"></i>
+                {isModalLocked && (
+                  <div className={`mx-4 mt-4 flex items-start gap-3 border rounded-xl px-4 py-3 shadow-sm ${
+                    isWonOrLostLocked
+                      ? selectedLead?.displayStatus === "Won"
+                        ? "bg-green-50 border-green-200"
+                        : "bg-red-50 border-red-200"
+                      : "bg-green-50 border-green-200"
+                  }`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                      isWonOrLostLocked
+                        ? selectedLead?.displayStatus === "Won"
+                          ? "bg-green-100"
+                          : "bg-red-100"
+                        : "bg-green-100"
+                    }`}>
+                      <i className={`bi bi-lock-fill text-sm ${
+                        isWonOrLostLocked
+                          ? selectedLead?.displayStatus === "Won"
+                            ? "text-green-600"
+                            : "text-red-600"
+                          : "text-green-600"
+                      }`}></i>
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-green-700">Quotation Approved</p>
-                      <p className="text-xs text-green-600 mt-0.5">
-                        This quotation is already approved. You cannot add or edit any further quotation activities.
+                      <p className={`text-sm font-bold ${
+                        isWonOrLostLocked
+                          ? selectedLead?.displayStatus === "Won"
+                            ? "text-green-700"
+                            : "text-red-700"
+                          : "text-green-700"
+                      }`}>
+                        {isWonOrLostLocked
+                          ? selectedLead?.displayStatus === "Won"
+                            ? "Lead Won"
+                            : "Lead Lost"
+                          : "Quotation Approved"}
+                      </p>
+                      <p className={`text-xs mt-0.5 ${
+                        isWonOrLostLocked
+                          ? selectedLead?.displayStatus === "Won"
+                            ? "text-green-600"
+                            : "text-red-600"
+                          : "text-green-600"
+                      }`}>
+                        {isWonOrLostLocked
+                          ? `This lead is marked as ${selectedLead?.displayStatus}. No further quotation updates are permitted.`
+                          : "This quotation is already approved. You cannot add or edit any further quotation activities."}
                       </p>
                     </div>
                   </div>
                 )}
 
                 <div
-                  className={`p-6 flex flex-col gap-4 ${isApprovedLocked ? "opacity-50 pointer-events-none select-none" : ""}`}
+                  className={`p-6 flex flex-col gap-4 ${isModalLocked ? "opacity-50 pointer-events-none select-none" : ""}`}
                 >
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -2771,10 +2889,12 @@ export default function QuotationPage() {
                 </div>
 
                 <div className="p-4 border-t border-gray-100 bg-gray-50 mt-auto flex gap-3">
-                  {isApprovedLocked ? (
+                  {isModalLocked ? (
                     <div className="flex-1 flex items-center justify-center gap-2 bg-gray-100 border border-gray-200 rounded-xl py-3 text-sm font-semibold text-gray-400 cursor-not-allowed select-none">
                       <i className="bi bi-lock-fill text-gray-400"></i>
-                      Locked — Quotation Approved
+                      {isWonOrLostLocked
+                        ? `Locked — Lead ${selectedLead?.displayStatus}`
+                        : "Locked — Quotation Approved"}
                     </div>
                   ) : (
                     <>
@@ -2852,7 +2972,7 @@ export default function QuotationPage() {
                       .map((item, index) => (
                         <div
                           key={index}
-                          className={`bg-white border rounded-xl p-4 shadow-sm transition-colors ${item.quotation_status === "Approved"
+                          className={`bg-white border rounded-xl p-4 shadow-sm transition-colors ${item.quotation_status === "Approved" || item.quotation_status === "Won"
                             ? "border-green-400 bg-green-50/20"
                             : "border-gray-200 hover:border-blue-200"
                             }`}
@@ -2860,7 +2980,7 @@ export default function QuotationPage() {
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex gap-2 items-center">
                               <div
-                                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-sm ${item.quotation_status === "Approved"
+                                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-sm ${item.quotation_status === "Approved" || item.quotation_status === "Won"
                                   ? "bg-green-100 text-green-700"
                                   : "bg-blue-100 text-blue-600"
                                   }`}
@@ -2883,8 +3003,9 @@ export default function QuotationPage() {
                                 item.quotation_status !== "Lost" &&
                                 item.quotation_status !== "Approved" &&
                                 item.quotation_status !== "Declined" &&
-                                !followUpHistory.find((h) => h.quotation_status === "Approved") &&
-                                (!isSales || item.quotation_status === "Sent") && (
+                                !isModalLocked &&
+                                (!isSales || item.quotation_status === "Sent") &&
+                                !isKhushaliEstimation && (
                                   <>
                                     <button
                                       onClick={() => handleApproveDecline(item.id, "Approved")}
@@ -2901,9 +3022,9 @@ export default function QuotationPage() {
                                   </>
                                 )}
                               <span
-                                className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-md ${item.quotation_status === "Approved"
+                                className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-md ${item.quotation_status === "Approved" || item.quotation_status === "Won"
                                   ? "bg-green-100 text-green-700"
-                                  : item.quotation_status === "Declined"
+                                  : item.quotation_status === "Declined" || item.quotation_status === "Lost"
                                     ? "bg-red-100 text-red-700"
                                     : "bg-gray-100 text-gray-700"
                                   }`}
@@ -2912,7 +3033,7 @@ export default function QuotationPage() {
                               </span>
                               {item.quotation_status !== "Approved" &&
                                 item.quotation_status !== "Declined" &&
-                                !isApprovedLocked && (
+                                !isModalLocked && (
                                   <button
                                     onClick={() => handleEditClick(item)}
                                     className="ml-1 text-gray-400 hover:text-blue-600 transition-colors p-1"
@@ -3049,6 +3170,32 @@ export default function QuotationPage() {
                   accept=".jpg,.jpeg,.png,.pdf"
                 />
               </div>
+
+              {selectedFiles.length > 0 && (
+                <div className="mt-4 space-y-1.5 text-left max-h-[150px] overflow-y-auto pr-1">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Selected Files:</p>
+                  {selectedFiles.map((file, idx) => (
+                    <div
+                      key={idx}
+                      className="flex justify-between items-center bg-gray-50 px-3 py-1.5 text-xs rounded-lg border border-gray-200 shadow-sm"
+                    >
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <i className="bi bi-file-earmark-text text-blue-500 text-sm"></i>
+                        <span className="text-gray-600 font-medium truncate max-w-[240px]">{file.name}</span>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedFiles(selectedFiles.filter((_, i) => i !== idx));
+                        }}
+                        className="text-gray-300 hover:text-red-500 transition-colors ml-2"
+                      >
+                        <i className="bi bi-x-circle text-sm"></i>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="px-6 py-3 bg-white flex justify-end gap-3 rounded-b-2xl">
               <button
