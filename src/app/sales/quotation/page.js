@@ -3278,7 +3278,7 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                                         )
                                       }
                                       className="bg-red-500 hover:bg-red-600 text-white text-[10px] px-2 py-1 rounded-md transition-all shadow-sm"
-                                    >
+                                    >  
                                       Decline
                                     </button>
                                   </>
