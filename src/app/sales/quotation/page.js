@@ -1648,7 +1648,6 @@ export default function QuotationPage() {
               className={`pb-3 px-1 sm:px-0 text-sm font-medium relative transition-all whitespace-nowrap ${activeTab === "Pending" ? "text-blue-600" : "text-gray-400 hover:text-gray-600"}`}
             >
               <span className="inline-flex items-center gap-1">
-                
                 <span className="text-xs sm:text-sm">Pending </span>
                 <span className="ml-0 sm:ml-2 bg-blue-100 text-blue-600 text-xs px-2 py-0.5 rounded-full">
                   {pendingCount}
@@ -2282,7 +2281,7 @@ export default function QuotationPage() {
       {showUpdateModal && (
         // BUG FIX #6: Full modal is scrollable with overflow-y-auto on inner container
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 p-4">
-<div className="bg-white w-full max-w-[820px] rounded-sm shadow-xl border border-gray-100 overflow-hidden flex flex-col max-h-[95vh] min-h-[80vh]">
+          <div className="bg-white w-full max-w-[820px] rounded-sm shadow-xl border border-gray-100 overflow-hidden flex flex-col max-h-[95vh] min-h-[80vh]">
             {/* Header */}
             <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-orange-100 to-white flex-shrink-0">
               <div className="flex items-center gap-2">
@@ -2338,17 +2337,17 @@ export default function QuotationPage() {
 
             {/* Body — scrollable */}
             {/* BUG FIX #6: overflow-y-auto on this body div makes modal content scroll */}
-<div className="flex flex-row flex-1 overflow-hidden">
-                {/* LEFT: Form */}
-<div className="w-1/2 px-3 sm:px-6 py-3 sm:py-5 border-r border-gray-100 overflow-y-auto">
+            <div className="flex flex-row flex-1 overflow-hidden">
+              {/* LEFT: Form */}
+              <div className="w-1/2 px-3 sm:px-6 py-3 sm:py-5 border-r border-gray-100 overflow-y-auto">
                 {followUpTab === "lead" && (
-<p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-2 sm:mb-4">
+                  <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-2 sm:mb-4">
                     Lead Follow-Up
                   </p>
                 )}
 
                 {followUpTab === "quotation" && (
-<p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-2 sm:mb-4">
+                  <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-2 sm:mb-4">
                     Quotation Follow-Up
                   </p>
                 )}
@@ -2356,12 +2355,12 @@ export default function QuotationPage() {
                 {/* LEAD TAB: Read-only notice */}
                 {followUpTab === "lead" && (
                   <div className="flex flex-col gap-3">
-<div className="flex items-start gap-2 sm:gap-3 bg-blue-50 border border-blue-200 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
-<div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <div className="flex items-start gap-2 sm:gap-3 bg-blue-50 border border-blue-200 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
+                      <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                         <i className="bi bi-info-circle-fill text-blue-500 text-sm"></i>
                       </div>
                       <div>
-<p className="text-xs sm:text-sm font-semibold text-blue-700">
+                        <p className="text-xs sm:text-sm font-semibold text-blue-700">
                           Lead Follow-Up History
                         </p>
                         <p className="text-xs text-blue-600 mt-0.5">
@@ -2372,7 +2371,7 @@ export default function QuotationPage() {
                     </div>
 
                     {selectedLead && (
-<div className="bg-gray-50 border border-gray-100 rounded-xl p-2 sm:p-4 space-y-1.5 sm:space-y-2">
+                      <div className="bg-gray-50 border border-gray-100 rounded-xl p-2 sm:p-4 space-y-1.5 sm:space-y-2">
                         <div className="flex justify-between text-xs">
                           <span className="text-gray-400 font-medium">
                             Company
@@ -2417,7 +2416,7 @@ export default function QuotationPage() {
 
                 {/* QUOTATION TAB: Editable Form */}
                 {followUpTab === "quotation" && (
-<div className="grid grid-cols-2 gap-x-2 sm:gap-x-4 gap-y-2 sm:gap-y-3">
+                  <div className="grid grid-cols-2 gap-x-2 sm:gap-x-4 gap-y-2 sm:gap-y-3">
                     <div>
                       <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Follow-Up Date
@@ -2427,7 +2426,7 @@ export default function QuotationPage() {
                         name="follow_up_date"
                         value={updateForm.follow_up_date}
                         onChange={handleInputChange}
-className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
+                        className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
                       />
                     </div>
                     <div>
@@ -2438,7 +2437,7 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                         name="activity_type"
                         value={updateForm.activity_type}
                         onChange={handleInputChange}
-className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
+                        className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
                       >
                         <option value="">-- Select --</option>
                         <option>Call</option>
@@ -2472,7 +2471,7 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                         name="contact_person"
                         value={updateForm.contact_person}
                         onChange={handleInputChange}
-className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
+                        className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
                       />
                     </div>
 
@@ -2507,7 +2506,7 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                         name="description"
                         value={updateForm.description}
                         onChange={handleInputChange}
-className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50 h-16 sm:h-20 resize-none"
+                        className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50 h-16 sm:h-20 resize-none"
                       />
                     </div>
                     {/* <div className="col-span-2 border-2 border-dashed border-orange-300 rounded-xl p-3 text-center bg-orange-50/40">
@@ -2545,13 +2544,13 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
 
               {/* RIGHT: History Panel */}
               {/* BUG FIX #5 & #6: Proper overflow-y-auto, aligned layout */}
-<div className="w-1/2 px-2 sm:px-6 py-3 sm:py-5 flex flex-col overflow-hidden">
+              <div className="w-1/2 px-2 sm:px-6 py-3 sm:py-5 flex flex-col overflow-hidden">
                 {followUpTab === "lead" && (
-<div className="flex flex-wrap justify-between items-center gap-1 mb-2 sm:mb-4 flex-shrink-0">
-<p className="text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-widest leading-tight">
+                  <div className="flex flex-wrap justify-between items-center gap-1 mb-2 sm:mb-4 flex-shrink-0">
+                    <p className="text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-widest leading-tight">
                       Lead Follow-Up History
                     </p>
-<span className="text-[10px] sm:text-xs bg-blue-50 text-blue-500 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full font-semibold border border-blue-100">
+                    <span className="text-[10px] sm:text-xs bg-blue-50 text-blue-500 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full font-semibold border border-blue-100">
                       {
                         followUpHistory.filter((h) => h.module_type === "sales")
                           .length
@@ -2562,11 +2561,11 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                 )}
 
                 {followUpTab === "quotation" && (
-<div className="flex flex-wrap justify-between items-center gap-1 mb-2 sm:mb-4 flex-shrink-0">
-<p className="text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-widest leading-tight">
+                  <div className="flex flex-wrap justify-between items-center gap-1 mb-2 sm:mb-4 flex-shrink-0">
+                    <p className="text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-widest leading-tight">
                       Quotation Follow-Up History
                     </p>
-<span className="text-[10px] sm:text-xs bg-orange-50 text-orange-500 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-lg font-semibold border border-orange-100">
+                    <span className="text-[10px] sm:text-xs bg-orange-50 text-orange-500 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-lg font-semibold border border-orange-100">
                       {
                         followUpHistory.filter(
                           (h) => h.module_type === "quotation",
@@ -2607,7 +2606,7 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                             onClick={() =>
                               setPreviewFollowUp(isActive ? null : item)
                             }
-                         className={`border rounded-xl p-2 sm:p-3 cursor-pointer transition-all select-none ${
+                            className={`border rounded-xl p-2 sm:p-3 cursor-pointer transition-all select-none ${
                               isActive
                                 ? "border-orange-400 bg-orange-50 shadow-sm"
                                 : "hover:bg-gray-50 border-gray-200"
@@ -2775,7 +2774,7 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
             </div>
 
             {/* Footer Buttons */}
-<div className="flex justify-end gap-2 sm:gap-3 px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-100 bg-gray-50 flex-shrink-0">
+            <div className="flex justify-end gap-2 sm:gap-3 px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-100 bg-gray-50 flex-shrink-0">
               <button
                 onClick={() => {
                   setShowUpdateModal(false);
@@ -2783,7 +2782,8 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                   setPreviewFollowUp(null);
                   setFollowUpTab("quotation");
                 }}
- className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-sm text-xs sm:text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"              >
+                className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-sm text-xs sm:text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
+              >
                 Cancel
               </button>
 
@@ -2795,7 +2795,7 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                     ? "Lead follow-ups cannot be added here"
                     : ""
                 }
-                 className={`px-3 sm:px-6 py-1.5 sm:py-2 rounded-sm text-xs sm:text-sm font-semibold text-white transition-all shadow-md flex items-center gap-2  ${
+                className={`px-3 sm:px-6 py-1.5 sm:py-2 rounded-sm text-xs sm:text-sm font-semibold text-white transition-all shadow-md flex items-center gap-2  ${
                   followUpTab === "lead"
                     ? "bg-gray-300 cursor-not-allowed shadow-none"
                     : updateLoading
@@ -2842,7 +2842,7 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
       {/* QUOTATION UPDATE MODAL */}
       {showQuotationModal && selectedLead && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-<div className="bg-white w-[95vw] max-w-[900px] h-[90vh] rounded-sm shadow-xl overflow-hidden border border-gray-100 flex flex-col">
+          <div className="bg-white w-[95vw] max-w-[900px] h-[90vh] rounded-sm shadow-xl overflow-hidden border border-gray-100 flex flex-col">
             <div
               className="flex justify-between items-center px-6 py-4 border-b border-gray-100 shadow-sm z-10"
               style={{
@@ -2870,9 +2870,9 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
               </button>
             </div>
 
-<div className="flex flex-row flex-1 overflow-hidden relative">
+            <div className="flex flex-row flex-1 overflow-hidden relative">
               {/* Left Side: Form */}
-<div className="w-5/12 min-w-[160px] bg-white border-r border-gray-100 flex flex-col relative z-10 overflow-y-auto">
+              <div className="w-5/12 min-w-[160px] bg-white border-r border-gray-100 flex flex-col relative z-10 overflow-y-auto">
                 {isModalLocked && (
                   <div
                     className={`mx-4 mt-4 flex items-start gap-3 border rounded-xl px-4 py-3 shadow-sm ${
@@ -2936,9 +2936,9 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                 )}
 
                 <div
-className={`p-3 sm:p-6 flex flex-col gap-3 sm:gap-4 ${isModalLocked ? "opacity-50 pointer-events-none select-none" : ""}`}>
-                
-<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+                  className={`p-3 sm:p-6 flex flex-col gap-3 sm:gap-4 ${isModalLocked ? "opacity-50 pointer-events-none select-none" : ""}`}
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                     <div>
                       <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Quotation Date <span className="text-red-400">*</span>
@@ -2948,7 +2948,7 @@ className={`p-3 sm:p-6 flex flex-col gap-3 sm:gap-4 ${isModalLocked ? "opacity-5
                         name="quotation_date"
                         value={form.quotation_date}
                         onChange={handleChange}
-className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
+                        className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
                       />
                     </div>
                     <div>
@@ -2959,7 +2959,7 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                         name="activity_type"
                         value={form.activity_type}
                         onChange={handleChange}
-className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
+                        className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
                       >
                         <option value="">-- Select --</option>
                         <option>Sent</option>
@@ -2997,7 +2997,7 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                         name="amount"
                         value={form.amount || ""}
                         onChange={handleChange}
-className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
+                        className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
                       />
                     </div>
                   </div>
@@ -3011,7 +3011,7 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                         name="discount"
                         value={form.discount || ""}
                         onChange={handleChange}
-className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
+                        className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
                       />
                     </div>
                     <div>
@@ -3022,7 +3022,7 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                         name="tax"
                         value={form.tax}
                         onChange={handleChange}
-className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
+                        className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
                       >
                         <option value="0">0%</option>
                         <option value="5">5%</option>
@@ -3041,7 +3041,7 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                         name="grand_total"
                         value={form.grand_total || ""}
                         onChange={handleChange}
-className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
+                        className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
                       />
                     </div>
                   </div>
@@ -3185,8 +3185,8 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
               </div>
 
               {/* Right Side: History */}
-<div className="w-7/12 min-w-0 bg-slate-50 flex flex-col relative z-0">
-<div className="px-3 sm:px-6 py-3 sm:py-4 flex justify-between items-center bg-white border-b border-gray-100 sticky top-0 z-20 shadow-sm">
+              <div className="w-7/12 min-w-0 bg-slate-50 flex flex-col relative z-0">
+                <div className="px-3 sm:px-6 py-3 sm:py-4 flex justify-between items-center bg-white border-b border-gray-100 sticky top-0 z-20 shadow-sm">
                   <h3 className="text-sm font-bold text-gray-700 uppercase flex items-center gap-2">
                     <i
                       className="bi bi-clock-history"
@@ -3195,7 +3195,7 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                     Quotation History Data
                   </h3>
                 </div>
-<div className="flex-1 overflow-y-auto p-2 sm:p-6 space-y-3 sm:space-y-4">
+                <div className="flex-1 overflow-y-auto p-2 sm:p-6 space-y-3 sm:space-y-4">
                   {followUpHistory.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-gray-400">
                       <i className="bi bi-inbox text-4xl mb-2 text-gray-300"></i>
@@ -3215,7 +3215,9 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                               ),
                       )
                       .map((item, index) => (
-                      <div key={index} className={`bg-white border rounded-xl p-2 sm:p-4 shadow-sm transition-colors ${
+                        <div
+                          key={index}
+                          className={`bg-white border rounded-xl p-2 sm:p-4 shadow-sm transition-colors ${
                             item.quotation_status === "Approved" ||
                             item.quotation_status === "Won"
                               ? "border-green-400 bg-green-50/20"
@@ -3353,7 +3355,7 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                               </p>
                             </div>
                           </div>
-<div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 bg-white p-2 sm:p-2.5 rounded-lg border border-gray-100 text-sm">
+                          <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 bg-white p-2 sm:p-2.5 rounded-lg border border-gray-100 text-sm">
                             <div>
                               <span className="text-gray-400 text-[10px] uppercase block">
                                 Amount
@@ -4427,3 +4429,5 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
     </>
   );
 }
+
+// 
