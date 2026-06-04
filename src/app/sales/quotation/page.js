@@ -1648,6 +1648,7 @@ export default function QuotationPage() {
               className={`pb-3 px-1 sm:px-0 text-sm font-medium relative transition-all whitespace-nowrap ${activeTab === "Pending" ? "text-blue-600" : "text-gray-400 hover:text-gray-600"}`}
             >
               <span className="inline-flex items-center gap-1">
+                
                 <span className="text-xs sm:text-sm">Pending </span>
                 <span className="ml-0 sm:ml-2 bg-blue-100 text-blue-600 text-xs px-2 py-0.5 rounded-full">
                   {pendingCount}
