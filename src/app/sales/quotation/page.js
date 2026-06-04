@@ -573,7 +573,12 @@ export default function QuotationPage() {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       const data = (res.data?.data || []).map((item) => {
-        const finalStatus = item.quotation_status || "Pending";
+        const finalStatus =
+          item.quotation_status === "Approved"
+            ? "Won"
+            : item.quotation_status === "Declined"
+              ? "Pending"
+              : item.quotation_status || "Pending";
         return {
           ...item,
           displayStatus: finalStatus,
@@ -801,6 +806,9 @@ export default function QuotationPage() {
   const handleChange = (e) => {
     let { name, value } = e.target;
     let newForm = { ...form, [name]: value };
+    if (name === "activity_type") {
+      newForm.quotation_status = value === "Sent" ? "Sent" : value === "Revision" ? "Revision" : "Pending";
+    }
     const getNum = (val) => parseFloat(val) || 0;
     let amount = name === "amount" ? getNum(value) : getNum(newForm.amount);
     let discount =
@@ -1032,16 +1040,24 @@ export default function QuotationPage() {
         (f) => f.name === file.name && f.size === file.size,
       );
       if (isDuplicate) continue;
-      if (![...IMAGE_EXT_FE, ...DOC_EXT_FE].includes(ext)) {
-        toast.error("Only JPG, PNG, PDF allowed");
+      if (![...IMAGE_EXT_FE, ...EXCEL_EXT_FE, ...CAD_EXT_FE, ...DOC_EXT_FE].includes(ext)) {
+        toast.error("Only JPG, PNG, PDF, Excel, and CAD files allowed");
         continue;
       }
-      if (IMAGE_EXT_FE.includes(ext) && file.size > MAX_IMG_SIZE) {
-        toast.error("Image must be under 2MB");
+      if (EXCEL_EXT_FE.includes(ext) && file.size > 2 * 1024 * 1024) {
+        toast.error("Excel files must be under 2MB");
         continue;
       }
-      if (DOC_EXT_FE.includes(ext) && file.size > MAX_DOC_SIZE_FE) {
-        toast.error("PDF must be under 2MB");
+      if (CAD_EXT_FE.includes(ext) && file.size > 5 * 1024 * 1024) {
+        toast.error("CAD files must be under 5MB");
+        continue;
+      }
+      if (IMAGE_EXT_FE.includes(ext) && file.size > 5 * 1024 * 1024) {
+        toast.error("Images must be under 5MB");
+        continue;
+      }
+      if (DOC_EXT_FE.includes(ext) && file.size > 5 * 1024 * 1024) {
+        toast.error("PDF files must be under 5MB");
         continue;
       }
       updatedFiles.push(file);
@@ -1108,9 +1124,9 @@ export default function QuotationPage() {
   // Multer Constants
   const MAX_FILES = 5;
   const IMAGE_EXT_FE = ["jpg", "jpeg", "png"];
+  const EXCEL_EXT_FE = ["xlsx", "xls", "csv", "excel"];
+  const CAD_EXT_FE = ["dwg", "dxf"];
   const DOC_EXT_FE = ["pdf"];
-  const MAX_IMG_SIZE = 2 * 1024 * 1024;
-  const MAX_DOC_SIZE_FE = 2 * 1024 * 1024;
 
   const handleSelect = (e) => {
     const files = Array.from(e.target.files);
@@ -1128,16 +1144,24 @@ export default function QuotationPage() {
         (f) => f.name === file.name && f.size === file.size,
       );
       if (isDuplicate) continue;
-      if (![...IMAGE_EXT_FE, ...DOC_EXT_FE].includes(ext)) {
-        toast.error("Only JPG, PNG, PDF allowed");
+      if (![...IMAGE_EXT_FE, ...EXCEL_EXT_FE, ...CAD_EXT_FE, ...DOC_EXT_FE].includes(ext)) {
+        toast.error("Only JPG, PNG, PDF, Excel, and CAD files allowed");
         continue;
       }
-      if (IMAGE_EXT_FE.includes(ext) && file.size > MAX_IMG_SIZE) {
-        toast.error("Image must be under 2MB");
+      if (EXCEL_EXT_FE.includes(ext) && file.size > 2 * 1024 * 1024) {
+        toast.error("Excel files must be under 2MB");
         continue;
       }
-      if (DOC_EXT_FE.includes(ext) && file.size > MAX_DOC_SIZE_FE) {
-        toast.error("PDF must be under 2MB");
+      if (CAD_EXT_FE.includes(ext) && file.size > 5 * 1024 * 1024) {
+        toast.error("CAD files must be under 5MB");
+        continue;
+      }
+      if (IMAGE_EXT_FE.includes(ext) && file.size > 5 * 1024 * 1024) {
+        toast.error("Images must be under 5MB");
+        continue;
+      }
+      if (DOC_EXT_FE.includes(ext) && file.size > 5 * 1024 * 1024) {
+        toast.error("PDF files must be under 5MB");
         continue;
       }
       updatedFiles.push(file);
@@ -1150,6 +1174,49 @@ export default function QuotationPage() {
   const handleDrop = (e) => {
     e.preventDefault();
     handleSelect({ target: { files: e.dataTransfer.files, value: "" } });
+  };
+
+  const handleFileDownload = async (e, filePath, originalName) => {
+    e.preventDefault();
+    if (!filePath) return;
+    
+    // Ensure all Cloudinary URLs are accessed securely via HTTPS
+    let secureFilePath = filePath;
+    if (filePath.startsWith("http://")) {
+      secureFilePath = filePath.replace("http://", "https://");
+    }
+
+    const ext = originalName.split(".").pop().toLowerCase();
+    
+    const isNativePreview = ["pdf", "jpg", "jpeg", "png"].includes(ext);
+    if (isNativePreview) {
+      window.open(secureFilePath, "_blank");
+      return;
+    }
+
+    const isExcel = ["xlsx", "xls", "csv", "excel"].includes(ext);
+    if (isExcel) {
+      const separator = secureFilePath.includes("?") ? "&" : "?";
+      const fileWithExt = secureFilePath + separator + "file=" + encodeURIComponent(originalName);
+      const officeUrl = `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(fileWithExt)}`;
+      window.open(officeUrl, "_blank");
+      return;
+    }
+
+    try {
+      const response = await fetch(secureFilePath);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = originalName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      window.open(secureFilePath, "_blank");
+    }
   };
 
   // ========================
@@ -1591,8 +1658,11 @@ export default function QuotationPage() {
             className="p-2 w-full md:w-45 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-400 text-sm"
           >
             <option value="">Status</option>
+            <option value="Pending">Pending</option>
             <option value="Won">Won</option>
             <option value="Lost">Lost</option>
+            <option value="Sent">Sent</option>
+            <option value="Revision">Revision</option>
           </select>
 
           <div className="flex p-1 items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-58 outline-none text-gray-400 text-sm col-span-2 md:col-span-1">
@@ -2738,6 +2808,7 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                               </div>
 
                               {/* BUG FIX #4: File URLs as clickable links that open in new tab */}
+<<<<<<< Updated upstream
                               {previewFollowUp.files &&
                                 previewFollowUp.files.length > 0 && (
                                   <div className="mt-3">
@@ -2762,6 +2833,25 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                                         </a>
                                       ))}
                                     </div>
+=======
+                              {previewFollowUp.files && previewFollowUp.files.length > 0 && (
+                                <div className="mt-3">
+                                  <p className="text-xs text-gray-400 font-medium mb-1.5">Attached Files</p>
+                                  <div className="flex flex-wrap gap-2">
+                                    {previewFollowUp.files.map((f, i) => (
+                                      <a
+                                        key={i}
+                                        href={f.file_path}
+                                        onClick={(e) => handleFileDownload(e, f.file_path, f.filename || f.file_name || "File")}
+                                        className="flex items-center gap-1.5 border border-indigo-100 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors shadow-sm"
+                                      >
+                                        <i className="bi bi-file-earmark-check text-indigo-500"></i>
+                                        <span className="truncate max-w-[120px]">
+                                          {f.filename || f.file_name || "File"}
+                                        </span>
+                                      </a>
+                                    ))}
+>>>>>>> Stashed changes
                                   </div>
                                 )}
                             </div>
@@ -2963,8 +3053,6 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                       >
                         <option value="">-- Select --</option>
                         <option>Sent</option>
-                        <option>Call</option>
-                        <option>Meeting</option>
                         <option>Revision</option>
                       </select>
                     </div>
@@ -3025,8 +3113,7 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
 className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
                       >
                         <option value="0">0%</option>
-                        <option value="5">5%</option>
-                        <option value="10">10%</option>
+                        <option value="9">9%</option>
                         <option value="18">18%</option>
                       </select>
                     </div>
@@ -3405,8 +3492,7 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                                   <a
                                     key={i}
                                     href={f.file_path}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
+                                    onClick={(e) => handleFileDownload(e, f.file_path, f.file_name || "File")}
                                     className="flex items-center gap-1.5 border border-indigo-100 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors shadow-sm"
                                   >
                                     <i className="bi bi-file-earmark-check text-indigo-500"></i>
@@ -3456,19 +3542,24 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                 <div className="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center mb-3">
                   <i className="bi bi-cloud-arrow-up text-orange-500 text-2xl"></i>
                 </div>
+<<<<<<< Updated upstream
                 <p className="font-bold text-gray-700 text-sm">
                   Click or drag files here
                 </p>
                 <p className="text-xs text-gray-400 mt-2">
                   JPG, PNG, PDF (Max 2MB per file, Max 5 files)
                 </p>
+=======
+                <p className="font-bold text-gray-700 text-sm">Click or drag files here</p>
+                <p className="text-xs text-gray-400 mt-2">JPG, PNG, PDF, CAD (Max 5MB), Excel (Max 2MB) - Max 5 files</p>
+>>>>>>> Stashed changes
                 <input
                   type="file"
                   id="quotFiles"
                   multiple
                   className="hidden"
                   onChange={handleSelect}
-                  accept=".jpg,.jpeg,.png,.pdf"
+                  accept=".jpg,.jpeg,.png,.pdf,.xlsx,.xls,.csv,.excel,.dwg,.dxf"
                 />
               </div>
 
@@ -4023,7 +4114,7 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                   type="file"
                   multiple
                   onChange={handleAssigneeFileChange}
-                  accept=".jpg,.jpeg,.png,.pdf"
+                  accept=".jpg,.jpeg,.png,.pdf,.xlsx,.xls,.csv,.excel,.dwg,.dxf"
                   className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[10px] file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer outline-none border border-gray-300 rounded-md p-1 bg-gray-50"
                 />
                 {assigneeFiles.length > 0 && (
@@ -4115,9 +4206,8 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                                       <a
                                         key={fileIdx}
                                         href={file.file_path}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 text-indigo-700 rounded text-[9px] font-medium transition-colors"
+                                        onClick={(e) => handleFileDownload(e, file.file_path, file.file_name || "File")}
+                                        className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 text-indigo-700 rounded text-[9px] font-medium transition-colors cursor-pointer"
                                       >
                                         <i className="bi bi-file-earmark-arrow-down"></i>
                                         <span
