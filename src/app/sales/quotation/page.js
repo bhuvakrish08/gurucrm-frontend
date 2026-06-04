@@ -2808,7 +2808,6 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                               </div>
 
                               {/* BUG FIX #4: File URLs as clickable links that open in new tab */}
-<<<<<<< Updated upstream
                               {previewFollowUp.files &&
                                 previewFollowUp.files.length > 0 && (
                                   <div className="mt-3">
@@ -2833,25 +2832,6 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                                         </a>
                                       ))}
                                     </div>
-=======
-                              {previewFollowUp.files && previewFollowUp.files.length > 0 && (
-                                <div className="mt-3">
-                                  <p className="text-xs text-gray-400 font-medium mb-1.5">Attached Files</p>
-                                  <div className="flex flex-wrap gap-2">
-                                    {previewFollowUp.files.map((f, i) => (
-                                      <a
-                                        key={i}
-                                        href={f.file_path}
-                                        onClick={(e) => handleFileDownload(e, f.file_path, f.filename || f.file_name || "File")}
-                                        className="flex items-center gap-1.5 border border-indigo-100 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors shadow-sm"
-                                      >
-                                        <i className="bi bi-file-earmark-check text-indigo-500"></i>
-                                        <span className="truncate max-w-[120px]">
-                                          {f.filename || f.file_name || "File"}
-                                        </span>
-                                      </a>
-                                    ))}
->>>>>>> Stashed changes
                                   </div>
                                 )}
                             </div>
@@ -3542,17 +3522,8 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                 <div className="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center mb-3">
                   <i className="bi bi-cloud-arrow-up text-orange-500 text-2xl"></i>
                 </div>
-<<<<<<< Updated upstream
-                <p className="font-bold text-gray-700 text-sm">
-                  Click or drag files here
-                </p>
-                <p className="text-xs text-gray-400 mt-2">
-                  JPG, PNG, PDF (Max 2MB per file, Max 5 files)
-                </p>
-=======
                 <p className="font-bold text-gray-700 text-sm">Click or drag files here</p>
                 <p className="text-xs text-gray-400 mt-2">JPG, PNG, PDF, CAD (Max 5MB), Excel (Max 2MB) - Max 5 files</p>
->>>>>>> Stashed changes
                 <input
                   type="file"
                   id="quotFiles"
