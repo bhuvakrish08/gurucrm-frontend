@@ -51,20 +51,20 @@ export default function ProformaPage() {
   const API = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   // ── FETCH ALL PI ─────────────────────────────────────────
- const fetchPI = async () => {
-  try {
-    const res = await axios.get(`${API}/api/pi/list`);
+  const fetchPI = async () => {
+    try {
+      const res = await axios.get(`${API}/api/pi/list`);
 
-    console.log("PI DATA =>", res.data.data);
+      console.log("PI DATA =>", res.data.data);
 
-    setPiData(res.data.data || []);
-    setCurrentPage(1);
-  } catch (err) {
-    console.error(err);
-  } finally {
-    setLoading(false);
-  }
-};
+      setPiData(res.data.data || []);
+      setCurrentPage(1);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // ── FILTER SEARCH ─────────────────────────────────────────
   const searchPI = async () => {
@@ -152,19 +152,19 @@ export default function ProformaPage() {
   }, []);
 
   // ── UPDATE STAGE ──────────────────────────────────────────
-const updateStage = async (pi_id, stage) => {
-  try {
-    await axios.put(`${API}/api/pi/update-stage/${pi_id}`, { stage });
-    // Local state update - backend fix ન થાય ત્યાં સુધી
-    setPiData(prev => prev.map(item => 
-      item.pi_id === pi_id ? { ...item, stage } : item
-    ));
-    toast.success(stage === "completed" ? "Completed ma move thay gayu!" : "Pending ma move thay gayu!");
-    fetchPI();
-  } catch (err) {
-    toast.error("Stage update failed");
-  }
-};
+  const updateStage = async (pi_id, stage) => {
+    try {
+      await axios.put(`${API}/api/pi/update-stage/${pi_id}`, { stage });
+      // Local state update - backend fix ન થાય ત્યાં સુધી
+      setPiData(prev => prev.map(item =>
+        item.pi_id === pi_id ? { ...item, stage } : item
+      ));
+      toast.success(stage === "completed" ? "Completed ma move thay gayu!" : "Pending ma move thay gayu!");
+      fetchPI();
+    } catch (err) {
+      toast.error("Stage update failed");
+    }
+  };
 
   // ── PI NUMBER FORMAT ──────────────────────────────────────
   const formatPINumber = (index) => {
@@ -724,32 +724,43 @@ const updateStage = async (pi_id, stage) => {
   // ── ADD FOLLOW-UP ─────────────────────────────────────────
   const handleSubmitFollowUp = async () => {
     const newPercent = Number(percentage);
+
     if (!newPercent || newPercent <= 0) {
       toast.error("Please enter percentage");
       return;
     }
+
     const followUps = selectedPI.follow_ups || [];
     const existingTotal = followUps.reduce(
       (sum, f) => sum + Number(f.proforma_percentage),
       0,
     );
+
     const newTotal = existingTotal + newPercent;
+
     if (newTotal > 100) {
       toast.error("Total percentage cannot exceed 100%");
       return;
     }
+
     try {
+      setSubmitLoading(true); // START SPINNER
+
       const res = await axios.post(
         `${API}/api/pi/add-followup/${selectedPI.pi_id}`,
         { percentage: newPercent },
       );
+
       const confirmedTotal = res.data?.total_percentage ?? newTotal;
+
       await updateStatus(selectedPI.pi_id, confirmedTotal);
+
       toast.success(
         confirmedTotal >= 100
           ? "Follow-up added & marked as Won!"
           : "Follow-up added successfully",
       );
+
       setShowModal(false);
       setPercentage("");
       setRupees("");
@@ -758,7 +769,7 @@ const updateStage = async (pi_id, stage) => {
     } catch (err) {
       toast.error(err.response?.data?.message || "Error");
     } finally {
-      setSubmitLoading(false);
+      setSubmitLoading(false); // STOP SPINNER
     }
   };
 
@@ -832,21 +843,21 @@ const updateStage = async (pi_id, stage) => {
     return true;
   });
 
- const pendingCount = piData.filter((d) => {
-  const stage = String(d.stage || "pending")
-    .trim()
-    .toLowerCase();
+  const pendingCount = piData.filter((d) => {
+    const stage = String(d.stage || "pending")
+      .trim()
+      .toLowerCase();
 
-  return stage !== "completed";
-}).length;
+    return stage !== "completed";
+  }).length;
 
-const completedCount = piData.filter((d) => {
-  const stage = String(d.stage || "")
-    .trim()
-    .toLowerCase();
+  const completedCount = piData.filter((d) => {
+    const stage = String(d.stage || "")
+      .trim()
+      .toLowerCase();
 
-  return stage === "completed";
-}).length;
+    return stage === "completed";
+  }).length;
 
 
 
@@ -960,10 +971,9 @@ const completedCount = piData.filter((d) => {
 
         <div
           className={`
-            ${
-              showMobileFilters
-                ? "absolute left-6 right-6 top-[170px] bg-white p-5 shadow-2xl rounded-lg grid grid-cols-2 gap-3 mt-1 z-[999] ring-2 ring-orange-300"
-                : "hidden"
+            ${showMobileFilters
+              ? "absolute left-6 right-6 top-[170px] bg-white p-5 shadow-2xl rounded-lg grid grid-cols-2 gap-3 mt-1 z-[999] ring-2 ring-orange-300"
+              : "hidden"
             }
             md:mx-6 md:flex md:flex-wrap md:items-center md:gap-x-3 md:gap-y-2 md:mt-3 md:mb-5 md:relative md:bg-transparent md:p-0 md:shadow-none md:ring-0
           `}
@@ -1089,19 +1099,17 @@ const completedCount = piData.filter((d) => {
               setCurrentPage(1);
             }}
             className={`px-5 py-2.5 text-sm font-semibold transition-all relative rounded-t-md
-              ${
-                activeTab === "pending"
-                  ? "text-blue-600 border-b-2 border-blue-500 bg-white"
-                  : "text-gray-400 hover:text-gray-600 border-b-2 border-transparent"
+              ${activeTab === "pending"
+                ? "text-blue-600 border-b-2 border-blue-500 bg-white"
+                : "text-gray-400 hover:text-gray-600 border-b-2 border-transparent"
               }`}
           >
             Pending
             <span
               className={`ml-2 text-xs px-2 py-0.5 rounded-full font-bold
-                ${
-                  activeTab === "pending"
-                    ? "bg-blue-100 text-blue-600"
-                    : "bg-gray-100 text-gray-400"
+                ${activeTab === "pending"
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-gray-100 text-gray-400"
                 }`}
             >
               {pendingCount}
@@ -1113,19 +1121,17 @@ const completedCount = piData.filter((d) => {
               setCurrentPage(1);
             }}
             className={`px-5 py-2.5 text-sm font-semibold transition-all relative rounded-t-md
-              ${
-                activeTab === "completed"
-                  ? "text-green-600 border-b-2 border-green-500 bg-white"
-                  : "text-gray-400 hover:text-gray-600 border-b-2 border-transparent"
+              ${activeTab === "completed"
+                ? "text-green-600 border-b-2 border-green-500 bg-white"
+                : "text-gray-400 hover:text-gray-600 border-b-2 border-transparent"
               }`}
           >
             Completed
             <span
               className={`ml-2 text-xs px-2 py-0.5 rounded-full font-bold
-                ${
-                  activeTab === "completed"
-                    ? "bg-green-100 text-green-600"
-                    : "bg-gray-100 text-gray-400"
+                ${activeTab === "completed"
+                  ? "bg-green-100 text-green-600"
+                  : "bg-gray-100 text-gray-400"
                 }`}
             >
               {completedCount}
@@ -1208,8 +1214,8 @@ const completedCount = piData.filter((d) => {
                             <td className="py-3 px-3 text-gray-500">
                               {item.pi_date
                                 ? new Date(item.pi_date).toLocaleDateString(
-                                    "en-IN",
-                                  )
+                                  "en-IN",
+                                )
                                 : "-"}
                             </td>
                             <td className="py-3 px-3 text-orange-500">
@@ -1250,13 +1256,12 @@ const completedCount = piData.filter((d) => {
                               <div className="flex items-center gap-2">
                                 <div className="w-16 bg-gray-100 rounded-full h-1.5">
                                   <div
-                                    className={`h-1.5 rounded-full transition-all ${
-                                      Number(item.proforma_percentage) >= 100
+                                    className={`h-1.5 rounded-full transition-all ${Number(item.proforma_percentage) >= 100
                                         ? "bg-green-500"
                                         : Number(item.proforma_percentage) >= 50
                                           ? "bg-orange-400"
                                           : "bg-blue-400"
-                                    }`}
+                                      }`}
                                     style={{
                                       width: `${Math.min(Number(item.proforma_percentage), 100)}%`,
                                     }}
@@ -1297,10 +1302,9 @@ const completedCount = piData.filter((d) => {
                                   updateStage(item.pi_id, e.target.value)
                                 }
                                 className={`text-xs font-semibold px-2 py-1.5 rounded-sm border cursor-pointer outline-none transition-all
-                                  ${
-                                    currentStage === "completed"
-                                      ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                                      : "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                                  ${currentStage === "completed"
+                                    ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                                    : "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
                                   }`}
                               >
                                 <option value="pending">Pending</option>
@@ -1398,11 +1402,10 @@ const completedCount = piData.filter((d) => {
                           <button
                             key={page}
                             onClick={() => setCurrentPage(page)}
-                            className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${
-                              currentPage === page
+                            className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${currentPage === page
                                 ? "bg-[#212121] text-white shadow-md shadow-black/10"
                                 : "border border-slate-200 text-slate-600 hover:bg-slate-50"
-                            }`}
+                              }`}
                           >
                             {page}
                           </button>
@@ -1436,12 +1439,12 @@ const completedCount = piData.filter((d) => {
           const grandTotal = getGrandTotal(selectedPI);
           const basePaidPercentage = editing
             ? (selectedPI.follow_ups || []).reduce(
-                (sum, f) =>
-                  f.id === editing.id
-                    ? sum
-                    : sum + Number(f.proforma_percentage),
-                0,
-              )
+              (sum, f) =>
+                f.id === editing.id
+                  ? sum
+                  : sum + Number(f.proforma_percentage),
+              0,
+            )
             : Number(selectedPI.proforma_percentage) || 0;
           const basePaidAmount = (grandTotal * basePaidPercentage) / 100;
           const baseRemainingPercentage = 100 - basePaidPercentage;
@@ -1529,13 +1532,12 @@ const completedCount = piData.filter((d) => {
 
                     {/* Remaining Card */}
                     <div
-                      className={`rounded-xl p-3 mb-4 border transition-all ${
-                        afterRemainingPct < 0
+                      className={`rounded-xl p-3 mb-4 border transition-all ${afterRemainingPct < 0
                           ? "bg-red-50 border-red-200"
                           : afterRemainingPct === 0 && enteredPct > 0
                             ? "bg-green-50 border-green-200"
                             : "bg-blue-50 border-blue-100"
-                      }`}
+                        }`}
                     >
                       <p className="text-xs font-bold uppercase tracking-wider mb-2 text-gray-500">
                         Remaining After This Entry
@@ -1543,13 +1545,12 @@ const completedCount = piData.filter((d) => {
                       <div className="flex justify-between items-center">
                         <div className="text-center">
                           <p
-                            className={`text-xl font-bold ${
-                              afterRemainingPct < 0
+                            className={`text-xl font-bold ${afterRemainingPct < 0
                                 ? "text-red-600"
                                 : afterRemainingPct === 0 && enteredPct > 0
                                   ? "text-green-600"
                                   : "text-blue-600"
-                            }`}
+                              }`}
                           >
                             {enteredPct > 0
                               ? afterRemainingPct < 0
@@ -1562,13 +1563,12 @@ const completedCount = piData.filter((d) => {
                         <div className="w-px h-10 bg-gray-200"></div>
                         <div className="text-center">
                           <p
-                            className={`text-xl font-bold ${
-                              afterRemainingPct < 0
+                            className={`text-xl font-bold ${afterRemainingPct < 0
                                 ? "text-red-600"
                                 : afterRemainingPct === 0 && enteredPct > 0
                                   ? "text-green-600"
                                   : "text-blue-600"
-                            }`}
+                              }`}
                           >
                             {enteredPct > 0
                               ? afterRemainingPct < 0
@@ -1582,13 +1582,12 @@ const completedCount = piData.filter((d) => {
                       <div className="mt-3">
                         <div className="w-full bg-white rounded-full h-2 border border-gray-200 overflow-hidden">
                           <div
-                            className={`h-2 rounded-full transition-all duration-300 ${
-                              afterRemainingPct < 0
+                            className={`h-2 rounded-full transition-all duration-300 ${afterRemainingPct < 0
                                 ? "bg-red-500"
                                 : paidPercentage + enteredPct >= 100
                                   ? "bg-green-500"
                                   : "bg-orange-400"
-                            }`}
+                              }`}
                             style={{
                               width: `${Math.min(paidPercentage + enteredPct, 100)}%`,
                             }}
@@ -1682,7 +1681,7 @@ const completedCount = piData.filter((d) => {
                     </div>
                     <div className="space-y-2 overflow-y-auto max-h-80">
                       {!selectedPI.follow_ups ||
-                      selectedPI.follow_ups.length === 0 ? (
+                        selectedPI.follow_ups.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-8 text-gray-300">
                           <i className="bi bi-clock-history text-3xl mb-2"></i>
                           <p className="text-sm">No history found</p>
@@ -1698,11 +1697,10 @@ const completedCount = piData.filter((d) => {
                                     index === activeIndex ? null : index,
                                   )
                                 }
-                                className={`border rounded-xl p-3 cursor-pointer transition-all select-none ${
-                                  isLatest
+                                className={`border rounded-xl p-3 cursor-pointer transition-all select-none ${isLatest
                                     ? "border-orange-400 bg-orange-50 shadow-sm"
                                     : "hover:bg-gray-50 border-gray-200"
-                                }`}
+                                  }`}
                               >
                                 <div className="flex justify-between items-center">
                                   <div className="flex items-center gap-2">
@@ -1809,14 +1807,28 @@ const completedCount = piData.filter((d) => {
                   </button>
                   <button
                     onClick={editing ? handleUpdate : handleSubmitFollowUp}
-                    disabled={afterRemainingPct < 0 && enteredPct > 0}
-                    className={`px-6 py-2 rounded-xl text-sm font-semibold text-white transition-all shadow-md ${
-                      afterRemainingPct < 0 && enteredPct > 0
+                    disabled={
+                      (afterRemainingPct < 0 && enteredPct > 0) ||
+                      submitLoading ||
+                      updateLoading
+                    }
+                    className={`px-6 py-2 rounded-xl text-sm font-semibold text-white transition-all shadow-md flex items-center justify-center gap-2 ${(afterRemainingPct < 0 && enteredPct > 0) ||
+                        submitLoading ||
+                        updateLoading
                         ? "bg-gray-300 cursor-not-allowed shadow-none"
                         : "bg-orange-500 hover:bg-orange-600 shadow-orange-200"
-                    }`}
+                      }`}
                   >
-                    {editing ? "Update Follow-Up" : "Add Follow-Up"}
+                    {(submitLoading || updateLoading) ? (
+                      <>
+                        <i className="bi bi-arrow-repeat animate-spin"></i>
+                        Processing...
+                      </>
+                    ) : editing ? (
+                      "Update Follow-Up"
+                    ) : (
+                      "Add Follow-Up"
+                    )}
                   </button>
                 </div>
               </div>

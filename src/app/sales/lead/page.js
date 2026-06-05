@@ -245,9 +245,9 @@ export default function Page() {
 
   const MAX_FILES = 5;
   const IMAGE_EXT = ["jpg", "jpeg", "png"];
-  const DOC_EXT = ["pdf"];
-  const MAX_IMG_SIZE = 2 * 1024 * 1024;
-  const MAX_DOC_SIZE = 2 * 1024 * 1024;
+  const DOC_EXT = ["pdf", "xlsx", "dwg"];
+  const MAX_IMG_SIZE = 5 * 1024 * 1024;
+  const MAX_DOC_SIZE = 5 * 1024 * 1024;
 
   const handleSelect = (e) => {
     const files = Array.from(e.target.files);
@@ -274,7 +274,7 @@ export default function Page() {
         continue;
       }
       if (![...IMAGE_EXT, ...DOC_EXT].includes(ext)) {
-        toast.error("Only JPG, PNG, PDF allowed");
+        toast.error("Unsupported File");
         continue;
       }
       if (IMAGE_EXT.includes(ext) && file.size > MAX_IMG_SIZE) {
@@ -282,7 +282,7 @@ export default function Page() {
         continue;
       }
       if (DOC_EXT.includes(ext) && file.size > MAX_DOC_SIZE) {
-        toast.error("PDF must be under 2MB");
+        toast.error("Document must be under 15MB");
         continue;
       }
       updatedFiles.push(file);
@@ -1590,7 +1590,7 @@ export default function Page() {
                   </div>
                 )}
                 <p className="text-xs text-gray-400 mt-1.5">
-                  Max 2MB · JPG, PNG, PDF
+                  Max 5MB · JPG, PNG, PDF, XLSX, DWG
                 </p>
               </div>
             </div>
@@ -1752,7 +1752,7 @@ export default function Page() {
                           ...updateForm,
                           description: e.target.value,
                         })
-                      }thhhhh
+                      }
                       className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50 h-20 resize-none"
                     />
                   </div>
@@ -1788,7 +1788,7 @@ export default function Page() {
                       </div>
                     )}
                     <p className="text-xs text-gray-400 mt-1.5">
-                      Max 2MB · JPG, PNG, PDF
+                      Max 5MB · JPG, PNG, PDF, XLSX, DWG
                     </p>
                   </div>
                 </div>
