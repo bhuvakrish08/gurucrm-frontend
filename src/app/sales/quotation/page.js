@@ -3032,7 +3032,7 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
 className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
                       >
                         <option value="">-- Select --</option>
-                        <option>Sent</option>
+                        <option>New</option>
                         <option>Revision</option>
                       </select>
                     </div>
