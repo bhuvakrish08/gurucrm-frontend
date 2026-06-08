@@ -2352,7 +2352,7 @@ export default function QuotationPage() {
       {showUpdateModal && (
         // BUG FIX #6: Full modal is scrollable with overflow-y-auto on inner container
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 p-4">
-<div className="bg-white w-full max-w-[820px] rounded-sm shadow-xl border border-gray-100 overflow-hidden flex flex-col max-h-[95vh] min-h-[80vh]">
+<div className="bg-white w-full max-w-[820px] rounded-sm shadow-xl border border-gray-100 overflow-hidden flex flex-col max-h-[70vh]">
             {/* Header */}
             <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-orange-100 to-white flex-shrink-0">
               <div className="flex items-center gap-2">
@@ -2374,6 +2374,7 @@ export default function QuotationPage() {
                 ✕
               </button>
             </div>
+            
 
             {/* Tabs */}
             <div className="flex border-b border-gray-200 flex-shrink-0">

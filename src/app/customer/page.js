@@ -212,41 +212,41 @@ export default function AddCustomer() {
   return (
     <>
       <Header />
-      <div className=" bg-gray-100 ">
+      <div className="min-h-screen bg-gray-100 pb-6">
         {/* Header */}
         <div className="bg-white w-full shadow-lg p-3 mt-1 mb-5">
-          <div className="hidden sm:flex items-center text-gray-700 w-full sm:w-auto">
-            <p className="flex items-center flex-wrap">
+          <div className="flex items-center text-gray-700 w-full">
+            <p className="flex items-center flex-wrap gap-y-2 text-sm sm:text-base">
               <Link
                 href="/dashboard"
-                className="mx-2 text-xl text-gray-400 hover:text-indigo-600"
+                className="mr-2 sm:mx-2 text-xl text-gray-400 hover:text-indigo-600"
               >
                 <i className="bi bi-house"></i>
               </Link>
               <i className="bi bi-chevron-right text-[10px]"></i>
               <Link
                 href="/customer-list"
-                className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
+                className="mx-2 text-sm sm:text-md text-gray-700 hover:text-orange-500 font-semibold"
               >
                 Customer List
               </Link>
               <i className="bi bi-chevron-right text-[10px]"></i>
               <Link
                 href="/customer"
-                className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
+                className="mx-2 text-sm sm:text-md text-gray-700 hover:text-orange-500 font-semibold"
               >
                 Add Customer
               </Link>
             </p>
           </div>
         </div>
-        <form onSubmit={handleSubmit} className="p-2 w-7xl mx-auto">
+        <form onSubmit={handleSubmit} className="w-full max-w-6xl mx-auto px-3 sm:px-5 lg:px-6">
           {/* Tab Header */}
-          <div className="flex mb-4 border-b border-gray-200">
+          <div className="flex mb-4 overflow-x-auto border-b border-gray-200">
             <button
               type="button"
               onClick={() => setActiveTab("customer")}
-              className={`px-5 py-2.5 text-sm font-semibold transition-all ${
+              className={`min-w-max flex-1 sm:flex-none px-3 sm:px-5 py-2.5 text-sm font-semibold transition-all ${
                 activeTab === "customer"
                   ? "text-orange-500 border-b-2 border-orange-500 -mb-px"
                   : "text-gray-500 hover:text-gray-700"
@@ -257,7 +257,7 @@ export default function AddCustomer() {
             <button
               type="button"
               onClick={() => setActiveTab("contact")}
-              className={`px-5 py-2.5 text-sm font-semibold transition-all ${
+              className={`min-w-max flex-1 sm:flex-none px-3 sm:px-5 py-2.5 text-sm font-semibold transition-all ${
                 activeTab === "contact"
                   ? "text-orange-500 border-b-2 border-orange-500 -mb-px"
                   : "text-gray-500 hover:text-gray-700"
@@ -269,17 +269,17 @@ export default function AddCustomer() {
 
           {/* ── PERSONAL INFORMATION TAB ── */}
           {activeTab === "customer" && (
-            <div className="bg-white rounded-sm border border-gray-200 shadow-sm p-6 space-y-5 max-w-[900px] max-h-[63vh] overflow-y-auto custom-scroll">
+            <div className="w-full max-w-[900px] mx-auto bg-white rounded-sm border border-gray-200 shadow-sm p-4 sm:p-6 space-y-5 max-h-none lg:max-h-[calc(100vh-220px)] overflow-y-visible lg:overflow-y-auto custom-scroll">
               {/* Customer Type */}
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                   Customer Type
                 </label>
-                <div className="flex gap-4">
+                <div className="grid grid-cols-1 sm:flex gap-3 sm:gap-4">
                   {["Individual", "Business"].map((type) => (
                     <label
                       key={type}
-                      className={`flex items-center gap-2.5 px-4 py-2.5 rounded-lg border-2 cursor-pointer transition-all ${
+                      className={`flex items-center justify-center sm:justify-start gap-2.5 px-4 py-2.5 rounded-lg border-2 cursor-pointer transition-all ${
                         formData.customer_type === type
                           ? "border-orange-400 bg-orange-50 text-orange-500"
                           : "border-gray-200 text-gray-600 hover:border-gray-300"
@@ -400,7 +400,7 @@ export default function AddCustomer() {
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
                   Address Details
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg sm:rounded-xl border border-gray-100">
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                       Address Type <span className="text-red-400">*</span>
@@ -439,7 +439,7 @@ export default function AddCustomer() {
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
                   GST Details
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg sm:rounded-xl border border-gray-100">
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                       GST Type
@@ -528,35 +528,36 @@ export default function AddCustomer() {
               </div>
 
               {/* Buttons */}
-              <div className="flex justify-end gap-3 pt-2">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
                 <button
                   type="button"
                   disabled
-                  className="px-6 py-2.5 text-sm text-gray-400 border border-gray-200 rounded-sm bg-gray-50 cursor-not-allowed"
+                  className="w-full sm:w-auto px-6 py-2.5 text-sm text-gray-400 border border-gray-200 rounded-sm bg-gray-50 cursor-not-allowed"
                 >
                   Previous
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveTab("contact")}
-                  className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-all shadow-sm cursor-pointer"
+                  className="w-full sm:w-auto px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-all shadow-sm cursor-pointer"
                 >
                   Next
                 </button>
                 <button
                   type="button"
                   onClick={() => router.push("/customer-list")}
-                  className="px-6 py-2.5 text-sm text-gray-500 border border-gray-200 rounded-sm hover:bg-gray-50 cursor-pointer transition-all"
+                  className="w-full sm:w-auto px-6 py-2.5 text-sm text-gray-500 border border-gray-200 rounded-sm hover:bg-gray-50 cursor-pointer transition-all"
                 >
                   Cancel
                 </button>
               </div>
             </div>
           )}
+          
 
           {/* ── CONTACT DETAILS TAB ── */}
           {activeTab === "contact" && (
-            <div className="bg-white rounded-sm border border-gray-200 shadow-sm p-6 space-y-5 max-w-[900px] max-h-[63vh] overflow-y-auto custom-scroll">
+            <div className="w-full max-w-[900px] mx-auto bg-white rounded-sm border border-gray-200 shadow-sm p-4 sm:p-6 space-y-5 max-h-none lg:max-h-[calc(100vh-220px)] overflow-y-visible lg:overflow-y-auto custom-scroll">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
@@ -618,24 +619,24 @@ export default function AddCustomer() {
               </div>
 
               {/* Buttons */}
-              <div className="flex justify-end gap-3 pt-2">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setActiveTab("customer")}
-                  className="px-6 py-2.5 text-sm text-gray-500 border border-gray-200 rounded-sm hover:bg-gray-50 cursor-pointer transition-all"
+                  className="w-full sm:w-auto px-6 py-2.5 text-sm text-gray-500 border border-gray-200 rounded-sm hover:bg-gray-50 cursor-pointer transition-all"
                 >
                   Previous
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-all shadow-sm cursor-pointer flex items-center gap-2"
+                  className="w-full sm:w-auto px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2"
                 >
                   <i className="bi bi-check2"></i> Save
                 </button>
                 <button
                   type="button"
                   onClick={() => router.push("/customer-list")}
-                  className="px-6 py-2.5 text-sm text-gray-500 border border-gray-200 rounded-sm hover:bg-gray-50 cursor-pointer transition-all"
+                  className="w-full sm:w-auto px-6 py-2.5 text-sm text-gray-500 border border-gray-200 rounded-sm hover:bg-gray-50 cursor-pointer transition-all"
                 >
                   Cancel
                 </button>
@@ -643,6 +644,7 @@ export default function AddCustomer() {
             </div>
           )}
         </form>
+        
       </div>
     </>
   );

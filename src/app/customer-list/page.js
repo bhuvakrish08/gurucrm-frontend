@@ -190,7 +190,7 @@ export default function CustomerList() {
                 href="/customer"
                 className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-sm w-full sm:w-auto text-center font-bold text-sm"
               >
-                + ADD CUSTOMER
+                + ADD CUSTOME
               </Link>
             </div>
           </div>
@@ -204,10 +204,12 @@ export default function CustomerList() {
           </button>
         </div>
 
-        <div className={`
-          ${showMobileFilters ? "absolute left-4 right-4 top-50 bg-white p-5 shadow-2xl border border-gray-100 z-50 rounded-lg grid grid-cols-2 gap-3 mt-1" : "hidden"} 
-          md:mx-4 md:mb-2 md:flex md:flex-wrap md:gap-2 md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
-        `}>
+        <div
+          className={`
+            ${showMobileFilters ? "mx-4 mb-3 grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-lg border border-gray-100 bg-white p-4 shadow-xl" : "hidden"}
+            md:mx-4 md:mb-2 md:flex md:flex-wrap md:gap-2 md:bg-transparent md:p-0 md:shadow-none md:border-none
+          `}
+        >
           <input
             type="text"
             name="customer_name"
@@ -256,7 +258,7 @@ export default function CustomerList() {
             ))}
           </select>
 
-          <div className="flex gap-2 col-span-2">
+          <div className="flex gap-2 sm:col-span-2 md:col-span-auto">
             <button
               type="button"
               onClick={() => {
@@ -563,3 +565,5 @@ export default function CustomerList() {
     </>
   );
 }
+
+
