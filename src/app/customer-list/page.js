@@ -429,15 +429,15 @@ export default function CustomerList() {
       {/* Delete Modal */}
       {deleteModal.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30">
-          <div className="bg-white rounded-sm shadow-xl w-full max-w-sm border border-gray-100 overflow-hidden">
-            <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-orange-100 to-white">
+          <div className="bg-white rounded-sm shadow-xl w-full max-w-[95vw] mx-auto border border-gray-100 overflow-hidden">
+            <div className="flex justify-between items-center px-3 py-4 bg-gradient-to-r from-orange-100 to-white">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-orange-500 inline-block"></span>
                 <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
                   Delete Customer
                 </span>
               </div>
-              <button
+              <button 
                 onClick={() => setDeleteModal({ open: false, id: null, name: "" })}
                 className="w-7 h-7 flex items-center justify-center text-orange-500 text-md"
               >
@@ -480,7 +480,7 @@ export default function CustomerList() {
       {/* View Customer Modal */}
       {viewModal.open && viewModal.data && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30">
-          <div className="bg-white rounded-sm shadow-xl w-full max-w-2xl overflow-hidden border border-gray-100">
+          <div className="bg-white rounded-sm shadow-xl w-full max-w-[95vw] mx-auto overflow-hidden border border-gray-100">
             <div className="flex items-center justify-between px-6 py-3 from-orange-100 to-white bg-gradient-to-r">
               <div className="flex items-center gap-3">
                 <div className="w-7 h-7 flex items-center justify-center">
@@ -554,7 +554,7 @@ export default function CustomerList() {
             <div className="px-6 pb-5 flex justify-end gap-3">
               <button
                 onClick={() => setViewModal({ open: false, data: null })}
-                className="px-5 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
+                className="px-5 py-2 rounded-sm text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
               >
                 Close
               </button>

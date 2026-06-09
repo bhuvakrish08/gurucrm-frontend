@@ -471,8 +471,8 @@ export default function AddCustomer() {
       <Header />
       <div className="bg-gray-50">
         {/* Breadcrumb */}
-        <div className="bg-white w-full rounded-sm shadow-lg p-3 mt-1 mb-5">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
+        <div className="hidden sm:flex bg-white w-full rounded-sm shadow-lg p-3 mt-1 mb-5">
+          <div className="flex  flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
             <p className="flex items-center flex-wrap">
               <Link
                 href="/dashboard"
@@ -544,7 +544,7 @@ export default function AddCustomer() {
 
           {/* ── UPDATE CUSTOMER TAB ── */}
           {activeTab === "update-customer" && (
-            <form className="bg-white rounded-sm border border-gray-200 shadow-sm p-6 space-y-5 max-w-[800px] max-h-[63vh] overflow-y-auto custom-scroll">
+            <form className="bg-white rounded-sm border border-gray-200 shadow-sm p-6 space-y-5 max-w-[800px] max-h-full overflow-y-auto custom-scroll">
               {/* Customer Type */}
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
@@ -823,7 +823,7 @@ export default function AddCustomer() {
                     await handleSubmit();
                     await saveGstDetails();
                   }}
-                  className={`w-40 flex items-center justify-center gap-2 px-6 py-2.5 bg-orange-500 text-white text-sm font-semibold rounded-lg transition-all shadow-sm
+                  className={`w-40 flex items-center justify-center gap-2 px-6 py-2.5 bg-orange-500 text-white text-sm font-semibold rounded-sm transition-all shadow-sm
                     ${isSubmitting ? "opacity-70 cursor-not-allowed" : "hover:bg-orange-600 hover:cursor-pointer"}`}
                 >
                   {isSubmitting ? (
@@ -881,7 +881,7 @@ export default function AddCustomer() {
                     setAddressForm({ address_type: "", address: "" });
                     setShowAddressModal(true);
                   }}
-                  className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:cursor-pointer transition-all shadow-sm"
+                  className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2 rounded-sm hover:cursor-pointer transition-all shadow-sm"
                 >
                   <i className="bi bi-plus-lg"></i> Add Address
                 </button>
@@ -958,10 +958,10 @@ export default function AddCustomer() {
                 </table>
               </div>
 
-              {/* ✅ Address Modal — Add & Edit both work here */}
+              {/* ✅ Address Modal — Add & Edit both work here */}  
               {showaddressModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                  <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+                  <div className="bg-white rounded-sm w-full max-w-[95vw] md:max-w-[55vw] lg:max-w-[35vw] xl:max-w-[30vw] mx-auto shadow-2xl overflow-hidden">
                     <div className="flex items-center justify-between px-6 py-4 from-orange-100 to-white bg-gradient-to-r">
                       <div className="flex items-center gap-2">
                         <i className="bi bi-geo-alt text-black"></i>
@@ -1013,7 +1013,7 @@ export default function AddCustomer() {
                       <button
                         type="button"
                         onClick={closeAddressModal}
-                        className="px-4 py-2 text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 hover:cursor-pointer transition-all"
+                        className="px-4 py-2 text-sm text-gray-500 border border-gray-200 rounded-sm hover:bg-gray-50 hover:cursor-pointer transition-all"
                       >
                         Cancel
                       </button>
@@ -1021,7 +1021,7 @@ export default function AddCustomer() {
                         type="button"
                         onClick={saveAddress}
                         disabled={isSavingAddress}
-                        className={`w-40 flex items-center justify-center px-5 py-2 text-sm font-semibold text-white bg-orange-500 rounded-lg transition-all
+                        className={`w-40 flex items-center justify-center px-5 py-2 text-sm font-semibold text-white bg-orange-500 rounded-sm transition-all
                           ${isSavingAddress ? "opacity-70 cursor-not-allowed" : "hover:bg-orange-600 hover:cursor-pointer"}`}
                       >
                         {isSavingAddress ? (
@@ -1085,7 +1085,7 @@ export default function AddCustomer() {
                     });
                     setShowContactsModal(true);
                   }}
-                  className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2 rounded-lg hover:cursor-pointer transition-all shadow-sm"
+                  className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2 rounded-sm hover:cursor-pointer transition-all shadow-sm"
                 >
                   <i className="bi bi-plus-lg"></i> Add Contact
                 </button>
@@ -1189,7 +1189,7 @@ export default function AddCustomer() {
               {/* Contact Modal */}
               {showcontactsModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                  <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+                  <div className="bg-white rounded-sm w-full max-w-[95vw] md:max-w-[55vw] lg:max-w-[35vw] xl:max-w-[30vw] mx-auto shadow-2xl overflow-hidden">
                     <div className="flex items-center justify-between px-6 py-4 from-orange-100 to-white bg-gradient-to-r">
                       <div className="flex items-center gap-2">
                         <i className="bi bi-telephone text-black"></i>
@@ -1268,7 +1268,7 @@ export default function AddCustomer() {
                       <button
                         type="button"
                         onClick={closeContactModal}
-                        className="px-4 py-2 text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 hover:cursor-pointer transition-all"
+                        className="px-4 py-2 text-sm text-gray-500 border border-gray-200 rounded-sm hover:bg-gray-50 hover:cursor-pointer transition-all"
                       >
                         Cancel
                       </button>
@@ -1276,12 +1276,12 @@ export default function AddCustomer() {
                         type="button"
                         onClick={saveContact}
                         disabled={isSavingContact}
-                        className={`w-40 flex items-center justify-center px-5 py-2 text-sm font-semibold text-white bg-orange-500 rounded-lg transition-all
+                        className={`w-40 flex items-center justify-center px-5 py-2 text-sm font-semibold text-white bg-orange-500 rounded-sm transition-all
                           ${isSavingContact ? "opacity-70 cursor-not-allowed" : "hover:bg-orange-600 hover:cursor-pointer"}`}
                       >
                         {isSavingContact ? (
                           <svg
-                            className="animate-spin h-4 w-4"
+                            className="animate-spin h-4 w-4 "
                             viewBox="0 0 24 24"
                             fill="none"
                           >
