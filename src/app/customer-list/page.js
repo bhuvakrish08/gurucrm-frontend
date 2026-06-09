@@ -169,7 +169,7 @@ export default function CustomerList() {
         {/* Header bar */}
         <div className="bg-white w-full rounded-sm shadow-lg p-3 mt-1 mb-5">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
-            <p className="flex items-center flex-wrap">
+<p className="hidden sm:flex items-center flex-wrap">
               <Link href="/dashboard" className="mx-3 text-xl text-gray-400 hover:text-indigo-600">
                 <i className="bi bi-house"></i>
               </Link>
@@ -190,7 +190,7 @@ export default function CustomerList() {
                 href="/customer"
                 className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-sm w-full sm:w-auto text-center font-bold text-sm"
               >
-                + ADD CUSTOME
+                + ADD CUSTOMER
               </Link>
             </div>
           </div>
