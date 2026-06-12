@@ -159,7 +159,11 @@ export default function ProformaPage() {
       setPiData(prev => prev.map(item =>
         item.pi_id === pi_id ? { ...item, stage } : item
       ));
-      toast.success(stage === "completed" ? "Completed ma move thay gayu!" : "Pending ma move thay gayu!");
+toast.success(
+  stage === "completed"
+    ? "Moved to Completed successfully!"
+    : "Moved to Pending successfully!"
+);
       fetchPI();
     } catch (err) {
       toast.error("Stage update failed");
