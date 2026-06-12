@@ -578,7 +578,7 @@ export default function Page() {
       {/* ── ADD TABLE CONTACTS MODAL ── */}
       {showForm && (
         <div className="fixed inset-0 bg-gray-900/30 z-50 flex justify-center items-center">
-          <div className="bg-white rounded-sm shadow-lg w-[450px] relative overflow-hidden">
+          <div className="bg-white rounded-sm w-full max-w-[95vw] md:max-w-[55vw] lg:max-w-[35vw] xl:max-w-[30vw] mx-auto shadow-2xl   relative overflow-hidden">
             {/* ✅ HEADER with gradient - like reference image */}
             <div className="bg-gradient-to-r from-orange-100 to-white px-6 py-5 mb-2">
               <button

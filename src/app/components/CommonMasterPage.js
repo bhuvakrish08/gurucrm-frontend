@@ -312,22 +312,22 @@ export default function CommonMasterPage({
 
         {/* Table */}
         <form className="p-1 mx-5">
-          <div className="overflow-x-auto overflow-y-auto max-h-[500px] custom-scroll bg-white shadow-md rounded-sm p-1 border border-gray-200">
-            <table className="w-full text-sm text-left text-gray-700 border-collapse mt-2 mb-2 whitespace-nowrap">
-              <thead className="bg-gray-50 text-gray-900 uppercase text-xs">
-                <tr>
-                  <th className="py-3 px-5 w-10">#</th>
+          <div className="overflow-x-auto overflow-y-auto max-h-[full] custom-scroll bg-white shadow-md rounded-sm p-1 border border-gray-200">
+                <table className="w-full text-sm whitespace-nowrap">
+              <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">#</th>
                   {extraColumn && (
-                    <th className="py-3 px-4 text-center">
+                    <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
                       {extraColumn.label}
                     </th>
                   )}
-                  <th className="py-3 px-4">{title} Name</th>
+                  <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{title} Name</th>
                   {showCheckboxColumn && (
-                    <th className="py-3 px-4 text-center">Select</th>
+                    <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Select</th>
                   )}
-                  <th className="py-3 px-4 text-center">Status</th>
-                  <th className="py-3 px-4 text-center">Action</th>
+                  <th className="py-3 px-3  text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                  <th className="py-3 px-3  text-xs font-semibold text-gray-400 uppercase tracking-wider">Action</th>
                 </tr>
               </thead>
 

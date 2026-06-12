@@ -60,7 +60,7 @@ export default function ProformaPage() {
       setPiData(res.data.data || []);
       setCurrentPage(1);
     } catch (err) {
-      console.error(err);
+      // console.error(err);
     } finally {
       setLoading(false);
     }

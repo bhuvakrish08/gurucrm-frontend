@@ -804,10 +804,10 @@ export default function Page() {
           </div>
 
           <div className="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-end">
-            <div className="relative" ref={exportRef}>
+            <div className="relative   w-1/2 sm:w-auto" ref={exportRef}>
               <button
                 onClick={() => setShowExportMenu((prev) => !prev)}
-                className="flex items-center gap-2 bg-orange-50 text-orange-500 px-4 py-2 rounded-sm text-sm font-semibold tracking-wide transition-all shadow-sm"
+                className="flex items-center justify-center gap-2 bg-orange-50 text-orange-500 px-4 py-2 rounded-sm text-sm font-semibold tracking-wide transition-all shadow-sm"
               >
                 <i className="bi bi-download text-base"></i>
                 Export
@@ -843,7 +843,7 @@ export default function Page() {
 
             <Link
               href="/sales/lead/add-lead"
-              className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-sm text-sm font-semibold shadow-md transition-all"
+              className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-sm text-sm font-semibold shadow-md transition-all "
             >
               + ADD LEAD
             </Link>

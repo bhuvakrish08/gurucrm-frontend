@@ -314,10 +314,11 @@ export default function EditContract() {
 
 
 
-  return (
+  return (  
     <>
       <Header />
       <div className="bg-gray-100">
+        {/* breadcrub  */}
         <div className="bg-white w-full rounded-2xl shadow-lg p-3 mt-1 mb-5 flex justify-between items-center text-sm font-semibold">
           <div className="hidden sm:flex items-center text-gray-700 w-full sm:w-auto">
             <p className="flex items-center flex-wrap">
