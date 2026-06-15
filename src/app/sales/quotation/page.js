@@ -771,6 +771,49 @@ export default function QuotationPage() {
     }
   };
 
+  // ===================================================
+  // 🚦 QUOTATION TRAFFIC LIGHT DOT
+  // Returns a colored dot JSX based on quotation_dot_color from API
+  // ===================================================
+  const getQuotationTrafficDot = (q) => {
+    const color = q.quotation_dot_color || "green"; // 'green' | 'yellow' | 'red'
+
+    const dotColors = {
+      green:  "#22c55e",
+      yellow: "#eab308",
+      red:    "#ef4444",
+    };
+
+    const isPending = !q.latest_quotation_id || ["Pending", "Revision"].includes(q.quotation_status);
+
+    const tooltips = isPending ? {
+      green:  "✅ Response time on track (< 24h)",
+      yellow: "⚠️ Action delayed (> 24h) — Attention needed",
+      red:    "🔴 Action critically delayed (> 48h)",
+    } : {
+      green:  "✅ Completed on track (< 24h)",
+      yellow: "⚠️ Completed late (24h - 48h)",
+      red:    "🔴 Completed late (48h+)",
+    };
+
+    const isPulse = isPending && (color === "yellow" || color === "red");
+
+    return (
+      <span
+        title={tooltips[color]}
+        style={{
+          display:         "inline-block",
+          width:           9,
+          height:          9,
+          borderRadius:    "50%",
+          backgroundColor: dotColors[color],
+          flexShrink:      0,
+          animation:       isPulse ? "pulse 1.5s infinite" : "none",
+        }}
+      />
+    );
+  };
+
   const openAssignModal = (quotation) => {
     setSelectedAssignQuotation(quotation);
     setAssignForm({
@@ -1790,6 +1833,22 @@ export default function QuotationPage() {
                 </button>
               </>
             )}
+
+            {/* 🚦 Traffic Light Legend */}
+            <div className="ml-auto flex items-center gap-4 pb-3 text-xs text-gray-500">
+              <span className="flex items-center gap-1.5">
+                <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", backgroundColor: "#22c55e" }} />
+                On track
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", backgroundColor: "#eab308" }} />
+                24h no follow-up
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", backgroundColor: "#ef4444" }} />
+                48h+ overdue
+              </span>
+            </div>
           </div>
 
           <div className="p-4">
@@ -1898,6 +1957,7 @@ export default function QuotationPage() {
                             </td>
                             <td className="font-medium px-3">
                               <div className="flex items-center gap-2">
+                                {getQuotationTrafficDot(q)}
                                 <span>{q.company_name || "-"}</span>
                                 {customLabelBadge}
                               </div>
@@ -2098,78 +2158,80 @@ export default function QuotationPage() {
                             </td>
 
                             <td className="px-3">
-                              {q.displayStatus === "Pending" ? (
-                                isKhushaliEstimation ? (
-                                  <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-xs font-bold">
-                                    Pending
+                              <div className="flex items-center gap-1.5">
+                                {q.displayStatus === "Pending" ? (
+                                  isKhushaliEstimation ? (
+                                    <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-xs font-bold">
+                                      Pending
+                                    </span>
+                                  ) : (
+                                    <select
+                                      value="Pending"
+                                      onChange={(e) =>
+                                        handleTableStatusChange(
+                                          q.latest_quotation_id,
+                                          e.target.value,
+                                        )
+                                      }
+                                      className="border rounded-md px-2 py-1 text-xs font-semibold outline-none bg-blue-50 text-blue-700 border-blue-300 cursor-pointer"
+                                    >
+                                      <option value="Pending">Pending</option>
+                                      <option value="Sent">Sent</option>
+                                      <option value="Lost">Lost</option>
+                                    </select>
+                                  )
+                                ) : q.displayStatus === "Sent" ? (
+                                  isKhushaliEstimation ? (
+                                    <span className="bg-sky-100 text-sky-700 px-2 py-1 rounded-md text-xs font-bold">
+                                      Sent
+                                    </span>
+                                  ) : (
+                                    <select
+                                      value="Sent"
+                                      onChange={(e) =>
+                                        handleTableStatusChange(
+                                          q.latest_quotation_id,
+                                          e.target.value,
+                                        )
+                                      }
+                                      className="border rounded-md px-2 py-1 text-xs font-semibold outline-none bg-sky-50 text-sky-700 border-sky-300 cursor-pointer"
+                                    >
+                                      <option value="Sent">Sent</option>
+                                      <option value="Revision">Revision</option>
+                                      <option value="Lost">Lost</option>
+                                    </select>
+                                  )
+                                ) : q.displayStatus === "Revision" ? (
+                                  isKhushaliEstimation ? (
+                                    <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-md text-xs font-bold">
+                                      Revision
+                                    </span>
+                                  ) : (
+                                    <select
+                                      value="Revision"
+                                      onChange={(e) =>
+                                        handleTableStatusChange(
+                                          q.latest_quotation_id,
+                                          e.target.value,
+                                        )
+                                      }
+                                      className="border rounded-md px-2 py-1 text-xs font-semibold outline-none bg-purple-50 text-purple-700 border-purple-300 cursor-pointer"
+                                    >
+                                      <option value="Revision">Revision</option>
+                                      <option value="Sent">Sent</option>
+                                      <option value="Lost">Lost</option>
+                                    </select>
+                                  )
+                                ) : q.displayStatus === "Won" ? (
+                                  <span className="bg-green-100 text-green-700 px-2 py-1 rounded-md text-xs font-bold">
+                                    Won
                                   </span>
-                                ) : (
-                                  <select
-                                    value="Pending"
-                                    onChange={(e) =>
-                                      handleTableStatusChange(
-                                        q.latest_quotation_id,
-                                        e.target.value,
-                                      )
-                                    }
-                                    className="border rounded-md px-2 py-1 text-xs font-semibold outline-none bg-blue-50 text-blue-700 border-blue-300 cursor-pointer"
-                                  >
-                                    <option value="Pending">Pending</option>
-                                    <option value="Sent">Sent</option>
-                                    <option value="Lost">Lost</option>
-                                  </select>
-                                )
-                              ) : q.displayStatus === "Sent" ? (
-                                isKhushaliEstimation ? (
-                                  <span className="bg-sky-100 text-sky-700 px-2 py-1 rounded-md text-xs font-bold">
-                                    Sent
+                                ) : q.displayStatus === "Lost" ? (
+                                  <span className="bg-red-100 text-red-700 px-2 py-1 rounded-md text-xs font-bold">
+                                    Lost
                                   </span>
-                                ) : (
-                                  <select
-                                    value="Sent"
-                                    onChange={(e) =>
-                                      handleTableStatusChange(
-                                        q.latest_quotation_id,
-                                        e.target.value,
-                                      )
-                                    }
-                                    className="border rounded-md px-2 py-1 text-xs font-semibold outline-none bg-sky-50 text-sky-700 border-sky-300 cursor-pointer"
-                                  >
-                                    <option value="Sent">Sent</option>
-                                    <option value="Revision">Revision</option>
-                                    <option value="Lost">Lost</option>
-                                  </select>
-                                )
-                              ) : q.displayStatus === "Revision" ? (
-                                isKhushaliEstimation ? (
-                                  <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-md text-xs font-bold">
-                                    Revision
-                                  </span>
-                                ) : (
-                                  <select
-                                    value="Revision"
-                                    onChange={(e) =>
-                                      handleTableStatusChange(
-                                        q.latest_quotation_id,
-                                        e.target.value,
-                                      )
-                                    }
-                                    className="border rounded-md px-2 py-1 text-xs font-semibold outline-none bg-purple-50 text-purple-700 border-purple-300 cursor-pointer"
-                                  >
-                                    <option value="Revision">Revision</option>
-                                    <option value="Sent">Sent</option>
-                                    <option value="Lost">Lost</option>
-                                  </select>
-                                )
-                              ) : q.displayStatus === "Won" ? (
-                                <span className="bg-green-100 text-green-700 px-2 py-1 rounded-md text-xs font-bold">
-                                  Won
-                                </span>
-                              ) : q.displayStatus === "Lost" ? (
-                                <span className="bg-red-100 text-red-700 px-2 py-1 rounded-md text-xs font-bold">
-                                  Lost
-                                </span>
-                              ) : null}
+                                ) : null}
+                              </div>
                             </td>
 
                             <td className="px-3 text-center">

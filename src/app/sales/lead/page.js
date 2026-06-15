@@ -618,32 +618,49 @@ export default function Page() {
     });
     fetchLeads();
   };
+ // ===================================================
+  // 🚦 TRAFFIC LIGHT DOT
+  // Returns a colored dot JSX based on follow_up_status from API
+  // Only shown for Pending leads; Won/Lost get no dot
   // ===================================================
-  // OVERDUE LEAD HIGHLIGHT
-  // ===================================================
+  const getTrafficDot = (lead) => {
+    const color = lead.follow_up_status || "green"; // 'green' | 'yellow' | 'red'
 
-  // ===================================================
-  // OVERDUE LEAD HIGHLIGHT
-  // ===================================================
+    const dotColors = {
+      green:  "#22c55e",
+      yellow: "#eab308",
+      red:    "#ef4444",
+    };
 
- const isOverdueLead = (lead) => {
-   // Won / Lost no highlight
-   if (lead.status !== "Pending") {
-     return false;
-   }
+    const isPending = lead.status === "Pending";
 
-   // server current time
-   const serverNow = new Date(lead.server_time);
+    const tooltips = isPending ? {
+      green:  "✅ Follow-up on track (< 24h)",
+      yellow: "⚠️ No follow-up in 24h — Attention needed",
+      red:    "🔴 No follow-up in 48h+ — Critical",
+    } : {
+      green:  "✅ Completed on track (< 24h)",
+      yellow: "⚠️ Completed late (24h - 48h)",
+      red:    "🔴 Completed late (48h+)",
+    };
 
-   // last activity time
-   const lastActivity = new Date(lead.updated_at || lead.created_at);
+    const isPulse = isPending && (color === "yellow" || color === "red");
 
-   // time difference
-   const diffHours = (serverNow - lastActivity) / (1000 * 60 * 60);
-
-   // 24+ hours
-   return diffHours >= 24;
- };
+    return (
+      <span
+        title={tooltips[color]}
+        style={{
+          display:         "inline-block",
+          width:           9,
+          height:          9,
+          borderRadius:    "50%",
+          backgroundColor: dotColors[color],
+          flexShrink:      0,
+          animation:       isPulse ? "pulse 1.5s infinite" : "none",
+        }}
+      />
+    );
+  };
 
   // ===================================================
   // TAB + FILTER MERGE
@@ -1057,6 +1074,22 @@ export default function Page() {
                 <div className="absolute bottom-0 left-0 w-full h-0.5 bg-red-600"></div>
               )}
             </button>
+
+            {/* 🚦 Traffic Light Legend */}
+            <div className="ml-auto flex items-center gap-4 pb-3 text-xs text-gray-500">
+              <span className="flex items-center gap-1.5">
+                <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", backgroundColor: "#22c55e" }} />
+                On track
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", backgroundColor: "#eab308" }} />
+                24h no follow-up
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", backgroundColor: "#ef4444" }} />
+                48h+ overdue
+              </span>
+            </div>
           </div>
 
           <div className="p-4">
@@ -1108,15 +1141,7 @@ export default function Page() {
                       paginatedLeads.map((lead, index) => (
                         <tr
                           key={lead.lead_id}
-                          className={`
-    border-b transition-all
-
-    ${
-      isOverdueLead(lead)
-        ? "border-l-4 border-red-500 bg-red-50 hover:bg-red-100"
-        : "border-gray-50 hover:bg-indigo-50/30"
-    }
-  `}
+                          className="border-b border-gray-50 hover:bg-indigo-50/30 transition-all"
                         >
                           <td className="py-3 px-2">
                             {(currentPage - 1) * itemsPerPage + index + 1}
@@ -1124,10 +1149,7 @@ export default function Page() {
 
                           <td className="font-medium px-2">
                             <div className="flex items-center gap-2">
-                              {isOverdueLead(lead) && (
-                                <span className="animate-pulse w-2 h-2 rounded-full bg-red-500"></span>
-                              )}
-
+                              {getTrafficDot(lead)}
                               {lead.company_name}
                             </div>
                           </td>

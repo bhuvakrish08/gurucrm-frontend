@@ -149,6 +149,7 @@ export default function Dashboard() {
   const [pis, setPis] = useState([]);
   const [contracts, setContracts] = useState([]);
   const [products, setProducts] = useState([]);
+  const [trafficLightStats, setTrafficLightStats] = useState([]);
   const [salesTimeframe, setSalesTimeframe] = useState("monthly");
   const [newTodoTitle, setNewTodoTitle] = useState("");
   const [addingTodo, setAddingTodo] = useState(false);
@@ -174,6 +175,7 @@ export default function Dashboard() {
         piRes,
         contractsRes,
         productsRes,
+        trafficLightRes,
       ] = await Promise.all([
         axios
           .get(`${API_BASE}/api/lead/read`, config)
@@ -199,6 +201,9 @@ export default function Dashboard() {
         axios
           .get(`${API_BASE}/api/product-master/read`, config)
           .catch(() => ({ data: [] })),
+        axios
+          .get(`${API_BASE}/api/lead/analytics/traffic-light`, config)
+          .catch(() => ({ data: { result: [] } })),
       ]);
 
       setLeads(
@@ -291,6 +296,9 @@ export default function Dashboard() {
 
       const fetchedProducts = productsRes.data?.data || productsRes.data;
       setProducts(Array.isArray(fetchedProducts) ? fetchedProducts : []);
+
+      const fetchedTrafficLight = trafficLightRes.data?.result || [];
+      setTrafficLightStats(Array.isArray(fetchedTrafficLight) ? fetchedTrafficLight : []);
 
     } catch (error) {
       console.error("Dashboard Data Fetch Error:", error);
@@ -3486,6 +3494,110 @@ export default function Dashboard() {
                       <p className="text-gray-400 text-[10px] text-center py-6">No finished tasks</p>
                     )}
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* =========================================
+            TRAFFIC LIGHT ANALYTICS SECTION (Phase 2)
+        ========================================= */}
+        {(role === 'Admin' || role === 'Super Admin' || role === 'Leads Management') && trafficLightStats.length > 0 && (
+          <div className="mt-6 mb-8 animate-fade-in">
+            <div className="flex items-center gap-3 mb-4 pl-1">
+              <div className="p-2 bg-gradient-to-br from-indigo-50 to-blue-50 border border-blue-100 rounded-lg shadow-sm">
+                <Activity size={18} className="text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-black text-gray-800 tracking-tight leading-tight">
+                  Team Performance <span className="text-gray-400 font-medium text-sm ml-1">(Traffic Light System)</span>
+                </h2>
+                <p className="text-[11px] font-medium text-gray-400 mt-0.5">
+                  Analyze response times and follow-up efficiency across the sales team
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Chart Card */}
+              <div className="bg-white/60 backdrop-blur-xl border border-gray-100 p-4 rounded-2xl shadow-sm flex flex-col">
+                <h3 className="text-[11px] font-bold text-gray-800 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <Activity size={14} className="text-gray-400" /> Follow-Up Status Distribution
+                </h3>
+                <div className="h-[250px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={trafficLightStats} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis dataKey="assignee" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                      <Tooltip
+                        cursor={{ fill: '#f8fafc' }}
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)', padding: '12px' }}
+                      />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
+                      <Bar dataKey="green_count" name="On Time (< 24h)" stackId="a" fill="#10B981" radius={[0, 0, 4, 4]} barSize={32} />
+                      <Bar dataKey="yellow_count" name="Late (24h-48h)" stackId="a" fill="#F59E0B" />
+                      <Bar dataKey="red_count" name="Very Late (> 48h)" stackId="a" fill="#EF4444" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Table Card */}
+              <div className="bg-white/60 backdrop-blur-xl border border-gray-100 p-4 rounded-2xl shadow-sm flex flex-col">
+                <h3 className="text-[11px] font-bold text-gray-800 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <Clock size={14} className="text-gray-400" /> Average Response Times
+                </h3>
+                <div className="overflow-x-auto rounded-xl border border-gray-100 shadow-sm">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50/80 border-b border-gray-100">
+                        <th className="px-4 py-3 text-[10px] font-extrabold text-gray-500 uppercase tracking-widest whitespace-nowrap">Employee</th>
+                        <th className="px-4 py-3 text-[10px] font-extrabold text-gray-500 uppercase tracking-widest whitespace-nowrap">Avg Response</th>
+                        <th className="px-4 py-3 text-[10px] font-extrabold text-gray-500 uppercase tracking-widest whitespace-nowrap text-right">Total Logs</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {trafficLightStats.map((stat, idx) => {
+                        const avgHours = parseFloat(stat.avg_hours_elapsed || 0);
+                        let timeString = "";
+                        if (avgHours < 1) {
+                          timeString = `${Math.round(avgHours * 60)} mins`;
+                        } else {
+                          timeString = `${avgHours.toFixed(1)} hours`;
+                        }
+                        
+                        let statusDot = "bg-green-500";
+                        if (avgHours >= 48) statusDot = "bg-red-500";
+                        else if (avgHours >= 24) statusDot = "bg-yellow-500";
+
+                        return (
+                          <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-100 to-blue-100 border border-blue-200 flex items-center justify-center">
+                                  <span className="text-[10px] font-bold text-blue-700">{stat.assignee ? stat.assignee.charAt(0).toUpperCase() : '?'}</span>
+                                </div>
+                                <span className="text-[12px] font-semibold text-gray-800">{stat.assignee || 'Unknown'}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                <span className={`w-2 h-2 rounded-full ${statusDot} shadow-sm`}></span>
+                                <span className="text-[12px] font-medium text-gray-600">{timeString}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-right">
+                              <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[11px] font-bold">
+                                {stat.total_logs}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
