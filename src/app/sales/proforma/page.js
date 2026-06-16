@@ -245,6 +245,7 @@ toast.success(
       setRupees(((grandTotal * num) / 100).toFixed(2));
     }
   };
+  
 
   // ── SYNC ₹ → % ───────────────────────────────────────────
   const handleRupeesChange = (val) => {

@@ -2167,6 +2167,7 @@ export default function Page() {
                 },
                 { icon: "bi-flag", label: "Source", value: viewLead.source },
                 { icon: "bi-tag", label: "Category", value: viewLead.category },
+                { icon: "bi-tag", label: "mobile no", value: viewLead.mobile_no },
                 {
                   icon: "bi-person-check",
                   label: "Assignee",

@@ -26,6 +26,7 @@ export default function Page() {
   const [formData, setFormData] = useState({
     company_name: "",
     customer_name: "",
+    mobile_no: "",       // ✅ FIXED
     reference: "",
     source: "",
     status: "Qualified",
@@ -67,6 +68,7 @@ export default function Page() {
       const payload = {
         ...formData,
         source: formData.source || null,
+        mobile_no: formData.mobile_no || null,   // ✅ FIXED
         priority: formData.priority || null,
         category: formData.category || null,
       };
@@ -98,6 +100,7 @@ export default function Page() {
     setFormData({
       company_name: "",
       customer_name: "",
+      mobile_no: "",     // ✅ FIXED
       reference: "",
       source: "",
       status: "Qualified",
@@ -109,7 +112,6 @@ export default function Page() {
     setErrors({});
   };
 
-  // ✅ FIX: lowercase 'source' — matches server.js after fix
   useEffect(() => {
     const fetchSource = async () => {
       try {
@@ -141,42 +143,6 @@ export default function Page() {
     };
     fetchCategory();
   }, []);
-
-  // useEffect(() => {
-  //   const fetchProductCategory = async () => {
-  //     try {
-  //       const token = localStorage.getItem("token");
-  //       const res = await axios.get(`${API_BASE}/api/product-category/read`, {
-  //         params: { status: 1 },
-  //         headers: { Authorization: `Bearer ${token}` },
-  //       });
-  //       setCategory(res.data);
-  //     } catch (err) {
-  //       console.error("Product category fetch error:", err);
-  //     }
-  //   };
-  //   fetchProductCategory();
-  // }, []);
-
-  // useEffect(() => {
-  //   if (!formData.product_category) {
-  //     setProductList([]);
-  //     return;
-  //   }
-  //   const fetchProducts = async () => {
-  //     try {
-  //       const token = localStorage.getItem("token");
-  //       const res = await axios.get(`${API_BASE}/api/product-master/read`, {
-  //         params: { search2: formData.product_category },
-  //         headers: { Authorization: `Bearer ${token}` },
-  //       });
-  //       setProductList(res.data);
-  //     } catch {
-  //       setProductList([]);
-  //     }
-  //   };
-  //   fetchProducts();
-  // }, [formData.product_category]);
 
   useEffect(() => {
     const fetchAssignee = async () => {
@@ -236,7 +202,7 @@ export default function Page() {
                 value={formData.company_name}
                 placeholder="Company Name"
                 onChange={handleChange}
-                className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none  bg-white"
+                className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none bg-white"
               />
             </div>
 
@@ -248,9 +214,22 @@ export default function Page() {
                 value={formData.customer_name}
                 placeholder="Customer Name"
                 onChange={handleChange}
-                className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none  bg-white"
+                className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none bg-white"
               />
               {errors.customer_name && <p className="text-red-500 text-xs mt-1">{errors.customer_name}</p>}
+            </div>
+
+            {/* Mobile No. ✅ FIXED: name="mobile_no" and correct error key */}
+            <div>
+              <label className="block mb-1 text-sm font-medium text-gray-600">Mobile No.</label>
+              <input
+                name="mobile_no"
+                value={formData.mobile_no}
+                placeholder="Mobile No."
+                onChange={handleChange}
+                className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none bg-white"
+              />
+              {errors.mobile_no && <p className="text-red-500 text-xs mt-1">{errors.mobile_no}</p>}
             </div>
 
             {/* Source */}
@@ -260,7 +239,7 @@ export default function Page() {
                 name="source"
                 value={formData.source}
                 onChange={handleChange}
-                className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none  bg-white"
+                className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none bg-white"
               >
                 <option value="">-- Select --</option>
                 {leadSource.map((item) => (
@@ -270,7 +249,7 @@ export default function Page() {
               {errors.source && <p className="text-red-500 text-xs mt-1">{errors.source}</p>}
             </div>
 
-            {/* reference */}
+            {/* Reference */}
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-600">Reference</label>
               <input
@@ -279,7 +258,7 @@ export default function Page() {
                 value={formData.reference}
                 placeholder="Reference"
                 onChange={handleChange}
-                className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none  bg-white"
+                className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none bg-white"
               />
               {errors.reference && <p className="text-red-500 text-xs mt-1">{errors.reference}</p>}
             </div>
@@ -297,40 +276,6 @@ export default function Page() {
               </select>
             </div>
 
-            {/* Product Category */}
-            {/* <div>
-              <label className="block mb-1 text-sm font-medium text-gray-600">Product Category *</label>
-              <select
-                name="product_category"
-                value={formData.product_category}
-                onChange={handleChange}
-                className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none  bg-white"
-              >
-                <option value="">-- Select --</option>
-                {category.map((item) => (
-                  <option key={item.id} value={item.id}>{item.name}</option>
-                ))}
-              </select>
-              {errors.product_category && <p className="text-red-500 text-xs mt-1">{errors.product_category}</p>}
-            </div> */}
-
-            {/* Product Name */}
-            {/* <div>
-              <label className="block mb-1 text-sm font-medium text-gray-600">Product Name *</label>
-              <select
-                name="product_name"
-                value={formData.product_name}
-                onChange={handleChange}
-                className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none  bg-white"
-              >
-                <option value="">-- Select Product --</option>
-                {productList.map((item) => (
-                  <option key={item.id} value={item.product_name}>{item.product_name}</option>
-                ))}
-              </select>
-              {errors.product_name && <p className="text-red-500 text-xs mt-1">{errors.product_name}</p>}
-            </div> */}
-
             {/* Priority */}
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-600">Priority</label>
@@ -338,7 +283,7 @@ export default function Page() {
                 name="priority"
                 value={formData.priority}
                 onChange={handleChange}
-                className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none  bg-white"
+                className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm text-gray-700 focus:outline-none bg-white"
               >
                 <option value="">-- Select --</option>
                 <option>High</option>
@@ -347,7 +292,6 @@ export default function Page() {
               </select>
             </div>
 
-
             {/* Category */}
             <div>
               <label className="block mb-1 text-sm font-medium text-gray-600">Category</label>
@@ -355,7 +299,7 @@ export default function Page() {
                 name="category"
                 value={formData.category}
                 onChange={handleChange}
-                className="w-full border border-orange-300 rounded-sm px-3 py-1.5 text-sm text-gray-700 focus:outline-none  bg-white"
+                className="w-full border border-orange-300 rounded-sm px-3 py-1.5 text-sm text-gray-700 focus:outline-none bg-white"
               >
                 <option value="">-- Select --</option>
                 {leadCategory.map((item) => (
@@ -373,7 +317,7 @@ export default function Page() {
               rows="2"
               value={formData.description}
               onChange={handleChange}
-              className="w-full border border-orange-300 rounded-sm px-3 py-1.5 text-sm text-gray-700 focus:outline-none  bg-white"
+              className="w-full border border-orange-300 rounded-sm px-3 py-1.5 text-sm text-gray-700 focus:outline-none bg-white"
             />
           </div>
 
