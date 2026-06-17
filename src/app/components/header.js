@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import axios from "redaxios";
-import { Bell, Activity, Clock } from "lucide-react";
+import { Bell, Activity, Clock, Calendar } from "lucide-react";
 
 export default function Header() {
   const [activities, setActivities] = useState([]);
@@ -65,13 +65,14 @@ export default function Header() {
       ) {
         setShowNotifications(false);
       }
-    }
-    if (
-      profileRef.current &&
-      event.target instanceof Node &&
-      !profileRef.current.contains(event.target)
-    ) {
-      setShowProfileMenu(false);
+
+      if (
+        profileRef.current &&
+        event.target instanceof Node &&
+        !profileRef.current.contains(event.target)
+      ) {
+        setShowProfileMenu(false);
+      }
     }
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -119,10 +120,6 @@ export default function Header() {
     }
   };
 
-  // useEffect(() => {
-  //   fetchData();
-  // }, [fetchData]);
-
   useEffect(() => {
     const fetchActivities = async () => {
       try {
@@ -163,6 +160,15 @@ export default function Header() {
 
         {/* Hamburger Icon (Mobile) */}
         <div className="md:hidden flex items-center gap-2">
+          {/* Mobile Calendar Icon */}
+          <Link
+            href="/calender"
+            className="p-2 text-gray-700 hover:text-orange-500 transition-colors"
+            title="Calendar"
+          >
+            <Calendar className="w-6 h-6" />
+          </Link>
+
           {/* Mobile Notification */}
           <div className="relative" ref={notificationRef}>
             <button
@@ -338,8 +344,26 @@ export default function Header() {
         )}
       </nav>
 
-      {/* Logout Button (Desktop) */}
+      {/* Desktop Right Side Icons */}
       <div className="hidden md:flex items-center gap-6">
+
+        {/* ✅ Calendar Icon Button (Desktop) */}
+        <Link
+          href="/calender"
+          className={`relative p-2.5 rounded-xl border transition-all ${
+            pathname === "/calender"
+              ? "bg-orange-50 border-orange-300 shadow-md"
+              : "bg-white border-gray-200 hover:shadow-md"
+          }`}
+          title="Calendar"
+        >
+          <Calendar
+            className={`w-5 h-5 ${
+              pathname === "/calender" ? "text-orange-500" : "text-gray-500 hover:text-orange-500"
+            }`}
+          />
+        </Link>
+
         {/* Notification Bell */}
         <div className="relative" ref={notificationRef}>
           <button
@@ -438,7 +462,6 @@ export default function Header() {
           )}
         </div>
 
-        {/* Logout Button */}
         {/* User Profile */}
         <div className="relative" ref={profileRef}>
           <button
@@ -478,6 +501,16 @@ export default function Header() {
             className="hover:text-orange-500 w-full py-1"
           >
             Dashboard
+          </Link>
+
+          {/* Mobile Calendar Link inside menu */}
+          <Link
+            onClick={() => setMobileMenuOpen(false)}
+            href="/calender"
+            className="hover:text-orange-500 w-full py-1 flex items-center gap-2"
+          >
+            <Calendar className="w-4 h-4" />
+            Calendar
           </Link>
 
           {userRole !== "Leads Management" && userRole !== "Estimation" && userRole !== "Sales" && userRole !== "Proforma invoices" && (
@@ -596,5 +629,3 @@ export default function Header() {
     </header>
   );
 }
-
-// header in logo
