@@ -34,6 +34,20 @@ export default function QuotationPage() {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [followUpHistory, setFollowUpHistory] = useState([]);
   const [editingId, setEditingId] = useState(null);
+  const [showSplitModal, setShowSplitModal] = useState(false);
+  const [isSplitReadOnly, setIsSplitReadOnly] = useState(false);
+  const [splitForm, setSplitForm] = useState({
+    amount: 0,
+    amount_9: 0,
+    amount_18: 0,
+    percent_9: 0,
+    percent_18: 100,
+    tax_percent_9: "9.00",
+    tax_percent_18: "18.00",
+    tax_9: "0.00",
+    tax_18: "0.00",
+    grand_total: "0.00"
+  });
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportRef = useRef(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
@@ -119,6 +133,12 @@ export default function QuotationPage() {
     tax: "0",
     grand_total: "",
     description: "",
+    amount_9: "",
+    amount_18: "",
+    tax_percent_9: "",
+    tax_percent_18: "",
+    tax_9: "",
+    tax_18: "",
   });
 
   useAuth(["Admin", "Super Admin", "Sales", "Estimation"]);
@@ -311,9 +331,16 @@ export default function QuotationPage() {
             : [];
           const lAssignees = q.lead_assignee
             ? q.lead_assignee
-                .split(",")
-                .map((name) => name.trim().toLowerCase())
+              .split(",")
+              .map((name) => name.trim().toLowerCase())
             : [];
+          if (q.displayStatus === "Pending" && qAssignees.length > 0) {
+            const isAssignedToMe = qAssignees.some((name) => name.includes(userFirstName));
+            if (!isAssignedToMe) {
+              return false;
+            }
+          }
+
           const hasBeenAssigned =
             qAssignees.some((name) => name.includes(userFirstName)) ||
             lAssignees.some((name) => name.includes(userFirstName));
@@ -331,7 +358,7 @@ export default function QuotationPage() {
                   (log.new_assignee &&
                     log.new_assignee.toLowerCase().includes(userFirstName)),
               );
-            } catch {}
+            } catch { }
           }
           return hasBeenAssigned || inLog;
         });
@@ -342,8 +369,8 @@ export default function QuotationPage() {
             : [];
           const lAssignees = q.lead_assignee
             ? q.lead_assignee
-                .split(",")
-                .map((name) => name.trim().toLowerCase())
+              .split(",")
+              .map((name) => name.trim().toLowerCase())
             : [];
 
           const matchesQuotation = qAssignees.some((name) =>
@@ -603,9 +630,16 @@ export default function QuotationPage() {
             : [];
           const lAssignees = q.lead_assignee
             ? q.lead_assignee
-                .split(",")
-                .map((name) => name.trim().toLowerCase())
+              .split(",")
+              .map((name) => name.trim().toLowerCase())
             : [];
+          if (q.displayStatus === "Pending" && qAssignees.length > 0) {
+            const isAssignedToMe = qAssignees.some((name) => name.includes(userFirstName));
+            if (!isAssignedToMe) {
+              return false;
+            }
+          }
+
           const hasBeenAssigned =
             qAssignees.some((name) => name.includes(userFirstName)) ||
             lAssignees.some((name) => name.includes(userFirstName));
@@ -623,7 +657,7 @@ export default function QuotationPage() {
                   (log.new_assignee &&
                     log.new_assignee.toLowerCase().includes(userFirstName)),
               );
-            } catch {}
+            } catch { }
           }
           return hasBeenAssigned || inLog;
         });
@@ -634,8 +668,8 @@ export default function QuotationPage() {
             : [];
           const lAssignees = q.lead_assignee
             ? q.lead_assignee
-                .split(",")
-                .map((name) => name.trim().toLowerCase())
+              .split(",")
+              .map((name) => name.trim().toLowerCase())
             : [];
 
           const matchesQuotation = qAssignees.some((name) =>
@@ -730,6 +764,10 @@ export default function QuotationPage() {
       amount: "",
       grand_total: "",
       description: "",
+      amount_9: "",
+      amount_18: "",
+      tax_9: "",
+      tax_18: "",
     });
     try {
       const res = await axios.get(
@@ -760,11 +798,38 @@ export default function QuotationPage() {
       );
       setFollowUpHistory(historyWithFiles);
       if (historyData.length > 0) {
-        setForm((prev) => ({
-          ...prev,
-          quotation_no: historyData[0].quotation_no || prev.quotation_no,
-          assignee: historyData[0].assignee || prev.assignee,
-        }));
+        const isAllowedToEditFull = checkRole(["Admin", "Super Admin", "Sales"]);
+        if (isAllowedToEditFull) {
+          const latest = historyData[0];
+          setForm((prev) => ({
+            ...prev,
+            quotation_no: latest.quotation_no || prev.quotation_no,
+            quotation_date: latest.quotation_date
+              ? new Date(latest.quotation_date).toISOString().split("T")[0]
+              : prev.quotation_date,
+            activity_type: latest.activity_type || prev.activity_type,
+            quotation_status: latest.quotation_status || prev.quotation_status,
+            assignee: latest.assignee || prev.assignee,
+            amount: latest.amount !== null && latest.amount !== undefined ? latest.amount.toString() : "",
+            grand_total: latest.grand_total !== null && latest.grand_total !== undefined ? latest.grand_total.toString() : "",
+            description: latest.description || "",
+            discount: latest.discount !== null && latest.discount !== undefined ? latest.discount.toString() : "",
+            tax: latest.tax !== null && latest.tax !== undefined ? latest.tax.toString() : "",
+            amount_9: latest.amount_9 !== null && latest.amount_9 !== undefined ? latest.amount_9.toString() : "",
+            amount_18: latest.amount_18 !== null && latest.amount_18 !== undefined ? latest.amount_18.toString() : "",
+            tax_percent_9: latest.tax_percent_9 !== null && latest.tax_percent_9 !== undefined ? latest.tax_percent_9.toString() : "",
+            tax_percent_18: latest.tax_percent_18 !== null && latest.tax_percent_18 !== undefined ? latest.tax_percent_18.toString() : "",
+            tax_9: latest.tax_9 !== null && latest.tax_9 !== undefined ? latest.tax_9.toString() : "",
+            tax_18: latest.tax_18 !== null && latest.tax_18 !== undefined ? latest.tax_18.toString() : "",
+          }));
+          setEditingId(latest.id);
+        } else {
+          setForm((prev) => ({
+            ...prev,
+            quotation_no: historyData[0].quotation_no || prev.quotation_no,
+            assignee: historyData[0].assignee || prev.assignee,
+          }));
+        }
       }
     } catch (err) {
       console.log(err);
@@ -779,21 +844,21 @@ export default function QuotationPage() {
     const color = q.quotation_dot_color || "green"; // 'green' | 'yellow' | 'red'
 
     const dotColors = {
-      green:  "#22c55e",
+      green: "#22c55e",
       yellow: "#eab308",
-      red:    "#ef4444",
+      red: "#ef4444",
     };
 
     const isPending = !q.latest_quotation_id || ["Pending", "Revision"].includes(q.quotation_status);
 
     const tooltips = isPending ? {
-      green:  "✅ Response time on track (< 24h)",
+      green: "✅ Response time on track (< 24h)",
       yellow: "⚠️ Action delayed (> 24h) — Attention needed",
-      red:    "🔴 Action critically delayed (> 48h)",
+      red: "🔴 Action critically delayed (> 48h)",
     } : {
-      green:  "✅ Completed on track (< 24h)",
+      green: "✅ Completed on track (< 24h)",
       yellow: "⚠️ Completed late (24h - 48h)",
-      red:    "🔴 Completed late (48h+)",
+      red: "🔴 Completed late (48h+)",
     };
 
     const isPulse = isPending && (color === "yellow" || color === "red");
@@ -802,13 +867,13 @@ export default function QuotationPage() {
       <span
         title={tooltips[color]}
         style={{
-          display:         "inline-block",
-          width:           9,
-          height:          9,
-          borderRadius:    "50%",
+          display: "inline-block",
+          width: 9,
+          height: 9,
+          borderRadius: "50%",
           backgroundColor: dotColors[color],
-          flexShrink:      0,
-          animation:       isPulse ? "pulse 1.5s infinite" : "none",
+          flexShrink: 0,
+          animation: isPulse ? "pulse 1.5s infinite" : "none",
         }}
       />
     );
@@ -843,11 +908,22 @@ export default function QuotationPage() {
       tax: item.tax || "0",
       grand_total: item.grand_total || "",
       description: item.description || "",
+      amount_9: item.amount_9 !== null && item.amount_9 !== undefined ? item.amount_9 : "",
+      amount_18: item.amount_18 !== null && item.amount_18 !== undefined ? item.amount_18 : "",
+      tax_percent_9: item.tax_percent_9 !== null && item.tax_percent_9 !== undefined ? item.tax_percent_9 : "",
+      tax_percent_18: item.tax_percent_18 !== null && item.tax_percent_18 !== undefined ? item.tax_percent_18 : "",
+      tax_9: item.tax_9 !== null && item.tax_9 !== undefined ? item.tax_9 : "",
+      tax_18: item.tax_18 !== null && item.tax_18 !== undefined ? item.tax_18 : "",
     });
   };
 
   const handleChange = (e) => {
     let { name, value } = e.target;
+    if (name === "amount" || name === "grand_total" || name === "discount" || name === "discount_rs" || name === "tax") {
+      value = value.replace(/[^0-9.]/g, '');
+      const parts = value.split('.');
+      value = parts.length > 2 ? `${parts[0]}.${parts.slice(1).join('')}` : value;
+    }
     let newForm = { ...form, [name]: value };
     if (name === "activity_type") {
       newForm.quotation_status = value === "Sent" ? "Sent" : value === "Revision" ? "Revision" : "Pending";
@@ -862,6 +938,15 @@ export default function QuotationPage() {
     if (name === "amount") {
       discount_rs = (amount * discount) / 100;
       newForm.discount_rs = discount_rs > 0 ? discount_rs.toFixed(2) : "";
+      // Initialize default participation values:
+      newForm.amount_9 = 0;
+      newForm.amount_18 = amount;
+      newForm.tax_percent_9 = newForm.tax_percent_9 || "9.00";
+      newForm.tax_percent_18 = newForm.tax_percent_18 || "18.00";
+      newForm.tax_9 = "0.00";
+      const pct18 = parseFloat(newForm.tax_percent_18) || 18;
+      newForm.tax_18 = (amount * pct18 / 100).toFixed(2);
+      newForm.grand_total = (amount + parseFloat(newForm.tax_18)).toFixed(2);
     } else if (name === "discount") {
       discount_rs = (amount * discount) / 100;
       newForm.discount_rs = discount_rs > 0 ? discount_rs.toFixed(2) : "";
@@ -869,11 +954,219 @@ export default function QuotationPage() {
       discount = amount > 0 ? (discount_rs / amount) * 100 : 0;
       newForm.discount = discount > 0 ? discount.toFixed(2) : "";
     }
-    let subTotal = amount - discount_rs;
-    let totalTaxRs = (subTotal * tax) / 100;
-    let grand_total = subTotal + totalTaxRs;
-    newForm.grand_total = grand_total > 0 ? grand_total.toFixed(2) : "";
+    if (name !== "amount") {
+      const hasSplits = newForm.amount_9 !== "" || newForm.amount_18 !== "";
+      if (hasSplits) {
+        const amtVal = parseFloat(newForm.amount) || 0;
+        const tax9Val = parseFloat(newForm.tax_9) || 0;
+        const tax18Val = parseFloat(newForm.tax_18) || 0;
+        newForm.grand_total = (amtVal + tax9Val + tax18Val).toFixed(2);
+      } else {
+        let subTotal = amount - discount_rs;
+        let totalTaxRs = (subTotal * tax) / 100;
+        let grand_total = subTotal + totalTaxRs;
+        newForm.grand_total = grand_total > 0 ? grand_total.toFixed(2) : "";
+      }
+    }
     setForm(newForm);
+  };
+
+  const openSplitModal = (readOnly = false) => {
+    if (isModalLocked && !readOnly) {
+      toast.error("Quotation is locked. Cannot edit participation.");
+      return;
+    }
+    if (!readOnly && form.quotation_status !== "Sent") {
+      toast.error("Tax calculations can only be configured in the Sent stage.");
+      return;
+    }
+    const isAllowedToParticipate = checkRole(["Admin", "Super Admin", "Sales"]);
+    if (!isAllowedToParticipate && !readOnly) {
+      toast.error("You do not have permission to configure tax calculation.");
+      return;
+    }
+    const amt = parseFloat(form.amount) || 0;
+    const pct9 = form.tax_percent_9 !== "" && form.tax_percent_9 !== undefined ? parseFloat(form.tax_percent_9) : 9;
+    const pct18 = form.tax_percent_18 !== "" && form.tax_percent_18 !== undefined ? parseFloat(form.tax_percent_18) : 18;
+
+    let amt9 = 0;
+    let amt18 = 0;
+    if ((form.amount_9 === "" || form.amount_9 === undefined || parseFloat(form.amount_9) === 0) &&
+      (form.amount_18 === "" || form.amount_18 === undefined || parseFloat(form.amount_18) === 0)) {
+      amt18 = amt;
+    } else {
+      amt9 = parseFloat(form.amount_9) || 0;
+      amt18 = parseFloat(form.amount_18) || 0;
+    }
+
+    const t9 = parseFloat(form.tax_9) || (amt9 * pct9 / 100);
+    const t18 = parseFloat(form.tax_18) || (amt18 * pct18 / 100);
+    const gt = parseFloat(form.grand_total) || (amt9 + t9 + amt18 + t18);
+
+    const splitPercent9 = amt > 0 ? (amt9 / amt) * 100 : 0;
+    const splitPercent18 = amt > 0 ? (amt18 / amt) * 100 : 100;
+
+    setSplitForm({
+      amount: amt,
+      amount_9: amt9 === 0 ? "" : amt9.toString(),
+      amount_18: amt18 === 0 ? "" : amt18.toString(),
+      percent_9: splitPercent9 === 0 ? "" : Number(splitPercent9.toFixed(4)).toString(),
+      percent_18: splitPercent18 === 0 ? "" : Number(splitPercent18.toFixed(4)).toString(),
+      tax_percent_9: pct9.toString(),
+      tax_percent_18: pct18.toString(),
+      tax_9: t9.toFixed(2),
+      tax_18: t18.toFixed(2),
+      grand_total: gt.toFixed(2)
+    });
+    setIsSplitReadOnly(readOnly);
+    setShowSplitModal(true);
+  };
+
+  const handleCancelSplitClick = () => {
+    setShowSplitModal(false);
+  };
+
+  const handleSplitBaseAmountChange = (e) => {
+    if (isSplitReadOnly) return;
+    let rawVal = e.target.value.replace(/[^0-9.]/g, '');
+    const parts = rawVal.split('.');
+    rawVal = parts.length > 2 ? `${parts[0]}.${parts.slice(1).join('')}` : rawVal;
+
+    const value = parseFloat(rawVal) || 0;
+    const pct18 = parseFloat(splitForm.tax_percent_18) || 18;
+    const t18 = value * pct18 / 100;
+    setSplitForm({
+      ...splitForm,
+      amount: rawVal,
+      amount_9: "",
+      amount_18: value === 0 ? "" : rawVal,
+      percent_9: "",
+      percent_18: "100",
+      tax_9: "0.00",
+      tax_18: t18.toFixed(2),
+      grand_total: (value + t18).toFixed(2)
+    });
+  };
+
+  const handleSplitFormChange = (e) => {
+    if (isSplitReadOnly) return;
+    let { name, value } = e.target;
+    value = value.replace(/[^0-9.]/g, '');
+    const parts = value.split('.');
+    value = parts.length > 2 ? `${parts[0]}.${parts.slice(1).join('')}` : value;
+
+    const totalAmt = parseFloat(splitForm.amount) || 0;
+
+    let rawAmt9 = splitForm.amount_9;
+    let rawAmt18 = splitForm.amount_18;
+    let rawPercent9 = splitForm.percent_9;
+    let rawPercent18 = splitForm.percent_18;
+    let rawTaxPercent9 = splitForm.tax_percent_9;
+    let rawTaxPercent18 = splitForm.tax_percent_18;
+
+    let numAmt9 = parseFloat(rawAmt9) || 0;
+    let numAmt18 = parseFloat(rawAmt18) || 0;
+    let numPercent9 = parseFloat(rawPercent9) || 0;
+    let numPercent18 = parseFloat(rawPercent18) || 0;
+
+    if (name === "amount_9") {
+      rawAmt9 = value;
+      const val = parseFloat(value) || 0;
+      numAmt9 = Math.min(val, totalAmt);
+      if (val > totalAmt) rawAmt9 = totalAmt.toString();
+      numAmt18 = totalAmt - numAmt9;
+      rawAmt18 = numAmt18.toString();
+
+      numPercent9 = totalAmt > 0 ? (numAmt9 / totalAmt) * 100 : 0;
+      numPercent18 = 100 - numPercent9;
+      rawPercent9 = numPercent9.toString();
+      rawPercent18 = numPercent18.toString();
+    } else if (name === "amount_18") {
+      rawAmt18 = value;
+      const val = parseFloat(value) || 0;
+      numAmt18 = Math.min(val, totalAmt);
+      if (val > totalAmt) rawAmt18 = totalAmt.toString();
+      numAmt9 = totalAmt - numAmt18;
+      rawAmt9 = numAmt9.toString();
+
+      numPercent18 = totalAmt > 0 ? (numAmt18 / totalAmt) * 100 : 0;
+      numPercent9 = 100 - numPercent18;
+      rawPercent18 = numPercent18.toString();
+      rawPercent9 = numPercent9.toString();
+    } else if (name === "percent_9") {
+      rawPercent9 = value;
+      const val = parseFloat(value) || 0;
+      numPercent9 = Math.min(val, 100);
+      if (val > 100) rawPercent9 = "100";
+      numPercent18 = 100 - numPercent9;
+      rawPercent18 = numPercent18.toString();
+
+      numAmt9 = (totalAmt * numPercent9) / 100;
+      numAmt18 = totalAmt - numAmt9;
+      rawAmt9 = numAmt9.toString();
+      rawAmt18 = numAmt18.toString();
+    } else if (name === "percent_18") {
+      rawPercent18 = value;
+      const val = parseFloat(value) || 0;
+      numPercent18 = Math.min(val, 100);
+      if (val > 100) rawPercent18 = "100";
+      numPercent9 = 100 - numPercent18;
+      rawPercent9 = numPercent9.toString();
+
+      numAmt18 = (totalAmt * numPercent18) / 100;
+      numAmt9 = totalAmt - numAmt18;
+      rawAmt9 = numAmt9.toString();
+      rawAmt18 = numAmt18.toString();
+    } else if (name === "tax_percent_9") {
+      rawTaxPercent9 = value;
+    } else if (name === "tax_percent_18") {
+      rawTaxPercent18 = value;
+    }
+
+    const numericPct9 = parseFloat(rawTaxPercent9) || 0;
+    const numericPct18 = parseFloat(rawTaxPercent18) || 0;
+
+    const t9 = numAmt9 * numericPct9 / 100;
+    const t18 = numAmt18 * numericPct18 / 100;
+    const gt = numAmt9 + t9 + numAmt18 + t18;
+
+    const formatStr = (val) => {
+      const n = parseFloat(val);
+      if (isNaN(n)) return "";
+      if (n === 0) return "";
+      if (val.toString().endsWith(".")) return val.toString();
+      return Number(n.toFixed(4)).toString();
+    };
+
+    setSplitForm({
+      amount: totalAmt,
+      amount_9: name === "amount_9" ? value : formatStr(rawAmt9),
+      amount_18: name === "amount_18" ? value : formatStr(rawAmt18),
+      percent_9: name === "percent_9" ? value : formatStr(rawPercent9),
+      percent_18: name === "percent_18" ? value : formatStr(rawPercent18),
+      tax_percent_9: rawTaxPercent9,
+      tax_percent_18: rawTaxPercent18,
+      tax_9: t9.toFixed(2),
+      tax_18: t18.toFixed(2),
+      grand_total: gt.toFixed(2)
+    });
+  };
+
+  const handleApplySplit = () => {
+    const amt9 = parseFloat(splitForm.amount_9) || 0;
+    const amt18 = parseFloat(splitForm.amount_18) || 0;
+    setForm((prev) => ({
+      ...prev,
+      amount: splitForm.amount,
+      amount_9: amt9 === 0 ? "" : amt9,
+      amount_18: amt18 === 0 ? "" : amt18,
+      tax_percent_9: splitForm.tax_percent_9,
+      tax_percent_18: splitForm.tax_percent_18,
+      tax_9: splitForm.tax_9,
+      tax_18: splitForm.tax_18,
+      grand_total: splitForm.grand_total,
+    }));
+    setShowSplitModal(false);
   };
 
   const proceedStatusUpdate = async (histId, status, assignedPiUser = null) => {
@@ -1222,7 +1515,7 @@ export default function QuotationPage() {
   const handleFileDownload = async (e, filePath, originalName) => {
     e.preventDefault();
     if (!filePath) return;
-    
+
     // Ensure all Cloudinary URLs are accessed securely via HTTPS
     let secureFilePath = filePath;
     if (filePath.startsWith("http://")) {
@@ -1230,7 +1523,7 @@ export default function QuotationPage() {
     }
 
     const ext = originalName.split(".").pop().toLowerCase();
-    
+
     const isNativePreview = ["pdf", "jpg", "jpeg", "png"].includes(ext);
     if (isNativePreview) {
       window.open(secureFilePath, "_blank");
@@ -1322,22 +1615,55 @@ export default function QuotationPage() {
         }),
       );
       setFollowUpHistory(historyWithFiles);
-      setForm({
-        quotation_no: "",
-        quotation_date: new Date().toISOString().split("T")[0],
-        activity_type: "",
-        quotation_status:
-          selectedLead.displayStatus === "Revision" ? "Revision" : "Pending",
-        assignee: form.assignee || "",
-        amount: "",
-        discount: "",
-        discount_rs: "",
-        tax: "0",
-        grand_total: "",
-        description: "",
-      });
       setSelectedFiles([]);
-      setEditingId(null);
+
+      const isAllowedToEditFull = checkRole(["Admin", "Super Admin", "Sales"]);
+      if (historyData.length > 0 && isAllowedToEditFull) {
+        const latest = historyData[0];
+        setForm({
+          quotation_no: latest.quotation_no || "",
+          quotation_date: latest.quotation_date
+            ? new Date(latest.quotation_date).toISOString().split("T")[0]
+            : new Date().toISOString().split("T")[0],
+          activity_type: latest.activity_type || "",
+          quotation_status: latest.quotation_status || "Pending",
+          assignee: latest.assignee || "",
+          amount: latest.amount !== null && latest.amount !== undefined ? latest.amount.toString() : "",
+          grand_total: latest.grand_total !== null && latest.grand_total !== undefined ? latest.grand_total.toString() : "",
+          description: latest.description || "",
+          discount: latest.discount !== null && latest.discount !== undefined ? latest.discount.toString() : "",
+          tax: latest.tax !== null && latest.tax !== undefined ? latest.tax.toString() : "",
+          amount_9: latest.amount_9 !== null && latest.amount_9 !== undefined ? latest.amount_9.toString() : "",
+          amount_18: latest.amount_18 !== null && latest.amount_18 !== undefined ? latest.amount_18.toString() : "",
+          tax_percent_9: latest.tax_percent_9 !== null && latest.tax_percent_9 !== undefined ? latest.tax_percent_9.toString() : "",
+          tax_percent_18: latest.tax_percent_18 !== null && latest.tax_percent_18 !== undefined ? latest.tax_percent_18.toString() : "",
+          tax_9: latest.tax_9 !== null && latest.tax_9 !== undefined ? latest.tax_9.toString() : "",
+          tax_18: latest.tax_18 !== null && latest.tax_18 !== undefined ? latest.tax_18.toString() : "",
+        });
+        setEditingId(latest.id);
+      } else {
+        setForm({
+          quotation_no: "",
+          quotation_date: new Date().toISOString().split("T")[0],
+          activity_type: "",
+          quotation_status:
+            selectedLead.displayStatus === "Revision" ? "Revision" : "Pending",
+          assignee: selectedLead.assignee || "",
+          amount: "",
+          discount: "",
+          discount_rs: "",
+          tax: "0",
+          grand_total: "",
+          description: "",
+          amount_9: "",
+          amount_18: "",
+          tax_percent_9: "",
+          tax_percent_18: "",
+          tax_9: "",
+          tax_18: "",
+        });
+        setEditingId(null);
+      }
       fetchQuotations();
     } catch (err) {
       const errMsg =
@@ -1389,8 +1715,8 @@ export default function QuotationPage() {
   const filteredQuotations = hasActiveFilters
     ? quotations
     : quotations.filter((q) => {
-        return q.displayStatus === activeTab;
-      });
+      return q.displayStatus === activeTab;
+    });
 
   const pendingCount = quotations.filter(
     (q) => q.displayStatus === "Pending",
@@ -1501,7 +1827,7 @@ export default function QuotationPage() {
   const isKhushaliEstimation =
     isEstimation &&
     (localStorage.getItem("username") || "").split(" ")[0].toLowerCase() ===
-      "khushali";
+    "khushali";
 
   const piGrandTotal = selectedPIQuotation
     ? Number(selectedPIQuotation.grand_total) || 0
@@ -1551,9 +1877,9 @@ export default function QuotationPage() {
     setNewAssigneeValue(
       q.assignee
         ? {
-            value: q.assignee.split(",")[0].trim(),
-            label: q.assignee.split(",")[0].trim(),
-          }
+          value: q.assignee.split(",")[0].trim(),
+          label: q.assignee.split(",")[0].trim(),
+        }
         : null,
     );
     setAssigneeLog([]);
@@ -1761,7 +2087,7 @@ export default function QuotationPage() {
               className={`pb-3 px-1 sm:px-0 text-sm font-medium relative transition-all whitespace-nowrap ${activeTab === "Pending" ? "text-blue-600" : "text-gray-400 hover:text-gray-600"}`}
             >
               <span className="inline-flex items-center gap-1">
-                
+
                 <span className="text-xs sm:text-sm">Pending </span>
                 <span className="ml-0 sm:ml-2 bg-blue-100 text-blue-600 text-xs px-2 py-0.5 rounded-full">
                   {pendingCount}
@@ -1913,8 +2239,8 @@ export default function QuotationPage() {
                         if (q.displayStatus === "Revision") {
                           const assignees = q.assignee
                             ? q.assignee
-                                .split(",")
-                                .map((name) => name.trim().toLowerCase())
+                              .split(",")
+                              .map((name) => name.trim().toLowerCase())
                             : [];
                           const hasKhushali = assignees.includes("khushali");
                           const hasDarshil = assignees.includes("darshil");
@@ -1993,12 +2319,12 @@ export default function QuotationPage() {
                             <td className="px-3 text-gray-500">
                               {q.quotation_date
                                 ? new Date(
-                                    q.quotation_date,
-                                  ).toLocaleDateString()
+                                  q.quotation_date,
+                                ).toLocaleDateString()
                                 : q.quotation_created_at
                                   ? new Date(
-                                      q.quotation_created_at,
-                                    ).toLocaleDateString()
+                                    q.quotation_created_at,
+                                  ).toLocaleDateString()
                                   : "-"}
                             </td>
                             <td className="px-3 font-semibold text-gray-700">
@@ -2010,7 +2336,7 @@ export default function QuotationPage() {
                             {/* ASSIGNEE CELL */}
                             <td className="px-3">
                               {q.displayStatus !== "Won" &&
-                              q.displayStatus !== "Lost" ? (
+                                q.displayStatus !== "Lost" ? (
                                 <button
                                   onClick={(e) => openAssigneePopover(e, q)}
                                   className="flex gap-1 items-center group cursor-pointer hover:opacity-80 transition-all"
@@ -2307,7 +2633,7 @@ export default function QuotationPage() {
 
                                 {q.latest_quotation_id ? (
                                   q.displayStatus === "Won" ||
-                                  q.displayStatus === "Lost" ? (
+                                    q.displayStatus === "Lost" ? (
                                     <div
                                       className="text-gray-300 w-8 h-8 rounded-full flex items-center justify-center"
                                       title="Locked"
@@ -2414,7 +2740,7 @@ export default function QuotationPage() {
       {showUpdateModal && (
         // BUG FIX #6: Full modal is scrollable with overflow-y-auto on inner container
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 p-4">
-<div className="bg-white w-full max-w-[820px] rounded-sm shadow-xl border border-gray-100 overflow-hidden flex flex-col max-h-[70vh]">
+          <div className="bg-white w-full max-w-[820px] rounded-sm shadow-xl border border-gray-100 overflow-hidden flex flex-col max-h-[70vh]">
             {/* Header */}
             <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-orange-100 to-white flex-shrink-0">
               <div className="flex items-center gap-2">
@@ -2436,7 +2762,7 @@ export default function QuotationPage() {
                 ✕
               </button>
             </div>
-            
+
 
             {/* Tabs */}
             <div className="flex border-b border-gray-200 flex-shrink-0">
@@ -2445,11 +2771,10 @@ export default function QuotationPage() {
                   setFollowUpTab("lead");
                   setPreviewFollowUp(null);
                 }}
-                className={`px-6 py-3 text-sm font-semibold transition-all ${
-                  followUpTab === "lead"
+                className={`px-6 py-3 text-sm font-semibold transition-all ${followUpTab === "lead"
                     ? "text-orange-500 border-b-2 border-orange-500 bg-orange-50"
                     : "text-gray-500"
-                }`}
+                  }`}
               >
                 Lead
               </button>
@@ -2459,11 +2784,10 @@ export default function QuotationPage() {
                   setFollowUpTab("quotation");
                   setPreviewFollowUp(null);
                 }}
-                className={`px-6 py-3 text-sm font-semibold transition-all ${
-                  followUpTab === "quotation"
+                className={`px-6 py-3 text-sm font-semibold transition-all ${followUpTab === "quotation"
                     ? "text-orange-500 border-b-2 border-orange-500 bg-orange-50"
                     : "text-gray-500"
-                }`}
+                  }`}
               >
                 Quotation
               </button>
@@ -2471,17 +2795,17 @@ export default function QuotationPage() {
 
             {/* Body — scrollable */}
             {/* BUG FIX #6: overflow-y-auto on this body div makes modal content scroll */}
-<div className="flex flex-row flex-1 overflow-hidden">
-                {/* LEFT: Form */}
-<div className="w-1/2 px-3 sm:px-6 py-3 sm:py-5 border-r border-gray-100 overflow-y-auto">
+            <div className="flex flex-row flex-1 overflow-hidden">
+              {/* LEFT: Form */}
+              <div className="w-1/2 px-3 sm:px-6 py-3 sm:py-5 border-r border-gray-100 overflow-y-auto">
                 {followUpTab === "lead" && (
-<p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-2 sm:mb-4">
+                  <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-2 sm:mb-4">
                     Lead Follow-Up
                   </p>
                 )}
 
                 {followUpTab === "quotation" && (
-<p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-2 sm:mb-4">
+                  <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-2 sm:mb-4">
                     Quotation Follow-Up
                   </p>
                 )}
@@ -2489,12 +2813,12 @@ export default function QuotationPage() {
                 {/* LEAD TAB: Read-only notice */}
                 {followUpTab === "lead" && (
                   <div className="flex flex-col gap-3">
-<div className="flex items-start gap-2 sm:gap-3 bg-blue-50 border border-blue-200 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
-<div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <div className="flex items-start gap-2 sm:gap-3 bg-blue-50 border border-blue-200 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
+                      <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
                         <i className="bi bi-info-circle-fill text-blue-500 text-sm"></i>
                       </div>
                       <div>
-<p className="text-xs sm:text-sm font-semibold text-blue-700">
+                        <p className="text-xs sm:text-sm font-semibold text-blue-700">
                           Lead Follow-Up History
                         </p>
                         <p className="text-xs text-blue-600 mt-0.5">
@@ -2505,7 +2829,7 @@ export default function QuotationPage() {
                     </div>
 
                     {selectedLead && (
-<div className="bg-gray-50 border border-gray-100 rounded-xl p-2 sm:p-4 space-y-1.5 sm:space-y-2">
+                      <div className="bg-gray-50 border border-gray-100 rounded-xl p-2 sm:p-4 space-y-1.5 sm:space-y-2">
                         <div className="flex justify-between text-xs">
                           <span className="text-gray-400 font-medium">
                             Company
@@ -2550,7 +2874,7 @@ export default function QuotationPage() {
 
                 {/* QUOTATION TAB: Editable Form */}
                 {followUpTab === "quotation" && (
-<div className="grid grid-cols-2 gap-x-2 sm:gap-x-4 gap-y-2 sm:gap-y-3">
+                  <div className="grid grid-cols-2 gap-x-2 sm:gap-x-4 gap-y-2 sm:gap-y-3">
                     <div>
                       <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Follow-Up Date
@@ -2560,7 +2884,7 @@ export default function QuotationPage() {
                         name="follow_up_date"
                         value={updateForm.follow_up_date}
                         onChange={handleInputChange}
-className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
+                        className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
                       />
                     </div>
                     <div>
@@ -2571,7 +2895,7 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                         name="activity_type"
                         value={updateForm.activity_type}
                         onChange={handleInputChange}
-className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
+                        className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
                       >
                         <option value="">-- Select --</option>
                         <option>Call</option>
@@ -2605,7 +2929,7 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                         name="contact_person"
                         value={updateForm.contact_person}
                         onChange={handleInputChange}
-className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
+                        className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
                       />
                     </div>
 
@@ -2623,12 +2947,11 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                           !!selectedQuotation?.quotation_no ||
                           !!selectedLead?.quotation_no
                         }
-                        className={`w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50 ${
-                          selectedQuotation?.quotation_no ||
-                          selectedLead?.quotation_no
+                        className={`w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50 ${selectedQuotation?.quotation_no ||
+                            selectedLead?.quotation_no
                             ? "opacity-75 cursor-not-allowed"
                             : ""
-                        }`}
+                          }`}
                       />
                     </div>
 
@@ -2640,7 +2963,7 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                         name="description"
                         value={updateForm.description}
                         onChange={handleInputChange}
-className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50 h-16 sm:h-20 resize-none"
+                        className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50 h-16 sm:h-20 resize-none"
                       />
                     </div>
                     {/* <div className="col-span-2 border-2 border-dashed border-orange-300 rounded-xl p-3 text-center bg-orange-50/40">
@@ -2678,13 +3001,13 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
 
               {/* RIGHT: History Panel */}
               {/* BUG FIX #5 & #6: Proper overflow-y-auto, aligned layout */}
-<div className="w-1/2 px-2 sm:px-6 py-3 sm:py-5 flex flex-col overflow-hidden">
+              <div className="w-1/2 px-2 sm:px-6 py-3 sm:py-5 flex flex-col overflow-hidden">
                 {followUpTab === "lead" && (
-<div className="flex flex-wrap justify-between items-center gap-1 mb-2 sm:mb-4 flex-shrink-0">
-<p className="text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-widest leading-tight">
+                  <div className="flex flex-wrap justify-between items-center gap-1 mb-2 sm:mb-4 flex-shrink-0">
+                    <p className="text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-widest leading-tight">
                       Lead Follow-Up History
                     </p>
-<span className="text-[10px] sm:text-xs bg-blue-50 text-blue-500 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full font-semibold border border-blue-100">
+                    <span className="text-[10px] sm:text-xs bg-blue-50 text-blue-500 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full font-semibold border border-blue-100">
                       {
                         followUpHistory.filter((h) => h.module_type === "sales")
                           .length
@@ -2695,11 +3018,11 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                 )}
 
                 {followUpTab === "quotation" && (
-<div className="flex flex-wrap justify-between items-center gap-1 mb-2 sm:mb-4 flex-shrink-0">
-<p className="text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-widest leading-tight">
+                  <div className="flex flex-wrap justify-between items-center gap-1 mb-2 sm:mb-4 flex-shrink-0">
+                    <p className="text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-widest leading-tight">
                       Quotation Follow-Up History
                     </p>
-<span className="text-[10px] sm:text-xs bg-orange-50 text-orange-500 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-lg font-semibold border border-orange-100">
+                    <span className="text-[10px] sm:text-xs bg-orange-50 text-orange-500 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-lg font-semibold border border-orange-100">
                       {
                         followUpHistory.filter(
                           (h) => h.module_type === "quotation",
@@ -2740,11 +3063,10 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                             onClick={() =>
                               setPreviewFollowUp(isActive ? null : item)
                             }
-                         className={`border rounded-xl p-2 sm:p-3 cursor-pointer transition-all select-none ${
-                              isActive
+                            className={`border rounded-xl p-2 sm:p-3 cursor-pointer transition-all select-none ${isActive
                                 ? "border-orange-400 bg-orange-50 shadow-sm"
                                 : "hover:bg-gray-50 border-gray-200"
-                            }`}
+                              }`}
                           >
                             <div className="flex justify-between items-center">
                               <div className="flex items-center gap-2">
@@ -2758,11 +3080,10 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                                     {item.activity_type}
                                   </p>
                                   <p
-                                    className={`text-[10px] uppercase font-semibold ${
-                                      followUpTab === "lead"
+                                    className={`text-[10px] uppercase font-semibold ${followUpTab === "lead"
                                         ? "text-blue-400"
                                         : "text-orange-400"
-                                    }`}
+                                      }`}
                                   >
                                     {followUpTab === "lead"
                                       ? "Lead"
@@ -2774,8 +3095,8 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                                 <span className="text-xs text-gray-400">
                                   {item.follow_up_date
                                     ? new Date(
-                                        item.follow_up_date,
-                                      ).toLocaleDateString()
+                                      item.follow_up_date,
+                                    ).toLocaleDateString()
                                     : "—"}
                                 </span>
                                 <i
@@ -2812,8 +3133,8 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                                     label: "Follow-Up Date",
                                     value: previewFollowUp.follow_up_date
                                       ? new Date(
-                                          previewFollowUp.follow_up_date,
-                                        ).toLocaleDateString()
+                                        previewFollowUp.follow_up_date,
+                                      ).toLocaleDateString()
                                       : "—",
                                   },
                                   {
@@ -2839,13 +3160,12 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                                     Status
                                   </p>
                                   <span
-                                    className={`text-xs px-2.5 py-0.5 rounded-full font-semibold mt-0.5 inline-block ${
-                                      previewFollowUp.status === "Completed"
+                                    className={`text-xs px-2.5 py-0.5 rounded-full font-semibold mt-0.5 inline-block ${previewFollowUp.status === "Completed"
                                         ? "bg-green-100 text-green-600"
                                         : previewFollowUp.status === "Cancelled"
                                           ? "bg-orange-100 text-orange-500"
                                           : "bg-orange-100 text-orange-600"
-                                    }`}
+                                      }`}
                                   >
                                     {previewFollowUp.status || "—"}
                                   </span>
@@ -2908,7 +3228,7 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
             </div>
 
             {/* Footer Buttons */}
-<div className="flex justify-end gap-2 sm:gap-3 px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-100 bg-gray-50 flex-shrink-0">
+            <div className="flex justify-end gap-2 sm:gap-3 px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-100 bg-gray-50 flex-shrink-0">
               <button
                 onClick={() => {
                   setShowUpdateModal(false);
@@ -2916,7 +3236,7 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                   setPreviewFollowUp(null);
                   setFollowUpTab("quotation");
                 }}
- className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-sm text-xs sm:text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"              >
+                className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-sm text-xs sm:text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"              >
                 Cancel
               </button>
 
@@ -2928,13 +3248,12 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                     ? "Lead follow-ups cannot be added here"
                     : ""
                 }
-                 className={`px-3 sm:px-6 py-1.5 sm:py-2 rounded-sm text-xs sm:text-sm font-semibold text-white transition-all shadow-md flex items-center gap-2  ${
-                  followUpTab === "lead"
+                className={`px-3 sm:px-6 py-1.5 sm:py-2 rounded-sm text-xs sm:text-sm font-semibold text-white transition-all shadow-md flex items-center gap-2  ${followUpTab === "lead"
                     ? "bg-gray-300 cursor-not-allowed shadow-none"
                     : updateLoading
                       ? "bg-orange-400 cursor-not-allowed shadow-orange-200"
                       : "bg-orange-500 hover:bg-orange-600 shadow-orange-200"
-                }`}
+                  }`}
               >
                 {updateLoading ? (
                   <>
@@ -2975,7 +3294,7 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
       {/* QUOTATION UPDATE MODAL */}
       {showQuotationModal && selectedLead && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-<div className="bg-white w-[95vw] max-w-[900px] h-[90vh] rounded-sm shadow-xl overflow-hidden border border-gray-100 flex flex-col">
+          <div className="bg-white w-[95vw] max-w-[900px] h-[90vh] rounded-sm shadow-xl overflow-hidden border border-gray-100 flex flex-col">
             <div
               className="flex justify-between items-center px-6 py-4 border-b border-gray-100 shadow-sm z-10"
               style={{
@@ -3003,47 +3322,43 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
               </button>
             </div>
 
-<div className="flex flex-row flex-1 overflow-hidden relative">
+            <div className="flex flex-row flex-1 overflow-hidden relative">
               {/* Left Side: Form */}
-<div className="w-5/12 min-w-[160px] bg-white border-r border-gray-100 flex flex-col relative z-10 overflow-y-auto">
+              <div className="w-5/12 min-w-[160px] bg-white border-r border-gray-100 flex flex-col relative z-10 overflow-y-auto">
                 {isModalLocked && (
                   <div
-                    className={`mx-4 mt-4 flex items-start gap-3 border rounded-xl px-4 py-3 shadow-sm ${
-                      isWonOrLostLocked
+                    className={`mx-4 mt-4 flex items-start gap-3 border rounded-xl px-4 py-3 shadow-sm ${isWonOrLostLocked
                         ? selectedLead?.displayStatus === "Won"
                           ? "bg-green-50 border-green-200"
                           : "bg-red-50 border-red-200"
                         : "bg-green-50 border-green-200"
-                    }`}
+                      }`}
                   >
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                        isWonOrLostLocked
+                      className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${isWonOrLostLocked
                           ? selectedLead?.displayStatus === "Won"
                             ? "bg-green-100"
                             : "bg-red-100"
                           : "bg-green-100"
-                      }`}
+                        }`}
                     >
                       <i
-                        className={`bi bi-lock-fill text-sm ${
-                          isWonOrLostLocked
+                        className={`bi bi-lock-fill text-sm ${isWonOrLostLocked
                             ? selectedLead?.displayStatus === "Won"
                               ? "text-green-600"
                               : "text-red-600"
                             : "text-green-600"
-                        }`}
+                          }`}
                       ></i>
                     </div>
                     <div>
                       <p
-                        className={`text-sm font-bold ${
-                          isWonOrLostLocked
+                        className={`text-sm font-bold ${isWonOrLostLocked
                             ? selectedLead?.displayStatus === "Won"
                               ? "text-green-700"
                               : "text-red-700"
                             : "text-green-700"
-                        }`}
+                          }`}
                       >
                         {isWonOrLostLocked
                           ? selectedLead?.displayStatus === "Won"
@@ -3052,13 +3367,12 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                           : "Quotation Approved"}
                       </p>
                       <p
-                        className={`text-xs mt-0.5 ${
-                          isWonOrLostLocked
+                        className={`text-xs mt-0.5 ${isWonOrLostLocked
                             ? selectedLead?.displayStatus === "Won"
                               ? "text-green-600"
                               : "text-red-600"
                             : "text-green-600"
-                        }`}
+                          }`}
                       >
                         {isWonOrLostLocked
                           ? `This lead is marked as ${selectedLead?.displayStatus}. No further quotation updates are permitted.`
@@ -3069,9 +3383,9 @@ className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-
                 )}
 
                 <div
-className={`p-3 sm:p-6 flex flex-col gap-3 sm:gap-4 ${isModalLocked ? "opacity-50 pointer-events-none select-none" : ""}`}>
-                
-<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+                  className={`p-3 sm:p-6 flex flex-col gap-3 sm:gap-4 ${isModalLocked ? "opacity-50 pointer-events-none select-none" : ""}`}>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                     <div>
                       <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Quotation Date <span className="text-red-400">*</span>
@@ -3081,7 +3395,7 @@ className={`p-3 sm:p-6 flex flex-col gap-3 sm:gap-4 ${isModalLocked ? "opacity-5
                         name="quotation_date"
                         value={form.quotation_date}
                         onChange={handleChange}
-className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
+                        className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
                       />
                     </div>
                     <div>
@@ -3092,7 +3406,7 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                         name="activity_type"
                         value={form.activity_type}
                         onChange={handleChange}
-className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
+                        className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
                       >
                         <option value="">-- Select --</option>
                         <option>New</option>
@@ -3110,11 +3424,10 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                         value={form.quotation_no}
                         onChange={handleChange}
                         disabled={isQuotationNoLocked}
-                        className={`w-full mt-1 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50 ${
-                          isQuotationNoLocked
+                        className={`w-full mt-1 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50 ${isQuotationNoLocked
                             ? "opacity-75 cursor-not-allowed"
                             : ""
-                        }`}
+                          }`}
                       />
                     </div>
                   </div>
@@ -3123,57 +3436,51 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                       <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Amount (₹)
                       </label>
-                      <input
-                        type="number"
-                        name="amount"
-                        value={form.amount || ""}
-                        onChange={handleChange}
-className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
-                      />
+                      <div className="relative flex items-center mt-1">
+                        <input
+                          type="text"
+                          name="amount"
+                          value={form.amount || ""}
+                          onChange={handleChange}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              if ((isAdmin || isSales) && form.quotation_status === "Sent") {
+                                openSplitModal(false);
+                              }
+                            }
+                          }}
+                          className="w-full border border-orange-300 rounded-sm pl-2 pr-10 sm:pl-3 sm:pr-10 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
+                        />
+                        {(isAdmin || isSales) && form.quotation_status === "Sent" && (
+                          <button
+                            type="button"
+                            onClick={() => openSplitModal(false)}
+                            className="absolute right-2 text-orange-500 hover:text-orange-700 font-bold p-1 rounded transition-colors flex items-center justify-center border-0 bg-transparent cursor-pointer"
+                            title="Configure Participation"
+                          >
+                            <i className="bi bi-plus-circle-fill text-lg"></i>
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-                    <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Discount (%)
-                      </label>
-                      <input
-                        type="number"
-                        name="discount"
-                        value={form.discount || ""}
-                        onChange={handleChange}
-className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Tax (%)
-                      </label>
-                      <select
-                        name="tax"
-                        value={form.tax}
-                        onChange={handleChange}
-className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
-                      >
-                        <option value="0">0%</option>
-                        <option value="9">9%</option>
-                        <option value="18">18%</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
                     <div>
                       <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                         Grand Total (₹)
                       </label>
                       <input
-                        type="number"
+                        type="text"
                         name="grand_total"
                         value={form.grand_total || ""}
-                        onChange={handleChange}
-className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
+                        readOnly
+                        disabled
+                        className="w-full mt-1 border border-gray-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-100 cursor-not-allowed font-semibold text-gray-700"
                       />
                     </div>
+                  </div>
+                  <div className="hidden">
+                    <input type="hidden" name="discount" value={form.discount || "0"} />
+                    <input type="hidden" name="tax" value={form.tax || "0"} />
                   </div>
                   <div>
                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
@@ -3302,6 +3609,10 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                               tax: "0",
                               grand_total: "",
                               description: "",
+                              amount_9: "",
+                              amount_18: "",
+                              tax_9: "",
+                              tax_18: "",
                             });
                           }}
                           className="flex-none bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl px-4 py-3 text-sm font-semibold transition-all"
@@ -3315,8 +3626,8 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
               </div>
 
               {/* Right Side: History */}
-<div className="w-7/12 min-w-0 bg-slate-50 flex flex-col relative z-0">
-<div className="px-3 sm:px-6 py-3 sm:py-4 flex justify-between items-center bg-white border-b border-gray-100 sticky top-0 z-20 shadow-sm">
+              <div className="w-7/12 min-w-0 bg-slate-50 flex flex-col relative z-0">
+                <div className="px-3 sm:px-6 py-3 sm:py-4 flex justify-between items-center bg-white border-b border-gray-100 sticky top-0 z-20 shadow-sm">
                   <h3 className="text-sm font-bold text-gray-700 uppercase flex items-center gap-2">
                     <i
                       className="bi bi-clock-history"
@@ -3325,7 +3636,7 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                     Quotation History Data
                   </h3>
                 </div>
-<div className="flex-1 overflow-y-auto p-2 sm:p-6 space-y-3 sm:space-y-4">
+                <div className="flex-1 overflow-y-auto p-2 sm:p-6 space-y-3 sm:space-y-4">
                   {followUpHistory.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-gray-400">
                       <i className="bi bi-inbox text-4xl mb-2 text-gray-300"></i>
@@ -3341,26 +3652,24 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                           : b.quotation_status === "Approved"
                             ? 1
                             : Math.sign(
-                                new Date(b.created_at) - new Date(a.created_at),
-                              ),
+                              new Date(b.created_at) - new Date(a.created_at),
+                            ),
                       )
                       .map((item, index) => (
-                      <div key={index} className={`bg-white border rounded-xl p-2 sm:p-4 shadow-sm transition-colors ${
-                            item.quotation_status === "Approved" ||
+                        <div key={index} className={`bg-white border rounded-xl p-2 sm:p-4 shadow-sm transition-colors ${item.quotation_status === "Approved" ||
                             item.quotation_status === "Won"
-                              ? "border-green-400 bg-green-50/20"
-                              : "border-gray-200 hover:border-blue-200"
+                            ? "border-green-400 bg-green-50/20"
+                            : "border-gray-200 hover:border-blue-200"
                           }`}
                         >
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex gap-2 items-center">
                               <div
-                                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-sm ${
-                                  item.quotation_status === "Approved" ||
-                                  item.quotation_status === "Won"
+                                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-sm ${item.quotation_status === "Approved" ||
+                                    item.quotation_status === "Won"
                                     ? "bg-green-100 text-green-700"
                                     : "bg-blue-100 text-blue-600"
-                                }`}
+                                  }`}
                               >
                                 {item.assignee ? item.assignee.charAt(0) : "U"}
                               </div>
@@ -3408,21 +3717,20 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                                         )
                                       }
                                       className="bg-red-500 hover:bg-red-600 text-white text-[10px] px-2 py-1 rounded-md transition-all shadow-sm"
-                                    >  
+                                    >
                                       Decline
                                     </button>
                                   </>
                                 )}
                               <span
-                                className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-md ${
-                                  item.quotation_status === "Approved" ||
-                                  item.quotation_status === "Won"
+                                className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-md ${item.quotation_status === "Approved" ||
+                                    item.quotation_status === "Won"
                                     ? "bg-green-100 text-green-700"
                                     : item.quotation_status === "Declined" ||
-                                        item.quotation_status === "Lost"
+                                      item.quotation_status === "Lost"
                                       ? "bg-red-100 text-red-700"
                                       : "bg-gray-100 text-gray-700"
-                                }`}
+                                  }`}
                               >
                                 {item.quotation_status || "Pending"}
                               </span>
@@ -3483,7 +3791,7 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                               </p>
                             </div>
                           </div>
-<div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 bg-white p-2 sm:p-2.5 rounded-lg border border-gray-100 text-sm">
+                          <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 bg-white p-2 sm:p-2.5 rounded-lg border border-gray-100 text-sm">
                             <div>
                               <span className="text-gray-400 text-[10px] uppercase block">
                                 Amount
@@ -3494,33 +3802,56 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                             </div>
                             <div>
                               <span className="text-gray-400 text-[10px] uppercase block">
-                                Discount
-                              </span>
-                              <span className="font-semibold text-gray-800">
-                                ₹
-                                {item.amount && item.discount
-                                  ? (
-                                      (item.amount * item.discount) /
-                                      100
-                                    ).toFixed(2)
-                                  : "0"}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-gray-400 text-[10px] uppercase block">
-                                Tax
-                              </span>
-                              <span className="font-semibold text-gray-800">
-                                {item.tax || "0"}%
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-gray-400 text-[10px] uppercase block">
                                 Grand Total
                               </span>
                               <span className="font-bold text-green-600">
                                 ₹{item.grand_total || "0"}
                               </span>
+                            </div>
+                            <div>
+                              <span className="text-gray-400 text-[10px] uppercase block">
+                                Participation Details
+                              </span>
+                              {((item.amount_9 !== null && Number(item.amount_9) > 0) || (item.amount_18 !== null && Number(item.amount_18) > 0)) ? (
+                                (isAdmin || isSales) ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const totalAmt = parseFloat(item.amount_9 || 0) + parseFloat(item.amount_18 || 0);
+                                      const pct9 = totalAmt > 0 ? ((parseFloat(item.amount_9 || 0) / totalAmt) * 100).toFixed(4) : "0.00";
+                                      const pct18 = totalAmt > 0 ? ((parseFloat(item.amount_18 || 0) / totalAmt) * 100).toFixed(4) : "0.00";
+
+                                      setSplitForm({
+                                        amount: totalAmt.toFixed(2),
+                                        amount_9: item.amount_9 || "",
+                                        amount_18: item.amount_18 || "",
+                                        percent_9: parseFloat(pct9) === 0 ? "" : Number(parseFloat(pct9).toFixed(4)).toString(),
+                                        percent_18: parseFloat(pct18) === 0 ? "" : Number(parseFloat(pct18).toFixed(4)).toString(),
+                                        tax_percent_9: item.tax_percent_9 !== null && item.tax_percent_9 !== undefined ? item.tax_percent_9.toString() : "9.00",
+                                        tax_percent_18: item.tax_percent_18 !== null && item.tax_percent_18 !== undefined ? item.tax_percent_18.toString() : "18.00",
+                                        tax_9: (item.tax_9 || 0).toString(),
+                                        tax_18: (item.tax_18 || 0).toString(),
+                                        grand_total: (item.split_grand_total || item.grand_total || 0).toString()
+                                      });
+                                      setIsSplitReadOnly(true);
+                                      setShowSplitModal(true);
+                                    }}
+                                    className="text-blue-600 hover:text-blue-800 bg-transparent border-0 cursor-pointer flex items-center justify-start mt-0.5 p-0.5 rounded hover:bg-blue-50"
+                                    title="View Participation Details"
+                                  >
+                                    <i className="bi bi-eye text-lg"></i>
+                                  </button>
+                                ) : (
+                                  <span 
+                                    className="text-gray-400 mt-0.5 p-0.5 inline-block cursor-not-allowed"
+                                    title="Participation details are hidden"
+                                  >
+                                    <i className="bi bi-eye text-lg opacity-50"></i>
+                                  </span>
+                                )
+                              ) : (
+                                <span className="text-xs text-gray-400 italic">No participation</span>
+                              )}
                             </div>
                           </div>
 
@@ -3636,6 +3967,230 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
               >
                 Done
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PARTICIPATION TAX CALCULATION MODAL */}
+      {showSplitModal && (
+        <div className="fixed inset-0 z-[65] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white w-[500px] rounded-lg shadow-2xl overflow-hidden border border-gray-100 flex flex-col animate-fade-in text-gray-800">
+            {/* Header */}
+            <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-orange-100 to-white border-b border-gray-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                  <i className="bi bi-calculator-fill text-orange-500 text-base"></i>
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
+                    Quotation Tax Calculation
+                  </h2>
+                  <p className="text-[10px] text-gray-500 font-medium">
+                    Configure 9% & 18% tax components
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleCancelSplitClick}
+                className="w-8 h-8 rounded-full hover:bg-gray-100 transition-colors flex items-center justify-center text-orange-500 border-0 bg-transparent cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-4 text-left">
+              {/* Total Amount Editable / Readonly */}
+              <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex justify-between items-center gap-4">
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
+                  Total Base Amount
+                </span>
+                {isSplitReadOnly ? (
+                  <span className="text-lg font-bold text-gray-800">
+                    ₹ {Number(splitForm.amount || 0).toLocaleString()}
+                  </span>
+                ) : (
+                  <div className="relative flex items-center max-w-[180px]">
+                    <span className="absolute left-2.5 text-gray-500 font-bold text-sm">₹</span>
+                    <input
+                      type="text"
+                      name="amount"
+                      value={splitForm.amount || ""}
+                      onChange={handleSplitBaseAmountChange}
+                      className="w-full border border-orange-300 rounded-md pl-6 pr-3 py-1.5 text-sm outline-none bg-white font-bold text-gray-800 focus:border-orange-500 text-right"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Grid for Splits */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Part B */}
+                <div className="bg-blue-50/20 p-4 rounded-xl border border-blue-100 space-y-3">
+                  <div>
+                    <label className="text-[11px] font-bold text-blue-700 uppercase tracking-wide block mb-1">
+                      Project Value (₹)
+                    </label>
+                    <input
+                      type="text"
+                      name="amount_18"
+                      value={splitForm.amount_18}
+                      onChange={handleSplitFormChange}
+                      readOnly={isSplitReadOnly}
+                      disabled={isSplitReadOnly}
+                      placeholder="Enter amount"
+                      className="w-full border border-blue-300 rounded-md px-3 py-1.5 text-sm outline-none bg-white font-semibold text-gray-800 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">
+                      Split (%)
+                    </label>
+                    <div className="relative flex items-center">
+                      <input
+                        type="text"
+                        name="percent_18"
+                        value={splitForm.percent_18}
+                        onChange={handleSplitFormChange}
+                        readOnly={isSplitReadOnly}
+                        disabled={isSplitReadOnly}
+                        placeholder="100.00"
+                        className="w-full border border-gray-300 rounded-md pl-3 pr-7 py-1.5 text-sm outline-none bg-white font-semibold text-gray-800 focus:border-blue-500"
+                      />
+                      <span className="absolute right-3 text-gray-400 text-xs font-bold">%</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">
+                      Tax Rate (%)
+                    </label>
+                    <div className="relative flex items-center">
+                      <input
+                        type="text"
+                        name="tax_percent_18"
+                        value={splitForm.tax_percent_18}
+                        onChange={handleSplitFormChange}
+                        readOnly={isSplitReadOnly}
+                        disabled={isSplitReadOnly}
+                        placeholder="18.00"
+                        className="w-full border border-gray-300 rounded-md pl-3 pr-7 py-1.5 text-sm outline-none bg-white font-semibold text-gray-800 focus:border-blue-500"
+                      />
+                      <span className="absolute right-3 text-gray-400 text-xs font-bold">%</span>
+                    </div>
+                  </div>
+                  <div className="mt-2.5 space-y-1 text-xs text-gray-500 pt-2 border-t border-dashed border-gray-200">
+                    <div className="flex justify-between">
+                      <span>Tax ({splitForm.tax_percent_18 || "0"}%):</span>
+                      <span className="font-medium text-gray-700">₹ {splitForm.tax_18}</span>
+                    </div>
+                    <div className="flex justify-between border-t border-dashed border-gray-150 pt-1">
+                      <span>Total B:</span>
+                      <span className="font-bold text-gray-700">
+                        ₹ {(parseFloat(splitForm.amount_18 || 0) + parseFloat(splitForm.tax_18 || 0)).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Part A */}
+                <div className="bg-orange-50/20 p-4 rounded-xl border border-orange-100 space-y-3">
+                  <div>
+                    <label className="text-[11px] font-bold text-orange-700 uppercase tracking-wide block mb-1">
+                      Other Charges (₹)
+                    </label>
+                    <input
+                      type="text"
+                      name="amount_9"
+                      value={splitForm.amount_9}
+                      onChange={handleSplitFormChange}
+                      readOnly={isSplitReadOnly}
+                      disabled={isSplitReadOnly}
+                      placeholder="Enter amount"
+                      className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm outline-none bg-white font-semibold text-gray-800 focus:border-orange-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">
+                      Split (%)
+                    </label>
+                    <div className="relative flex items-center">
+                      <input
+                        type="text"
+                        name="percent_9"
+                        value={splitForm.percent_9}
+                        onChange={handleSplitFormChange}
+                        readOnly={isSplitReadOnly}
+                        disabled={isSplitReadOnly}
+                        placeholder="0.00"
+                        className="w-full border border-gray-300 rounded-md pl-3 pr-7 py-1.5 text-sm outline-none bg-white font-semibold text-gray-800 focus:border-orange-500"
+                      />
+                      <span className="absolute right-3 text-gray-400 text-xs font-bold">%</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">
+                      Tax Rate (%)
+                    </label>
+                    <div className="relative flex items-center">
+                      <input
+                        type="text"
+                        name="tax_percent_9"
+                        value={splitForm.tax_percent_9}
+                        onChange={handleSplitFormChange}
+                        readOnly={isSplitReadOnly}
+                        disabled={isSplitReadOnly}
+                        placeholder="9.00"
+                        className="w-full border border-gray-300 rounded-md pl-3 pr-7 py-1.5 text-sm outline-none bg-white font-semibold text-gray-800 focus:border-orange-500"
+                      />
+                      <span className="absolute right-3 text-gray-400 text-xs font-bold">%</span>
+                    </div>
+                  </div>
+                  <div className="mt-2.5 space-y-1 text-xs text-gray-500 pt-2 border-t border-dashed border-gray-200">
+                    <div className="flex justify-between">
+                      <span>Tax ({splitForm.tax_percent_9 || "0"}%):</span>
+                      <span className="font-medium text-gray-700">₹ {splitForm.tax_9}</span>
+                    </div>
+                    <div className="flex justify-between border-t border-dashed border-gray-150 pt-1">
+                      <span>Total A:</span>
+                      <span className="font-bold text-gray-700">
+                        ₹ {(parseFloat(splitForm.amount_9 || 0) + parseFloat(splitForm.tax_9 || 0)).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grand Total */}
+              <div className="bg-green-50 p-4 rounded-xl border border-green-100 flex justify-between items-center">
+                <span className="text-xs font-semibold text-green-700 uppercase tracking-wide">
+                  Project Value
+                </span>
+                <span className="text-xl font-black text-green-700">
+                  ₹ {Number(splitForm.grand_total || 0).toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100 rounded-b-lg">
+              <button
+                type="button"
+                onClick={handleCancelSplitClick}
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all cursor-pointer border-0"
+              >
+                {isSplitReadOnly ? "Close" : "Cancel"}
+              </button>
+              {!isSplitReadOnly && (
+                <button
+                  type="button"
+                  onClick={handleApplySplit}
+                  className="px-5 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90 transition-all cursor-pointer border-0"
+                  style={{ background: "#f07400" }}
+                >
+                  Apply Participation
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -3891,15 +4446,14 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
 
               {piGrandTotal > 0 && (
                 <div
-                  className={`rounded-sm p-3 border transition-all ${
-                    piIsOver
+                  className={`rounded-sm p-3 border transition-all ${piIsOver
                       ? "bg-red-50 border-red-200"
                       : piEnteredPct === 100
                         ? "bg-green-50 border-green-200"
                         : piEnteredPct > 0
                           ? "bg-green-50 border-green-200"
                           : "bg-blue-50 border-blue-100"
-                  }`}
+                    }`}
                 >
                   <p className="text-xs font-bold uppercase tracking-wider mb-2 text-gray-500">
                     {piEnteredPct > 0
@@ -3936,13 +4490,12 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                   <div className="mt-3">
                     <div className="w-full bg-white rounded-full h-2 border border-gray-200 overflow-hidden">
                       <div
-                        className={`h-2 rounded-full transition-all duration-300 ${
-                          piIsOver
+                        className={`h-2 rounded-full transition-all duration-300 ${piIsOver
                             ? "bg-red-500"
                             : piEnteredPct >= 100
                               ? "bg-green-500"
                               : "bg-green-400"
-                        }`}
+                          }`}
                         style={{ width: `${Math.min(piEnteredPct, 100)}%` }}
                       ></div>
                     </div>
@@ -3984,14 +4537,13 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                   Number(piPercentage) <= 0 ||
                   Number(piPercentage) > 100
                 }
-                className={`flex-1 bg-green-500 hover:bg-green-600 text-white rounded-sm py-2.5 text-sm font-semibold shadow-md shadow-green-200 transition-all flex justify-center items-center gap-2 ${
-                  isCreatingPI ||
-                  !piPercentage ||
-                  Number(piPercentage) <= 0 ||
-                  Number(piPercentage) > 100
+                className={`flex-1 bg-green-500 hover:bg-green-600 text-white rounded-sm py-2.5 text-sm font-semibold shadow-md shadow-green-200 transition-all flex justify-center items-center gap-2 ${isCreatingPI ||
+                    !piPercentage ||
+                    Number(piPercentage) <= 0 ||
+                    Number(piPercentage) > 100
                     ? "opacity-60 cursor-not-allowed"
                     : ""
-                }`}
+                  }`}
               >
                 {isCreatingPI ? (
                   <>
@@ -4299,11 +4851,10 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
               <button
                 onClick={handleAssigneeUpdate}
                 disabled={isUpdatingAssignee || !newAssigneeValue}
-                className={`flex-[2] py-2.5 rounded-lg text-xs text-white font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                  isUpdatingAssignee || !newAssigneeValue
+                className={`flex-[2] py-2.5 rounded-lg text-xs text-white font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${isUpdatingAssignee || !newAssigneeValue
                     ? "bg-orange-300 cursor-not-allowed"
                     : "bg-orange-500 hover:bg-orange-600 shadow-md shadow-orange-100"
-                }`}
+                  }`}
               >
                 {isUpdatingAssignee ? (
                   <>
@@ -4487,8 +5038,8 @@ className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 s
                   label: "Created At",
                   value: viewQuotation.created_at
                     ? new Date(viewQuotation.created_at).toLocaleDateString(
-                        "en-GB",
-                      )
+                      "en-GB",
+                    )
                     : "—",
                 },
                 {

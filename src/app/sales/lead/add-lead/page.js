@@ -37,7 +37,10 @@ export default function Page() {
   });
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    let { name, value } = e.target;
+    if (name === "mobile_no") {
+      value = value.replace(/[^0-9]/g, "").slice(0, 10);
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
   };
@@ -47,6 +50,9 @@ export default function Page() {
     if (!formData.customer_name.trim()) newErrors.customer_name = "Customer Name is required";
     if (!formData.reference.trim()) newErrors.reference = "Lead Title is required";
     if (!formData.source) newErrors.source = "Source is required";
+    if (formData.mobile_no && formData.mobile_no.length !== 10) {
+      newErrors.mobile_no = "Mobile number must be exactly 10 digits";
+    }
     return newErrors;
   };
 
@@ -57,7 +63,11 @@ export default function Page() {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) {
-      toast.error("Please fill all required fields");
+      if (newErrors.mobile_no && Object.keys(newErrors).length === 1) {
+        toast.error(newErrors.mobile_no);
+      } else {
+        toast.error("Please fill all required fields and correct any errors");
+      }
       return;
     }
 

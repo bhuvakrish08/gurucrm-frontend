@@ -19,6 +19,17 @@ export default function ProformaPage() {
   const [updateLoading, setUpdateLoading] = useState(false);
 
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showSplitModal, setShowSplitModal] = useState(false);
+  const [splitForm, setSplitForm] = useState({
+    amount_9: 0,
+    amount_18: 0,
+    tax_percent_9: "9.00",
+    tax_percent_18: "18.00",
+    tax_9: "0.00",
+    tax_18: "0.00",
+    grand_total: "0.00",
+    amount: 0
+  });
   const exportRef = useRef(null);
   const debounceRef = useRef(null);
 
@@ -63,6 +74,36 @@ export default function ProformaPage() {
       // console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleViewSplit = async (quotationId) => {
+    if (!quotationId) return;
+    try {
+      const res = await axios.get(`${API}/api/quotation/split/${quotationId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      if (res.data.success && res.data.split) {
+        const split = res.data.split;
+        setSplitForm({
+          amount_9: split.amount_9 || 0,
+          amount_18: split.amount_18 || 0,
+          tax_percent_9: split.tax_percent_9 !== null && split.tax_percent_9 !== undefined ? split.tax_percent_9.toString() : "9.00",
+          tax_percent_18: split.tax_percent_18 !== null && split.tax_percent_18 !== undefined ? split.tax_percent_18.toString() : "18.00",
+          tax_9: (split.tax_9 || 0).toString(),
+          tax_18: (split.tax_18 || 0).toString(),
+          grand_total: (split.grand_total || 0).toString(),
+          amount: (parseFloat(split.amount_9 || 0) + parseFloat(split.amount_18 || 0)).toFixed(2)
+        });
+        setShowSplitModal(true);
+      } else {
+        toast.info("No participation details recorded for this quotation.");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch participation details");
     }
   };
 
@@ -1227,7 +1268,18 @@ toast.success(
                               {item.customer_name || "-"}
                             </td>
                             <td className="py-3 px-3 text-gray-600">
-                              {item.quotation_no || "-"}
+                              <div className="flex items-center gap-1.5">
+                                <span>{item.quotation_no || "-"}</span>
+                                {item.quotation_id && (
+                                  <button
+                                    onClick={() => handleViewSplit(item.quotation_id)}
+                                    className="text-blue-600 hover:text-blue-800 flex items-center justify-center p-1 rounded hover:bg-blue-50 cursor-pointer border-0 bg-transparent"
+                                    title="View Quotation Participation Details"
+                                  >
+                                    <i className="bi bi-eye text-lg"></i>
+                                  </button>
+                                )}
+                              </div>
                             </td>
                             <td className="py-3 px-3 text-gray-500">
                               {item.source || "-"}
@@ -1840,6 +1892,163 @@ toast.success(
             </div>
           );
         })()}
+
+      {/* PARTICIPATION TAX CALCULATION MODAL */}
+      {showSplitModal && (
+        <div className="fixed inset-0 z-[65] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white w-[500px] rounded-lg shadow-2xl overflow-hidden border border-gray-100 flex flex-col animate-fade-in text-gray-800">
+            {/* Header */}
+            <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-orange-100 to-white border-b border-gray-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                  <i className="bi bi-calculator-fill text-orange-500 text-base"></i>
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
+                    Quotation Tax Calculation Details
+                  </h2>
+                  <p className="text-[10px] text-gray-500 font-medium">
+                    Calculations for the linked quotation
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSplitModal(false)}
+                className="w-8 h-8 rounded-full hover:bg-gray-100 transition-colors flex items-center justify-center text-orange-500 border-0 bg-transparent cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Body */}
+            {(() => {
+              const amtTotal = parseFloat(splitForm.amount) || 0;
+              const amt9 = parseFloat(splitForm.amount_9) || 0;
+              const amt18 = parseFloat(splitForm.amount_18) || 0;
+              const percent9 = amtTotal > 0 ? ((amt9 / amtTotal) * 100).toFixed(2) : "0.00";
+              const percent18 = amtTotal > 0 ? ((amt18 / amtTotal) * 100).toFixed(2) : "0.00";
+
+              return (
+                <div className="p-6 space-y-4">
+                  {/* Total Amount Readonly */}
+                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex justify-between items-center">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                      Total Base Amount
+                    </span>
+                    <span className="text-lg font-bold text-gray-800">
+                      ₹ {Number(splitForm.amount || 0).toLocaleString()}
+                    </span>
+                  </div>
+
+                  {/* Grid for Participation */}
+                  <div className="grid grid-cols-2 gap-4 text-left">
+                    {/* Part B */}
+                    <div className="bg-blue-50/20 p-4 rounded-xl border border-blue-100 space-y-3">
+                      <div>
+                        <label className="text-[11px] font-bold text-blue-700 uppercase tracking-wide block mb-1">
+                          Project Value (₹)
+                        </label>
+                        <div className="border border-blue-200 rounded-md px-3 py-1.5 text-sm bg-white font-semibold text-gray-800 shadow-sm">
+                          ₹ {Number(splitForm.amount_18 || 0).toLocaleString()}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">
+                          Split (%)
+                        </label>
+                        <div className="border border-gray-300 rounded-md px-3 py-1.5 text-sm bg-white font-semibold text-gray-800 shadow-sm">
+                          {percent18}%
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">
+                          Tax Rate (%)
+                        </label>
+                        <div className="border border-gray-300 rounded-md px-3 py-1.5 text-sm bg-white font-semibold text-gray-800 shadow-sm">
+                          {splitForm.tax_percent_18}%
+                        </div>
+                      </div>
+                      <div className="mt-2.5 space-y-1 text-xs text-gray-500 pt-2 border-t border-dashed border-gray-200">
+                        <div className="flex justify-between">
+                          <span>Tax ({splitForm.tax_percent_18}%):</span>
+                          <span className="font-medium text-gray-700">₹ {splitForm.tax_18}</span>
+                        </div>
+                        <div className="flex justify-between border-t border-dashed border-gray-150 pt-1">
+                          <span>Total B:</span>
+                          <span className="font-bold text-gray-700">
+                            ₹ {(parseFloat(splitForm.amount_18 || 0) + parseFloat(splitForm.tax_18 || 0)).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Part A */}
+                    <div className="bg-orange-50/20 p-4 rounded-xl border border-orange-100 space-y-3">
+                      <div>
+                        <label className="text-[11px] font-bold text-orange-700 uppercase tracking-wide block mb-1">
+                          Other Charges (₹)
+                        </label>
+                        <div className="border border-orange-200 rounded-md px-3 py-1.5 text-sm bg-white font-semibold text-gray-800 shadow-sm">
+                          ₹ {Number(splitForm.amount_9 || 0).toLocaleString()}
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">
+                          Split (%)
+                        </label>
+                        <div className="border border-gray-300 rounded-md px-3 py-1.5 text-sm bg-white font-semibold text-gray-800 shadow-sm">
+                          {percent9}%
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">
+                          Tax Rate (%)
+                        </label>
+                        <div className="border border-gray-300 rounded-md px-3 py-1.5 text-sm bg-white font-semibold text-gray-800 shadow-sm">
+                          {splitForm.tax_percent_9}%
+                        </div>
+                      </div>
+                      <div className="mt-2.5 space-y-1 text-xs text-gray-500 pt-2 border-t border-dashed border-gray-200">
+                        <div className="flex justify-between">
+                          <span>Tax ({splitForm.tax_percent_9}%):</span>
+                          <span className="font-medium text-gray-700">₹ {splitForm.tax_9}</span>
+                        </div>
+                        <div className="flex justify-between border-t border-dashed border-gray-150 pt-1">
+                          <span>Total A:</span>
+                          <span className="font-bold text-gray-700">
+                            ₹ {(parseFloat(splitForm.amount_9 || 0) + parseFloat(splitForm.tax_9 || 0)).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Grand Total */}
+                  <div className="bg-green-50 p-4 rounded-xl border border-green-100 flex justify-between items-center">
+                    <span className="text-xs font-semibold text-green-700 uppercase tracking-wide">
+                      Project Value
+                    </span>
+                    <span className="text-xl font-black text-green-700">
+                      ₹ {Number(splitForm.grand_total || 0).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 flex justify-end border-t border-gray-100 rounded-b-lg">
+              <button
+                type="button"
+                onClick={() => setShowSplitModal(false)}
+                className="px-5 py-2 rounded-lg text-sm font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all cursor-pointer border-0"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
