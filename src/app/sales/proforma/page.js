@@ -487,13 +487,29 @@ toast.success(
       const badgeX = pageW - 14 - badgeW;
       const badgeY = 33.5;
 
-      doc.setFillColor(...green);
+      let statusText = "DRAFT";
+      let statusColor = [107, 114, 128]; // gray
+      if (item.status === "paid") {
+        statusText = "WON / PAID";
+        statusColor = green; // green
+      } else if (item.status === "partial") {
+        statusText = "PENDING";
+        statusColor = orange; // orange
+      } else if (item.status === "sent") {
+        statusText = "SENT";
+        statusColor = [59, 130, 246]; // blue
+      } else if (item.status === "cancelled") {
+        statusText = "CANCELLED";
+        statusColor = [239, 68, 68]; // red
+      }
+
+      doc.setFillColor(...statusColor);
       doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 1.5, 1.5, "F");
 
       doc.setTextColor(...white);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8);
-      doc.text("WON / PAID", badgeX + badgeW / 2, badgeY + 5.3, {
+      doc.text(statusText, badgeX + badgeW / 2, badgeY + 5.3, {
         align: "center",
       });
 
@@ -727,14 +743,14 @@ toast.success(
       });
 
       const finalRowY = summaryY + sCardH - 1;
-      doc.setFillColor(...orange);
+      doc.setFillColor(...statusColor);
       doc.roundedRect(sCardX, finalRowY - 7, sCardW, 10, 2, 2, "F");
 
       doc.setTextColor(...white);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(8.5);
       doc.text("Final Status", labelX, finalRowY - 0.5);
-      doc.text("WON / PAID", valueX, finalRowY - 0.5, { align: "right" });
+      doc.text(statusText, valueX, finalRowY - 0.5, { align: "right" });
 
       doc.setFillColor(...orange);
       doc.rect(0, pageH - 12, 60, 12, "F");
@@ -1270,15 +1286,6 @@ toast.success(
                             <td className="py-3 px-3 text-gray-600">
                               <div className="flex items-center gap-1.5">
                                 <span>{item.quotation_no || "-"}</span>
-                                {item.quotation_id && (
-                                  <button
-                                    onClick={() => handleViewSplit(item.quotation_id)}
-                                    className="text-blue-600 hover:text-blue-800 flex items-center justify-center p-1 rounded hover:bg-blue-50 cursor-pointer border-0 bg-transparent"
-                                    title="View Quotation Participation Details"
-                                  >
-                                    <i className="bi bi-eye text-lg"></i>
-                                  </button>
-                                )}
                               </div>
                             </td>
                             <td className="py-3 px-3 text-gray-500">
@@ -1387,22 +1394,18 @@ toast.success(
 
                             {/* DOWNLOAD BUTTON */}
                             <td className="py-3 px-3 text-center">
-                              {isWon ? (
-                                <button
-                                  onClick={() =>
-                                    downloadPIPdf(item, globalIndex)
-                                  }
-                                  title="Download PI PDF"
-                                  className="group relative w-9 h-9 rounded-full border border-green-200 bg-green-50 flex items-center justify-center mx-auto hover:bg-green-500 hover:border-green-500 transition-all cursor-pointer"
-                                >
-                                  <i className="bi bi-file-earmark-pdf text-green-600 group-hover:text-white text-base transition-all"></i>
-                                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-2 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                    Download PDF
-                                  </span>
-                                </button>
-                              ) : (
-                                <span className="text-gray-300 text-xs">—</span>
-                              )}
+                              <button
+                                onClick={() =>
+                                  downloadPIPdf(item, globalIndex)
+                                }
+                                title="Download PI PDF"
+                                className="group relative w-9 h-9 rounded-full border border-green-200 bg-green-50 flex items-center justify-center mx-auto hover:bg-green-500 hover:border-green-500 transition-all cursor-pointer"
+                              >
+                                <i className="bi bi-file-earmark-pdf text-green-600 group-hover:text-white text-base transition-all"></i>
+                                <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-[10px] px-2 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                  Download PDF
+                                </span>
+                              </button>
                             </td>
                           </tr>
                         );

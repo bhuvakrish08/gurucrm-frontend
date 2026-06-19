@@ -3791,7 +3791,7 @@ export default function QuotationPage() {
                               </p>
                             </div>
                           </div>
-                          <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 bg-white p-2 sm:p-2.5 rounded-lg border border-gray-100 text-sm">
+                          <div className={`mt-2 grid ${(isAdmin || isSales) ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2"} gap-2 sm:gap-4 bg-white p-2 sm:p-2.5 rounded-lg border border-gray-100 text-sm`}>
                             <div>
                               <span className="text-gray-400 text-[10px] uppercase block">
                                 Amount
@@ -3808,12 +3808,12 @@ export default function QuotationPage() {
                                 ₹{item.grand_total || "0"}
                               </span>
                             </div>
-                            <div>
-                              <span className="text-gray-400 text-[10px] uppercase block">
-                                Participation Details
-                              </span>
-                              {((item.amount_9 !== null && Number(item.amount_9) > 0) || (item.amount_18 !== null && Number(item.amount_18) > 0)) ? (
-                                (isAdmin || isSales) ? (
+                            {(isAdmin || isSales) && (
+                              <div>
+                                <span className="text-gray-400 text-[10px] uppercase block">
+                                  Participation Details
+                                </span>
+                                {((item.amount_9 !== null && Number(item.amount_9) > 0) || (item.amount_18 !== null && Number(item.amount_18) > 0)) ? (
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -3842,17 +3842,10 @@ export default function QuotationPage() {
                                     <i className="bi bi-eye text-lg"></i>
                                   </button>
                                 ) : (
-                                  <span 
-                                    className="text-gray-400 mt-0.5 p-0.5 inline-block cursor-not-allowed"
-                                    title="Participation details are hidden"
-                                  >
-                                    <i className="bi bi-eye text-lg opacity-50"></i>
-                                  </span>
-                                )
-                              ) : (
-                                <span className="text-xs text-gray-400 italic">No participation</span>
-                              )}
-                            </div>
+                                  <span className="text-xs text-gray-400 italic">No participation</span>
+                                )}
+                              </div>
+                            )}
                           </div>
 
                           {/* BUG FIX #4: Files in quotation history cards also open in new tab */}
