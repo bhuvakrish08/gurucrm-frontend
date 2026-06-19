@@ -1487,6 +1487,7 @@ export default function CalendarPage() {
           title={deleteTarget?.title || ""}
         />
 
+
         <DetailModal
           open={!!detailEvent}
           onClose={() => setDetailEvent(null)}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import axios from "redaxios";
+import { toast } from "react-toastify";
 import { Bell, Activity, Clock, Calendar } from "lucide-react";
 
 export default function Header() {
@@ -13,7 +14,6 @@ export default function Header() {
 
   const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-  // Remove search
   const router = useRouter();
   const pathname = usePathname();
   const [salesOpen, setSalesOpen] = useState(false);
@@ -25,6 +25,10 @@ export default function Header() {
 
   const [username, setUsername] = useState("");
   const [userRole, setUserRole] = useState("");
+
+  // ✅ NEW: Today's task reminders (calendar) — { today: [...], overdue: [...] }
+  const [reminders, setReminders] = useState({ today: [], overdue: [] });
+  const alertedRef = useRef(new Set());
 
   useEffect(() => {
     const storedUsername = localStorage.getItem("username") || "";
@@ -144,6 +148,105 @@ export default function Header() {
     fetchActivities();
   }, []);
 
+  // ============================================================
+  // ✅ NEW: TODAY'S TASK REMINDER SYSTEM
+  // Backend endpoint required: GET /api/calendar/reminders/today
+  // (returns { success, today: [...], overdue: [...] } for the
+  // logged-in user based on their assignee id from the token)
+  // ============================================================
+
+  const fetchReminders = async () => {
+    try {
+      const currentToken = localStorage.getItem("token");
+      if (!currentToken) return;
+
+      const config = { headers: { Authorization: `Bearer ${currentToken}` } };
+      const res = await axios.get(
+        `${API_BASE}/api/calendar/reminders/today`,
+        config,
+      );
+
+      setReminders({
+        today: res.data.today || [],
+        overdue: res.data.overdue || [],
+      });
+    } catch (err) {
+      console.error("Reminder fetch failed:", err);
+    }
+  };
+
+  // Initial fetch + re-fetch every 5 min, jethi navi add thayeli task pan dekhay
+  useEffect(() => {
+    fetchReminders();
+    const poll = setInterval(fetchReminders, 5 * 60 * 1000);
+    return () => clearInterval(poll);
+  }, []);
+
+  // Din ma ek j vaar "Aaje X task che" digest toast batave
+  useEffect(() => {
+    const total = reminders.today.length + reminders.overdue.length;
+    if (total === 0) return;
+
+    const now = new Date();
+    const todayKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+    const lastShown = localStorage.getItem("reminderDigestShown");
+
+    if (lastShown !== todayKey) {
+      const parts = [];
+      if (reminders.today.length > 0)
+        parts.push(`${reminders.today.length} aaje`);
+      if (reminders.overdue.length > 0)
+        parts.push(`${reminders.overdue.length} overdue`);
+
+     toast.info(`📋 You have ${parts.join(", ")} task(s) pending!`, {
+  autoClose: 6000,
+});
+      localStorage.setItem("reminderDigestShown", todayKey);
+    }
+  }, [reminders]);
+
+  // Har 30 second e check kare — task no exact time ave tyare live alert
+  useEffect(() => {
+    const tick = setInterval(() => {
+      const now = new Date();
+      const hhmm = `${String(now.getHours()).padStart(2, "0")}:${String(
+        now.getMinutes(),
+      ).padStart(2, "0")}`;
+
+      reminders.today.forEach((r) => {
+        const taskTime = (r.activity_time || "").slice(0, 5);
+        if (taskTime === hhmm && !alertedRef.current.has(r.id)) {
+          alertedRef.current.add(r.id);
+
+          toast.warning(`⏰ Reminder: "${r.title}" is due now!`, {
+  autoClose: 8000,
+});
+
+          if (
+            typeof Notification !== "undefined" &&
+            Notification.permission === "granted"
+          ) {
+            new Notification("Task Reminder", { body: r.title });
+          }
+        }
+      });
+    }, 30000);
+
+    return () => clearInterval(tick);
+  }, [reminders]);
+
+  // Browser notification permission ek j vaar magi le
+  useEffect(() => {
+    if (
+      typeof Notification !== "undefined" &&
+      Notification.permission === "default"
+    ) {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  const reminderCount = reminders.today.length + reminders.overdue.length;
+
   return (
     <header className="sticky top-0 z-50 flex flex-col md:flex-row items-center justify-between px-4 sm:px-8 py-4 shadow-sm bg-white">
       <div className="flex w-full md:w-auto items-center justify-between">
@@ -163,10 +266,14 @@ export default function Header() {
           {/* Mobile Calendar Icon */}
           <Link
             href="/calender"
-            className="p-2 text-gray-700 hover:text-orange-500 transition-colors"
+            className="relative p-2 text-gray-700 hover:text-orange-500 transition-colors"
             title="Calendar"
           >
             <Calendar className="w-6 h-6" />
+            {/* ✅ NEW: today's-task indicator dot */}
+            {reminderCount > 0 && (
+              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white" />
+            )}
           </Link>
 
           {/* Mobile Notification */}
@@ -355,13 +462,21 @@ export default function Header() {
               ? "bg-orange-50 border-orange-300 shadow-md"
               : "bg-white border-gray-200 hover:shadow-md"
           }`}
-          title="Calendar"
+          title={
+            reminderCount > 0
+              ? `${reminderCount} task(s) need attention today`
+              : "Calendar"
+          }
         >
           <Calendar
             className={`w-5 h-5 ${
               pathname === "/calender" ? "text-orange-500" : "text-gray-500 hover:text-orange-500"
             }`}
           />
+          {/* ✅ NEW: today's-task indicator dot */}
+          {reminderCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-red-500 rounded-full border-2 border-white" />
+          )}
         </Link>
 
         {/* Notification Bell */}
@@ -511,6 +626,10 @@ export default function Header() {
           >
             <Calendar className="w-4 h-4" />
             Calendar
+            {/* ✅ NEW: today's-task indicator dot */}
+            {reminderCount > 0 && (
+              <span className="w-2 h-2 bg-red-500 rounded-full" />
+            )}
           </Link>
 
           {userRole !== "Leads Management" && userRole !== "Estimation" && userRole !== "Sales" && userRole !== "Proforma invoices" && (
