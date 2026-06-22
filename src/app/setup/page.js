@@ -235,6 +235,23 @@ export default function setupPage() {
                 </div>
               </div>
 
+              
+              {/* Manage Architecture */}
+              <div className="bg-orange-50 rounded-sm shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-semibold text-orange-500">
+                  Manage Architecture
+                </h2>
+                <hr className="border-gray-300 my-3" />
+                <div className="flex flex-col text-gray-700">
+                  <Link
+                    href="/setup/manage-architecture"
+                    className="hover:text-orange-600"
+                  >
+                    Manage Architecture
+                  </Link>
+                </div>
+              </div>
+
               {/* Miscellaneous Settings */}
               {/* <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                             <h2 className="text-xl font-semibold text-gray-800">Miscellaneous Settings</h2>
