@@ -16,12 +16,13 @@ export default function ArchitectTable() {
   const [error, setError] = useState("");
 
   const [showMobileFilters, setShowMobileFilters] = useState(false);
- const [filters, setFilters] = useState({
-  searchName: "",
-  searchEmail: "",
-  searchMobile: "",
-  status: "",
-});
+  const [filters, setFilters] = useState({
+    searchName: "",
+    searchEmail: "",
+    searchMobile: "",
+    status: "",
+  });
+
   // ---------- Modal state ----------
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState("add"); // "add" | "edit"
@@ -51,9 +52,9 @@ export default function ArchitectTable() {
     try {
       const params = new URLSearchParams();
       if (filters.searchName) params.append("searchName", filters.searchName);
-if (filters.searchEmail) params.append("searchEmail", filters.searchEmail);
-if (filters.searchMobile) params.append("searchMobile", filters.searchMobile);
-if (filters.status !== "") params.append("status", filters.status);
+      if (filters.searchEmail) params.append("searchEmail", filters.searchEmail);
+      if (filters.searchMobile) params.append("searchMobile", filters.searchMobile);
+      if (filters.status !== "") params.append("status", filters.status);
 
       const res = await fetch(`${APIBase}?${params.toString()}`);
       if (!res.ok) throw new Error("Failed to load architects");
@@ -65,16 +66,21 @@ if (filters.status !== "") params.append("status", filters.status);
     } finally {
       setLoading(false);
     }
- }, [filters.searchName, filters.searchEmail, filters.searchMobile, filters.status]);
+  }, [filters.searchName, filters.searchEmail, filters.searchMobile, filters.status]);
 
   useEffect(() => {
     fetchArchitects();
   }, [fetchArchitects]);
 
-  // ---------- UPDATE STATUS ONLY — toggle 0/1 ----------
+  // ---------- UPDATE STATUS ONLY — toggle active/inactive ----------
+  // ✅ FIX: status is stored as "active" / "inactive" string in DB,
+  //         NOT as 1 / 0 number. Number("active") => NaN, which was
+  //         causing the toggle to always send wrong / falsy values
+  //         and break the PATCH request on the backend.
   const toggleStatus = async (architect) => {
-    const newStatus = Number(architect.status) === 1 ? 0 : 1;
+    const newStatus = architect.status === "active" ? "inactive" : "active";
 
+    // optimistic UI update
     setArchitects((prev) =>
       prev.map((a) =>
         a.id === architect.id ? { ...a, status: newStatus } : a,
@@ -87,8 +93,13 @@ if (filters.status !== "") params.append("status", filters.status);
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
-      if (!res.ok) throw new Error("Failed to update status");
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.success === false) {
+        throw new Error(data.message || "Failed to update status");
+      }
     } catch (err) {
+      // rollback on failure
       setArchitects((prev) =>
         prev.map((a) =>
           a.id === architect.id ? { ...a, status: architect.status } : a,
@@ -149,10 +160,12 @@ if (filters.status !== "") params.append("status", filters.status);
     setSaving(true);
     try {
       if (modalMode === "add") {
+        // ✅ FIX: status sent as "active" string (matches DB default/type),
+        //         not 1 (number)
         const res = await fetch(`${APIBase}/insert`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...form, status: 1 }),
+          body: JSON.stringify({ ...form, status: "active" }),
         });
         const data = await res.json();
         if (!res.ok || !data.success) {
@@ -242,7 +255,6 @@ if (filters.status !== "") params.append("status", filters.status);
             md:mx-6 md:flex md:flex-wrap md:items-center md:gap-x-5 md:gap-y-2 md:mt-3 md:mb-5 md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
           `}
         >
-            
           <input
             type="text"
             name="searchName"
@@ -269,6 +281,9 @@ if (filters.status !== "") params.append("status", filters.status);
             value={filters.searchMobile}
             onChange={handleFilterChange}
           />
+
+          {/* ✅ FIX: option values changed from "1"/"0" to "active"/"inactive"
+                     to match the actual varchar values stored in DB */}
           <select
             name="status"
             value={filters.status}
@@ -276,8 +291,8 @@ if (filters.status !== "") params.append("status", filters.status);
             className="p-2 w-full md:w-53 md:mx-2 border border-orange-300 md:border text-gray-500 bg-white rounded-sm outline-none text-sm"
           >
             <option value="">Status</option>
-            <option value="1">Active</option>
-            <option value="0">Inactive</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
           </select>
 
           <div className="flex gap-2 col-span-2">
@@ -321,10 +336,7 @@ if (filters.status !== "") params.append("status", filters.status);
                 <tbody>
                   {loading && (
                     <tr>
-                      <td
-                        colSpan={7}
-                        className="text-center py-8 text-gray-400"
-                      >
+                      <td colSpan={7} className="text-center py-8 text-gray-400">
                         Loading...
                       </td>
                     </tr>
@@ -340,10 +352,7 @@ if (filters.status !== "") params.append("status", filters.status);
 
                   {!loading && !error && architects.length === 0 && (
                     <tr>
-                      <td
-                        colSpan={7}
-                        className="text-center py-8 text-gray-400"
-                      >
+                      <td colSpan={7} className="text-center py-8 text-gray-400">
                         No architects found.
                       </td>
                     </tr>
@@ -364,18 +373,19 @@ if (filters.status !== "") params.append("status", filters.status);
                         <td className="py-3 px-4">{a.email}</td>
                         <td className="py-3 px-4">{a.address || "-"}</td>
                         <td className="py-3 px-4">
+                          {/* ✅ FIX: compare against "active" string, not Number(...) === 1 */}
                           <button
                             type="button"
                             onClick={() => toggleStatus(a)}
                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                              Number(a.status) === 1
+                              a.status === "active"
                                 ? "bg-orange-500"
                                 : "bg-gray-300"
                             }`}
                           >
                             <span
                               className={`inline-block h-[18px] w-[18px] transform rounded-full bg-white transition-transform ${
-                                Number(a.status) === 1
+                                a.status === "active"
                                   ? "translate-x-6"
                                   : "translate-x-1"
                               }`}
@@ -409,12 +419,13 @@ if (filters.status !== "") params.append("status", filters.status);
               <h2 className="font-bold text-gray-900">
                 {modalMode === "add" ? "Add Architecture" : "Edit Architecture"}
               </h2>
+              {/* ✅ FIX: close (X) icon was using pencil icon before, swapped to an actual close icon */}
               <button
                 type="button"
                 onClick={closeModal}
                 className="text-gray-400 hover:text-gray-700"
               >
-                <i className="bi bi-pencil-square"></i>
+                <i className="bi bi-x-lg"></i>
               </button>
             </div>
 
