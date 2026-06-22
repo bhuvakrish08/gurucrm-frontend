@@ -50,8 +50,10 @@ export default function ArchitectTable() {
     setError("");
     try {
       const params = new URLSearchParams();
-      if (filters.search) params.append("search", filters.search);
-      if (filters.status !== "") params.append("status", filters.status);
+      if (filters.searchName) params.append("searchName", filters.searchName);
+if (filters.searchEmail) params.append("searchEmail", filters.searchEmail);
+if (filters.searchMobile) params.append("searchMobile", filters.searchMobile);
+if (filters.status !== "") params.append("status", filters.status);
 
       const res = await fetch(`${APIBase}?${params.toString()}`);
       if (!res.ok) throw new Error("Failed to load architects");
@@ -63,7 +65,7 @@ export default function ArchitectTable() {
     } finally {
       setLoading(false);
     }
-  }, [filters.search, filters.status]);
+ }, [filters.searchName, filters.searchEmail, filters.searchMobile, filters.status]);
 
   useEffect(() => {
     fetchArchitects();
