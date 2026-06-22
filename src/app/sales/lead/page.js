@@ -545,7 +545,7 @@ export default function Page() {
     customer_name: "",
     reference: "",
     source: "",
-    assignee: "",
+    mobile_no: "",
     status: "",
     created_by: "",
     from_created: "",
@@ -937,19 +937,12 @@ export default function Page() {
             ))}
           </select>
 
-          <select
-            name="assignee"
-            value={filters.assignee}
+          <input
+            name="mobile_no"
+            value={filters.mobile_no}
             onChange={handleFilterChange}
-            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-400 text-sm"
-          >
-            <option value="">Select Assignee</option>
-            {assignee.map((item) => (
-              <option key={item.id} value={item.name}>
-                {item.name}
-              </option>
-            ))}
-          </select>
+            placeholder="Mobile No" 
+            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-600 text-sm" />
 
           <div className="flex p-1 items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-58  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
             <span className="mx-1 p-1 text-gray-400 whitespace-nowrap">
@@ -1119,7 +1112,7 @@ export default function Page() {
                         Source
                       </th>
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Assignee
+                        Mobile No
                       </th>
                       <th className="py-3 px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                         Next Follow Up
@@ -1164,27 +1157,8 @@ export default function Page() {
 
                           <td className="px-3">{lead.source}</td>
 
-                          <td
-                            style={{
-                              display: "flex",
-                              gap: "1px",
-                              alignItems: "center",
-                            }}
-                            className="py-2 px-4"
-                          >
-                            {lead.assignee
-                              ? String(lead.assignee)
-                                  .split(",")
-                                  .map((name, idx) => (
-                                    <div
-                                      key={idx}
-                                      title={name.trim()}
-                                      className="px-3 py-1.5 bg-blue-800 text-white rounded-full font-semibold text-sm flex justify-center items-center min-w-[28px] text-center select-none"
-                                    >
-                                      {name.trim().charAt(0).toUpperCase()}
-                                    </div>
-                                  ))
-                              : "-"}
+                          <td className="py-2 px-4 text-start">
+                            {lead.mobile_no}
                           </td>
 
                           <td className="text-center">
