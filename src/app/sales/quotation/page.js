@@ -237,7 +237,6 @@ export default function QuotationPage() {
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
-            // Content-Type set ન કરો - axios automatically multipart/form-data set કરે
           },
         },
       );
@@ -305,7 +304,7 @@ export default function QuotationPage() {
           item.quotation_status === "Approved"
             ? "Won"
             : item.quotation_status === "Declined"
-              ? "Pending"
+              ? "Declined"
               : item.quotation_status || "Pending";
         return {
           ...item,
@@ -1187,7 +1186,7 @@ export default function QuotationPage() {
       if (status === "Approved") {
         await axios.put(
           `${API_BASE}/api/quotation/update-main-status/${selectedLead.latest_quotation_id}`,
-          { quotation_status: "Won" },
+          { quotation_status: "Declined" },
         );
       }
 

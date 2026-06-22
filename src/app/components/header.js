@@ -444,6 +444,12 @@ export default function Header() {
             Task List
           </Link>
         )}
+
+
+         <Link href="/sales/projects" className="hover:text-orange-500 transition-colors">
+            Projects
+          </Link>
+
         {["Admin", "Super Admin"].includes(userRole) && (
           <Link href="/setup" className="hover:text-orange-500 transition-colors">
             Settings
