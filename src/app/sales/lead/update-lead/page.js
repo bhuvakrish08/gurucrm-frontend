@@ -28,6 +28,7 @@ export default function Page() {
     lead_id: "",
     company_name: "",
     customer_name: "",
+    mobile_no: "",
     reference: "",
     source: "",
     status: "",
@@ -58,6 +59,7 @@ export default function Page() {
       lead_id: parsedLead.lead_id || "",
       company_name: parsedLead.company_id || parsedLead.company_name || "",
       customer_name: parsedLead.customer_name || "",
+      mobile_no: parsedLead.mobile_no || "",
       reference: parsedLead.reference || "",
       source: parsedLead.source_id || parsedLead.source || "",
       status: parsedLead.status || "",
@@ -69,8 +71,16 @@ export default function Page() {
   }, []);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    let { name, value } = e.target;
+
+    if (name === "mobile_no") {
+      value = value.replace(/[^0-9]/g, "").slice(0, 10);
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   // ✅ FIXED: Authorization header added to fetch
@@ -103,6 +113,7 @@ export default function Page() {
           body: JSON.stringify({
             company_name: formData.company_name,
             customer_name: formData.customer_name,
+            mobile_no: formData.mobile_no || null, // ✅ ADD
             reference: formData.reference,
             source: formData.source,
             status: formData.status,
@@ -142,7 +153,7 @@ export default function Page() {
           { params: { status: 1 } }
         );
         setLeadSource(res.data);
-      } catch {}
+      } catch { }
     };
     fetchSource();
   }, []);
@@ -156,7 +167,7 @@ export default function Page() {
           { params: { status: 1 } }
         );
         setLeadCategory(res.data);
-      } catch {}
+      } catch { }
     };
     fetchCategory();
   }, []);
@@ -250,7 +261,7 @@ export default function Page() {
               {/* Company Name */}
               <div>
                 <label className="block mb-1 text-xs font-medium text-gray-600">
-                  Company Name 
+                  Company Name
                 </label>
                 <input
                   name="company_name"
@@ -271,6 +282,20 @@ export default function Page() {
                   value={formData.customer_name}
                   onChange={handleChange}
                   placeholder="Customer Name"
+                  className="w-full border border-orange-300 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-none bg-white"
+                />
+              </div>
+
+              {/*  Mobile No  */}
+              <div>
+                <label className="block mb-1 text-xs font-medium text-gray-600">
+                  Mobile No.
+                </label>
+                <input
+                  name="mobile_no"
+                  value={formData.mobile_no}
+                  onChange={handleChange}
+                  placeholder="Mobile No."
                   className="w-full border border-orange-300 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-none bg-white"
                 />
               </div>

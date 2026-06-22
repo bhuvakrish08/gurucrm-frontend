@@ -466,6 +466,7 @@ export default function Page() {
           lead_id: leadData.lead_id,
           company_name: leadData.company_name,
           customer_name: leadData.customer_name,
+          mobile_no: leadData.mobile_no, // ✅ ADD THIS
           reference: leadData.reference,
           source: leadData.source,
           status: leadData.status,
@@ -618,7 +619,7 @@ export default function Page() {
     });
     fetchLeads();
   };
- // ===================================================
+  // ===================================================
   // 🚦 TRAFFIC LIGHT DOT
   // Returns a colored dot JSX based on follow_up_status from API
   // Only shown for Pending leads; Won/Lost get no dot
@@ -627,21 +628,21 @@ export default function Page() {
     const color = lead.follow_up_status || "green"; // 'green' | 'yellow' | 'red'
 
     const dotColors = {
-      green:  "#22c55e",
+      green: "#22c55e",
       yellow: "#eab308",
-      red:    "#ef4444",
+      red: "#ef4444",
     };
 
     const isPending = lead.status === "Pending";
 
     const tooltips = isPending ? {
-      green:  "✅ Follow-up on track (< 24h)",
+      green: "✅ Follow-up on track (< 24h)",
       yellow: "⚠️ No follow-up in 24h — Attention needed",
-      red:    "🔴 No follow-up in 48h+ — Critical",
+      red: "🔴 No follow-up in 48h+ — Critical",
     } : {
-      green:  "✅ Completed on track (< 24h)",
+      green: "✅ Completed on track (< 24h)",
       yellow: "⚠️ Completed late (24h - 48h)",
-      red:    "🔴 Completed late (48h+)",
+      red: "🔴 Completed late (48h+)",
     };
 
     const isPulse = isPending && (color === "yellow" || color === "red");
@@ -650,13 +651,13 @@ export default function Page() {
       <span
         title={tooltips[color]}
         style={{
-          display:         "inline-block",
-          width:           9,
-          height:          9,
-          borderRadius:    "50%",
+          display: "inline-block",
+          width: 9,
+          height: 9,
+          borderRadius: "50%",
           backgroundColor: dotColors[color],
-          flexShrink:      0,
-          animation:       isPulse ? "pulse 1.5s infinite" : "none",
+          flexShrink: 0,
+          animation: isPulse ? "pulse 1.5s infinite" : "none",
         }}
       />
     );
@@ -670,10 +671,10 @@ export default function Page() {
   const filteredLeads = hasActiveFilters
     ? leads
     : leads.filter((l) => {
-        if (activeTab === "Pending")
-          return l.status !== "Won" && l.status !== "Lost";
-        return l.status === activeTab;
-      });
+      if (activeTab === "Pending")
+        return l.status !== "Won" && l.status !== "Lost";
+      return l.status === activeTab;
+    });
 
   const pendingCount = leads.filter((l) => l.status === "Pending").length;
   const wonCount = leads.filter((l) => l.status === "Won").length;
@@ -754,7 +755,7 @@ export default function Page() {
           },
         );
         setLeadSource(res.data);
-      } catch {}
+      } catch { }
     };
     fetchSource();
   }, []);
@@ -769,7 +770,7 @@ export default function Page() {
           },
         );
         setLeadCategory(res.data);
-      } catch {}
+      } catch { }
     };
     fetchCategory();
   }, []);
@@ -781,7 +782,7 @@ export default function Page() {
           params: { status: 1 },
         });
         setCategory(res.data);
-      } catch {}
+      } catch { }
     };
     fetchProductCategory();
   }, []);
@@ -941,7 +942,7 @@ export default function Page() {
             name="mobile_no"
             value={filters.mobile_no}
             onChange={handleFilterChange}
-            placeholder="Mobile No" 
+            placeholder="Mobile No"
             className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-600 text-sm" />
 
           <div className="flex p-1 items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-58  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
@@ -1233,37 +1234,37 @@ export default function Page() {
                           </td>
 
                           <td className="text-lg">
-  <div className="flex items-center gap-2 flex-nowrap">
-    {lead.status === "Pending" ? (
-      <>
-        <button
-          onClick={() => handleView(lead)}
-          className="text-gray-400 hover:text-green-600 cursor-pointer"
-        >
-          <i className="bi bi-eye text-xl"></i>
-        </button>
+                            <div className="flex items-center gap-2 flex-nowrap">
+                              {lead.status === "Pending" ? (
+                                <>
+                                  <button
+                                    onClick={() => handleView(lead)}
+                                    className="text-gray-400 hover:text-green-600 cursor-pointer"
+                                  >
+                                    <i className="bi bi-eye text-xl"></i>
+                                  </button>
 
-        <button
-          onClick={() => handleEdit(lead)}
-          className="text-gray-400 hover:text-blue-800 cursor-pointer"
-        >
-          <i className="bi bi-pencil-square"></i>
-        </button>
+                                  <button
+                                    onClick={() => handleEdit(lead)}
+                                    className="text-gray-400 hover:text-blue-800 cursor-pointer"
+                                  >
+                                    <i className="bi bi-pencil-square"></i>
+                                  </button>
 
-        <button
-          onClick={() => openDeleteModal(lead)}
-          className="text-gray-400 hover:text-red-600 cursor-pointer"
-        >
-          <i className="bi bi-trash3"></i>
-        </button>
-      </>
-    ) : (
-      <span className="text-gray-300 cursor-not-allowed">
-        <i className="bi bi-lock text-lg"></i>
-      </span>
-    )}
-  </div>
-</td>
+                                  <button
+                                    onClick={() => openDeleteModal(lead)}
+                                    className="text-gray-400 hover:text-red-600 cursor-pointer"
+                                  >
+                                    <i className="bi bi-trash3"></i>
+                                  </button>
+                                </>
+                              ) : (
+                                <span className="text-gray-300 cursor-not-allowed">
+                                  <i className="bi bi-lock text-lg"></i>
+                                </span>
+                              )}
+                            </div>
+                          </td>
                         </tr>
                       ))
                     ) : (
@@ -1321,11 +1322,10 @@ export default function Page() {
                           <button
                             key={page}
                             onClick={() => setCurrentPage(page)}
-                            className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${
-                              currentPage === page
+                            className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${currentPage === page
                                 ? "bg-[#212121] text-white shadow-md shadow-black/10"
                                 : "border border-slate-200 text-slate-600 hover:bg-slate-50"
-                            }`}
+                              }`}
                           >
                             {page}
                           </button>
@@ -1834,8 +1834,8 @@ export default function Page() {
                             <span className="text-xs text-gray-400">
                               {item.follow_up_date
                                 ? new Date(
-                                    item.follow_up_date,
-                                  ).toLocaleDateString()
+                                  item.follow_up_date,
+                                ).toLocaleDateString()
                                 : "—"}
                             </span>
                             <i
@@ -1874,8 +1874,8 @@ export default function Page() {
                           label: "Follow-Up Date",
                           value: previewFollowUp.follow_up_date
                             ? new Date(
-                                previewFollowUp.follow_up_date,
-                              ).toLocaleDateString()
+                              previewFollowUp.follow_up_date,
+                            ).toLocaleDateString()
                             : "—",
                         },
                         {
