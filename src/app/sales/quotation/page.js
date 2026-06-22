@@ -304,8 +304,16 @@ export default function QuotationPage() {
           item.quotation_status === "Approved"
             ? "Won"
             : item.quotation_status === "Declined"
-              ? "Declined"
+              ? "Pending"
               : item.quotation_status || "Pending";
+        // const finalStatus =
+        //   item.quotation_status === "Approved"
+        //     ? "Won"
+
+
+        //     : item.quotation_status === "Declined"
+        //       ? "Declined"
+        //       : item.quotation_status || "Pending";
         return {
           ...item,
           displayStatus: finalStatus,
@@ -605,12 +613,18 @@ export default function QuotationPage() {
             : item.quotation_status === "Declined"
               ? "Pending"
               : item.quotation_status || "Pending";
+        // const finalStatus =
+        //   item.quotation_status === "Approved"
+        //     ? "Won"
+        //     : item.quotation_status === "Declined"
+        //       ? "Pending"
+        //       : item.quotation_status || "Pending";
         return {
           ...item,
           displayStatus: finalStatus,
           wasApprovedOnce:
             item.has_approved ||
-            item.quotation_status === "Won" ||
+            item.quotation_status === "Approved" ||
             item.quotation_status === "Lost",
           pi_exists:
             item.proforma_percentage && Number(item.proforma_percentage) > 0,
@@ -1182,13 +1196,18 @@ export default function QuotationPage() {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         },
       );
+      const historyRes = await axios.get(
+        `${API_BASE}/api/quotation/history/${selectedLead.lead_id}`,
+      );
 
-      if (status === "Approved") {
-        await axios.put(
-          `${API_BASE}/api/quotation/update-main-status/${selectedLead.latest_quotation_id}`,
-          { quotation_status: "Declined" },
-        );
-      }
+      setFollowUpHistory(historyRes.data.result || []);
+
+      // if (status === "Approved") {
+      //   await axios.put(
+      //     `${API_BASE}/api/quotation/update-main-status/${selectedLead.latest_quotation_id}`,
+      //     { quotation_status: "Declined" },
+      //   );
+      // }
 
       toast.success(`Quotation marked as ${status}`);
 
