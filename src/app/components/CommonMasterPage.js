@@ -15,6 +15,7 @@ export default function CommonMasterPage({
   extraColumn = null,
   showRadio = false,
   radioField = "is_parent",
+  showDelete = false,
 }) {
   const [data, setData] = useState([]);
   const [formName, setFormName] = useState("");
@@ -38,6 +39,10 @@ export default function CommonMasterPage({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  const getHeaders = useCallback(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }, []);
 
   const fetchData = useCallback(
     async (parentDesignation = "", name = "", status = "") => {
@@ -47,12 +52,12 @@ export default function CommonMasterPage({
         if (name) params.search2 = name;
         if (status) params.status = status;
 
-        const res = await axios.get(listApi, { params });
+        const res = await axios.get(listApi, { params, headers: getHeaders() });
         setData(res.data);
       } catch (err) {
         console.error("Fetch error:", err);
       }
-    }, [listApi]);
+    }, [listApi, getHeaders]);
 
   useEffect(() => {
     fetchData();
@@ -64,17 +69,17 @@ export default function CommonMasterPage({
     }, 300);
 
     return () => clearTimeout(timeout);
-  }, [parentDesignation, name, statusFilter]);
+  }, [parentDesignation, name, statusFilter, fetchData]);
 
   const fetchParentOptions = useCallback(async () => {
     if (!parentListApi) return;
     try {
-      const res = await axios.get(parentListApi);
+      const res = await axios.get(parentListApi, { headers: getHeaders() });
       setParentOptions(res.data);
     } catch (err) {
       console.error("Error fetching parent options:", err);
     }
-  }, [parentListApi]);
+  }, [parentListApi, getHeaders]);
 
   useEffect(() => {
     fetchData();
@@ -97,10 +102,10 @@ export default function CommonMasterPage({
       setIsSubmitting(true); // ✅ START
 
       if (editId) {
-        await axios.put(`${saveApi}/update/${editId}`, payload);
+        await axios.put(`${saveApi}/update/${editId}`, payload, { headers: getHeaders() });
         toast.success("Updated successfully");
       } else {
-        await axios.post(`${saveApi}/insert`, payload);
+        await axios.post(`${saveApi}/insert`, payload, { headers: getHeaders() });
         toast.success("Inserted successfully");
       }
       resetForm();
@@ -127,14 +132,28 @@ export default function CommonMasterPage({
     try {
       await axios.put(`${saveApi}/status/${id}`, {
         status: currentStatus === 1 ? 0 : 1,
-      });
+      }, { headers: getHeaders() });
       setData((prevData) =>
         prevData.map((item) =>
           item.id === id ? { ...item, status: currentStatus === 1 ? 0 : 1 } : item
         )
       );
+      toast.success("Status updated successfully");
     } catch (err) {
       console.error("Error updating status:", err);
+      toast.error("Error updating status");
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this item?")) return;
+    try {
+      await axios.delete(`${saveApi}/delete/${id}`, { headers: getHeaders() });
+      toast.success("Deleted successfully");
+      fetchData();
+    } catch (err) {
+      console.error("Error deleting:", err);
+      toast.error("Error deleting data");
     }
   };
 
@@ -153,14 +172,16 @@ export default function CommonMasterPage({
   const handleCheckboxChange = async (id, currentDefault) => {
     const newDefault = currentDefault === 1 ? 0 : 1;
     try {
-      await axios.put(`${saveApi}/default/${id}`, { default: newDefault });
+      await axios.put(`${saveApi}/default/${id}`, { default: newDefault }, { headers: getHeaders() });
       setData((prev) =>
         prev.map((item) =>
           item.id === id ? { ...item, default: newDefault } : item
         )
       );
+      toast.success("Updated successfully");
     } catch (err) {
       console.error("Error updating checkbox:", err);
+      toast.error("Error updating setting");
     }
   };
 
@@ -378,13 +399,25 @@ export default function CommonMasterPage({
                     </td>
 
                     <td className="py-1 px-4 text-center">
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(item)}
-                        className="text-gray-700 hover:text-blue-700"
-                      >
-                        <i className="bi bi-pencil-square text-lg"></i>
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleEdit(item)}
+                          className="text-gray-700 hover:text-blue-700"
+                        >
+                          <i className="bi bi-pencil-square text-lg"></i>
+                        </button>
+                        {showDelete && (
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(item.id)}
+                            className="text-rose-600 hover:text-rose-800"
+                            title="Delete"
+                          >
+                            <i className="bi bi-trash text-lg"></i>
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

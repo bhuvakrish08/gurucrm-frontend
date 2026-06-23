@@ -109,14 +109,22 @@ export default function setupPage() {
               </div>
 
               {/* Expense */}
-              {/* <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                            <h2 className="text-xl font-semibold text-gray-800">Expense</h2>
-                            <hr className="border-gray-300 my-3" />
-                            <div className="flex flex-col space-y-2 text-gray-700">
-                                <Link href="setup/expense/expense-category" className="hover:text-indigo-600">Expense Category</Link>
-                                <Link href="setup/expense/expense-sub-category" className="hover:text-indigo-600">Expense Sub Category</Link>
-                            </div>
-                        </div> */}
+              {hasRoleAccess(["Super Admin", "Admin"]) && (
+                <div className="bg-orange-50 rounded-sm shadow-sm border border-gray-200 p-6">
+                  <h2 className="text-xl font-semibold text-orange-500">
+                    Expense
+                  </h2>
+                  <hr className="border-gray-300 my-3" />
+                  <div className="flex flex-col space-y-2 text-gray-700">
+                    <Link
+                      href="setup/expense/expense-category"
+                      className="hover:text-orange-600 font-semibold text-gray-700"
+                    >
+                      Expense Category
+                    </Link>
+                  </div>
+                </div>
+              )}
 
               {/* Contracts */}
               {/* <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
