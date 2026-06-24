@@ -1050,6 +1050,7 @@ export default function ProformaPage() {
                       </span>
                       <span className="text-xs text-gray-400">100%</span>
                     </div>
+                    
                   </div>
 
                   {/* ── PART A FORM ── */}
