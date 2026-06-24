@@ -200,11 +200,11 @@ export default function ProformaPage() {
       setPiData(prev => prev.map(item =>
         item.pi_id === pi_id ? { ...item, stage } : item
       ));
-toast.success(
-  stage === "completed"
-    ? "Moved to Completed successfully!"
-    : "Moved to Pending successfully!"
-);
+      toast.success(
+        stage === "completed"
+          ? "Moved to Completed successfully!"
+          : "Moved to Pending successfully!"
+      );
       fetchPI();
     } catch (err) {
       toast.error("Stage update failed");
@@ -286,7 +286,7 @@ toast.success(
       setRupees(((grandTotal * num) / 100).toFixed(2));
     }
   };
-  
+
 
   // ── SYNC ₹ → % ───────────────────────────────────────────
   const handleRupeesChange = (val) => {
@@ -1321,10 +1321,10 @@ toast.success(
                                 <div className="w-16 bg-gray-100 rounded-full h-1.5">
                                   <div
                                     className={`h-1.5 rounded-full transition-all ${Number(item.proforma_percentage) >= 100
-                                        ? "bg-green-500"
-                                        : Number(item.proforma_percentage) >= 50
-                                          ? "bg-orange-400"
-                                          : "bg-blue-400"
+                                      ? "bg-green-500"
+                                      : Number(item.proforma_percentage) >= 50
+                                        ? "bg-orange-400"
+                                        : "bg-blue-400"
                                       }`}
                                     style={{
                                       width: `${Math.min(Number(item.proforma_percentage), 100)}%`,
@@ -1463,8 +1463,8 @@ toast.success(
                             key={page}
                             onClick={() => setCurrentPage(page)}
                             className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${currentPage === page
-                                ? "bg-[#212121] text-white shadow-md shadow-black/10"
-                                : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                              ? "bg-[#212121] text-white shadow-md shadow-black/10"
+                              : "border border-slate-200 text-slate-600 hover:bg-slate-50"
                               }`}
                           >
                             {page}
@@ -1593,10 +1593,10 @@ toast.success(
                     {/* Remaining Card */}
                     <div
                       className={`rounded-xl p-3 mb-4 border transition-all ${afterRemainingPct < 0
-                          ? "bg-red-50 border-red-200"
-                          : afterRemainingPct === 0 && enteredPct > 0
-                            ? "bg-green-50 border-green-200"
-                            : "bg-blue-50 border-blue-100"
+                        ? "bg-red-50 border-red-200"
+                        : afterRemainingPct === 0 && enteredPct > 0
+                          ? "bg-green-50 border-green-200"
+                          : "bg-blue-50 border-blue-100"
                         }`}
                     >
                       <p className="text-xs font-bold uppercase tracking-wider mb-2 text-gray-500">
@@ -1606,10 +1606,10 @@ toast.success(
                         <div className="text-center">
                           <p
                             className={`text-xl font-bold ${afterRemainingPct < 0
-                                ? "text-red-600"
-                                : afterRemainingPct === 0 && enteredPct > 0
-                                  ? "text-green-600"
-                                  : "text-blue-600"
+                              ? "text-red-600"
+                              : afterRemainingPct === 0 && enteredPct > 0
+                                ? "text-green-600"
+                                : "text-blue-600"
                               }`}
                           >
                             {enteredPct > 0
@@ -1624,10 +1624,10 @@ toast.success(
                         <div className="text-center">
                           <p
                             className={`text-xl font-bold ${afterRemainingPct < 0
-                                ? "text-red-600"
-                                : afterRemainingPct === 0 && enteredPct > 0
-                                  ? "text-green-600"
-                                  : "text-blue-600"
+                              ? "text-red-600"
+                              : afterRemainingPct === 0 && enteredPct > 0
+                                ? "text-green-600"
+                                : "text-blue-600"
                               }`}
                           >
                             {enteredPct > 0
@@ -1643,10 +1643,10 @@ toast.success(
                         <div className="w-full bg-white rounded-full h-2 border border-gray-200 overflow-hidden">
                           <div
                             className={`h-2 rounded-full transition-all duration-300 ${afterRemainingPct < 0
-                                ? "bg-red-500"
-                                : paidPercentage + enteredPct >= 100
-                                  ? "bg-green-500"
-                                  : "bg-orange-400"
+                              ? "bg-red-500"
+                              : paidPercentage + enteredPct >= 100
+                                ? "bg-green-500"
+                                : "bg-orange-400"
                               }`}
                             style={{
                               width: `${Math.min(paidPercentage + enteredPct, 100)}%`,
@@ -1758,8 +1758,8 @@ toast.success(
                                   )
                                 }
                                 className={`border rounded-xl p-3 cursor-pointer transition-all select-none ${isLatest
-                                    ? "border-orange-400 bg-orange-50 shadow-sm"
-                                    : "hover:bg-gray-50 border-gray-200"
+                                  ? "border-orange-400 bg-orange-50 shadow-sm"
+                                  : "hover:bg-gray-50 border-gray-200"
                                   }`}
                               >
                                 <div className="flex justify-between items-center">
@@ -1873,10 +1873,10 @@ toast.success(
                       updateLoading
                     }
                     className={`px-6 py-2 rounded-xl text-sm font-semibold text-white transition-all shadow-md flex items-center justify-center gap-2 ${(afterRemainingPct < 0 && enteredPct > 0) ||
-                        submitLoading ||
-                        updateLoading
-                        ? "bg-gray-300 cursor-not-allowed shadow-none"
-                        : "bg-orange-500 hover:bg-orange-600 shadow-orange-200"
+                      submitLoading ||
+                      updateLoading
+                      ? "bg-gray-300 cursor-not-allowed shadow-none"
+                      : "bg-orange-500 hover:bg-orange-600 shadow-orange-200"
                       }`}
                   >
                     {(submitLoading || updateLoading) ? (

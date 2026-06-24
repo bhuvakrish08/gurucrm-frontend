@@ -61,6 +61,93 @@ function formatDate(value) {
   })
 }
 
+function SearchableSelect({ value, onChange, options, placeholder, className }) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const containerRef = React.useRef(null);
+
+  const filteredOptions = options.filter(option => 
+    option.label.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  React.useEffect(() => {
+    function handleClickOutside(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setIsOpen(false);
+        setSearchTerm("");
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSelect = (option) => {
+    onChange(option.value);
+    setSearchTerm("");
+    setIsOpen(false);
+  };
+
+  const selectedOption = options.find(opt => opt.value === value);
+
+  const highlightMatch = (text, query) => {
+    if (!query) return text;
+    const parts = text.split(new RegExp(`(${query})`, 'gi'));
+    return (
+      <span>
+        {parts.map((part, index) => 
+          part.toLowerCase() === query.toLowerCase() 
+            ? <mark key={index} className="bg-amber-200 font-semibold text-slate-900 p-0.5 rounded">{part}</mark>
+            : part
+        )}
+      </span>
+    );
+  };
+
+  return (
+    <div ref={containerRef} className="relative w-full">
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        className={className || "w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-700 cursor-pointer flex justify-between items-center"}
+      >
+        <span className={selectedOption ? "text-slate-800" : "text-slate-400"}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <i className={`bi bi-chevron-down transition-transform duration-200 ${isOpen ? 'rotate-180' : ''} text-slate-400 ml-2`}></i>
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-[100] mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto flex flex-col p-2 gap-1">
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-2 border border-slate-100 rounded-lg text-xs outline-none focus:ring-1 focus:ring-orange-500/20 focus:border-orange-500 mb-1 text-slate-800"
+            autoFocus
+            onClick={(e) => e.stopPropagation()}
+          />
+          {filteredOptions.length === 0 ? (
+            <div className="text-xs text-slate-400 text-center py-2">No matches found</div>
+          ) : (
+            filteredOptions.map((option) => (
+              <div
+                key={option.value}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSelect(option);
+                }}
+                className={`p-2 hover:bg-orange-50 rounded-lg text-xs cursor-pointer text-slate-700 hover:text-orange-950 transition-colors ${value === option.value ? 'bg-orange-50 font-bold text-orange-950' : ''}`}
+              >
+                {highlightMatch(option.label, searchTerm)}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Page() {
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
@@ -173,6 +260,7 @@ function Page() {
   const [editReference, setEditReference] = useState("")
   const [editSource, setEditSource] = useState("")
   const [editGrandTotal, setEditGrandTotal] = useState("")
+  const [editAmount, setEditAmount] = useState("")
   const [savingEdit, setSavingEdit] = useState(false)
   const [editModalError, setEditModalError] = useState(null)
 
@@ -335,8 +423,8 @@ function Page() {
   const updatePercentage = (index, value) => {
     const val = parseFloat(value)
     const pct = isNaN(val) ? 0 : val
-    const grandTotal = Number(selectedProject?.grand_total || 0)
-    const amount = grandTotal * (pct / 100)
+    const baseAmount = Number(selectedProject?.amount || 0)
+    const amount = baseAmount * (pct / 100)
 
     setAssignedArchitects(prev => {
       const copy = [...prev]
@@ -349,8 +437,8 @@ function Page() {
   const updateAmount = (index, value) => {
     const val = parseFloat(value)
     const amount = isNaN(val) ? 0 : val
-    const grandTotal = Number(selectedProject?.grand_total || 0)
-    const pct = grandTotal > 0 ? (amount / grandTotal) * 100 : 0
+    const baseAmount = Number(selectedProject?.amount || 0)
+    const pct = baseAmount > 0 ? (amount / baseAmount) * 100 : 0
 
     setAssignedArchitects(prev => {
       const copy = [...prev]
@@ -571,6 +659,7 @@ function Page() {
     setEditReference(project.reference || "")
     setEditSource(project.source || "")
     setEditGrandTotal(project.grand_total === 0 || project.grand_total === "0" || project.grand_total === "0.00" ? "" : project.grand_total)
+    setEditAmount(project.amount === 0 || project.amount === "0" || project.amount === "0.00" ? "" : project.amount)
     setEditModalError(null)
     setShowEditModal(true)
   }
@@ -591,7 +680,8 @@ function Page() {
           customer_name: editCustomerName,
           reference: editReference,
           source: editSource,
-          grand_total: parseFloat(editGrandTotal) || 0
+          grand_total: parseFloat(editGrandTotal) || 0,
+          amount: parseFloat(editAmount) || 0
         }),
       })
 
@@ -610,6 +700,7 @@ function Page() {
             reference: json.data.reference,
             source: json.data.source,
             grand_total: json.data.grand_total,
+            amount: json.data.amount,
             net_revenue_amount: json.data.net_revenue_amount
           }
         }
@@ -683,8 +774,8 @@ function Page() {
               <button
                 onClick={() => setViewMode("list")}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${viewMode === 'list'
-                    ? 'bg-white text-slate-800 shadow-md scale-100'
-                    : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white text-slate-800 shadow-md scale-100'
+                  : 'text-slate-500 hover:text-slate-700'
                   }`}
               >
                 <Briefcase size={13} />
@@ -693,8 +784,8 @@ function Page() {
               <button
                 onClick={() => setViewMode("analytics")}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${viewMode === 'analytics'
-                    ? 'bg-white text-orange-600 shadow-md scale-100'
-                    : 'text-slate-500 hover:text-slate-700'
+                  ? 'bg-white text-orange-600 shadow-md scale-100'
+                  : 'text-slate-500 hover:text-slate-700'
                   }`}
               >
                 <BarChart2 size={13} />
@@ -925,8 +1016,8 @@ function Page() {
                                   key={t}
                                   onClick={() => setExpenseTimeframe(t)}
                                   className={`px-3 py-1 rounded-md text-[10px] font-bold capitalize transition-all cursor-pointer ${expenseTimeframe === t
-                                      ? 'bg-white text-slate-800 shadow-sm'
-                                      : 'text-slate-500 hover:text-slate-700'
+                                    ? 'bg-white text-slate-800 shadow-sm'
+                                    : 'text-slate-500 hover:text-slate-700'
                                     }`}
                                 >
                                   {t}
@@ -1019,21 +1110,21 @@ function Page() {
                           <tr>
                             <th className="py-2.5 px-4">Company Name</th>
                             <th className="py-2.5 px-4">Customer Name</th>
-                            <th className="py-2.5 px-4 text-right">Grand Total</th>
+                            <th className="py-2.5 px-4 text-right">Amount</th>
                             <th className="py-2.5 px-4 text-right">Net Revenue</th>
                             <th className="py-2.5 px-4 w-48">Profit Margin %</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-slate-700 bg-white">
                           {analyticsData.topProjects.map((p, idx) => {
-                            const marginPct = p.grand_total > 0
-                              ? Math.round((p.net_revenue_amount / p.grand_total) * 100)
+                            const marginPct = p.amount > 0
+                              ? Math.round((p.net_revenue_amount / p.amount) * 100)
                               : 0;
                             return (
                               <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                                 <td className="py-2.5 px-4 font-semibold text-slate-800">{p.company_name || '-'}</td>
                                 <td className="py-2.5 px-4 text-xs text-slate-500">{p.customer_name || '-'}</td>
-                                <td className="py-2.5 px-4 text-right font-medium">{formatCurrency(p.grand_total)}</td>
+                                <td className="py-2.5 px-4 text-right font-medium">{formatCurrency(p.amount)}</td>
                                 <td className="py-2.5 px-4 text-right font-bold text-emerald-600">{formatCurrency(p.net_revenue_amount)}</td>
                                 <td className="py-2.5 px-4">
                                   <div className="flex items-center gap-2">
@@ -1064,6 +1155,9 @@ function Page() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      ID
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                       Quotation No
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
@@ -1083,6 +1177,9 @@ function Page() {
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
                       Grand Total
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
+                      Amount
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
                       Architecture Net
@@ -1105,7 +1202,7 @@ function Page() {
                 <tbody className="divide-y divide-gray-100">
                   {loading && (
                     <tr>
-                      <td colSpan={12} className="px-4 py-8 text-center text-sm text-gray-500">
+                      <td colSpan={14} className="px-4 py-8 text-center text-sm text-gray-500">
                         Loading projects...
                       </td>
                     </tr>
@@ -1113,7 +1210,7 @@ function Page() {
 
                   {!loading && error && (
                     <tr>
-                      <td colSpan={12} className="px-4 py-8 text-center text-sm text-red-600">
+                      <td colSpan={14} className="px-4 py-8 text-center text-sm text-red-600">
                         Error: {error}
                       </td>
                     </tr>
@@ -1121,7 +1218,7 @@ function Page() {
 
                   {!loading && !error && projects.length === 0 && (
                     <tr>
-                      <td colSpan={12} className="px-4 py-8 text-center text-sm text-gray-500">
+                      <td colSpan={14} className="px-4 py-8 text-center text-sm text-gray-500">
                         No projects found.
                       </td>
                     </tr>
@@ -1129,8 +1226,11 @@ function Page() {
 
                   {!loading &&
                     !error &&
-                    projects.map((project) => (
+                    projects.map((project, index) => (
                       <tr key={project.id} className="hover:bg-gray-50">
+                        <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-500">
+                          {index + 1}
+                        </td>
                         <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
                           {project.quotation_no || '-'}
                         </td>
@@ -1151,6 +1251,9 @@ function Page() {
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-gray-900">
                           {formatCurrency(project.grand_total)}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-gray-900">
+                          {formatCurrency(project.amount)}
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-gray-700">
                           <div className="flex items-center justify-end gap-1">
@@ -1191,13 +1294,7 @@ function Page() {
                             >
                               <i className="bi bi-eye-fill"></i>
                             </button>
-                            <button
-                              onClick={() => handleEditProject(project)}
-                              className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-100 transition-all border border-amber-200 cursor-pointer"
-                              title="Edit Project"
-                            >
-                              <i className="bi bi-pencil-fill"></i>
-                            </button>
+
                             <button
                               onClick={() => handleDeleteProject(project.id)}
                               className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-all border border-rose-200 cursor-pointer"
@@ -1258,32 +1355,38 @@ function Page() {
               ) : (
                 <>
                   {/* Financial Overview Card */}
-                  <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 grid grid-cols-3 gap-4">
+                  <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 grid grid-cols-4 gap-4">
                     <div className="text-center p-2">
                       <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Grand Total</span>
-                      <p className="text-lg font-bold text-slate-900 mt-1">
+                      <p className="text-sm font-bold text-slate-900 mt-1">
                         {formatCurrency(selectedProject?.grand_total || 0)}
                       </p>
                     </div>
-                    <div className="text-center p-2 border-x border-slate-200">
+                    <div className="text-center p-2 border-l border-slate-200">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Base Amount</span>
+                      <p className="text-sm font-bold text-slate-900 mt-1">
+                        {formatCurrency(selectedProject?.amount || 0)}
+                      </p>
+                    </div>
+                    <div className="text-center p-2 border-l border-slate-200">
                       <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Commission Net</span>
-                      <p className="text-lg font-bold text-orange-600 mt-1">
+                      <p className="text-sm font-bold text-orange-600 mt-1">
                         {formatCurrency(
                           assignedArchitects.reduce((sum, arch) => {
                             const pct = Number(arch.percentage) || 0;
-                            return sum + (Number(selectedProject?.grand_total || 0) * pct / 100);
+                            return sum + (Number(selectedProject?.amount || 0) * pct / 100);
                           }, 0)
                         )}
                       </p>
                     </div>
-                    <div className="text-center p-2">
+                    <div className="text-center p-2 border-l border-slate-200">
                       <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Net Balance</span>
-                      <p className="text-lg font-bold text-emerald-600 mt-1">
+                      <p className="text-sm font-bold text-emerald-600 mt-1">
                         {formatCurrency(
-                          Number(selectedProject?.grand_total || 0) -
+                          Number(selectedProject?.amount || 0) -
                           assignedArchitects.reduce((sum, arch) => {
                             const pct = Number(arch.percentage) || 0;
-                            return sum + (Number(selectedProject?.grand_total || 0) * pct / 100);
+                            return sum + (Number(selectedProject?.amount || 0) * pct / 100);
                           }, 0)
                         )}
                       </p>
@@ -1295,17 +1398,12 @@ function Page() {
                     <label className="block text-sm font-semibold text-slate-800">
                       Add Architect to Project
                     </label>
-                    <div className="relative">
-                      <select
-                        onChange={(e) => {
-                          addArchitect(e.target.value);
-                          e.target.value = ""; // Reset dropdown
+                      <SearchableSelect
+                        value=""
+                        onChange={(val) => {
+                          if (val) addArchitect(val);
                         }}
-                        className="w-full p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-700 bg-white shadow-sm"
-                        defaultValue=""
-                      >
-                        <option value="" disabled>-- Select Architect to Assign --</option>
-                        {allArchitects
+                        options={allArchitects
                           .filter(
                             (a) =>
                               Number(a.status) === 1 &&
@@ -1315,13 +1413,13 @@ function Page() {
                                   assigned.architecture_name === a.name
                               )
                           )
-                          .map((a) => (
-                            <option key={a.id} value={a.id}>
-                              {a.name} ({a.email || 'No Email'})
-                            </option>
-                          ))}
-                      </select>
-                    </div>
+                          .map((a) => ({
+                            value: a.id,
+                            label: `${a.name} (${a.email || 'No Email'})`
+                          }))}
+                        placeholder="-- Select Architect to Assign --"
+                        className="w-full p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none text-slate-700 bg-white shadow-sm cursor-pointer flex justify-between items-center"
+                      />
                   </div>
 
                   {/* Assigned Architectures Table */}
@@ -1354,8 +1452,10 @@ function Page() {
                                     <div className="font-semibold text-slate-800">
                                       {arch.architecture_name || arch.name}
                                     </div>
-                                    <div className="text-[11px] text-slate-400 mt-0.5">
-                                      {arch.email || arch.mobile_no || 'No Contact Info'}
+                                    <div className="text-[11px] text-slate-400 mt-0.5 flex flex-col gap-0.5">
+                                      {arch.email && <div>{arch.email}</div>}
+                                      {arch.mobile_no && <div>{arch.mobile_no}</div>}
+                                      {!arch.email && !arch.mobile_no && <div>No Contact Info</div>}
                                     </div>
                                   </td>
                                   <td className="py-3 px-4">
@@ -1474,11 +1574,17 @@ function Page() {
               ) : (
                 <>
                   {/* Financial Stats Summary */}
-                  <div className="grid grid-cols-4 divide-x divide-slate-100 border border-slate-100 rounded-2xl bg-slate-50/50 p-4 shadow-inner">
+                  <div className="grid grid-cols-5 divide-x divide-slate-100 border border-slate-100 rounded-2xl bg-slate-50/50 p-4 shadow-inner">
                     <div className="text-center p-1">
                       <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Grand Total</span>
                       <p className="text-sm font-bold text-slate-800 mt-1">
                         {formatCurrency(selectedProject?.grand_total)}
+                      </p>
+                    </div>
+                    <div className="text-center p-1">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Base Amount</span>
+                      <p className="text-sm font-bold text-slate-800 mt-1">
+                        {formatCurrency(selectedProject?.amount)}
                       </p>
                     </div>
                     <div className="text-center p-1">
@@ -1499,7 +1605,7 @@ function Page() {
                       <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Net Revenue</span>
                       <p className="text-sm font-bold text-emerald-600 mt-1">
                         {formatCurrency(
-                          Number(selectedProject?.grand_total || 0) -
+                          Number(selectedProject?.amount || 0) -
                           Number(selectedProject?.architecture_net_amount || 0) -
                           projectExpenses.reduce((sum, exp) => sum + Number(exp.expense_amount || 0), 0)
                         )}
@@ -1517,19 +1623,13 @@ function Page() {
                         <label className="block text-[11px] font-semibold text-slate-500 mb-1">
                           Category <span className="text-rose-500">*</span>
                         </label>
-                        <select
+                        <SearchableSelect
                           value={newExpenseCategory}
-                          onChange={(e) => setNewExpenseCategory(e.target.value)}
-                          onKeyDown={handleExpenseKeyDown}
-                          className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-700"
-                        >
-                          <option value="">-- Category --</option>
-                          {activeCategories.map((cat) => (
-                            <option key={cat.id} value={cat.name}>
-                              {cat.name}
-                            </option>
-                          ))}
-                        </select>
+                          onChange={(val) => setNewExpenseCategory(val)}
+                          options={activeCategories.map((cat) => ({ value: cat.name, label: cat.name }))}
+                          placeholder="-- Category --"
+                          className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-700 cursor-pointer flex justify-between items-center"
+                        />
                       </div>
 
                       <div>
@@ -1675,8 +1775,8 @@ function Page() {
               <button
                 onClick={() => setViewTab("analytics")}
                 className={`py-3 px-4 text-xs font-bold border-b-2 transition-all ${viewTab === "analytics"
-                    ? "border-orange-500 text-orange-600 font-extrabold"
-                    : "border-transparent text-slate-500 hover:text-slate-700"
+                  ? "border-orange-500 text-orange-600 font-extrabold"
+                  : "border-transparent text-slate-500 hover:text-slate-700"
                   }`}
               >
                 Analytics Dashboard
@@ -1684,8 +1784,8 @@ function Page() {
               <button
                 onClick={() => setViewTab("details")}
                 className={`py-3 px-4 text-xs font-bold border-b-2 transition-all ${viewTab === "details"
-                    ? "border-orange-500 text-orange-600 font-extrabold"
-                    : "border-transparent text-slate-500 hover:text-slate-700"
+                  ? "border-orange-500 text-orange-600 font-extrabold"
+                  : "border-transparent text-slate-500 hover:text-slate-700"
                   }`}
               >
                 Details
@@ -1693,8 +1793,8 @@ function Page() {
               <button
                 onClick={() => setViewTab("architectures")}
                 className={`py-3 px-4 text-xs font-bold border-b-2 transition-all ${viewTab === "architectures"
-                    ? "border-orange-500 text-orange-600 font-extrabold"
-                    : "border-transparent text-slate-500 hover:text-slate-700"
+                  ? "border-orange-500 text-orange-600 font-extrabold"
+                  : "border-transparent text-slate-500 hover:text-slate-700"
                   }`}
               >
                 Architecture Commissions
@@ -1702,8 +1802,8 @@ function Page() {
               <button
                 onClick={() => setViewTab("expenses")}
                 className={`py-3 px-4 text-xs font-bold border-b-2 transition-all ${viewTab === "expenses"
-                    ? "border-orange-500 text-orange-600 font-extrabold"
-                    : "border-transparent text-slate-500 hover:text-slate-700"
+                  ? "border-orange-500 text-orange-600 font-extrabold"
+                  : "border-transparent text-slate-500 hover:text-slate-700"
                   }`}
               >
                 Project Expenses
@@ -1722,8 +1822,8 @@ function Page() {
                   {viewTab === "analytics" && (() => {
                     const totalArchCom = viewArchitectures.reduce((sum, arch) => sum + (Number(arch.architecture_amount) || 0), 0);
                     const totalExpenses = viewExpenses.reduce((sum, exp) => sum + (Number(exp.expense_amount) || 0), 0);
-                    const netRev = Number(selectedProject.grand_total || 0) - totalArchCom - totalExpenses;
-                    const margin = selectedProject.grand_total > 0 ? ((netRev / selectedProject.grand_total) * 100).toFixed(1) : 0;
+                    const netRev = Number(selectedProject.amount || 0) - totalArchCom - totalExpenses;
+                    const margin = selectedProject.amount > 0 ? ((netRev / selectedProject.amount) * 100).toFixed(1) : 0;
                     return (
                       <div className="space-y-6">
                         {/* KPI Grid */}
@@ -1737,7 +1837,7 @@ function Page() {
                               </div>
                             </div>
                             <div>
-                              <h3 className="text-base font-extrabold text-slate-800">{formatCurrency(selectedProject.grand_total)}</h3>
+                              <h3 className="text-base font-extrabold text-slate-800">{formatCurrency(selectedProject.amount)}</h3>
                               <p className="text-[9px] text-slate-400 font-medium mt-0.5">Initial contract value</p>
                             </div>
                           </div>
@@ -1753,7 +1853,7 @@ function Page() {
                             <div>
                               <h3 className="text-base font-extrabold text-slate-800">{formatCurrency(totalArchCom)}</h3>
                               <p className="text-[9px] text-slate-500 font-bold mt-0.5">
-                                {selectedProject.grand_total > 0 ? ((totalArchCom / selectedProject.grand_total) * 100).toFixed(1) : 0}% of project value
+                                {selectedProject.amount > 0 ? ((totalArchCom / selectedProject.amount) * 100).toFixed(1) : 0}% of project value
                               </p>
                             </div>
                           </div>
@@ -1769,7 +1869,7 @@ function Page() {
                             <div>
                               <h3 className="text-base font-extrabold text-slate-800">{formatCurrency(totalExpenses)}</h3>
                               <p className="text-[9px] text-slate-500 font-bold mt-0.5">
-                                {selectedProject.grand_total > 0 ? ((totalExpenses / selectedProject.grand_total) * 100).toFixed(1) : 0}% of project value
+                                {selectedProject.amount > 0 ? ((totalExpenses / selectedProject.amount) * 100).toFixed(1) : 0}% of project value
                               </p>
                             </div>
                           </div>
@@ -1805,8 +1905,8 @@ function Page() {
                                     key={t}
                                     onClick={() => setViewModalTimeframe(t)}
                                     className={`px-2.5 py-0.5 rounded-md text-[9px] font-bold capitalize transition-all cursor-pointer ${viewModalTimeframe === t
-                                        ? 'bg-white text-slate-800 shadow-sm'
-                                        : 'text-slate-500 hover:text-slate-700'
+                                      ? 'bg-white text-slate-800 shadow-sm'
+                                      : 'text-slate-500 hover:text-slate-700'
                                       }`}
                                   >
                                     {t}
@@ -1928,7 +2028,13 @@ function Page() {
                                   {viewArchitectures.map((arch, idx) => (
                                     <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                                       <td className="py-2.5 px-3 font-semibold text-slate-800">{arch.architecture_name}</td>
-                                      <td className="py-2.5 px-3 text-slate-400">{arch.email || arch.mobile_no || '-'}</td>
+                                      <td className="py-2.5 px-3 text-slate-400">
+                                        <div className="flex flex-col gap-0.5">
+                                          {arch.email && <div>{arch.email}</div>}
+                                          {arch.mobile_no && <div>{arch.mobile_no}</div>}
+                                          {!arch.email && !arch.mobile_no && <div>-</div>}
+                                        </div>
+                                      </td>
                                       <td className="py-2.5 px-3 text-center font-bold text-slate-500">{arch.percentage}%</td>
                                       <td className="py-2.5 px-3 text-right font-bold text-amber-600">{formatCurrency(arch.architecture_amount)}</td>
                                     </tr>
@@ -1974,8 +2080,8 @@ function Page() {
                       <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 space-y-4">
                         <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider border-b border-slate-200/60 pb-2">Financial Breakdown</h4>
                         <div className="flex justify-between items-center text-sm">
-                          <span className="text-slate-500">Grand Total</span>
-                          <span className="font-semibold text-slate-800">{formatCurrency(selectedProject.grand_total)}</span>
+                          <span className="text-slate-500">Base Amount</span>
+                          <span className="font-semibold text-slate-800">{formatCurrency(selectedProject.amount)}</span>
                         </div>
                         <div className="flex justify-between items-center text-sm text-rose-600">
                           <span>(-) Architecture Net</span>
@@ -2155,6 +2261,17 @@ function Page() {
                     type="number"
                     value={editGrandTotal}
                     onChange={(e) => setEditGrandTotal(e.target.value)}
+                    placeholder="0"
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-orange-500 focus:outline-none transition-colors no-spinner"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Base Amount</label>
+                  <input
+                    type="number"
+                    value={editAmount}
+                    onChange={(e) => setEditAmount(e.target.value)}
                     placeholder="0"
                     className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-orange-500 focus:outline-none transition-colors no-spinner"
                   />

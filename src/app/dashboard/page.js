@@ -814,7 +814,7 @@ export default function Dashboard() {
   const getPaddedProformaData = (isCompletedData = false) => {
     const periods = [];
     const now = new Date();
-    
+
     if (salesTimeframe === "weekly") {
       for (let i = 3; i >= 0; i--) {
         const d = new Date(now);
@@ -840,7 +840,7 @@ export default function Dashboard() {
     }
 
     const rawData = isCompletedData ? processCompletedProformaData() : processPendingProformaData();
-    
+
     periods.forEach(p => {
       const match = rawData.find(r => r.name === p.name);
       if (match) {
@@ -857,7 +857,7 @@ export default function Dashboard() {
   const tasksPriorityData = processTasksPriority();
   const quotationStatusData = processQuotationStatus();
   const paymentProgressData = processPaymentProgress();
-  
+
   const pendingData = getPaddedProformaData(false);
   const completedData = getPaddedProformaData(true);
   const pendingTotal = pendingData.reduce((acc, curr) => acc + curr.amount, 0);
@@ -1622,8 +1622,8 @@ export default function Dashboard() {
                         <div className="flex flex-col min-w-0 pr-2">
                           <div className="flex items-center gap-1.5 mb-0.5">
                             <span className={`px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter ${act.type === "Lead"
-                                ? "bg-indigo-100 text-indigo-600 border border-indigo-200/50"
-                                : "bg-emerald-100 text-emerald-600 border border-emerald-200/50"
+                              ? "bg-indigo-100 text-indigo-600 border border-indigo-200/50"
+                              : "bg-emerald-100 text-emerald-600 border border-emerald-200/50"
                               }`}>
                               {act.type}
                             </span>
@@ -1646,10 +1646,10 @@ export default function Dashboard() {
                             </span>
                           )}
                           <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-tight mt-1 ${act.status === "Won" || act.status === "Approved"
-                              ? "bg-green-100 text-green-700"
-                              : act.status === "Lost"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-amber-100 text-amber-700"
+                            ? "bg-green-100 text-green-700"
+                            : act.status === "Lost"
+                              ? "bg-red-100 text-red-700"
+                              : "bg-amber-100 text-amber-700"
                             }`}>
                             {act.status}
                           </span>
@@ -2831,10 +2831,10 @@ export default function Dashboard() {
                             Paid: {pi.proforma_percentage || 0}%
                           </span>
                           <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-tight mt-1 ${(pi.status || "").toLowerCase() === "paid" || (pi.stage || "").toLowerCase() === "completed"
-                              ? "bg-emerald-100 text-emerald-700"
-                              : (pi.status || "").toLowerCase() === "cancelled"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-blue-100 text-blue-700"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : (pi.status || "").toLowerCase() === "cancelled"
+                              ? "bg-red-100 text-red-700"
+                              : "bg-blue-100 text-blue-700"
                             }`}>
                             {pi.status || "Draft"}
                           </span>
@@ -3243,10 +3243,10 @@ export default function Dashboard() {
                     <div className="flex items-center gap-1.5">
                       <span
                         className={`px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-tighter ${q.quotation_status === "Approved"
-                            ? "bg-green-100 text-green-700"
-                            : q.quotation_status === "Lost"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-blue-100 text-blue-700"
+                          ? "bg-green-100 text-green-700"
+                          : q.quotation_status === "Lost"
+                            ? "bg-red-100 text-red-700"
+                            : "bg-blue-100 text-blue-700"
                           }`}
                       >
                         {q.quotation_status || "Pending"}
@@ -3567,7 +3567,7 @@ export default function Dashboard() {
                         } else {
                           timeString = `${avgHours.toFixed(1)} hours`;
                         }
-                        
+
                         let statusDot = "bg-green-500";
                         if (avgHours >= 48) statusDot = "bg-red-500";
                         else if (avgHours >= 24) statusDot = "bg-yellow-500";
