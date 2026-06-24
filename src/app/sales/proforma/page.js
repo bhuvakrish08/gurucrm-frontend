@@ -162,20 +162,8 @@ export default function ProformaPage() {
   const updateStage = async (pi_id, stage) => {
     try {
       await axios.put(`${API}/api/pi/update-stage/${pi_id}`, { stage });
-<<<<<<< Updated upstream
-      // Local state update - backend fix ન થાય ત્યાં સુધી
-      setPiData(prev => prev.map(item =>
-        item.pi_id === pi_id ? { ...item, stage } : item
-      ));
-      toast.success(
-        stage === "completed"
-          ? "Moved to Completed successfully!"
-          : "Moved to Pending successfully!"
-      );
-=======
       setPiData((prev) => prev.map((item) => item.pi_id === pi_id ? { ...item, stage } : item));
       toast.success(stage === "completed" ? "Moved to Completed!" : "Moved to Pending!");
->>>>>>> Stashed changes
       fetchPI();
     } catch (err) {
       toast.error("Stage update failed");
@@ -248,10 +236,6 @@ export default function ProformaPage() {
       setAmt9(((base9 * num) / 100).toFixed(2));
     }
   };
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
 
   const handleAmt9Change = (val) => {
     setAmt9(val);
@@ -868,55 +852,6 @@ export default function ProformaPage() {
                                   </div>
                                 ))}
                               </div>
-<<<<<<< Updated upstream
-                            </td>
-                            <td className="py-3 px-3 text-gray-500">
-                              {item.source || "-"}
-                            </td>
-                            <td className="py-3 px-3 text-gray-500">
-                              {item.reference || "-"}
-                            </td>
-                            <td className="py-3 px-3">
-                              {item.assignee ? (
-                                <div className="flex gap-1 items-center">
-                                  {String(item.assignee)
-                                    .split(",")
-                                    .map((name, i) => (
-                                      <div
-                                        key={i}
-                                        title={name.trim()}
-                                        className="px-3 py-1.5 bg-blue-800 text-white rounded-full font-semibold text-sm flex justify-center items-center min-w-[28px] text-center select-none"
-                                      >
-                                        {name.trim().charAt(0).toUpperCase()}
-                                      </div>
-                                    ))}
-                                </div>
-                              ) : (
-                                "-"
-                              )}
-                            </td>
-                            <td className="py-3 px-3 font-medium text-gray-800">
-                              Rs.{Number(item.total).toLocaleString()}
-                            </td>
-                            <td className="py-3 px-3">
-                              <div className="flex items-center gap-2">
-                                <div className="w-16 bg-gray-100 rounded-full h-1.5">
-                                  <div
-                                    className={`h-1.5 rounded-full transition-all ${Number(item.proforma_percentage) >= 100
-                                      ? "bg-green-500"
-                                      : Number(item.proforma_percentage) >= 50
-                                        ? "bg-orange-400"
-                                        : "bg-blue-400"
-                                      }`}
-                                    style={{
-                                      width: `${Math.min(Number(item.proforma_percentage), 100)}%`,
-                                    }}
-                                  ></div>
-                                </div>
-                                <span className="font-semibold text-gray-800 text-xs">
-                                  {item.proforma_percentage}%
-                                </span>
-=======
                             ) : "-"}
                           </td>
                           <td className="py-3 px-3 font-medium text-gray-800">Rs.{Number(item.total).toLocaleString()}</td>
@@ -924,7 +859,6 @@ export default function ProformaPage() {
                             <div className="flex items-center gap-2">
                               <div className="w-16 bg-gray-100 rounded-full h-1.5">
                                 <div className={`h-1.5 rounded-full transition-all ${Number(item.proforma_percentage) >= 100 ? "bg-green-500" : Number(item.proforma_percentage) >= 50 ? "bg-orange-400" : "bg-blue-400"}`} style={{ width: `${Math.min(Number(item.proforma_percentage), 100)}%` }}></div>
->>>>>>> Stashed changes
                               </div>
                               <span className="font-semibold text-gray-800 text-xs">{item.proforma_percentage}%</span>
                             </div>
@@ -986,38 +920,10 @@ export default function ProformaPage() {
                       <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed">
                         <i className="bi bi-chevron-left text-sm"></i>
                       </button>
-<<<<<<< Updated upstream
-
-                      <div className="flex items-center gap-1.5">
-                        {getSlidingPages().map((page) => (
-                          <button
-                            key={page}
-                            onClick={() => setCurrentPage(page)}
-                            className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${currentPage === page
-                              ? "bg-[#212121] text-white shadow-md shadow-black/10"
-                              : "border border-slate-200 text-slate-600 hover:bg-slate-50"
-                              }`}
-                          >
-                            {page}
-                          </button>
-                        ))}
-                      </div>
-
-                      <button
-                        onClick={() =>
-                          setCurrentPage((prev) =>
-                            Math.min(prev + 1, totalPages),
-                          )
-                        }
-                        disabled={currentPage === totalPages}
-                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-=======
                       {getSlidingPages().map((page) => (
                         <button key={page} onClick={() => setCurrentPage(page)} className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${currentPage === page ? "bg-[#212121] text-white shadow-md" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}>{page}</button>
                       ))}
                       <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed">
->>>>>>> Stashed changes
                         <i className="bi bi-chevron-right text-sm"></i>
                       </button>
                     </div>
@@ -1079,295 +985,6 @@ export default function ProformaPage() {
               {/* Body */}
               <div className="flex flex-col md:flex-row">
 
-<<<<<<< Updated upstream
-                    {/* Remaining Card */}
-                    <div
-                      className={`rounded-xl p-3 mb-4 border transition-all ${afterRemainingPct < 0
-                        ? "bg-red-50 border-red-200"
-                        : afterRemainingPct === 0 && enteredPct > 0
-                          ? "bg-green-50 border-green-200"
-                          : "bg-blue-50 border-blue-100"
-                        }`}
-                    >
-                      <p className="text-xs font-bold uppercase tracking-wider mb-2 text-gray-500">
-                        Remaining After This Entry
-                      </p>
-                      <div className="flex justify-between items-center">
-                        <div className="text-center">
-                          <p
-                            className={`text-xl font-bold ${afterRemainingPct < 0
-                              ? "text-red-600"
-                              : afterRemainingPct === 0 && enteredPct > 0
-                                ? "text-green-600"
-                                : "text-blue-600"
-                              }`}
-                          >
-                            {enteredPct > 0
-                              ? afterRemainingPct < 0
-                                ? "Over!"
-                                : `${parseFloat(afterRemainingPct.toFixed(2))}%`
-                              : `${parseFloat(remainingPercentage.toFixed(2))}%`}
-                          </p>
-                          <p className="text-xs text-gray-400">Percentage</p>
-                        </div>
-                        <div className="w-px h-10 bg-gray-200"></div>
-                        <div className="text-center">
-                          <p
-                            className={`text-xl font-bold ${afterRemainingPct < 0
-                              ? "text-red-600"
-                              : afterRemainingPct === 0 && enteredPct > 0
-                                ? "text-green-600"
-                                : "text-blue-600"
-                              }`}
-                          >
-                            {enteredPct > 0
-                              ? afterRemainingPct < 0
-                                ? "Over!"
-                                : `Rs.${Number(afterRemainingAmt).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
-                              : `Rs.${Number(remainingAmount).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
-                          </p>
-                          <p className="text-xs text-gray-400">Amount</p>
-                        </div>
-                      </div>
-                      <div className="mt-3">
-                        <div className="w-full bg-white rounded-full h-2 border border-gray-200 overflow-hidden">
-                          <div
-                            className={`h-2 rounded-full transition-all duration-300 ${afterRemainingPct < 0
-                              ? "bg-red-500"
-                              : paidPercentage + enteredPct >= 100
-                                ? "bg-green-500"
-                                : "bg-orange-400"
-                              }`}
-                            style={{
-                              width: `${Math.min(paidPercentage + enteredPct, 100)}%`,
-                            }}
-                          ></div>
-                        </div>
-                        <div className="flex justify-between mt-1">
-                          <span className="text-xs text-gray-400">
-                            {editing ? "Others" : "Paid"}:{" "}
-                            {parseFloat(paidPercentage.toFixed(2))}%
-                            {enteredPct > 0 &&
-                              ` + ${parseFloat(enteredPct.toFixed(2))}% ${editing ? "edited" : "new"}`}
-                          </span>
-                          <span className="text-xs text-gray-400">100%</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Inputs */}
-                    <div className="flex gap-3">
-                      <div className="flex-1">
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                          Percentage <span className="text-orange-500">*</span>
-                        </label>
-                        <div className="relative mt-1.5">
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={percentage}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (val === "") {
-                                handlePercentageChange("");
-                                return;
-                              }
-                              const num = Number(val);
-                              if (num >= 0 && num <= 100)
-                                handlePercentageChange(num);
-                            }}
-                            className="w-full border border-gray-200 rounded-xl pl-3 pr-8 py-2 text-sm focus:ring-1 focus:ring-orange-300 focus:border-transparent outline-none bg-gray-50 transition-all"
-                            placeholder="0"
-                          />
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
-                            %
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                          Amount <span className="text-orange-500">*</span>
-                        </label>
-                        <div className="relative mt-1.5">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
-                            Rs.
-                          </span>
-                          <input
-                            type="number"
-                            min="0"
-                            value={rupees}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (val === "") {
-                                handleRupeesChange("");
-                                return;
-                              }
-                              handleRupeesChange(Number(val));
-                            }}
-                            className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 focus:border-transparent outline-none bg-gray-50 transition-all"
-                            placeholder="0.00"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    {afterRemainingPct < 0 && enteredPct > 0 && (
-                      <p className="text-xs text-red-500 mt-2 font-medium">
-                        ⚠ Exceeds remaining by{" "}
-                        {parseFloat(Math.abs(afterRemainingPct).toFixed(2))}%
-                      </p>
-                    )}
-                  </div>
-
-                  {/* RIGHT - History */}
-                  <div className="w-full md:w-1/2 px-6 py-5 flex flex-col bg-gray-50/50">
-                    <div className="flex justify-between items-center mb-4">
-                      <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">
-                        Follow-Up History
-                      </p>
-                      <span className="text-xs bg-orange-50 text-orange-500 px-2.5 py-1 rounded-full font-semibold border border-orange-100">
-                        {selectedPI.follow_ups?.length || 0} record(s)
-                      </span>
-                    </div>
-                    <div className="space-y-2 overflow-y-auto max-h-80">
-                      {!selectedPI.follow_ups ||
-                        selectedPI.follow_ups.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-8 text-gray-300">
-                          <i className="bi bi-clock-history text-3xl mb-2"></i>
-                          <p className="text-sm">No history found</p>
-                        </div>
-                      ) : (
-                        selectedPI.follow_ups.map((h, index) => {
-                          const isLatest = index === 0;
-                          return (
-                            <div key={h.id}>
-                              <div
-                                onClick={() =>
-                                  setActiveIndex(
-                                    index === activeIndex ? null : index,
-                                  )
-                                }
-                                className={`border rounded-xl p-3 cursor-pointer transition-all select-none ${isLatest
-                                  ? "border-orange-400 bg-orange-50 shadow-sm"
-                                  : "hover:bg-gray-50 border-gray-200"
-                                  }`}
-                              >
-                                <div className="flex justify-between items-center">
-                                  <div className="flex items-center gap-2">
-                                    {isLatest && (
-                                      <span className="text-xs bg-orange-100 text-orange-500 px-2 py-0.5 rounded-full font-semibold">
-                                        Latest
-                                      </span>
-                                    )}
-                                    <p className="font-semibold text-sm text-gray-700">
-                                      {h.proforma_percentage}% → Rs.
-                                      {Number(h.total).toLocaleString()}
-                                    </p>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs text-gray-400">
-                                      {new Date(
-                                        h.created_at,
-                                      ).toLocaleDateString("en-IN")}
-                                    </span>
-                                    {isLatest && (
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleEdit(h);
-                                        }}
-                                        className="text-gray-400 hover:text-orange-500 transition-all"
-                                      >
-                                        <i className="bi bi-pencil-square text-xs"></i>
-                                      </button>
-                                    )}
-                                    <i
-                                      className={`bi ${activeIndex === index ? "bi-chevron-up" : "bi-chevron-down"} text-gray-400 text-xs`}
-                                    ></i>
-                                  </div>
-                                </div>
-                                <p className="text-xs text-gray-400 mt-1 truncate">
-                                  NA
-                                </p>
-                              </div>
-                              {activeIndex === index && (
-                                <div className="mt-2 border border-orange-200 rounded-xl bg-gradient-to-br from-orange-50 to-white p-4 text-sm shadow-sm">
-                                  <div className="flex justify-between items-center mb-3">
-                                    <p className="font-bold text-orange-500 text-xs uppercase tracking-wide">
-                                      Details
-                                    </p>
-                                    <button
-                                      onClick={() => setActiveIndex(null)}
-                                      className="text-gray-400 hover:text-gray-600 text-xs"
-                                    >
-                                      ✕ Close
-                                    </button>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
-                                    <div>
-                                      <p className="text-xs text-gray-400 font-medium">
-                                        Percentage
-                                      </p>
-                                      <p className="font-semibold text-gray-700 text-sm mt-0.5">
-                                        {h.proforma_percentage}%
-                                      </p>
-                                    </div>
-                                    <div>
-                                      <p className="text-xs text-gray-400 font-medium">
-                                        Amount
-                                      </p>
-                                      <p className="font-semibold text-gray-700 text-sm mt-0.5">
-                                        Rs.{Number(h.total).toLocaleString()}
-                                      </p>
-                                    </div>
-                                    <div>
-                                      <p className="text-xs text-gray-400 font-medium">
-                                        Date
-                                      </p>
-                                      <p className="font-semibold text-gray-700 text-sm mt-0.5">
-                                        {new Date(
-                                          h.created_at,
-                                        ).toLocaleDateString("en-IN")}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer */}
-                <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
-                  <button
-                    onClick={() => {
-                      setShowModal(false);
-                      setEditing(null);
-                      setPercentage("");
-                      setRupees("");
-                      setActiveIndex(null);
-                    }}
-                    className="px-5 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={editing ? handleUpdate : handleSubmitFollowUp}
-                    disabled={
-                      (afterRemainingPct < 0 && enteredPct > 0) ||
-                      submitLoading ||
-                      updateLoading
-                    }
-                    className={`px-6 py-2 rounded-xl text-sm font-semibold text-white transition-all shadow-md flex items-center justify-center gap-2 ${(afterRemainingPct < 0 && enteredPct > 0) ||
-                      submitLoading ||
-                      updateLoading
-                      ? "bg-gray-300 cursor-not-allowed shadow-none"
-                      : "bg-orange-500 hover:bg-orange-600 shadow-orange-200"
-=======
                 {/* ── LEFT PANEL ── */}
                 <div className="w-full md:w-1/2 px-6 py-5 border-b md:border-b-0 md:border-r border-gray-100">
 
@@ -1379,7 +996,6 @@ export default function ProformaPage() {
                         activePartTab === "a"
                           ? "border-orange-500 text-orange-600"
                           : "border-transparent text-gray-400 hover:text-gray-600"
->>>>>>> Stashed changes
                       }`}
                     >
                       Other Charges
