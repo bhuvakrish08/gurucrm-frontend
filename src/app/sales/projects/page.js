@@ -38,7 +38,8 @@ import {
 } from 'recharts'
 
 // Set this in .env.local as: NEXT_PUBLIC_BACKEND_URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL 
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL
+ 
 
 function formatCurrency(value) {
   const num = Number(value)
