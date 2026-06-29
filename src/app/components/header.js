@@ -26,7 +26,6 @@ export default function Header() {
   const [username, setUsername] = useState("");
   const [userRole, setUserRole] = useState("");
 
-  // ✅ NEW: Today's task reminders (calendar) — { today: [...], overdue: [...] }
   const [reminders, setReminders] = useState({ today: [], overdue: [] });
   const alertedRef = useRef(new Set());
 
@@ -445,10 +444,11 @@ export default function Header() {
           </Link>
         )}
 
-
+{["Admin", "Super Admin"].includes(userRole) && (
          <Link href="/sales/projects" className="hover:text-orange-500 transition-colors">
             Projects
           </Link>
+)}
 
         {["Admin", "Super Admin"].includes(userRole) && (
           <Link href="/setup" className="hover:text-orange-500 transition-colors">

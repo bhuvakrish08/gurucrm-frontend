@@ -56,7 +56,7 @@ export default function ProformaPage() {
   const [amt18, setAmt18] = useState("");
 
   // ── ACTIVE PART TAB (a = Other Charges, b = Project Value) ──
-  const [activePartTab, setActivePartTab] = useState("a");
+  const [activePartTab, setActivePartTab] = useState("b");
 
   // ── TAB STATE ─────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState("pending");
@@ -266,11 +266,9 @@ export default function ProformaPage() {
   };
 
   // ── BASE AMOUNTS (TAX-INCLUSIVE) ──────────────────────────
-  // Base = ORIGINAL quotation split amount + its tax.
-  // Part A (Other Charges) base  = amount_9  + tax_9
-  // Part B (Project Value) base  = amount_18 + tax_18
-  // Never fall back to total_9 / total_18 — those are CONSUMED
-  // totals from follow-ups, not a base to split percentages against.
+  // split_amount_9 / split_amount_18 → quotation_splits table થી આવે (COALESCE)
+  // amount_9 / amount_18 → proforma_invoices directly
+  // base = amount + tax (tax-inclusive)
   const getBaseAmounts = (pi) => {
     const rawAmt9 = Number(pi.split_amount_9 ?? pi.amount_9 ?? 0);
     const rawAmt18 = Number(pi.split_amount_18 ?? pi.amount_18 ?? 0);
@@ -280,6 +278,15 @@ export default function ProformaPage() {
     const base9 = rawAmt9 + rawTax9;
     const base18 = rawAmt18 + rawTax18;
     return { base9, base18 };
+  };
+
+  // ── SMART DEFAULT TAB based on base amounts ───────────────
+  const getDefaultTab = (pi) => {
+    const { base9, base18 } = getBaseAmounts(pi);
+    if (base9 > 0 && base18 > 0) return "a"; // બંને છે → Part A default
+    if (base18 > 0) return "b";               // ફક્ત Part B
+    if (base9 > 0)  return "a";               // ફક્ત Part A
+    return "b";                               // fallback
   };
 
   const getUsedSplitPct = (pi, excludeId = null) => {
@@ -354,7 +361,129 @@ export default function ProformaPage() {
     setPct18("");
     setAmt18("");
     setActiveIndex(null);
-    setActivePartTab("a");
+    setActivePartTab("b");
+  };
+
+  // ── ADD FOLLOW-UP ─────────────────────────────────────────
+  // FIX: ફક્ત active (base > 0) parts validate કરો
+  const handleSubmitFollowUp = async () => {
+    const new9  = Number(pct9  || 0);
+    const new18 = Number(pct18 || 0);
+
+    const { base9: b9, base18: b18 } = getBaseAmounts(selectedPI);
+
+    // ── Active part based validation ──
+    if (b9 > 0 && b18 === 0 && new9 <= 0) {
+      toast.error("Please enter Part A (Other Charges) percentage");
+      return;
+    }
+    if (b18 > 0 && b9 === 0 && new18 <= 0) {
+      toast.error("Please enter Part B (Project Value) percentage");
+      return;
+    }
+    if (b9 > 0 && b18 > 0 && new9 <= 0 && new18 <= 0) {
+      toast.error("Please enter at least one amount (Part A or Part B)");
+      return;
+    }
+
+    const { used9, used18 } = getUsedSplitPct(selectedPI);
+
+    // ── Over-check — ફક્ત active parts ──
+    if (b9 > 0 && used9 + new9 > 100) {
+      toast.error(`Part A: Only ${(100 - used9).toFixed(2)}% remaining`);
+      return;
+    }
+    if (b18 > 0 && used18 + new18 > 100) {
+      toast.error(`Part B: Only ${(100 - used18).toFixed(2)}% remaining`);
+      return;
+    }
+
+    try {
+      setSubmitLoading(true);
+      const res = await axios.post(`${API}/api/pi/add-followup/${selectedPI.pi_id}`, {
+        percentage_9: new9,
+        percentage_18: new18,
+      });
+
+      const confirmedTotal = res.data?.total_percentage ?? (used9 + new9 + used18 + new18) / 2;
+      await updateStatus(selectedPI.pi_id, confirmedTotal);
+
+      toast.success(confirmedTotal >= 100 ? "Follow-up added & marked as Won!" : "Follow-up added successfully");
+      resetModal();
+      fetchPI();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Error");
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
+
+  // ── UPDATE FOLLOW-UP ──────────────────────────────────────
+  // FIX: ફક્ત active (base > 0) parts validate કરો
+  const handleUpdate = async () => {
+    const new9  = Number(pct9  || 0);
+    const new18 = Number(pct18 || 0);
+
+    const { base9: b9, base18: b18 } = getBaseAmounts(selectedPI);
+
+    // ── Active part based validation ──
+    if (b9 > 0 && b18 === 0 && new9 <= 0) {
+      toast.error("Enter valid percentage for Part A");
+      return;
+    }
+    if (b18 > 0 && b9 === 0 && new18 <= 0) {
+      toast.error("Enter valid percentage for Part B");
+      return;
+    }
+    if (b9 > 0 && b18 > 0 && new9 <= 0 && new18 <= 0) {
+      toast.error("Enter valid percentage for at least one part");
+      return;
+    }
+
+    const { used9, used18 } = getUsedSplitPct(selectedPI, editing.id);
+
+    // ── Over-check — ફક્ત active parts ──
+    if (b9 > 0 && used9 + new9 > 100) {
+      toast.error(`Part A: Only ${(100 - used9).toFixed(2)}% remaining`);
+      return;
+    }
+    if (b18 > 0 && used18 + new18 > 100) {
+      toast.error(`Part B: Only ${(100 - used18).toFixed(2)}% remaining`);
+      return;
+    }
+
+    try {
+      setUpdateLoading(true);
+      await axios.put(`${API}/api/pi/update-followup/${selectedPI.pi_id}/${editing.id}`, {
+        percentage_9: new9,
+        percentage_18: new18,
+      });
+
+      const grandTotal = getGrandTotal(selectedPI);
+      const { base9, base18 } = getBaseAmounts(selectedPI);
+      const newAmt9  = (base9  * new9)  / 100;
+      const newAmt18 = (base18 * new18) / 100;
+      const newTotal = newAmt9 + newAmt18;
+      const newOverall = grandTotal > 0 ? ((newTotal / grandTotal) * 100) : 0;
+      const newTotalOverall = used9 + used18 + newOverall;
+
+      await updateStatus(selectedPI.pi_id, newTotalOverall);
+      toast.success(newTotalOverall >= 100 ? "Updated & marked as Won!" : "Updated successfully");
+      resetModal();
+      fetchPI();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Update failed");
+    } finally {
+      setUpdateLoading(false);
+    }
+  };
+
+  const handleEdit = (item) => {
+    setEditing(item);
+    setPct9(item.proforma_percentage_9 || "");
+    setAmt9(item.total_9 || "");
+    setPct18(item.proforma_percentage_18 || "");
+    setAmt18(item.total_18 || "");
   };
 
   // ── EXPORT EXCEL ──────────────────────────────────────────
@@ -465,19 +594,12 @@ export default function ProformaPage() {
   };
 
   // ── DOWNLOAD SINGLE PI INVOICE (PDF) ──────────────────────
-  // Builds a Venster-branded Proforma Invoice for ONE row, with
-  // two SEPARATE payment-history tables:
-  //   1) Other Charges  (Part A / 9%)
-  //   2) Project Value  (Part B / 18%)
-  // Numbers reuse getGrandTotal() / getBaseAmounts() so the PDF
-  // always matches what the follow-up modal shows on screen.
   const downloadInvoicePDF = async (item, index) => {
     try {
       const { default: jsPDF } = await import("jspdf");
       const { default: autoTable } = await import("jspdf-autotable");
 
       const followUps = item.follow_ups || [];
-      // Latest first (same ordering used in the modal history list)
       const sortedFollowUps = [...followUps].sort(
         (a, b) => new Date(b.created_at) - new Date(a.created_at),
       );
@@ -516,7 +638,6 @@ export default function ProformaPage() {
       const doc = new jsPDF({ orientation: "portrait" });
       const pageWidth = doc.internal.pageSize.getWidth();
 
-      // ── Header band ──
       doc.setFontSize(20);
       doc.setTextColor(234, 88, 12);
       doc.setFont(undefined, "bold");
@@ -544,7 +665,6 @@ export default function ProformaPage() {
       doc.setLineWidth(0.6);
       doc.line(14, 28, pageWidth - 14, 28);
 
-      // ── PI No + status badge row ──
       doc.setFontSize(11);
       doc.setTextColor(40, 40, 40);
       doc.setFont(undefined, "bold");
@@ -583,7 +703,6 @@ export default function ProformaPage() {
         align: "center",
       });
 
-      // ── Bill To / Order Details boxes ──
       const boxTop = 42;
       const boxHeight = 32;
       const colGap = 4;
@@ -653,7 +772,6 @@ export default function ProformaPage() {
 
       let cursorY = boxTop + boxHeight + 10;
 
-      // ── TABLE 1 — Other Charges (Part A / 9%) history ──
       doc.setFontSize(10);
       doc.setTextColor(234, 88, 12);
       doc.setFont(undefined, "bold");
@@ -695,7 +813,6 @@ export default function ProformaPage() {
 
       cursorY = doc.lastAutoTable.finalY + 10;
 
-      // ── TABLE 2 — Project Value (Part B / 18%) history ──
       doc.setFontSize(10);
       doc.setTextColor(37, 99, 235);
       doc.setFont(undefined, "bold");
@@ -737,11 +854,15 @@ export default function ProformaPage() {
 
       cursorY = doc.lastAutoTable.finalY + 12;
 
+<<<<<<< Updated upstream
       // ── Footer note + summary box ──
       if (cursorY > 250) {
         doc.addPage();
         cursorY = 20;
       }
+=======
+      if (cursorY > 250) { doc.addPage(); cursorY = 20; }
+>>>>>>> Stashed changes
 
       doc.setFontSize(10);
       doc.setTextColor(40, 40, 40);
@@ -793,6 +914,7 @@ export default function ProformaPage() {
     }
   };
 
+<<<<<<< Updated upstream
   // ── ADD FOLLOW-UP ─────────────────────────────────────────
   const handleSubmitFollowUp = async () => {
     const new9 = Number(pct9 || 0);
@@ -904,6 +1026,8 @@ export default function ProformaPage() {
     setAmt18(item.total_18 || "");
   };
 
+=======
+>>>>>>> Stashed changes
   // ── PAGINATION ────────────────────────────────────────────
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -947,6 +1071,7 @@ export default function ProformaPage() {
     if (totalPages <= visibleCount)
       return Array.from({ length: totalPages }, (_, i) => i + 1);
     let start = currentPage - Math.floor(visibleCount / 2);
+<<<<<<< Updated upstream
     let end = currentPage + Math.floor(visibleCount / 2);
     if (start < 1) {
       start = 1;
@@ -956,6 +1081,11 @@ export default function ProformaPage() {
       end = totalPages;
       start = totalPages - visibleCount + 1;
     }
+=======
+    let end   = currentPage + Math.floor(visibleCount / 2);
+    if (start < 1)        { start = 1; end = visibleCount; }
+    if (end > totalPages) { end = totalPages; start = totalPages - visibleCount + 1; }
+>>>>>>> Stashed changes
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   };
 
@@ -1295,6 +1425,7 @@ export default function ProformaPage() {
                                   {item.proforma_percentage}%
                                 </span>
                               </div>
+<<<<<<< Updated upstream
                             </td>
                             <td className="py-3 px-3">
                               <span
@@ -1375,6 +1506,61 @@ export default function ProformaPage() {
                           No Data Found
                         </td>
                       </tr>
+=======
+                            ) : "-"}
+                          </td>
+                          <td className="py-3 px-3 font-medium text-gray-800">Rs.{Number(item.total).toLocaleString()}</td>
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-16 bg-gray-100 rounded-full h-1.5">
+                                <div className={`h-1.5 rounded-full transition-all ${Number(item.proforma_percentage) >= 100 ? "bg-green-500" : Number(item.proforma_percentage) >= 50 ? "bg-orange-400" : "bg-blue-400"}`} style={{ width: `${Math.min(Number(item.proforma_percentage), 100)}%` }}></div>
+                              </div>
+                              <span className="font-semibold text-gray-800 text-xs">{item.proforma_percentage}%</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3">
+                            <span className={`border rounded-sm px-3 py-1 text-xs font-semibold ${item.status === "paid" ? "border-green-200 bg-green-50 text-green-700" : ""} ${item.status === "partial" ? "border-orange-200 bg-orange-50 text-orange-700" : ""} ${item.status === "draft" ? "border-gray-200 bg-gray-50 text-gray-700" : ""} ${item.status === "sent" ? "border-blue-200 bg-blue-50 text-blue-700" : ""} ${item.status === "cancelled" ? "border-red-200 bg-red-50 text-red-700" : ""}`}>
+                              {item.status === "paid" ? "Won" : item.status === "partial" ? "Pending" : item.status === "sent" ? "Sent" : item.status === "cancelled" ? "Cancelled" : "Draft"}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3">
+                            <select value={currentStage} onChange={(e) => updateStage(item.pi_id, e.target.value)} className={`text-xs font-semibold px-2 py-1.5 rounded-sm border cursor-pointer outline-none transition-all ${currentStage === "completed" ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100" : "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"}`}>
+                              <option value="pending">Pending</option>
+                              <option value="completed">Completed</option>
+                            </select>
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            {/* ── FIX: Smart default tab on open ── */}
+                            <button
+                              onClick={() => {
+                                setSelectedPI(item);
+                                setEditing(null);
+                                setPct9(""); setAmt9("");
+                                setPct18(""); setAmt18("");
+                                setActiveIndex(null);
+                                // Smart default: base amounts પ્રમાણે tab set કરો
+                                setActivePartTab(getDefaultTab(item));
+                                setShowModal(true);
+                              }}
+                              className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center mx-auto hover:bg-gray-100 cursor-pointer"
+                            >
+                              <i className="bi bi-plus text-lg"></i>
+                            </button>
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <button
+                              title="Download PI PDF"
+                              onClick={() => downloadInvoicePDF(item, globalIndex)}
+                              className="group relative w-9 h-9 rounded-full border border-green-200 bg-green-50 flex items-center justify-center mx-auto hover:bg-green-500 hover:border-green-500 transition-all cursor-pointer"
+                            >
+                              <i className="bi bi-file-earmark-pdf text-green-600 group-hover:text-white text-base transition-all"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    }) : (
+                      <tr><td colSpan="14" className="text-center py-10 text-gray-400">No Data Found</td></tr>
+>>>>>>> Stashed changes
                     )}
                   </tbody>
                 </table>
@@ -1441,7 +1627,7 @@ export default function ProformaPage() {
       </div>
 
       {/* ══════════════════════════════════════════════════════
-          SPLIT FOLLOW-UP MODAL — WITH TABS
+          SPLIT FOLLOW-UP MODAL — WITH TABS + ALL FIXES
       ══════════════════════════════════════════════════════ */}
       {showModal &&
         selectedPI &&
@@ -1461,6 +1647,7 @@ export default function ProformaPage() {
           const afterAmt9 = (base9 * after9) / 100;
           const afterAmt18 = (base18 * after18) / 100;
 
+<<<<<<< Updated upstream
           const over9 = after9 < 0 && entered9 > 0;
           const over18 = after18 < 0 && entered18 > 0;
           const isDisabled = over9 || over18 || submitLoading || updateLoading;
@@ -1469,6 +1656,21 @@ export default function ProformaPage() {
           const avgEntered = (entered9 + entered18) / 2;
           const barFill = Math.min(avgUsed + avgEntered, 100);
           const barOver = over9 || over18;
+=======
+        // ── FIX: over check ফক্ত active parts ──
+        const over9  = base9  > 0 && after9  < 0 && entered9  > 0;
+        const over18 = base18 > 0 && after18 < 0 && entered18 > 0;
+        const isDisabled = over9 || over18 || submitLoading || updateLoading;
+
+        // ── FIX: Progress bar — active parts count પ્રમાણે ──
+        const activeParts  = (base9 > 0 ? 1 : 0) + (base18 > 0 ? 1 : 0);
+        const totalUsed    = (base9  > 0 ? used9    : 0) + (base18 > 0 ? used18    : 0);
+        const totalEntered = (base9  > 0 ? entered9 : 0) + (base18 > 0 ? entered18 : 0);
+        const avgUsed    = activeParts > 0 ? totalUsed    / activeParts : 0;
+        const avgEntered = activeParts > 0 ? totalEntered / activeParts : 0;
+        const barFill    = Math.min(avgUsed + avgEntered, 100);
+        const barOver    = over9 || over18;
+>>>>>>> Stashed changes
 
           // ── filtered history per tab ──────────────────────
           const allFollowUps = selectedPI.follow_ups || [];
@@ -1480,6 +1682,7 @@ export default function ProformaPage() {
           );
           const shownHistory = activePartTab === "a" ? historyA : historyB;
 
+<<<<<<< Updated upstream
           return (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
               <div className="bg-white w-full max-w-[980px] rounded-2xl shadow-2xl border border-gray-100 overflow-hidden max-h-[95vh] overflow-y-auto">
@@ -1490,6 +1693,57 @@ export default function ProformaPage() {
                     <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
                       Update Proforma Activities
                     </h2>
+=======
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="bg-white w-full max-w-[980px] rounded-2xl shadow-2xl border border-gray-100 overflow-hidden max-h-[95vh] overflow-y-auto">
+
+              {/* Header */}
+              <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-orange-50 to-white">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-orange-500 inline-block"></span>
+                  <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Update Proforma Activities</h2>
+                </div>
+                <button onClick={resetModal} className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-100 hover:bg-orange-100 text-gray-400 hover:text-orange-500 transition-all">✕</button>
+              </div>
+
+              {/* Body */}
+              <div className="flex flex-col md:flex-row">
+
+                {/* ── LEFT PANEL ── */}
+                <div className="w-full md:w-1/2 px-6 py-5 border-b md:border-b-0 md:border-r border-gray-100">
+
+                  {/* ── PART TABS — FIX: disable જ્યારે base = 0 ── */}
+                  <div className="flex border-b border-gray-200 mb-4">
+                    <button
+                      onClick={() => base9 > 0 && setActivePartTab("a")}
+                      disabled={base9 === 0}
+                      className={`px-5 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-all ${
+                        base9 === 0
+                          ? "border-transparent text-gray-300 cursor-not-allowed opacity-40"
+                          : activePartTab === "a"
+                            ? "border-orange-500 text-orange-600"
+                            : "border-transparent text-gray-400 hover:text-gray-600"
+                      }`}
+                    >
+                      Other Charges
+                      {base9 === 0 && <span className="ml-1 text-[10px]">🔒</span>}
+                    </button>
+                    <button
+                      onClick={() => base18 > 0 && setActivePartTab("b")}
+                      disabled={base18 === 0}
+                      className={`px-5 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-all ${
+                        base18 === 0
+                          ? "border-transparent text-gray-300 cursor-not-allowed opacity-40"
+                          : activePartTab === "b"
+                            ? "border-blue-500 text-blue-600"
+                            : "border-transparent text-gray-400 hover:text-gray-600"
+                      }`}
+                    >
+                      Project Value
+                      {base18 === 0 && <span className="ml-1 text-[10px]">🔒</span>}
+                    </button>
+>>>>>>> Stashed changes
                   </div>
                   <button
                     onClick={resetModal}
@@ -1755,6 +2009,7 @@ export default function ProformaPage() {
                     )}
                   </div>
 
+<<<<<<< Updated upstream
                   {/* ── RIGHT PANEL — History (tab-filtered) ── */}
                   <div className="w-full md:w-1/2 px-6 py-5 flex flex-col bg-gray-50/50">
                     <div className="flex justify-between items-center mb-4">
@@ -1765,8 +2020,39 @@ export default function ProformaPage() {
                       </p>
                       <span className="text-xs bg-orange-50 text-orange-500 px-2.5 py-1 rounded-full font-semibold border border-orange-100">
                         {shownHistory.length} record(s)
+=======
+                  {/* ── FIX: Overall progress bar — active parts based ── */}
+                  <div className="mb-5 bg-gray-50 rounded-xl border border-gray-100 p-3">
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Overall Progress</p>
+                    <div className="w-full bg-white rounded-full h-2 border border-gray-200 overflow-hidden">
+                      <div
+                        className={`h-2 rounded-full transition-all duration-300 ${barOver ? "bg-red-500" : barFill >= 100 ? "bg-green-500" : "bg-orange-400"}`}
+                        style={{ width: `${barFill}%` }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-xs text-gray-400">
+                        Used: {avgUsed.toFixed(1)}% {avgEntered > 0 && `+ ${avgEntered.toFixed(1)}% new`}
+>>>>>>> Stashed changes
                       </span>
                     </div>
+<<<<<<< Updated upstream
+=======
+                    {/* Split info badge */}
+                    <div className="flex gap-2 mt-2">
+                      {base9 > 0 && (
+                        <span className="text-[10px] bg-orange-50 border border-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-semibold">
+                          A: {used9.toFixed(1)}% used
+                        </span>
+                      )}
+                      {base18 > 0 && (
+                        <span className="text-[10px] bg-blue-50 border border-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-semibold">
+                          B: {used18.toFixed(1)}% used
+                        </span>
+                      )}
+                    </div>
+                  </div>
+>>>>>>> Stashed changes
 
                     <div className="space-y-2 overflow-y-auto max-h-[500px]">
                       {shownHistory.length === 0 ? (
@@ -1826,6 +2112,7 @@ export default function ProformaPage() {
                                         h.created_at,
                                       ).toLocaleDateString("en-IN")}
                                     </span>
+<<<<<<< Updated upstream
                                     {isLatest && (
                                       <button
                                         onClick={(e) => {
@@ -1840,6 +2127,34 @@ export default function ProformaPage() {
                                     <i
                                       className={`bi ${activeIndex === index ? "bi-chevron-up" : "bi-chevron-down"} text-gray-400 text-xs`}
                                     ></i>
+=======
+                                  )}
+                                  <p className="font-semibold text-sm text-gray-700">
+                                    {displayPct.toFixed(1)}% → Rs.{Number(displayAmt).toLocaleString()}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-gray-400">{new Date(h.created_at).toLocaleDateString("en-IN")}</span>
+                                  {isLatest && (
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); handleEdit(h); }}
+                                      className="text-gray-400 hover:text-orange-500 transition-all"
+                                    >
+                                      <i className="bi bi-pencil-square text-xs"></i>
+                                    </button>
+                                  )}
+                                  <i className={`bi ${activeIndex === index ? "bi-chevron-up" : "bi-chevron-down"} text-gray-400 text-xs`}></i>
+                                </div>
+                              </div>
+
+                              <div className="flex gap-3 mt-2">
+                                {activePartTab === "a" ? (
+                                  <div className="flex items-center gap-1.5 text-xs text-orange-600 bg-orange-50 border border-orange-100 rounded-lg px-2 py-1">
+                                    <span className="font-bold">A:</span>
+                                    <span>{pct9v.toFixed(1)}%</span>
+                                    <span className="text-gray-400">|</span>
+                                    <span>Rs.{Number(t9v).toLocaleString("en-IN")}</span>
+>>>>>>> Stashed changes
                                   </div>
                                 </div>
 
@@ -1868,6 +2183,7 @@ export default function ProformaPage() {
                                 </div>
                               </div>
 
+<<<<<<< Updated upstream
                               {activeIndex === index && (
                                 <div
                                   className={`mt-2 border rounded-xl p-4 text-sm shadow-sm ${
@@ -1982,6 +2298,10 @@ export default function ProformaPage() {
                                       </div>
                                     </div>
                                   </div>
+=======
+                    
+
+>>>>>>> Stashed changes
                                 </div>
                               )}
                             </div>
