@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Header from "@/app/components/header";
+import { toast } from "react-toastify";
+
 
 // 🔧 Make sure NEXT_PUBLIC_BACKEND_URL is set in .env.local, e.g.
 // NEXT_PUBLIC_BACKEND_URL=http://localhost:5000
@@ -78,7 +80,7 @@ export default function ArchitectTable() {
   //         causing the toggle to always send wrong / falsy values
   //         and break the PATCH request on the backend.
   const toggleStatus = async (architect) => {
-    const newStatus = architect.status === "active" ? "inactive" : "active";
+    const newStatus = architect.status === "1" ? "0" : "1";
 
     // optimistic UI update
     setArchitects((prev) =>
@@ -105,7 +107,7 @@ export default function ArchitectTable() {
           a.id === architect.id ? { ...a, status: architect.status } : a,
         ),
       );
-      alert(err.message || "Could not update status");
+      toast.error(err.message || "Could not update status");
     }
   };
 
@@ -291,8 +293,8 @@ export default function ArchitectTable() {
             className="p-2 w-full md:w-53 md:mx-2 border border-orange-300 md:border text-gray-500 bg-white rounded-sm outline-none text-sm"
           >
             <option value="">Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
+            <option value="1">Active</option>
+            <option value="0">Inactive</option>
           </select>
 
           <div className="flex gap-2 col-span-2">
@@ -378,14 +380,14 @@ export default function ArchitectTable() {
                             type="button"
                             onClick={() => toggleStatus(a)}
                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                              a.status === "active"
+                              a.status === "1"
                                 ? "bg-orange-500"
                                 : "bg-gray-300"
                             }`}
                           >
                             <span
                               className={`inline-block h-[18px] w-[18px] transform rounded-full bg-white transition-transform ${
-                                a.status === "active"
+                                a.status === "1"
                                   ? "translate-x-6"
                                   : "translate-x-1"
                               }`}
