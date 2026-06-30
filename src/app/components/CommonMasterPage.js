@@ -217,6 +217,7 @@ export default function CommonMasterPage({
 
   return (
     <>
+    
       <div className="bg-gray-100">
         {/* Header */}
         <div className="bg-white w-full shadow-lg p-3 mt-1 mb-5 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">

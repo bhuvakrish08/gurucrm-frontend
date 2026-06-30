@@ -243,7 +243,6 @@ export default function setupPage() {
                 </div>
               </div>
 
-              
               {/* Manage Architecture */}
               <div className="bg-orange-50 rounded-sm shadow-sm border border-gray-200 p-6">
                 <h2 className="text-xl font-semibold text-orange-500">
@@ -259,6 +258,24 @@ export default function setupPage() {
                   </Link>
                 </div>
               </div>
+{/* //general expense  */}
+              <div className="bg-orange-50 rounded-sm shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-semibold text-orange-500">
+                  General Expense
+                </h2>
+                <hr className="border-gray-300 my-3" />
+                <div className="flex flex-col text-gray-700">
+                <Link
+                  href="/setup/general-expense"
+                  className="block text-gray-700 hover:text-orange-500 text-sm py-1"
+                >
+                  General Expense
+                </Link>
+                </div>
+              </div>
+
+
+
 
               {/* Miscellaneous Settings */}
               {/* <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

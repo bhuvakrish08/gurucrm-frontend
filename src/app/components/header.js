@@ -366,39 +366,42 @@ export default function Header() {
           Dashboard
         </Link>
 
-        {userRole !== "Leads Management" && userRole !== "Estimation" && userRole !== "Sales" && userRole !== "Proforma invoices" && (
-        <div className="relative" ref={customerRef}>
-          <button
-            onClick={() => setCustomerOpen(!customerOpen)}
-            className="hover:text-orange-500 transition-colors cursor-pointer"
-          >
-            Customer ▾
-          </button>
+        {userRole !== "Leads Management" &&
+          userRole !== "Estimation" &&
+          userRole !== "Sales" &&
+          userRole !== "Proforma invoices" && (
+            <div className="relative" ref={customerRef}>
+              <button
+                onClick={() => setCustomerOpen(!customerOpen)}
+                className="hover:text-orange-500 transition-colors cursor-pointer"
+              >
+                Customer ▾
+              </button>
 
-          {customerOpen && (
-            <div className="absolute left-0 mt-2 w-52 bg-white rounded-md shadow-lg py-2 z-50 border border-gray-100">
-              <Link
-                href="/customer-list"
-                className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
-              >
-                Customers
-              </Link>
-              <Link
-                href="/contacts"
-                className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
-              >
-                Contact Details
-              </Link>
-              <Link
-                href="/contactDesignation"
-                className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
-              >
-                Contact Designation
-              </Link>
+              {customerOpen && (
+                <div className="absolute left-0 mt-2 w-52 bg-white rounded-md shadow-lg py-2 z-50 border border-gray-100">
+                  <Link
+                    href="/customer-list"
+                    className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
+                  >
+                    Customers
+                  </Link>
+                  <Link
+                    href="/contacts"
+                    className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
+                  >
+                    Contact Details
+                  </Link>
+                  <Link
+                    href="/contactDesignation"
+                    className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
+                  >
+                    Contact Designation
+                  </Link>
+                </div>
+              )}
             </div>
           )}
-        </div>
-        )}
 
         <div className="relative" ref={salesRef}>
           <button
@@ -410,48 +413,72 @@ export default function Header() {
 
           {salesOpen && (
             <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-50 border border-gray-100">
-              {userRole !== "Estimation" && userRole !== "Proforma invoices" && (
-                <Link
-                  href="/sales/lead"
-                  className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
-                >
-                  Lead
-                </Link>
-              )}
-              {userRole !== "Leads Management" && userRole !== "Proforma invoices" && (
-                <Link
-                  href="/sales/quotation"
-                  className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
-                >
-                  Quotation
-                </Link>
-              )}
-              {userRole !== "Leads Management" && userRole !== "Estimation" && userRole !== "Sales" && (
-                <Link
-                  href="/sales/proforma"
-                  className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
-                >
-                  Proforma Invoice
-                </Link>
-              )}
+              {userRole !== "Estimation" &&
+                userRole !== "Proforma invoices" && (
+                  <Link
+                    href="/sales/lead"
+                    className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
+                  >
+                    Lead
+                  </Link>
+                )}
+              {userRole !== "Leads Management" &&
+                userRole !== "Proforma invoices" && (
+                  <Link
+                    href="/sales/quotation"
+                    className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
+                  >
+                    Quotation
+                  </Link>
+                )}
+              {userRole !== "Leads Management" &&
+                userRole !== "Estimation" &&
+                userRole !== "Sales" && (
+                  <Link
+                    href="/sales/proforma"
+                    className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
+                  >
+                    Proforma Invoice
+                  </Link>
+                )}
             </div>
           )}
         </div>
 
-        {userRole !== "Leads Management" && userRole !== "Estimation" && userRole !== "Sales" && userRole !== "Proforma invoices" && (
-          <Link href="/tasks" className="hover:text-orange-500 transition-colors">
-            Task List
+        {userRole !== "Leads Management" &&
+          userRole !== "Estimation" &&
+          userRole !== "Sales" &&
+          userRole !== "Proforma invoices" && (
+            <Link
+              href="/tasks"
+              className="hover:text-orange-500 transition-colors"
+            >
+              Task List
+            </Link>
+          )}
+
+        {["Admin", "Super Admin"].includes(userRole) && (
+          <Link
+            href="/sales/projects"
+            className="hover:text-orange-500 transition-colors"
+          >
+            Projects
+          </Link>
+        )}
+        {["Admin", "Super Admin"].includes(userRole) && (
+          <Link
+            href="/sales/net-profit"
+            className="hover:text-orange-500 transition-colors"
+          >
+            General Expense
           </Link>
         )}
 
-{["Admin", "Super Admin"].includes(userRole) && (
-         <Link href="/sales/projects" className="hover:text-orange-500 transition-colors">
-            Projects
-          </Link>
-)}
-
         {["Admin", "Super Admin"].includes(userRole) && (
-          <Link href="/setup" className="hover:text-orange-500 transition-colors">
+          <Link
+            href="/setup"
+            className="hover:text-orange-500 transition-colors"
+          >
             Settings
           </Link>
         )}
@@ -459,7 +486,6 @@ export default function Header() {
 
       {/* Desktop Right Side Icons */}
       <div className="hidden md:flex items-center gap-6">
-
         {/* ✅ Calendar Icon Button (Desktop) */}
         <Link
           href="/calender"
@@ -476,7 +502,9 @@ export default function Header() {
         >
           <Calendar
             className={`w-5 h-5 ${
-              pathname === "/calender" ? "text-orange-500" : "text-gray-500 hover:text-orange-500"
+              pathname === "/calender"
+                ? "text-orange-500"
+                : "text-gray-500 hover:text-orange-500"
             }`}
           />
           {/* ✅ NEW: today's-task indicator dot */}
@@ -638,44 +666,47 @@ export default function Header() {
             )}
           </Link>
 
-          {userRole !== "Leads Management" && userRole !== "Estimation" && userRole !== "Sales" && userRole !== "Proforma invoices" && (
-          <div className="w-full">
-            <button
-              onClick={() => setMobileCustomerOpen(!mobileCustomerOpen)}
-              className="flex justify-between w-full hover:text-orange-500 py-1"
-            >
-              Customer{" "}
-              <span className="ml-1 text-gray-400">
-                {mobileCustomerOpen ? "▴" : "▾"}
-              </span>
-            </button>
-            {mobileCustomerOpen && (
-              <div className="flex flex-col pl-4 mt-2 space-y-3 border-l-2 border-orange-100">
-                <Link
-                  href="/customer-list"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="hover:text-orange-500 text-sm"
+          {userRole !== "Leads Management" &&
+            userRole !== "Estimation" &&
+            userRole !== "Sales" &&
+            userRole !== "Proforma invoices" && (
+              <div className="w-full">
+                <button
+                  onClick={() => setMobileCustomerOpen(!mobileCustomerOpen)}
+                  className="flex justify-between w-full hover:text-orange-500 py-1"
                 >
-                  Customers
-                </Link>
-                <Link
-                  href="/contacts"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="hover:text-orange-500 text-sm"
-                >
-                  Contact Details
-                </Link>
-                <Link
-                  href="/contactDesignation"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="hover:text-orange-500 text-sm"
-                >
-                  Contact Designation
-                </Link>
+                  Customer{" "}
+                  <span className="ml-1 text-gray-400">
+                    {mobileCustomerOpen ? "▴" : "▾"}
+                  </span>
+                </button>
+                {mobileCustomerOpen && (
+                  <div className="flex flex-col pl-4 mt-2 space-y-3 border-l-2 border-orange-100">
+                    <Link
+                      href="/customer-list"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="hover:text-orange-500 text-sm"
+                    >
+                      Customers
+                    </Link>
+                    <Link
+                      href="/contacts"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="hover:text-orange-500 text-sm"
+                    >
+                      Contact Details
+                    </Link>
+                    <Link
+                      href="/contactDesignation"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="hover:text-orange-500 text-sm"
+                    >
+                      Contact Designation
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
-          </div>
-          )}
 
           <div className="w-full">
             <button
@@ -689,46 +720,54 @@ export default function Header() {
             </button>
             {mobileSalesOpen && (
               <div className="flex flex-col pl-4 mt-2 space-y-3 border-l-2 border-orange-100">
-                {userRole !== "Estimation" && userRole !== "Proforma invoices" && (
-                  <Link
-                    href="/sales/lead"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="hover:text-orange-500 text-sm"
-                  >
-                    Lead
-                  </Link>
-                )}
-                {userRole !== "Leads Management" && userRole !== "Proforma invoices" && (
-                  <Link
-                    href="/sales/quotation"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="hover:text-orange-500 text-sm"
-                  >
-                    Quotation
-                  </Link>
-                )}
-                {userRole !== "Leads Management" && userRole !== "Estimation" && userRole !== "Sales" && (
-                  <Link
-                    href="/sales/proforma"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="hover:text-orange-500 text-sm"
-                  >
-                    Proforma Invoice
-                  </Link>
-                )}
+                {userRole !== "Estimation" &&
+                  userRole !== "Proforma invoices" && (
+                    <Link
+                      href="/sales/lead"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="hover:text-orange-500 text-sm"
+                    >
+                      Lead
+                    </Link>
+                  )}
+                {userRole !== "Leads Management" &&
+                  userRole !== "Proforma invoices" && (
+                    <Link
+                      href="/sales/quotation"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="hover:text-orange-500 text-sm"
+                    >
+                      Quotation
+                    </Link>
+                  )}
+                {userRole !== "Leads Management" &&
+                  userRole !== "Estimation" &&
+                  userRole !== "Sales" && (
+                    <Link
+                      href="/sales/proforma"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="hover:text-orange-500 text-sm"
+                    >
+                      Proforma Invoice
+                    </Link>
+                  )}
               </div>
             )}
           </div>
 
-          {userRole !== "Leads Management" && userRole !== "Estimation" && userRole !== "Sales" && userRole !== "Proforma invoices" && (
-            <Link
-              onClick={() => setMobileMenuOpen(false)}
-              href="/tasks"
-              className="hover:text-orange-500 w-full py-1"
-            >
-              Task List
-            </Link>
-          )}
+          {userRole !== "Leads Management" &&
+            userRole !== "Estimation" &&
+            userRole !== "Sales" &&
+            userRole !== "Proforma invoices" && (
+              <Link
+                onClick={() => setMobileMenuOpen(false)}
+                href="/tasks"
+                className="hover:text-orange-500 w-full py-1"
+              >
+                Task List
+              </Link>
+            )}
+            
           {["Admin", "Super Admin"].includes(userRole) && (
             <Link
               onClick={() => setMobileMenuOpen(false)}
