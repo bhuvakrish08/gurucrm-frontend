@@ -50,7 +50,16 @@ export default function GeneralExpenseTable() {
       if (!res.ok) throw new Error("Failed to load general expense types");
 
       const data = await res.json();
-      setExpenseTypes(data.data || []);
+
+      // ---------- FIX: MySQL status number (1/0) rite aave che,
+      // pan aakha component ma string ("1"/"0") sathe compare thay che.
+      // Etle fetch karta j string ma normalize kari deva no.
+      const normalized = (data.data || []).map((item) => ({
+        ...item,
+        status: String(item.status),
+      }));
+
+      setExpenseTypes(normalized);
     } catch (err) {
       setError(err.message || "Something went wrong");
     } finally {
@@ -64,11 +73,14 @@ export default function GeneralExpenseTable() {
 
   // ---------- UPDATE STATUS ONLY — toggle active/inactive ----------
   const toggleStatus = async (item) => {
-    const newStatus = item.status === "1" ? "0" : "1";
+    const currentStatus = String(item.status); // safety normalize
+    const newStatus = currentStatus === "1" ? "0" : "1";
 
     // optimistic UI update
     setExpenseTypes((prev) =>
-      prev.map((e) => (e.id === item.id ? { ...e, status: newStatus } : e)),
+      prev.map((e) =>
+        e.id === item.id ? { ...e, status: newStatus } : e,
+      ),
     );
 
     try {
@@ -85,7 +97,9 @@ export default function GeneralExpenseTable() {
     } catch (err) {
       // rollback on failure
       setExpenseTypes((prev) =>
-        prev.map((e) => (e.id === item.id ? { ...e, status: item.status } : e)),
+        prev.map((e) =>
+          e.id === item.id ? { ...e, status: currentStatus } : e,
+        ),
       );
       toast.error(err.message || "Could not update status");
     }
@@ -105,7 +119,7 @@ export default function GeneralExpenseTable() {
     setEditingId(item.id);
     setForm({
       name: item.name || "",
-      status: item.status || "1",
+      status: String(item.status || "1"),
     });
     setFormErrors({});
     setShowModal(true);
@@ -335,14 +349,14 @@ export default function GeneralExpenseTable() {
                             type="button"
                             onClick={() => toggleStatus(item)}
                             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                              item.status === "1"
+                              String(item.status) === "1"
                                 ? "bg-orange-500"
                                 : "bg-gray-300"
                             }`}
                           >
                             <span
                               className={`inline-block h-[18px] w-[18px] transform rounded-full bg-white transition-transform ${
-                                item.status === "1"
+                                String(item.status) === "1"
                                   ? "translate-x-6"
                                   : "translate-x-1"
                               }`}
