@@ -9,6 +9,7 @@ import {
   XAxis,
   YAxis,
   Tooltip,
+  Legend,
   ResponsiveContainer,
   PieChart,
   Pie,
@@ -39,6 +40,14 @@ const EMPTY_EXPENSE_FORM = {
 };
 
 const DONUT_COLORS = ["#16a34a", "#f59e0b", "#3b82f6", "#ef4444", "#8b5cf6", "#06b6d4"];
+
+// Colors for the 4-way trend chart: Amount / Architecture Net / Expense Net / General Expense
+const TREND_COLORS = {
+  amount: "#3b82f6",
+  architecture_net: "#8b5cf6",
+  expense_net: "#ef4444",
+  expense: "#f97316",
+};
 
 export default function NetProfitPage() {
   const [tab, setTab] = useState("entry"); // "entry" | "analytics"
@@ -671,11 +680,11 @@ export default function NetProfitPage() {
                   </div>
                 </div>
 
-                {/* Revenue vs expense bar chart */}
+                {/* Amount vs Architecture Net vs Expense Net vs General Expense — trend chart */}
                 <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-4 mb-5">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                     <p className="text-sm font-bold text-gray-900">
-                      Revenue vs expense
+                      Quat Amount vs Expense vs Architecture Amount vs Gen Expense
                     </p>
                     {/* Weekly / Monthly / Yearly toggle */}
                     <div className="flex bg-gray-100 rounded-lg p-1 w-fit">
@@ -699,13 +708,27 @@ export default function NetProfitPage() {
                       ))}
                     </div>
                   </div>
-                  <ResponsiveContainer width="100%" height={260}>
+                  <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={analytics.monthly}>
                       <XAxis dataKey="month" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                       <YAxis tickFormatter={fmtShort} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
                       <Tooltip formatter={(v) => fmt(v)} />
-                      <Bar dataKey="revenue" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="expense" fill="#f97316" radius={[4, 4, 0, 0]} />
+                      <Legend
+                        wrapperStyle={{ fontSize: 12 }}
+                        formatter={(value) => {
+                          const labels = {
+                            amount: "Quat Amount",
+                            expense_net: "Expense",
+                            architecture_net: "Architecture Amount",
+                            expense: "Gen Expense",
+                          };
+                          return labels[value] || value;
+                        }}
+                      />
+                      <Bar dataKey="amount" name="Quat Amount" fill={TREND_COLORS.amount} radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="expense_net" name="Expense" fill={TREND_COLORS.expense_net} radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="architecture_net" name="Architecture Amount" fill={TREND_COLORS.architecture_net} radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="expense" name="Gen Expense" fill={TREND_COLORS.expense} radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -826,12 +849,13 @@ export default function NetProfitPage() {
                         No budget limits set yet for any expense type.
                       </p>
                     )}
+
                   </div>
                 </div>
-              </>
+              </> 
             )}
           </div>
-        )}
+        )}  
       </div>
     </>
   );

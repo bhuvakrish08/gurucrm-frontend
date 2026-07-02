@@ -39,7 +39,7 @@ import {
 
 // Set this in .env.local as: NEXT_PUBLIC_BACKEND_URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL
- 
+
 
 function formatCurrency(value) {
   const num = Number(value)
@@ -181,6 +181,12 @@ function Page() {
   const [viewArchitectures, setViewArchitectures] = useState([])
   const [viewExpenses, setViewExpenses] = useState([])
   const [viewModalTimeframe, setViewModalTimeframe] = useState("monthly") // 'weekly', 'monthly', 'yearly'
+
+  // ========================
+  // PAGINATION STATES
+  // ========================
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
 
   const getProjectExpenseTimeSeries = () => {
     const items = [...viewExpenses]
@@ -742,6 +748,36 @@ function Page() {
     }
   }
 
+  // ========================
+  // PAGINATION LOGIC (matches Quotation page)
+  // ========================
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [itemsPerPage, viewMode, projects.length])
+
+  const indexOfLastItem = currentPage * itemsPerPage
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage
+  const paginatedProjects = projects.slice(indexOfFirstItem, indexOfLastItem)
+  const totalPages = Math.ceil(projects.length / itemsPerPage)
+
+  const getSlidingPages = () => {
+    const visibleCount = 5
+    if (totalPages <= visibleCount) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1)
+    }
+    let start = currentPage - Math.floor(visibleCount / 2)
+    let end = currentPage + Math.floor(visibleCount / 2)
+    if (start < 1) {
+      start = 1
+      end = visibleCount
+    }
+    if (end > totalPages) {
+      end = totalPages
+      start = totalPages - visibleCount + 1
+    }
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i)
+  }
+
   return (
     <div>
       <Header />
@@ -1150,165 +1186,239 @@ function Page() {
             ) : null}
           </div>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      ID
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Quotation No
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Company
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Customer
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Reference
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Source
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Quotation Date
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Grand Total
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Amount
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Architecture Net
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Expense Net
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Net Revenue
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Created At
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody className="divide-y divide-gray-100">
-                  {loading && (
-                    <tr>
-                      <td colSpan={14} className="px-4 py-8 text-center text-sm text-gray-500">
-                        Loading projects...
-                      </td>
+          /* ======================================================
+             PROJECT LIST TABLE — styled to match Quotation page
+             ====================================================== */
+          <div className="bg-white rounded-sm border border-gray-100 py-2">
+            <div className="p-4">
+              <div
+                className="overflow-x-auto overflow-y-scroll max-h-[500px] custom-scroll"
+                style={{ overflowX: "scroll" }}
+              >
+                <table className="w-full text-sm whitespace-nowrap">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100">
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        #
+                      </th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Quotation No
+                      </th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Company
+                      </th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Customer
+                      </th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Reference
+                      </th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Source
+                      </th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Quotation Date
+                      </th>
+                      <th className="py-3 px-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Grand Total
+                      </th>
+                      <th className="py-3 px-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Amount
+                      </th>
+                      <th className="py-3 px-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Architecture Net
+                      </th>
+                      <th className="py-3 px-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Expense Net
+                      </th>
+                      <th className="py-3 px-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Net Revenue
+                      </th>
+                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Created At
+                      </th>
+                      <th className="py-3 px-3 text-center text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Action
+                      </th>
                     </tr>
-                  )}
+                  </thead>
 
-                  {!loading && error && (
-                    <tr>
-                      <td colSpan={14} className="px-4 py-8 text-center text-sm text-red-600">
-                        Error: {error}
-                      </td>
-                    </tr>
-                  )}
-
-                  {!loading && !error && projects.length === 0 && (
-                    <tr>
-                      <td colSpan={14} className="px-4 py-8 text-center text-sm text-gray-500">
-                        No projects found.
-                      </td>
-                    </tr>
-                  )}
-
-                  {!loading &&
-                    !error &&
-                    projects.map((project, index) => (
-                      <tr key={project.id} className="hover:bg-gray-50">
-                        <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-500">
-                          {index + 1}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
-                          {project.quotation_no || '-'}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
-                          {project.company_name || '-'}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
-                          {project.customer_name || '-'}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
-                          {project.reference || '-'}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
-                          {project.source || '-'}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700">
-                          {formatDate(project.quotation_date)}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-gray-900">
-                          {formatCurrency(project.grand_total)}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-semibold text-gray-900">
-                          {formatCurrency(project.amount)}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-gray-700">
-                          <div className="flex items-center justify-end gap-1">
-                            <span>{formatCurrency(project.architecture_net_amount)}</span>
-                            <button
-                              onClick={() => handleManageArchitecture(project)}
-                              className="text-gray-400 hover:text-orange-500 transition-colors p-1 cursor-pointer"
-                              title="Edit Architecture Commissions"
-                            >
-                              <i className="bi bi-pencil-square"></i>
-                            </button>
-                          </div>
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-gray-700">
-                          <div className="flex items-center justify-end gap-1">
-                            <span>{formatCurrency(project.expense_net_amount)}</span>
-                            <button
-                              onClick={() => handleManageExpenses(project)}
-                              className="text-gray-400 hover:text-orange-500 transition-colors p-1 cursor-pointer"
-                              title="Edit Project Expenses"
-                            >
-                              <i className="bi bi-pencil-square"></i>
-                            </button>
-                          </div>
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-right text-sm text-gray-700">
-                          {formatCurrency(project.net_revenue_amount)}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
-                          {formatDate(project.created_at)}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-center text-sm font-medium">
-                          <div className="flex items-center justify-center gap-2">
-                            <button
-                              onClick={() => handleViewProject(project)}
-                              className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-all border border-blue-200 cursor-pointer"
-                              title="View Project Details"
-                            >
-                              <i className="bi bi-eye-fill"></i>
-                            </button>
-
-                            <button
-                              onClick={() => handleDeleteProject(project.id)}
-                              className="inline-flex items-center justify-center h-8 w-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-all border border-rose-200 cursor-pointer"
-                              title="Delete Project"
-                            >
-                              <i className="bi bi-trash-fill"></i>
-                            </button>
-                          </div>
+                  <tbody>
+                    {loading && (
+                      <tr>
+                        <td colSpan={14} className="text-center py-10 text-gray-400">
+                          Loading projects...
                         </td>
                       </tr>
-                    ))}
-                </tbody>
-              </table>
+                    )}
+
+                    {!loading && error && (
+                      <tr>
+                        <td colSpan={14} className="text-center py-10 text-red-500">
+                          Error: {error}
+                        </td>
+                      </tr>
+                    )}
+
+                    {!loading && !error && projects.length === 0 && (
+                      <tr>
+                        <td colSpan={14} className="text-center py-10 text-gray-400">
+                          No Projects Found
+                        </td>
+                      </tr>
+                    )}
+
+                    {!loading &&
+                      !error &&
+                      paginatedProjects.map((project, index) => (
+                        <tr
+                          key={project.id}
+                          className="border-b border-gray-50 hover:bg-indigo-50/30 transition-colors"
+                        >
+                          <td className="py-3 px-3">
+                            {(currentPage - 1) * itemsPerPage + index + 1}
+                          </td>
+                          <td className="font-medium px-3 text-gray-700">
+                            {project.quotation_no || '-'}
+                          </td>
+                          <td className="px-3 text-gray-700">
+                            {project.company_name || '-'}
+                          </td>
+                          <td className="text-orange-500 px-3">
+                            {project.customer_name || '-'}
+                          </td>
+                          <td className="px-3 text-gray-600">
+                            {project.reference || '-'}
+                          </td>
+                          <td className="px-3 text-gray-600">
+                            {project.source || '-'}
+                          </td>
+                          <td className="px-3 text-gray-500">
+                            {formatDate(project.quotation_date)}
+                          </td>
+                          <td className="px-3 text-right font-semibold text-gray-700">
+                            {formatCurrency(project.grand_total)}
+                          </td>
+                          <td className="px-3 text-right font-semibold text-gray-700">
+                            {formatCurrency(project.amount)}
+                          </td>
+                          <td className="px-3 text-right text-gray-600">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <span>{formatCurrency(project.architecture_net_amount)}</span>
+                              <button
+                                onClick={() => handleManageArchitecture(project)}
+                                className="text-gray-400 hover:text-orange-500 transition-colors cursor-pointer"
+                                title="Edit Architecture Commissions"
+                              >
+                                <i className="bi bi-pencil-square text-sm"></i>
+                              </button>
+                            </div>
+                          </td>
+                          <td className="px-3 text-right text-gray-600">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <span>{formatCurrency(project.expense_net_amount)}</span>
+                              <button
+                                onClick={() => handleManageExpenses(project)}
+                                className="text-gray-400 hover:text-orange-500 transition-colors cursor-pointer"
+                                title="Edit Project Expenses"
+                              >
+                                <i className="bi bi-pencil-square text-sm"></i>
+                              </button>
+                            </div>
+                          </td>
+                          <td className="px-3 text-right font-bold text-green-600">
+                            {formatCurrency(project.net_revenue_amount)}
+                          </td>
+                          <td className="px-3 text-gray-500">
+                            {formatDate(project.created_at)}
+                          </td>
+                          <td className="px-3 text-center">
+                            <div className="flex items-center justify-center gap-3">
+                              <button
+                                onClick={() => handleViewProject(project)}
+                                className="text-slate-500 hover:text-blue-600 transition-all"
+                                title="View Project Details"
+                              >
+                                <i className="bi bi-eye text-lg"></i>
+                              </button>
+                              <button
+                                onClick={() => handleDeleteProject(project.id)}
+                                className="text-gray-400 hover:text-red-600 cursor-pointer transition-all"
+                                title="Delete Project"
+                              >
+                                <i className="bi bi-trash3 text-lg"></i>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+
+                {/* PAGINATION — matches Quotation page style */}
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white rounded-b-lg">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-slate-500 font-medium">
+                      Rows per page:
+                    </span>
+                    <select
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value))
+                        setCurrentPage(1)
+                      }}
+                      className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all cursor-pointer font-medium"
+                    >
+                      {[10, 20, 100, 200].map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
+                      disabled={currentPage === 1}
+                      className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <i className="bi bi-chevron-left text-sm"></i>
+                    </button>
+
+                    {totalPages > 1 && (
+                      <div className="flex items-center gap-1.5">
+                        {getSlidingPages().map((page) => (
+                          <button
+                            type="button"
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${currentPage === page ? "bg-[#212121] text-white shadow-md shadow-black/10" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentPage((prev) =>
+                          Math.min(prev + 1, totalPages || 1),
+                        )
+                      }
+                      disabled={currentPage === totalPages || totalPages === 0}
+                      className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <i className="bi bi-chevron-right text-sm"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -2304,5 +2414,4 @@ function Page() {
     </div>
   )
 }
-
-export default Page
+export default Page 
