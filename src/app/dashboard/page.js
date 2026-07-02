@@ -23,6 +23,10 @@ import {
   Circle,
   CheckCircle2,
   Pencil,
+  CalendarClock,
+  PhoneCall,
+  FileText,
+  AlertCircle,
 } from "lucide-react";
 import {
   AreaChart,
@@ -136,6 +140,157 @@ function DashboardCard({
   );
 }
 
+// ===================================================
+// FOLLOW-UPS WIDGET (Leads + Quotations, next 2 days)
+// ===================================================
+function FollowUpsWidget({ followUps, loadingFollowUps, router }) {
+  const [activeTab, setActiveTab] = useState("today");
+
+  const tabs = [
+    { key: "today", label: "Today", count: followUps.today.length },
+    { key: "tomorrow", label: "Tomorrow", count: followUps.tomorrow.length },
+    { key: "day_after", label: "Day After", count: followUps.day_after.length },
+  ];
+
+  const activeList = followUps[activeTab] || [];
+
+  const getStatusBadge = (item) => {
+    const status = item.type === "lead" ? item.status : item.quotation_status;
+    const st = (status || "Pending").toString();
+    const stLower = st.toLowerCase();
+    const cls =
+      stLower === "won" || stLower === "approved"
+        ? "bg-green-100 text-green-700"
+        : stLower === "lost" || stLower === "declined"
+          ? "bg-red-100 text-red-700"
+          : "bg-amber-100 text-amber-700";
+    return (
+      <span className={`px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-tighter ${cls}`}>
+        {st}
+      </span>
+    );
+  };
+
+  const handleItemClick = (item) => {
+    if (item.type === "lead") {
+      router.push(`/sales/lead?id=${item.lead_id}`);
+    } else {
+      router.push(`/sales/quotation?id=${item.quotation_id}`);
+    }
+  };
+
+  return (
+    <div
+      className="bg-gradient-to-br from-white to-orange-50/20 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-300 border border-slate-100 p-4 mb-5 animate-fade-in-up h-full"
+      style={{ animationDelay: "0.05s" }}
+    >
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-3">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-orange-50 text-orange-500 border border-orange-100/50 shadow-sm">
+            <CalendarClock className="w-3.5 h-3.5" strokeWidth={2.5} />
+          </div>
+          <div>
+            <h3 className="text-[13px] font-extrabold text-gray-800 leading-tight">
+              Upcoming Follow-Ups
+            </h3>
+            <p className="text-[9px] text-gray-500 font-semibold uppercase tracking-wider">
+              Leads &amp; Estimations — next 2 days
+            </p>
+          </div>
+        </div>
+        <div className="flex space-x-1 bg-gray-50 p-0.5 rounded-lg border border-gray-100 self-start sm:self-auto">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-2.5 py-1 text-[9px] rounded-md font-bold transition-all duration-200 flex items-center gap-1 ${activeTab === tab.key
+                ? "bg-white text-orange-600 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+                }`}
+            >
+              {tab.label}
+              {tab.count > 0 && (
+                <span
+                  className={`inline-flex items-center justify-center min-w-[14px] h-3.5 px-1 rounded-full text-[8px] font-black ${activeTab === tab.key
+                    ? "bg-orange-100 text-orange-600"
+                    : "bg-gray-200 text-gray-500"
+                    }`}
+                >
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loadingFollowUps ? (
+        <div className="py-8 text-center">
+          <span className="text-gray-400 text-xs font-semibold animate-pulse">
+            Loading follow-ups...
+          </span>
+        </div>
+      ) : (
+        <div className="space-y-1.5 overflow-y-auto max-h-[204px] pr-1 custom-scrollbar">
+          {activeList.map((item, idx) => (
+            <div
+              key={`${item.type}-${item.type === "lead" ? item.lead_id : item.quotation_id}-${idx}`}
+              onClick={() => handleItemClick(item)}
+              className="bg-white/80 backdrop-blur-sm border border-slate-100 px-2.5 py-2 rounded-lg shadow-sm hover:shadow-md hover:border-orange-100 transition-all cursor-pointer group flex items-center justify-between gap-2 animate-fade-in"
+            >
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span
+                  className={`shrink-0 px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter flex items-center gap-1 ${item.type === "lead"
+                    ? "bg-indigo-100 text-indigo-600 border border-indigo-200/50"
+                    : "bg-emerald-100 text-emerald-600 border border-emerald-200/50"
+                    }`}
+                >
+                  {item.type === "lead" ? (
+                    <PhoneCall size={8} />
+                  ) : (
+                    <FileText size={8} />
+                  )}
+                  {item.type === "lead" ? "Lead" : "Quot."}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-bold text-gray-800 text-[11px] truncate group-hover:text-orange-600 transition-colors leading-tight">
+                    {item.company_name || "Untitled"}
+                  </h4>
+                  <p className="text-gray-400 text-[9px] font-semibold truncate leading-tight">
+                    {item.customer_name}
+                    {item.type === "quotation" && item.quotation_no ? ` • ${item.quotation_no}` : ""}
+                    {item.assignee ? ` • ${item.assignee}` : ""}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="flex items-center gap-1 text-[9px] font-bold text-orange-500">
+                  <Clock size={9} />
+                  {item.follow_up_date
+                    ? new Date(item.follow_up_date).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                    })
+                    : ""}
+                </span>
+                {getStatusBadge(item)}
+              </div>
+            </div>
+          ))}
+          {activeList.length === 0 && (
+            <div className="py-8 text-center bg-white/40 rounded-xl border border-dashed border-gray-200">
+              <AlertCircle className="mx-auto mb-1.5 text-gray-300" size={18} />
+              <p className="text-gray-400 text-[10px] font-semibold">
+                No follow-ups scheduled for this day
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const [role, setRole] = useState("");
   const [token, setToken] = useState("");
@@ -155,6 +310,8 @@ export default function Dashboard() {
   const [addingTodo, setAddingTodo] = useState(false);
   const [editingTodoId, setEditingTodoId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [followUps, setFollowUps] = useState({ today: [], tomorrow: [], day_after: [] });
+  const [loadingFollowUps, setLoadingFollowUps] = useState(true);
 
   useAuth();
 
@@ -176,6 +333,8 @@ export default function Dashboard() {
         contractsRes,
         productsRes,
         trafficLightRes,
+        leadFollowUpRes,
+        quotationFollowUpRes,
       ] = await Promise.all([
         axios
           .get(`${API_BASE}/api/lead/read`, config)
@@ -204,6 +363,12 @@ export default function Dashboard() {
         axios
           .get(`${API_BASE}/api/lead/analytics/traffic-light`, config)
           .catch(() => ({ data: { result: [] } })),
+        axios
+          .get(`${API_BASE}/api/followup/lead-follow-up/upcoming`, config)
+          .catch(() => ({ data: { today: [], tomorrow: [], day_after: [] } })),
+        axios
+          .get(`${API_BASE}/api/followup/quotation/upcoming-followups`, config)
+          .catch(() => ({ data: { today: [], tomorrow: [], day_after: [] } })),
       ]);
 
       setLeads(
@@ -300,16 +465,46 @@ export default function Dashboard() {
       const fetchedTrafficLight = trafficLightRes.data?.result || [];
       setTrafficLightStats(Array.isArray(fetchedTrafficLight) ? fetchedTrafficLight : []);
 
+      // Merge lead + quotation follow-ups into unified, date-sorted buckets
+      const mergeBucket = (leadArr = [], quoteArr = []) => {
+        const leadItems = (Array.isArray(leadArr) ? leadArr : []).map((item) => ({
+          ...item,
+          type: "lead",
+        }));
+        const quoteItems = (Array.isArray(quoteArr) ? quoteArr : []).map((item) => ({
+          ...item,
+          type: "quotation",
+        }));
+        return [...leadItems, ...quoteItems].sort(
+          (a, b) => new Date(a.follow_up_date) - new Date(b.follow_up_date),
+        );
+      };
+
+      const leadFU = leadFollowUpRes.data || {};
+      const quoteFU = quotationFollowUpRes.data || {};
+
+      setFollowUps({
+        today: mergeBucket(leadFU.today, quoteFU.today),
+        tomorrow: mergeBucket(leadFU.tomorrow, quoteFU.tomorrow),
+        day_after: mergeBucket(leadFU.day_after, quoteFU.day_after),
+      });
     } catch (error) {
       console.error("Dashboard Data Fetch Error:", error);
     } finally {
       setLoading(false);
+      setLoadingFollowUps(false);
     }
   }, []);
 
   useEffect(() => {
     fetchData();
     setRole(localStorage.getItem("role") || "");
+
+    // Keep follow-ups fresh: re-fetch every 5 minutes so items whose date
+    // has passed automatically fall off the list (the backend query only
+    // ever returns today -> +2 days).
+    const interval = setInterval(fetchData, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, [fetchData]);
 
   const handleAddTodo = async (e) => {
@@ -1163,6 +1358,15 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* Upcoming Follow-Ups (Leads + Estimations) — visible for every role except the default view, where it's merged into the Sales Overview row below */}
+        {!loading && (role === 'Leads Management' || role === 'Estimation' || role === 'Sales' || role === 'Proforma invoices') && (
+          <FollowUpsWidget
+            followUps={followUps}
+            loadingFollowUps={loadingFollowUps}
+            router={router}
+          />
+        )}
+
         {/* Dashboard Analytics & Widgets */}
         {!loading && role === 'Leads Management' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-6">
@@ -1662,10 +1866,10 @@ export default function Dashboard() {
             </div>
 
             {/* ROW 2: Sales Area Chart & Checklist */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
               {/* Estimation Performance Trend (Area Chart) (Span 7) */}
               <div
-                className="lg:col-span-7 bg-gradient-to-br from-white to-indigo-50/20 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col justify-between animate-fade-in-up"
+                className="lg:col-span-6 bg-gradient-to-br from-white to-indigo-50/20 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col justify-between animate-fade-in-up"
                 style={{ animationDelay: "0.4s" }}
               >
                 <div className="flex justify-between items-center mb-2">
@@ -1775,7 +1979,7 @@ export default function Dashboard() {
 
               {/* Todo split list (Span 5) */}
               <div
-                className="lg:col-span-5 bg-gradient-to-br from-white to-slate-50/40 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-100 p-5 flex flex-col justify-between animate-fade-in-up"
+                className="lg:col-span-6 bg-gradient-to-br from-white to-slate-50/40 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-slate-100 p-5 flex flex-col justify-between animate-fade-in-up"
                 style={{ animationDelay: "0.5s" }}
               >
                 <div>
@@ -1909,9 +2113,9 @@ export default function Dashboard() {
         {!loading && role !== 'Leads Management' && role !== 'Estimation' && role !== 'Sales' && role !== 'Proforma invoices' && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-6">
             {/* ROW 1 */}
-            {/* Sales Chart (Span 8) */}
+            {/* Sales Chart (Span 6) */}
             <div
-              className="lg:col-span-8 bg-gradient-to-br from-white to-indigo-50/20 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col relative overflow-hidden group animate-fade-in-up"
+              className="lg:col-span-6 bg-gradient-to-br from-white to-indigo-50/20 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col relative overflow-hidden group animate-fade-in-up"
               style={{ animationDelay: "0.1s" }}
             >
               <div className="absolute top-0 right-0 w-64 h-full bg-gradient-to-l from-indigo-50/30 to-transparent pointer-events-none transition-opacity opacity-0 group-hover:opacity-100 duration-500"></div>
@@ -2008,62 +2212,13 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Leads Donut Chart (Span 4) */}
-            <div
-              className="lg:col-span-4 bg-gradient-to-br from-white to-orange-50/40 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col animate-fade-in-up"
-              style={{ animationDelay: "0.2s" }}
-            >
-              <div className="mb-1">
-                <h3 className="text-md font-extrabold text-gray-800">
-                  Lead Status
-                </h3>
-                <p className="text-[10px] text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
-                  CRM leads distribution
-                </p>
-              </div>
-              <div className="h-[200px] flex items-center justify-center mt-auto">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={leadsDonutData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={45}
-                      outerRadius={65}
-                      paddingAngle={4}
-                      dataKey="value"
-                      animationDuration={2000}
-                    >
-                      {leadsDonutData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={entry.color}
-                          stroke="transparent"
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: "12px",
-                        border: "none",
-                        boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
-                      }}
-                      itemStyle={{ fontWeight: "bold", fontSize: "12px" }}
-                    />
-                    <Legend
-                      layout="vertical"
-                      verticalAlign="middle"
-                      align="right"
-                      iconType="circle"
-                      wrapperStyle={{
-                        fontSize: "10px",
-                        fontWeight: 600,
-                        color: "#475569",
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+            {/* Upcoming Follow-Ups (Span 6) — sits beside Sales Overview, 50/50 */}
+            <div className="lg:col-span-6 animate-fade-in-up" style={{ animationDelay: "0.15s" }}>
+              <FollowUpsWidget
+                followUps={followUps}
+                loadingFollowUps={loadingFollowUps}
+                router={router}
+              />
             </div>
 
             {/* ROW 2: 1x3 Symmetrical Row (Todo List, Pending Invoices, Completed Invoices) */}
@@ -2179,6 +2334,125 @@ export default function Dashboard() {
               </div>
             </div>
 
+
+            {/* Leads Donut Chart (Span 4) */}
+            <div
+              className="lg:col-span-4 bg-gradient-to-br from-white to-orange-50/40 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col animate-fade-in-up"
+              style={{ animationDelay: "0.2s" }}
+            >
+              <div className="mb-1">
+                <h3 className="text-md font-extrabold text-gray-800">
+                  Lead Status
+                </h3>
+                <p className="text-[10px] text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
+                  CRM leads distribution
+                </p>
+              </div>
+              <div className="h-[200px] flex items-center justify-center mt-auto">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={leadsDonutData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={45}
+                      outerRadius={65}
+                      paddingAngle={4}
+                      dataKey="value"
+                      animationDuration={2000}
+                    >
+                      {leadsDonutData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.color}
+                          stroke="transparent"
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: "12px",
+                        border: "none",
+                        boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+                      }}
+                      itemStyle={{ fontWeight: "bold", fontSize: "12px" }}
+                    />
+                    <Legend
+                      layout="vertical"
+                      verticalAlign="middle"
+                      align="right"
+                      iconType="circle"
+                      wrapperStyle={{
+                        fontSize: "10px",
+                        fontWeight: 600,
+                        color: "#475569",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+
+            {/* Quotation Status Chart (Span 4) */}
+            <div
+              className="lg:col-span-4 bg-gradient-to-br from-white to-slate-50/30 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col justify-between animate-fade-in-up"
+              style={{ animationDelay: "0.7s" }}
+            >
+              <div>
+                <h3 className="text-sm font-extrabold text-gray-800">
+                  Quotation Status
+                </h3>
+                <p className="text-[10px] text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
+                  Active vs Won vs Lost
+                </p>
+              </div>
+              <div className="h-[200px] flex items-center justify-center mt-4">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={quotationStatusData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={45}
+                      outerRadius={65}
+                      paddingAngle={4}
+                      dataKey="value"
+                      animationDuration={2000}
+                    >
+                      {quotationStatusData.map((entry, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.color}
+                          stroke="transparent"
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        borderRadius: "12px",
+                        border: "none",
+                        boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
+                      }}
+                      itemStyle={{ fontWeight: "bold", fontSize: "12px" }}
+                    />
+                    <Legend
+                      layout="vertical"
+                      verticalAlign="middle"
+                      align="right"
+                      iconType="circle"
+                      wrapperStyle={{
+                        fontSize: "10px",
+                        fontWeight: 600,
+                        color: "#475569",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+
             {/* Pending Invoices (Span 4) */}
             <div
               className="lg:col-span-4 bg-gradient-to-br from-white to-amber-50/10 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-0.5 transition-all duration-300 border border-slate-100 p-5 flex flex-col justify-between animate-fade-in-up"
@@ -2194,26 +2468,7 @@ export default function Dashboard() {
                       Proforma Collection
                     </p>
                   </div>
-                  <div className="flex space-x-1 bg-gray-50 p-0.5 rounded-lg border border-gray-100">
-                    <button
-                      onClick={() => setSalesTimeframe("weekly")}
-                      className={`px-1.5 py-0.5 text-[9px] rounded font-black transition-all duration-200 ${salesTimeframe === "weekly" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-                    >
-                      W
-                    </button>
-                    <button
-                      onClick={() => setSalesTimeframe("monthly")}
-                      className={`px-1.5 py-0.5 text-[9px] rounded font-black transition-all duration-200 ${salesTimeframe === "monthly" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-                    >
-                      M
-                    </button>
-                    <button
-                      onClick={() => setSalesTimeframe("yearly")}
-                      className={`px-1.5 py-0.5 text-[9px] rounded font-black transition-all duration-200 ${salesTimeframe === "yearly" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-                    >
-                      Y
-                    </button>
-                  </div>
+
                 </div>
               </div>
 
@@ -2221,7 +2476,7 @@ export default function Dashboard() {
                 <div className="flex justify-between items-end">
                   <div>
                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
-                      Total Paid
+                      Total Amount
                     </p>
                     <p className="text-lg font-extrabold text-amber-600 leading-none">
                       ₹
@@ -2289,26 +2544,6 @@ export default function Dashboard() {
                       Proforma Collection
                     </p>
                   </div>
-                  <div className="flex space-x-1 bg-gray-50 p-0.5 rounded-lg border border-gray-100">
-                    <button
-                      onClick={() => setSalesTimeframe("weekly")}
-                      className={`px-1.5 py-0.5 text-[9px] rounded font-black transition-all duration-200 ${salesTimeframe === "weekly" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-                    >
-                      W
-                    </button>
-                    <button
-                      onClick={() => setSalesTimeframe("monthly")}
-                      className={`px-1.5 py-0.5 text-[9px] rounded font-black transition-all duration-200 ${salesTimeframe === "monthly" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-                    >
-                      M
-                    </button>
-                    <button
-                      onClick={() => setSalesTimeframe("yearly")}
-                      className={`px-1.5 py-0.5 text-[9px] rounded font-black transition-all duration-200 ${salesTimeframe === "yearly" ? "bg-white text-indigo-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-                    >
-                      Y
-                    </button>
-                  </div>
                 </div>
               </div>
 
@@ -2316,7 +2551,7 @@ export default function Dashboard() {
                 <div className="flex justify-between items-end">
                   <div>
                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
-                      Total Paid
+                      Total Amount
                     </p>
                     <p className="text-lg font-extrabold text-emerald-600 leading-none">
                       ₹
@@ -2370,122 +2605,6 @@ export default function Dashboard() {
             </div>
 
             {/* ROW 4: Donuts & Progress Indicators */}
-            {/* Tasks Priority Donut (Span 4) */}
-            <div
-              className="lg:col-span-4 bg-gradient-to-br from-white to-slate-50/30 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col justify-between animate-fade-in-up"
-              style={{ animationDelay: "0.6s" }}
-            >
-              <div>
-                <h3 className="text-sm font-extrabold text-gray-800">
-                  Tasks Priority
-                </h3>
-                <p className="text-[10px] text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
-                  Focus areas
-                </p>
-              </div>
-              <div className="h-[200px] flex items-center justify-center mt-4">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={tasksPriorityData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={45}
-                      outerRadius={65}
-                      paddingAngle={4}
-                      dataKey="value"
-                      animationDuration={2000}
-                    >
-                      {tasksPriorityData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={entry.color}
-                          stroke="transparent"
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: "12px",
-                        border: "none",
-                        boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
-                      }}
-                      itemStyle={{ fontWeight: "bold", fontSize: "12px" }}
-                    />
-                    <Legend
-                      layout="vertical"
-                      verticalAlign="middle"
-                      align="right"
-                      iconType="circle"
-                      wrapperStyle={{
-                        fontSize: "10px",
-                        fontWeight: 600,
-                        color: "#475569",
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Quotation Status Chart (Span 4) */}
-            <div
-              className="lg:col-span-4 bg-gradient-to-br from-white to-slate-50/30 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col justify-between animate-fade-in-up"
-              style={{ animationDelay: "0.7s" }}
-            >
-              <div>
-                <h3 className="text-sm font-extrabold text-gray-800">
-                  Quotation Status
-                </h3>
-                <p className="text-[10px] text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
-                  Active vs Won vs Lost
-                </p>
-              </div>
-              <div className="h-[200px] flex items-center justify-center mt-4">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={quotationStatusData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={45}
-                      outerRadius={65}
-                      paddingAngle={4}
-                      dataKey="value"
-                      animationDuration={2000}
-                    >
-                      {quotationStatusData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={entry.color}
-                          stroke="transparent"
-                        />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        borderRadius: "12px",
-                        border: "none",
-                        boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1)",
-                      }}
-                      itemStyle={{ fontWeight: "bold", fontSize: "12px" }}
-                    />
-                    <Legend
-                      layout="vertical"
-                      verticalAlign="middle"
-                      align="right"
-                      iconType="circle"
-                      wrapperStyle={{
-                        fontSize: "10px",
-                        fontWeight: 600,
-                        color: "#475569",
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
             {/* Payment Due Progress Bar (Span 4) */}
             <div
               className="lg:col-span-4 bg-gradient-to-br from-white to-slate-50/30 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col justify-between animate-fade-in-up"
@@ -2503,7 +2622,7 @@ export default function Dashboard() {
                 <div className="flex justify-between items-end">
                   <div>
                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
-                      Total Paid
+                      Total Amount
                     </p>
                     <p className="text-lg font-extrabold text-emerald-600 leading-none">
                       ₹
