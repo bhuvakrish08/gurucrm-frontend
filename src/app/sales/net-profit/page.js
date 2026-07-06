@@ -39,7 +39,14 @@ const EMPTY_EXPENSE_FORM = {
   expense_date: "",
 };
 
-const DONUT_COLORS = ["#16a34a", "#f59e0b", "#3b82f6", "#ef4444", "#8b5cf6", "#06b6d4"];
+const DONUT_COLORS = [
+  "#16a34a",
+  "#f59e0b",
+  "#3b82f6",
+  "#ef4444",
+  "#8b5cf6",
+  "#06b6d4",
+];
 
 // Colors for the 4-way trend chart: Amount / Architecture Net / Expense Net / General Expense
 const TREND_COLORS = {
@@ -84,7 +91,8 @@ export default function NetProfitPage() {
     "₹" + Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 });
   const fmtShort = (n) => {
     n = Number(n || 0);
-    if (n >= 100000) return "₹" + (n / 100000).toFixed(1).replace(/\.0$/, "") + "L";
+    if (n >= 100000)
+      return "₹" + (n / 100000).toFixed(1).replace(/\.0$/, "") + "L";
     if (n >= 1000) return "₹" + (n / 1000).toFixed(1).replace(/\.0$/, "") + "k";
     return "₹" + n;
   };
@@ -192,7 +200,9 @@ export default function NetProfitPage() {
   const handleEditExpense = (exp) => {
     setEditingId(exp.id);
     setExpenseForm({
-      expense_master_id: String(exp.expense_master_id ?? exp.expenseMasterId ?? ""),
+      expense_master_id: String(
+        exp.expense_master_id ?? exp.expenseMasterId ?? "",
+      ),
       amount: exp.amount,
       expense_date: exp.expense_date,
     });
@@ -230,7 +240,10 @@ export default function NetProfitPage() {
       });
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.message || (isEdit ? "Failed to update expense" : "Failed to log expense"));
+        throw new Error(
+          data.message ||
+            (isEdit ? "Failed to update expense" : "Failed to log expense"),
+        );
       }
 
       toast.success(isEdit ? "Expense updated" : "Expense added");
@@ -247,7 +260,7 @@ export default function NetProfitPage() {
   // ---------- Delete an expense entry ----------
   const handleDeleteExpense = async (exp) => {
     const confirmed = window.confirm(
-      `Delete "${exp.expense_name}" of ${fmt(exp.amount)} dated ${exp.expense_date}?`
+      `Delete "${exp.expense_name}" of ${fmt(exp.amount)} dated ${exp.expense_date}?`,
     );
     if (!confirmed) return;
 
@@ -286,19 +299,19 @@ export default function NetProfitPage() {
               >
                 <i className="bi bi-house"></i>
               </Link>
-              <i className="bi bi-chevron-right text-[10px]"></i>
-              <Link
+              {/* <i className="bi bi-chevron-right text-[10px]"></i> */}
+              {/* <Link
                 href="/sales/projects"
                 className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
               >
                 Projects
-              </Link>
+              </Link> */}
               <i className="bi bi-chevron-right text-[10px]"></i>
               <Link
-                href="/sales/projects/net-profit"
+                href="/sales/net-profit"
                 className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
               >
-                Net Profit
+                General Expense
               </Link>
             </p>
           </div>
@@ -349,7 +362,8 @@ export default function NetProfitPage() {
         {isLifetime && (
           <div className="mx-4 -mt-3 mb-4">
             <p className="text-xs text-orange-600 font-semibold flex items-center gap-1">
-              <i className="bi bi-info-circle"></i> Showing lifetime data — all projects &amp; expenses (no date filter)
+              <i className="bi bi-info-circle"></i> Showing lifetime data — all
+              projects &amp; expenses (no date filter)
             </p>
           </div>
         )}
@@ -386,19 +400,27 @@ export default function NetProfitPage() {
                 <p className="text-xs text-gray-500 mb-1">
                   {isLifetime ? "Net Revenue (Lifetime)" : "Net Revenue"}
                 </p>
-                <p className="text-2xl font-bold text-gray-900">{fmt(netRevenue)}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {fmt(netRevenue)}
+                </p>
               </div>
               <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-4">
                 <p className="text-xs text-gray-500 mb-1">
-                  {isLifetime ? "General Expense (Lifetime)" : "General Expense"}
+                  {isLifetime
+                    ? "General Expense (Lifetime)"
+                    : "General Expense"}
                 </p>
-                <p className="text-2xl font-bold text-gray-900">{fmt(totalExpense)}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {fmt(totalExpense)}
+                </p>
               </div>
               <div className="bg-orange-50 rounded-2xl shadow-md border border-orange-200 p-4">
                 <p className="text-xs text-orange-600 mb-1">
                   {isLifetime ? "Net Profit (Lifetime)" : "Net Profit"}
                 </p>
-                <p className="text-2xl font-bold text-orange-600">{fmt(netProfit)}</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {fmt(netProfit)}
+                </p>
               </div>
             </div>
 
@@ -406,7 +428,9 @@ export default function NetProfitPage() {
             <div className="mx-4 mb-5">
               <div
                 className={`bg-white rounded-2xl shadow-md border p-4 ${
-                  editingId ? "border-orange-400 ring-1 ring-orange-200" : "border-gray-200"
+                  editingId
+                    ? "border-orange-400 ring-1 ring-orange-200"
+                    : "border-gray-200"
                 }`}
               >
                 <div className="flex items-center justify-between mb-3">
@@ -419,7 +443,10 @@ export default function NetProfitPage() {
                     </span>
                   )}
                 </div>
-                <form onSubmit={handleAddExpense} className="flex flex-col sm:flex-row gap-3">
+                <form
+                  onSubmit={handleAddExpense}
+                  className="flex flex-col sm:flex-row gap-3"
+                >
                   <select
                     name="expense_master_id"
                     value={expenseForm.expense_master_id}
@@ -463,8 +490,8 @@ export default function NetProfitPage() {
                           ? "Updating..."
                           : "Adding..."
                         : editingId
-                        ? "Update"
-                        : "+ Add"}
+                          ? "Update"
+                          : "+ Add"}
                     </button>
                     {editingId && (
                       <button
@@ -501,22 +528,33 @@ export default function NetProfitPage() {
                     <tbody>
                       {loading && (
                         <tr>
-                          <td colSpan={5} className="text-center py-8 text-gray-400">
+                          <td
+                            colSpan={5}
+                            className="text-center py-8 text-gray-400"
+                          >
                             Loading...
                           </td>
                         </tr>
                       )}
                       {!loading && error && (
                         <tr>
-                          <td colSpan={5} className="text-center py-8 text-red-500">
+                          <td
+                            colSpan={5}
+                            className="text-center py-8 text-red-500"
+                          >
                             {error}
                           </td>
                         </tr>
                       )}
                       {!loading && !error && expenses.length === 0 && (
                         <tr>
-                          <td colSpan={5} className="text-center py-8 text-gray-400">
-                            {isLifetime ? "No expenses logged yet." : "No expenses logged for this range."}
+                          <td
+                            colSpan={5}
+                            className="text-center py-8 text-gray-400"
+                          >
+                            {isLifetime
+                              ? "No expenses logged yet."
+                              : "No expenses logged for this range."}
                           </td>
                         </tr>
                       )}
@@ -589,21 +627,30 @@ export default function NetProfitPage() {
                     <tbody>
                       {loading && (
                         <tr>
-                          <td colSpan={6} className="text-center py-8 text-gray-400">
+                          <td
+                            colSpan={6}
+                            className="text-center py-8 text-gray-400"
+                          >
                             Loading...
                           </td>
                         </tr>
                       )}
                       {!loading && error && (
                         <tr>
-                          <td colSpan={6} className="text-center py-8 text-red-500">
+                          <td
+                            colSpan={6}
+                            className="text-center py-8 text-red-500"
+                          >
                             {error}
                           </td>
                         </tr>
                       )}
                       {!loading && !error && projects.length === 0 && (
                         <tr>
-                          <td colSpan={6} className="text-center py-8 text-gray-400">
+                          <td
+                            colSpan={6}
+                            className="text-center py-8 text-gray-400"
+                          >
                             {isLifetime
                               ? "No projects with net revenue found."
                               : "No projects with net revenue in this range."}
@@ -613,7 +660,10 @@ export default function NetProfitPage() {
                       {!loading &&
                         !error &&
                         projects.map((p, i) => (
-                          <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <tr
+                            key={p.id}
+                            className="border-b border-gray-100 hover:bg-gray-50"
+                          >
                             <td className="py-3 px-5">{i + 1}</td>
                             <td className="py-3 px-4 font-semibold text-gray-900">
                               {p.company_name}
@@ -621,7 +671,9 @@ export default function NetProfitPage() {
                             <td className="py-3 px-4">{p.customer_name}</td>
                             <td className="py-3 px-4">{p.quotation_no}</td>
                             <td className="py-3 px-4">{p.quotation_date}</td>
-                            <td className="py-3 px-4">{fmt(p.net_revenue_amount)}</td>
+                            <td className="py-3 px-4">
+                              {fmt(p.net_revenue_amount)}
+                            </td>
                           </tr>
                         ))}
                     </tbody>
@@ -635,7 +687,9 @@ export default function NetProfitPage() {
         {tab === "analytics" && (
           <div className="mx-4 mb-8">
             {analyticsLoading && !analytics && (
-              <div className="text-center py-16 text-gray-400">Loading analytics...</div>
+              <div className="text-center py-16 text-gray-400">
+                Loading analytics...
+              </div>
             )}
 
             {analytics && (
@@ -644,7 +698,9 @@ export default function NetProfitPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-5">
                   <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-4">
                     <p className="text-xs text-gray-500 mb-1">Profit margin</p>
-                    <p className="text-2xl font-bold text-gray-900">{analytics.profitMargin}%</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {analytics.profitMargin}%
+                    </p>
                   </div>
                   <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-4">
                     <p className="text-xs text-gray-500 mb-1">
@@ -652,7 +708,9 @@ export default function NetProfitPage() {
                     </p>
                     <p
                       className={`text-2xl font-bold ${
-                        analytics.revenueChangePct >= 0 ? "text-green-600" : "text-red-600"
+                        analytics.revenueChangePct >= 0
+                          ? "text-green-600"
+                          : "text-red-600"
                       }`}
                     >
                       {analytics.revenueChangePct >= 0 ? "+" : ""}
@@ -665,7 +723,9 @@ export default function NetProfitPage() {
                     </p>
                     <p
                       className={`text-2xl font-bold ${
-                        analytics.expenseChangePct > 0 ? "text-red-600" : "text-green-600"
+                        analytics.expenseChangePct > 0
+                          ? "text-red-600"
+                          : "text-green-600"
                       }`}
                     >
                       {analytics.expenseChangePct >= 0 ? "+" : ""}
@@ -673,7 +733,9 @@ export default function NetProfitPage() {
                     </p>
                   </div>
                   <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-4">
-                    <p className="text-xs text-gray-500 mb-1">Avg daily expense</p>
+                    <p className="text-xs text-gray-500 mb-1">
+                      Avg daily expense
+                    </p>
                     <p className="text-2xl font-bold text-gray-900">
                       {fmt(analytics.avgDailyExpense)}
                     </p>
@@ -684,7 +746,8 @@ export default function NetProfitPage() {
                 <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-4 mb-5">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                     <p className="text-sm font-bold text-gray-900">
-                      Quat Amount vs Expense vs Architecture Amount vs Gen Expense
+                      Quat Amount vs Expense vs Architecture Amount vs Gen
+                      Expense
                     </p>
                     {/* Weekly / Monthly / Yearly toggle */}
                     <div className="flex bg-gray-100 rounded-lg p-1 w-fit">
@@ -710,8 +773,18 @@ export default function NetProfitPage() {
                   </div>
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={analytics.monthly}>
-                      <XAxis dataKey="month" tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
-                      <YAxis tickFormatter={fmtShort} tick={{ fontSize: 12 }} axisLine={false} tickLine={false} />
+                      <XAxis
+                        dataKey="month"
+                        tick={{ fontSize: 12 }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        tickFormatter={fmtShort}
+                        tick={{ fontSize: 12 }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
                       <Tooltip formatter={(v) => fmt(v)} />
                       <Legend
                         wrapperStyle={{ fontSize: 12 }}
@@ -725,10 +798,30 @@ export default function NetProfitPage() {
                           return labels[value] || value;
                         }}
                       />
-                      <Bar dataKey="amount" name="Quat Amount" fill={TREND_COLORS.amount} radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="expense_net" name="Expense" fill={TREND_COLORS.expense_net} radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="architecture_net" name="Architecture Amount" fill={TREND_COLORS.architecture_net} radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="expense" name="Gen Expense" fill={TREND_COLORS.expense} radius={[4, 4, 0, 0]} />
+                      <Bar
+                        dataKey="amount"
+                        name="Quat Amount"
+                        fill={TREND_COLORS.amount}
+                        radius={[4, 4, 0, 0]}
+                      />
+                      <Bar
+                        dataKey="expense_net"
+                        name="Expense"
+                        fill={TREND_COLORS.expense_net}
+                        radius={[4, 4, 0, 0]}
+                      />
+                      <Bar
+                        dataKey="architecture_net"
+                        name="Architecture Amount"
+                        fill={TREND_COLORS.architecture_net}
+                        radius={[4, 4, 0, 0]}
+                      />
+                      <Bar
+                        dataKey="expense"
+                        name="Gen Expense"
+                        fill={TREND_COLORS.expense}
+                        radius={[4, 4, 0, 0]}
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -736,9 +829,13 @@ export default function NetProfitPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
                   {/* Donut: expense breakdown */}
                   <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-4">
-                    <p className="text-sm font-bold text-gray-900 mb-3">Expense breakdown by type</p>
+                    <p className="text-sm font-bold text-gray-900 mb-3">
+                      Expense breakdown by type
+                    </p>
                     {analytics.expenseBreakdown.length === 0 ? (
-                      <p className="text-center text-gray-400 py-10 text-sm">No expenses in range.</p>
+                      <p className="text-center text-gray-400 py-10 text-sm">
+                        No expenses in range.
+                      </p>
                     ) : (
                       <>
                         <ResponsiveContainer width="100%" height={220}>
@@ -752,7 +849,10 @@ export default function NetProfitPage() {
                               paddingAngle={2}
                             >
                               {analytics.expenseBreakdown.map((_, i) => (
-                                <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />
+                                <Cell
+                                  key={i}
+                                  fill={DONUT_COLORS[i % DONUT_COLORS.length]}
+                                />
                               ))}
                             </Pie>
                             <Tooltip formatter={(v) => fmt(v)} />
@@ -760,13 +860,25 @@ export default function NetProfitPage() {
                         </ResponsiveContainer>
                         <div className="flex flex-wrap gap-3 justify-center mt-2">
                           {analytics.expenseBreakdown.map((e, i) => {
-                            const total = analytics.expenseBreakdown.reduce((s, x) => s + x.amount, 0);
-                            const pct = total > 0 ? Math.round((e.amount / total) * 100) : 0;
+                            const total = analytics.expenseBreakdown.reduce(
+                              (s, x) => s + x.amount,
+                              0,
+                            );
+                            const pct =
+                              total > 0
+                                ? Math.round((e.amount / total) * 100)
+                                : 0;
                             return (
-                              <span key={i} className="text-xs text-gray-600 flex items-center gap-1">
+                              <span
+                                key={i}
+                                className="text-xs text-gray-600 flex items-center gap-1"
+                              >
                                 <span
                                   className="w-2.5 h-2.5 rounded-full inline-block"
-                                  style={{ background: DONUT_COLORS[i % DONUT_COLORS.length] }}
+                                  style={{
+                                    background:
+                                      DONUT_COLORS[i % DONUT_COLORS.length],
+                                  }}
                                 ></span>
                                 {e.name} {pct}%
                               </span>
@@ -779,7 +891,9 @@ export default function NetProfitPage() {
 
                   {/* Top categories + top projects */}
                   <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-4">
-                    <p className="text-sm font-bold text-gray-900 mb-3">Top expense categories</p>
+                    <p className="text-sm font-bold text-gray-900 mb-3">
+                      Top expense categories
+                    </p>
                     {analytics.topExpenseCategories.length === 0 ? (
                       <p className="text-gray-400 text-sm mb-4">No data.</p>
                     ) : (
@@ -789,13 +903,17 @@ export default function NetProfitPage() {
                             <span className="text-gray-700">
                               {i + 1}. {c.name}
                             </span>
-                            <span className="font-semibold text-gray-900">{fmt(c.amount)}</span>
+                            <span className="font-semibold text-gray-900">
+                              {fmt(c.amount)}
+                            </span>
                           </li>
                         ))}
                       </ul>
                     )}
 
-                    <p className="text-sm font-bold text-gray-900 mb-3">Top projects by revenue</p>
+                    <p className="text-sm font-bold text-gray-900 mb-3">
+                      Top projects by revenue
+                    </p>
                     {analytics.topProjects.length === 0 ? (
                       <p className="text-gray-400 text-sm">No data.</p>
                     ) : (
@@ -805,7 +923,9 @@ export default function NetProfitPage() {
                             <span className="text-gray-700">
                               {i + 1}. {p.name}
                             </span>
-                            <span className="font-semibold text-gray-900">{fmt(p.amount)}</span>
+                            <span className="font-semibold text-gray-900">
+                              {fmt(p.amount)}
+                            </span>
                           </li>
                         ))}
                       </ul>
@@ -815,12 +935,17 @@ export default function NetProfitPage() {
 
                 {/* Budget tracking */}
                 <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-4">
-                  <p className="text-sm font-bold text-gray-900 mb-4">Budget tracking</p>
+                  <p className="text-sm font-bold text-gray-900 mb-4">
+                    Budget tracking
+                  </p>
                   <div className="space-y-4">
                     {analytics.budgetTracking
                       .filter((b) => b.budget != null)
                       .map((b, i) => {
-                        const pct = b.budget > 0 ? Math.min(100, (b.spent / b.budget) * 100) : 0;
+                        const pct =
+                          b.budget > 0
+                            ? Math.min(100, (b.spent / b.budget) * 100)
+                            : 0;
                         const over = b.spent >= b.budget;
                         return (
                           <div key={i}>
@@ -838,24 +963,25 @@ export default function NetProfitPage() {
                             </div>
                             {over && (
                               <p className="text-xs text-orange-500 mt-1 flex items-center gap-1">
-                                <i className="bi bi-exclamation-triangle"></i> Budget limit reached
+                                <i className="bi bi-exclamation-triangle"></i>{" "}
+                                Budget limit reached
                               </p>
                             )}
                           </div>
                         );
                       })}
-                    {analytics.budgetTracking.filter((b) => b.budget != null).length === 0 && (
+                    {analytics.budgetTracking.filter((b) => b.budget != null)
+                      .length === 0 && (
                       <p className="text-gray-400 text-sm">
                         No budget limits set yet for any expense type.
                       </p>
                     )}
-
                   </div>
                 </div>
-              </> 
+              </>
             )}
           </div>
-        )}  
+        )}
       </div>
     </>
   );
