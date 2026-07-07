@@ -467,7 +467,7 @@ export default function Header() {
         )}
         {["Admin", "Super Admin"].includes(userRole) && (
           <Link
-            href="/sales/net-profit"
+            href="/sales/Genexpence"
             className="hover:text-orange-500 transition-colors"
           >
             General Expense

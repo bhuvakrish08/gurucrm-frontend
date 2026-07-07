@@ -3043,6 +3043,7 @@ function Page() {
                 )}
               </div>
 
+<<<<<<< Updated upstream
               {/* Footer */}
               <div className="border-t border-slate-100 px-6 py-4 bg-slate-50 flex items-center justify-end">
                 <button
@@ -3052,6 +3053,84 @@ function Page() {
                 >
                   Close
                 </button>
+=======
+            {/* Form body */}
+            <div className="p-6 space-y-4">
+
+              {editModalError && (
+                <div className="p-3 bg-rose-50 text-rose-600 border border-rose-100 text-xs rounded-xl font-medium">
+                  {editModalError}
+                </div>
+              )}
+              00
+
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Company Name</label>
+                  <input
+                    type="text"
+                    value={editCompanyName}
+                    onChange={(e) => setEditCompanyName(e.target.value)}
+                    placeholder="e.g. Acme Corp"
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-orange-500 focus:outline-none transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Customer Name</label>
+                  <input
+                    type="text"
+                    value={editCustomerName}
+                    onChange={(e) => setEditCustomerName(e.target.value)}
+                    placeholder="e.g. John Doe"
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-orange-500 focus:outline-none transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Reference</label>
+                  <input
+                    type="text"
+                    value={editReference}
+                    onChange={(e) => setEditReference(e.target.value)}
+                    placeholder="e.g. Manthan"
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-orange-500 focus:outline-none transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Source</label>
+                  <input
+                    type="text"
+                    value={editSource}
+                    onChange={(e) => setEditSource(e.target.value)}
+                    placeholder="e.g. Advertisement"
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-orange-500 focus:outline-none transition-colors"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Grand Total</label>
+                  <input
+                    type="number"
+                    value={editGrandTotal}
+                    onChange={(e) => setEditGrandTotal(e.target.value)}
+                    placeholder="0"
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-orange-500 focus:outline-none transition-colors no-spinner"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Base Amount</label>
+                  <input
+                    type="number"
+                    value={editAmount}
+                    onChange={(e) => setEditAmount(e.target.value)}
+                    placeholder="0"
+                    className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:border-orange-500 focus:outline-none transition-colors no-spinner"
+                  />
+                </div>
+>>>>>>> Stashed changes
               </div>
             </div>
           </div>
