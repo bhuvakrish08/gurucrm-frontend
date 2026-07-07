@@ -767,7 +767,25 @@ export default function Header() {
                 Task List
               </Link>
             )}
-            
+          {["Admin", "Super Admin"].includes(userRole) && (
+            <Link
+              onClick={() => setMobileMenuOpen(false)}
+              href="/sales/projects"
+              className="hover:text-orange-500 w-full py-1"
+            >
+              Projects
+            </Link>
+          )}
+
+          {["Admin", "Super Admin"].includes(userRole) && (
+            <Link
+              onClick={() => setMobileMenuOpen(false)}
+              href="/sales/net-profit"
+              className="hover:text-orange-500 w-full py-1"
+            >
+              General Expense
+            </Link>
+          )}
           {["Admin", "Super Admin"].includes(userRole) && (
             <Link
               onClick={() => setMobileMenuOpen(false)}
