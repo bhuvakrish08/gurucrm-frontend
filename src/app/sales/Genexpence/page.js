@@ -62,6 +62,40 @@ const TREND_COLORS = {
   expense: "#f97316",
 };
 
+// NEW: animates a numeric value counting up from its previous value whenever it changes
+function CountUp({ value, formatter, duration = 700 }) {
+  const [display, setDisplay] = useState(value);
+  const rafRef = useRef(null);
+  const fromRef = useRef(value);
+
+  useEffect(() => {
+    const from = fromRef.current;
+    const to = Number(value) || 0;
+    const start = performance.now();
+
+    cancelAnimationFrame(rafRef.current);
+
+    const tick = (now) => {
+      const progress = Math.min(1, (now - start) / duration);
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = from + (to - from) * eased;
+      setDisplay(current);
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        fromRef.current = to;
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  return <>{formatter(display)}</>;
+}
+
 export default function NetProfitPage() {
   const [tab, setTab] = useState("entry"); // "entry" | "analytics"
   const [range, setRange] = useState(getDefaultRange());
@@ -419,8 +453,8 @@ export default function NetProfitPage() {
       <button
         type="button"
         onClick={applyThisMonth}
-        className={`rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap ${
-          !isLifetime ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+        className={`btn-press rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap transition-colors duration-200 ${
+          !isLifetime ? "bg-orange-500 text-white shadow-sm" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
         }`}
       >
         This month
@@ -428,8 +462,8 @@ export default function NetProfitPage() {
       <button
         type="button"
         onClick={applyLifetime}
-        className={`rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap flex items-center gap-1 ${
-          isLifetime ? "bg-orange-500 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+        className={`btn-press rounded-lg px-3 py-2 text-sm font-semibold whitespace-nowrap flex items-center gap-1 transition-colors duration-200 ${
+          isLifetime ? "bg-orange-500 text-white shadow-sm" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
         }`}
       >
         <i className="bi bi-infinity"></i> All Time
@@ -439,18 +473,29 @@ export default function NetProfitPage() {
 
   const SummaryCards = () => (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 flex items-center gap-4">
-        <div className="w-12 h-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center text-lg shrink-0">
+      <div
+        className="stat-card anim-fade-in-up card-hover bg-white rounded-2xl shadow-sm border border-gray-200 p-5 flex items-center gap-4"
+        style={{ animationDelay: "0ms" }}
+      >
+        <span className="anim-bar-grow absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-green-400 to-green-600" style={{ animationDelay: "150ms" }}></span>
+        <span className="sheen"></span>
+        <div
+          className="stat-icon anim-icon-pop w-12 h-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center text-lg shrink-0"
+          style={{ animationDelay: "120ms" }}
+        >
           <i className="bi bi-graph-up-arrow"></i>
         </div>
         <div>
           <p className="text-sm text-gray-500 mb-1">Balance Amount</p>
-          <p className="text-2xl font-bold text-gray-900">{fmt(netRevenue)}</p>
+          <p className="text-2xl font-bold text-gray-900">
+            <CountUp value={netRevenue} formatter={fmt} />
+          </p>
           {analytics && (
             <p
-              className={`text-xs font-semibold mt-1 flex items-center gap-1 ${
+              className={`anim-badge-in text-xs font-semibold mt-1 flex items-center gap-1 ${
                 analytics.revenueChangePct >= 0 ? "text-green-600" : "text-red-600"
               }`}
+              style={{ animationDelay: "320ms" }}
             >
               <i className={`bi bi-arrow-${analytics.revenueChangePct >= 0 ? "up" : "down"}`}></i>
               {Math.abs(analytics.revenueChangePct)}% from last month
@@ -458,18 +503,29 @@ export default function NetProfitPage() {
           )}
         </div>
       </div>
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 flex items-center gap-4">
-        <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-lg shrink-0">
+      <div
+        className="stat-card anim-fade-in-up card-hover bg-white rounded-2xl shadow-sm border border-gray-200 p-5 flex items-center gap-4"
+        style={{ animationDelay: "80ms" }}
+      >
+        <span className="anim-bar-grow absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-blue-400 to-blue-600" style={{ animationDelay: "230ms" }}></span>
+        <span className="sheen"></span>
+        <div
+          className="stat-icon anim-icon-pop w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-lg shrink-0"
+          style={{ animationDelay: "200ms" }}
+        >
           <i className="bi bi-wallet2"></i>
         </div>
         <div>
           <p className="text-sm text-gray-500 mb-1">Total Gen.Expenses</p>
-          <p className="text-2xl font-bold text-gray-900">{fmt(totalExpense)}</p>
+          <p className="text-2xl font-bold text-gray-900">
+            <CountUp value={totalExpense} formatter={fmt} />
+          </p>
           {analytics && (
             <p
-              className={`text-xs font-semibold mt-1 flex items-center gap-1 ${
+              className={`anim-badge-in text-xs font-semibold mt-1 flex items-center gap-1 ${
                 analytics.expenseChangePct > 0 ? "text-blue-600" : "text-green-600"
               }`}
+              style={{ animationDelay: "400ms" }}
             >
               <i className={`bi bi-arrow-${analytics.expenseChangePct >= 0 ? "up" : "down"}`}></i>
               {Math.abs(analytics.expenseChangePct)}% from last month
@@ -477,24 +533,36 @@ export default function NetProfitPage() {
           )}
         </div>
       </div>
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 flex items-center gap-4">
+      <div
+        className="stat-card anim-fade-in-up card-hover bg-white rounded-2xl shadow-sm border border-gray-200 p-5 flex items-center gap-4"
+        style={{ animationDelay: "160ms" }}
+      >
+        <span
+          className={`anim-bar-grow absolute top-0 left-0 h-1 w-full bg-gradient-to-r ${
+            netProfit >= 0 ? "from-orange-400 to-orange-600" : "from-red-400 to-red-600"
+          }`}
+          style={{ animationDelay: "310ms" }}
+        ></span>
+        <span className="sheen"></span>
         <div
-          className={`w-12 h-12 rounded-full flex items-center justify-center text-lg shrink-0 ${
+          className={`stat-icon anim-icon-pop w-12 h-12 rounded-full flex items-center justify-center text-lg shrink-0 ${
             netProfit >= 0 ? "bg-orange-50 text-orange-600" : "bg-red-50 text-red-600"
           }`}
+          style={{ animationDelay: "280ms" }}
         >
           <i className={`bi ${netProfit >= 0 ? "bi-piggy-bank" : "bi-exclamation-triangle"}`}></i>
         </div>
         <div>
           <p className="text-sm text-gray-500 mb-1">Available Balance</p>
           <p className={`text-2xl font-bold ${netProfit >= 0 ? "text-gray-900" : "text-red-600"}`}>
-            {fmt(netProfit)}
+            <CountUp value={netProfit} formatter={fmt} />
           </p>
           {analytics && (
             <p
-              className={`text-xs font-semibold mt-1 flex items-center gap-1 ${
+              className={`anim-badge-in text-xs font-semibold mt-1 flex items-center gap-1 ${
                 netProfit >= 0 ? "text-green-600" : "text-red-600"
               }`}
+              style={{ animationDelay: "480ms" }}
             >
               <i className={`bi bi-arrow-${netProfit >= 0 ? "up" : "down"}`}></i>
               {analytics.profitMargin}% margin
@@ -508,9 +576,266 @@ export default function NetProfitPage() {
   return (
     <>
       <Header />
+      {/* NEW: animation keyframes + reusable animation utility classes (UI only, no functional impact) */}
+      <style jsx global>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+        @keyframes rowIn {
+          from {
+            opacity: 0;
+            transform: translateX(-6px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+        @keyframes shake {
+          10%,
+          90% {
+            transform: translateX(-1px);
+          }
+          20%,
+          80% {
+            transform: translateX(2px);
+          }
+          30%,
+          50%,
+          70% {
+            transform: translateX(-3px);
+          }
+          40%,
+          60% {
+            transform: translateX(3px);
+          }
+        }
+        @keyframes pulseGlow {
+          0% {
+            background-color: rgba(34, 197, 94, 0.18);
+          }
+          50% {
+            background-color: rgba(34, 197, 94, 0.06);
+          }
+          100% {
+            background-color: transparent;
+          }
+        }
+        @keyframes shimmer {
+          from {
+            background-position: -400px 0;
+          }
+          to {
+            background-position: 400px 0;
+          }
+        }
+        @keyframes spinSlow {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+        .anim-spin-slow {
+          display: inline-block;
+          animation: spinSlow 0.8s linear infinite;
+        }
+        @keyframes barGrow {
+          from {
+            transform: scaleX(0);
+          }
+          to {
+            transform: scaleX(1);
+          }
+        }
+        @keyframes iconPop {
+          0% {
+            opacity: 0;
+            transform: scale(0.5) rotate(-15deg);
+          }
+          60% {
+            opacity: 1;
+            transform: scale(1.15) rotate(4deg);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+          }
+        }
+        @keyframes badgeSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(6px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .anim-bar-grow {
+          transform-origin: left;
+          animation: barGrow 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .anim-icon-pop {
+          animation: iconPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+        .anim-badge-in {
+          animation: badgeSlideIn 0.4s ease both;
+        }
+        .stat-card {
+          position: relative;
+          overflow: hidden;
+        }
+        .stat-card .sheen {
+          content: "";
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          background: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.55) 50%, transparent 80%);
+          transform: translateX(-120%);
+          transition: transform 0.75s ease;
+        }
+        .stat-card:hover .sheen {
+          transform: translateX(120%);
+        }
+        .stat-icon {
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .stat-card:hover .stat-icon {
+          transform: scale(1.08) rotate(-4deg);
+        }
+        .anim-fade-in-up {
+          animation: fadeInUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+        .anim-fade-in {
+          animation: fadeIn 0.4s ease both;
+        }
+        .anim-row-in {
+          animation: rowIn 0.3s ease both;
+        }
+        .anim-shake {
+          animation: shake 0.4s ease;
+        }
+        .anim-pulse-glow {
+          animation: pulseGlow 2s ease-out;
+        }
+        .anim-shimmer {
+          background: linear-gradient(90deg, #f3f4f6 0%, #eceef1 40px, #f3f4f6 80px);
+          background-size: 600px 100%;
+          animation: shimmer 1.4s ease-in-out infinite;
+        }
+        .card-hover {
+          transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+        }
+        .card-hover:hover {
+          transform: translateY(-3px) scale(1.01);
+          box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.12);
+          border-color: rgba(0, 0, 0, 0.08);
+        }
+        .btn-press {
+          transition: transform 0.12s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+        }
+        .btn-press:active {
+          transform: scale(0.96);
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .anim-fade-in-up,
+          .anim-fade-in,
+          .anim-row-in,
+          .anim-shake,
+          .anim-pulse-glow,
+          .anim-spin-slow,
+          .anim-shimmer,
+          .anim-bar-grow,
+          .anim-icon-pop,
+          .anim-badge-in,
+          .stat-card .sheen,
+          .stat-icon,
+          .card-hover,
+          .btn-press {
+            animation: none !important;
+            transition: none !important;
+          }
+        }
+
+  /* Lightbulb subtle pulse/glow */
+  @keyframes iconPulseGlow {
+    0%, 100% {
+      transform: scale(1);
+      filter: drop-shadow(0 0 0 rgba(251, 191, 36, 0));
+    }
+    50% {
+      transform: scale(1.12);
+      filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.6));
+    }
+  }
+  .anim-icon-pulse {
+    display: inline-block;
+    animation: iconPulseGlow 2.2s ease-in-out infinite;
+  }
+
+  /* Check icon pop-in */
+  @keyframes checkPopIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.3) rotate(-15deg);
+    }
+    60% {
+      opacity: 1;
+      transform: scale(1.2) rotate(5deg);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
+    }
+  }
+  .anim-check-pop {
+    display: inline-block;
+    opacity: 0;
+    animation: checkPopIn 0.4s ease-out forwards;
+  }
+
+  /* Card hover lift */
+  .anim-card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+
+ /* Continuous fade-in / fade-out loop for insight cards */
+    @keyframes fadeInOut {
+    0%   { background-color: rgb(219 234 254); }  /* gray-50 */
+    50%  { background-color: rgb(249 250 251); }  /* blue-100 */
+    100% { background-color: rgb(219 234 254); }  /* gray-50 */
+  }
+  .anim-fade-in-out {
+    animation: fadeInOut 3s ease-in-out infinite;
+  }
+  /* Card hover lift (kept from before) */
+  .anim-card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  }
+
+      `}</style>
       <div className="bg-gray-50 min-h-screen">
         {/* Breadcrumb + date range */}
-        <div className="bg-white w-full shadow-sm p-3 mt-1 mb-5 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
+        <div className="anim-fade-in-up bg-white w-full shadow-sm p-3 mt-1 mb-5 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
           <div className="hidden sm:flex items-center text-gray-700 w-full sm:w-auto">
             <p className="flex items-center flex-wrap">
               <Link href="/dashboard" className="mx-2 text-xl text-gray-400 hover:text-indigo-600">
@@ -538,7 +863,7 @@ export default function NetProfitPage() {
           <div className="flex gap-1 border-b border-gray-200">
             <button
               onClick={() => setTab("entry")}
-              className={`px-4 py-2 text-sm font-semibold flex items-center gap-2 border-b-2 -mb-[1px] ${
+              className={`px-4 py-2 text-sm font-semibold flex items-center gap-2 border-b-2 -mb-[1px] transition-all duration-200 ${
                 tab === "entry" ? "border-orange-500 text-orange-600" : "border-transparent text-gray-400 hover:text-gray-600"
               }`}
             >
@@ -546,7 +871,7 @@ export default function NetProfitPage() {
             </button>
             <button
               onClick={() => setTab("analytics")}
-              className={`px-4 py-2 text-sm font-semibold flex items-center gap-2 border-b-2 -mb-[1px] ${
+              className={`px-4 py-2 text-sm font-semibold flex items-center gap-2 border-b-2 -mb-[1px] transition-all duration-200 ${
                 tab === "analytics" ? "border-orange-500 text-orange-600" : "border-transparent text-gray-400 hover:text-gray-600"
               }`}
             >
@@ -557,7 +882,7 @@ export default function NetProfitPage() {
             <button
               type="button"
               onClick={handleExportExcel}
-              className="flex items-center gap-2 text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-4 py-2"
+              className="btn-press flex items-center gap-2 text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-lg px-4 py-2 transition-colors duration-200"
             >
               <i className="bi bi-download"></i> Export
             </button>
@@ -573,7 +898,7 @@ export default function NetProfitPage() {
             {/* Add / Edit expense form */}
             <div className="mx-4 mb-5">
               <div
-                className={`bg-orange-50 rounded-2xl border p-5 ${
+                className={`anim-fade-in-up bg-orange-50 rounded-2xl border p-5 transition-colors duration-300 ${
                   editingId ? "border-orange-400 ring-1 ring-orange-200" : "border-orange-100"
                 }`}
               >
@@ -596,8 +921,8 @@ export default function NetProfitPage() {
                       name="expense_master_id"
                       value={expenseForm.expense_master_id}
                       onChange={handleExpenseFormChange}
-                      className={`p-2.5 w-full border text-gray-700 bg-white rounded-lg outline-none text-sm focus:border-orange-400 focus:ring-1 focus:ring-orange-200 ${
-                        formErrors.expense_master_id ? "border-red-400" : "border-gray-300"
+                      className={`p-2.5 w-full border text-gray-700 bg-white rounded-lg outline-none text-sm transition-all duration-150 focus:border-orange-400 focus:ring-1 focus:ring-orange-200 ${
+                        formErrors.expense_master_id ? "border-red-400 anim-shake" : "border-gray-300"
                       }`}
                     >
                       <option value="">Select type</option>
@@ -623,8 +948,8 @@ export default function NetProfitPage() {
                         placeholder="Enter amount"
                         value={expenseForm.amount}
                         onChange={handleExpenseFormChange}
-                        className={`p-2.5 pl-6 w-full border text-gray-700 bg-white rounded-lg outline-none text-sm focus:border-orange-400 focus:ring-1 focus:ring-orange-200 ${
-                          formErrors.amount ? "border-red-400" : "border-gray-300"
+                        className={`p-2.5 pl-6 w-full border text-gray-700 bg-white rounded-lg outline-none text-sm transition-all duration-150 focus:border-orange-400 focus:ring-1 focus:ring-orange-200 ${
+                          formErrors.amount ? "border-red-400 anim-shake" : "border-gray-300"
                         }`}
                       />
                     </div>
@@ -638,8 +963,8 @@ export default function NetProfitPage() {
                       name="expense_date"
                       value={expenseForm.expense_date}
                       onChange={handleExpenseFormChange}
-                      className={`p-2.5 w-full border text-gray-700 bg-white rounded-lg outline-none text-sm focus:border-orange-400 focus:ring-1 focus:ring-orange-200 ${
-                        formErrors.expense_date ? "border-red-400" : "border-gray-300"
+                      className={`p-2.5 w-full border text-gray-700 bg-white rounded-lg outline-none text-sm transition-all duration-150 focus:border-orange-400 focus:ring-1 focus:ring-orange-200 ${
+                        formErrors.expense_date ? "border-red-400 anim-shake" : "border-gray-300"
                       }`}
                     />
                     {formErrors.expense_date && (
@@ -655,7 +980,7 @@ export default function NetProfitPage() {
                       placeholder="Add a note..."
                       value={expenseForm.notes}
                       onChange={handleExpenseFormChange}
-                      className="p-2.5 w-full border border-gray-300 text-gray-700 bg-white rounded-lg outline-none text-sm focus:border-orange-400 focus:ring-1 focus:ring-orange-200"
+                      className="p-2.5 w-full border border-gray-300 text-gray-700 bg-white rounded-lg outline-none text-sm transition-all duration-150 focus:border-orange-400 focus:ring-1 focus:ring-orange-200"
                     />
                   </div>
 
@@ -663,11 +988,20 @@ export default function NetProfitPage() {
                     <button
                       type="submit"
                       disabled={saving}
-                      className={`px-5 py-2.5 rounded-lg shadow-sm font-semibold text-sm text-white disabled:opacity-60 whitespace-nowrap w-full transition-colors ${
+                      className={`btn-press px-5 py-2.5 rounded-lg shadow-sm font-semibold text-sm text-white disabled:opacity-60 whitespace-nowrap w-full transition-colors ${
                         editingId ? "bg-blue-600 hover:bg-blue-700" : "bg-orange-500 hover:bg-orange-600"
                       }`}
                     >
-                      {saving ? (editingId ? "Updating..." : "Adding...") : editingId ? "Update" : "+ Add Expense"}
+                      {saving ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <i className="bi bi-arrow-repeat anim-spin-slow"></i>
+                          {editingId ? "Updating..." : "Adding..."}
+                        </span>
+                      ) : editingId ? (
+                        "Update"
+                      ) : (
+                        "+ Add Expense"
+                      )}
                     </button>
                   </div>
                   {editingId && (
@@ -675,7 +1009,7 @@ export default function NetProfitPage() {
                       type="button"
                       onClick={handleCancelEdit}
                       disabled={saving}
-                      className="border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-100 whitespace-nowrap sm:col-span-1"
+                      className="btn-press border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-gray-100 whitespace-nowrap sm:col-span-1 transition-colors duration-150"
                     >
                       Cancel
                     </button>
@@ -687,7 +1021,7 @@ export default function NetProfitPage() {
             {/* Expenses + Projects */}
             <div className="mx-4 mb-8 grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Expenses table */}
-              <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
+              <div className="anim-fade-in-up lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-200 p-4" style={{ animationDelay: "60ms" }}>
                 <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                   <div>
                     <p className="text-sm font-bold text-gray-900">All Expenses</p>
@@ -697,14 +1031,14 @@ export default function NetProfitPage() {
                     <button
                       type="button"
                       onClick={handleExportExcel}
-                      className="flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 rounded-md px-2.5 py-1.5"
+                      className="btn-press flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 rounded-md px-2.5 py-1.5 transition-colors duration-150"
                     >
                       <i className="bi bi-file-earmark-excel"></i> Excel
                     </button>
                     <button
                       type="button"
                       onClick={handleExportPDF}
-                      className="flex items-center gap-1 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md px-2.5 py-1.5"
+                      className="btn-press flex items-center gap-1 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md px-2.5 py-1.5 transition-colors duration-150"
                     >
                       <i className="bi bi-file-earmark-pdf"></i> PDF
                     </button>
@@ -715,7 +1049,7 @@ export default function NetProfitPage() {
                         value={expenseSearch}
                         onChange={(e) => setExpenseSearch(e.target.value)}
                         placeholder="Search expense..."
-                        className="pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-md outline-none focus:border-orange-400 bg-white w-40"
+                        className="pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-md outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-200 bg-white w-40 transition-all duration-150 focus:w-52"
                       />
                     </div>
                   </div>
@@ -735,13 +1069,32 @@ export default function NetProfitPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {loading && (
-                        <tr>
-                          <td colSpan={7} className="text-center py-8 text-gray-400">
-                            Loading...
-                          </td>
-                        </tr>
-                      )}
+                      {loading &&
+                        Array.from({ length: 4 }).map((_, i) => (
+                          <tr key={`sk-${i}`} className="border-b border-gray-100">
+                            <td className="py-3 px-3">
+                              <div className="anim-shimmer h-3 w-4 rounded"></div>
+                            </td>
+                            <td className="py-3 px-3">
+                              <div className="anim-shimmer h-3 w-28 rounded"></div>
+                            </td>
+                            <td className="py-3 px-3">
+                              <div className="anim-shimmer h-5 w-16 rounded-full"></div>
+                            </td>
+                            <td className="py-3 px-3">
+                              <div className="anim-shimmer h-3 w-16 rounded"></div>
+                            </td>
+                            <td className="py-3 px-3">
+                              <div className="anim-shimmer h-3 w-20 rounded"></div>
+                            </td>
+                            <td className="py-3 px-3">
+                              <div className="anim-shimmer h-3 w-24 rounded"></div>
+                            </td>
+                            <td className="py-3 px-3">
+                              <div className="anim-shimmer h-8 w-16 rounded-full ml-auto"></div>
+                            </td>
+                          </tr>
+                        ))}
                       {!loading && error && (
                         <tr>
                           <td colSpan={7} className="text-center py-8 text-red-500">
@@ -768,11 +1121,12 @@ export default function NetProfitPage() {
                           return (
                             <tr
                               key={exp.id}
-                              className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
+                              style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
+                              className={`anim-row-in border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200 ${
                                 editingId === exp.id
                                   ? "bg-orange-50"
                                   : newlyAddedId === exp.id
-                                  ? "bg-green-50"
+                                  ? "anim-pulse-glow"
                                   : ""
                               }`}
                             >
@@ -794,7 +1148,7 @@ export default function NetProfitPage() {
                                     type="button"
                                     onClick={() => handleEditExpense(exp)}
                                     title="Edit"
-                                    className="w-8 h-8 flex items-center justify-center rounded-full text-blue-600 hover:bg-blue-50 border border-blue-200"
+                                    className="btn-press w-8 h-8 flex items-center justify-center rounded-full text-blue-600 hover:bg-blue-50 hover:scale-110 border border-blue-200 transition-all duration-150"
                                   >
                                     <i className="bi bi-pencil-square"></i>
                                   </button>
@@ -803,10 +1157,10 @@ export default function NetProfitPage() {
                                     onClick={() => handleDeleteExpense(exp)}
                                     disabled={deletingId === exp.id}
                                     title="Delete"
-                                    className="w-8 h-8 flex items-center justify-center rounded-full text-red-600 hover:bg-red-50 border border-red-200 disabled:opacity-50"
+                                    className="btn-press w-8 h-8 flex items-center justify-center rounded-full text-red-600 hover:bg-red-50 hover:scale-110 border border-red-200 disabled:opacity-50 transition-all duration-150"
                                   >
                                     {deletingId === exp.id ? (
-                                      <i className="bi bi-hourglass-split"></i>
+                                      <i className="bi bi-hourglass-split anim-spin-slow"></i>
                                     ) : (
                                       <i className="bi bi-trash"></i>
                                     )}
@@ -831,18 +1185,21 @@ export default function NetProfitPage() {
                         type="button"
                         disabled={currentPage === 1}
                         onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                        className="w-8 h-8 flex items-center justify-center rounded-md border border-gray-200 text-gray-500 disabled:opacity-40"
+                        className="btn-press w-8 h-8 flex items-center justify-center rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors duration-150"
                       >
                         <i className="bi bi-chevron-left"></i>
                       </button>
-                      <span className="w-8 h-8 flex items-center justify-center rounded-md bg-orange-500 text-white text-sm font-semibold">
+                      <span
+                        key={currentPage}
+                        className="anim-fade-in w-8 h-8 flex items-center justify-center rounded-md bg-orange-500 text-white text-sm font-semibold"
+                      >
                         {currentPage}
                       </span>
                       <button
                         type="button"
                         disabled={currentPage === totalPages}
                         onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                        className="w-8 h-8 flex items-center justify-center rounded-md border border-gray-200 text-gray-500 disabled:opacity-40"
+                        className="btn-press w-8 h-8 flex items-center justify-center rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors duration-150"
                       >
                         <i className="bi bi-chevron-right"></i>
                       </button>
@@ -852,7 +1209,7 @@ export default function NetProfitPage() {
               </div>
 
               {/* Projects table */}
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
+              <div className="anim-fade-in-up bg-white rounded-2xl shadow-sm border border-gray-200 p-4" style={{ animationDelay: "120ms" }}>
                 <p className="text-sm font-bold text-gray-900 mb-1">Projects Net Revenue</p>
                 <p className="text-xs text-gray-400 mb-3">Revenue from all projects</p>
                 <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
@@ -884,7 +1241,7 @@ export default function NetProfitPage() {
                       {!loading &&
                         !error &&
                         projects.map((p, i) => (
-                          <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-150">
                             <td className="py-2.5 px-2">{i + 1}</td>
                             <td className="py-2.5 px-2 font-semibold text-gray-900">{p.company_name}</td>
                             <td className="py-2.5 px-2">{p.customer_name}</td>
@@ -897,9 +1254,10 @@ export default function NetProfitPage() {
                 <div className="mt-3">
                   <Link
                     href="/sales/projects"
-                    className="text-xs font-semibold text-orange-600 hover:text-orange-700 flex items-center gap-1"
+                    className="group text-xs font-semibold text-orange-600 hover:text-orange-700 flex items-center gap-1 transition-colors duration-150"
                   >
-                    View All Projects <i className="bi bi-arrow-right"></i>
+                    View All Projects{" "}
+                    <i className="bi bi-arrow-right transition-transform duration-150 group-hover:translate-x-1"></i>
                   </Link>
                 </div>
               </div>
@@ -912,68 +1270,41 @@ export default function NetProfitPage() {
             <SummaryCards />
 
             {analyticsLoading && !analytics && (
-              <div className="text-center py-16 text-gray-400">Loading analytics...</div>
+              <div className="anim-fade-in text-center py-16 text-gray-400">
+                <i className="bi bi-arrow-repeat anim-spin-slow text-xl block mb-2"></i>
+                Loading analytics...
+              </div>
             )}
 
             {analytics && (
               <>
-                {/* Top mini stat cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-5">
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
-                    <p className="text-xs text-gray-500 mb-1">Profit margin</p>
-                    <p className="text-2xl font-bold text-gray-900">{analytics.profitMargin}%</p>
-                  </div>
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
-                    <p className="text-xs text-gray-500 mb-1">
-                      {isLifetime ? "Revenue trend" : "Balance Amount vs last period"}
-                    </p>
-                    <p
-                      className={`text-2xl font-bold ${
-                        analytics.revenueChangePct >= 0 ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {analytics.revenueChangePct >= 0 ? "+" : ""}
-                      {analytics.revenueChangePct}%
-                    </p>
-                  </div>
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
-                    <p className="text-xs text-gray-500 mb-1">
-                      {isLifetime ? "Expense trend" : "Gen. Expense vs last period"}
-                    </p>
-                    <p
-                      className={`text-2xl font-bold ${
-                        analytics.expenseChangePct > 0 ? "text-red-600" : "text-green-600"
-                      }`}
-                    >
-                      {analytics.expenseChangePct >= 0 ? "+" : ""}
-                      {analytics.expenseChangePct}%
-                    </p>
-                  </div>
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
-                    <p className="text-xs text-gray-500 mb-1">Avg daily expense</p>
-                    <p className="text-2xl font-bold text-gray-900">{fmt(analytics.avgDailyExpense)}</p>
-                  </div>
-                </div>
+               
 
                 {/* Quick Insights */}
-                {analytics.quickInsights?.length > 0 && (
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 mb-5">
-                    <p className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-                      <i className="bi bi-lightbulb text-amber-400"></i> Quick Insights
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {analytics.quickInsights.map((insight, i) => (
-                        <div key={i} className="flex items-start gap-2 bg-gray-50 rounded-lg p-3">
-                          <i className="bi bi-check-circle text-orange-400 mt-0.5"></i>
-                          <p className="text-xs text-gray-600">{insight}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+           {analytics.quickInsights?.length > 0 && (
+  <div className="anim-fade-in-up bg-white rounded-2xl shadow-sm border border-gray-200 p-4 mb-5">
+    <p className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+      <i className="bi bi-lightbulb text-amber-400 anim-icon-pulse"></i> Quick Insights
+    </p>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      {analytics.quickInsights.map((insight, i) => (
+        <div
+          key={i}
+          className="anim-fade-in-out anim-card-hover flex items-start gap-2 bg-gray-50 rounded-lg p-3 transition-all duration-200 hover:bg-blue-100"
+          style={{ animationDelay: `${i * 300}ms` }}
+        >
+          <i
+            className="bi bi-check-circle text-orange-400 mt-0.5"
+          ></i>
+          <p className="text-xs text-gray-600">{insight}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
 
                 {/* Trend chart */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 mb-5">
+                <div className="anim-fade-in-up bg-white rounded-2xl shadow-sm border border-gray-200 p-4 mb-5">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                     <p className="text-sm font-bold text-gray-900">Project Value vs All Expense Overview</p>
                     <div className="flex bg-gray-100 rounded-lg p-1 w-fit">
@@ -987,7 +1318,7 @@ export default function NetProfitPage() {
                           key={opt.key}
                           type="button"
                           onClick={() => setChartPeriod(opt.key)}
-                          className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                          className={`btn-press px-3 py-1.5 text-xs font-semibold rounded-md transition-all duration-200 ${
                             chartPeriod === opt.key
                               ? "bg-white text-gray-900 shadow-sm"
                               : "text-gray-500 hover:text-gray-700"
@@ -1025,7 +1356,7 @@ export default function NetProfitPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
                   {/* Donut: expense breakdown */}
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
+                  <div className="anim-fade-in-up bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
                     <p className="text-sm font-bold text-gray-900 mb-3">Expense Breakdown by Type</p>
                     {analytics.expenseBreakdown.length === 0 ? (
                       <p className="text-center text-gray-400 py-10 text-sm">No expenses in range.</p>
@@ -1073,7 +1404,7 @@ export default function NetProfitPage() {
                   </div>
 
                   {/* Top expense categories */}
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
+                  <div className="anim-fade-in-up bg-white rounded-2xl shadow-sm border border-gray-200 p-4" style={{ animationDelay: "80ms" }}>
                     <div className="flex items-center justify-between mb-3">
                       <p className="text-sm font-bold text-gray-900">Top Expense Categories</p>
                       <Link href="#" className="text-xs font-semibold text-orange-600">
@@ -1092,9 +1423,9 @@ export default function NetProfitPage() {
                                 {fmt(c.amount)} · {c.pct}%
                               </span>
                             </div>
-                            <div className="w-full bg-gray-100 rounded-full h-2">
+                            <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
                               <div
-                                className="h-2 rounded-full bg-green-500"
+                                className="h-2 rounded-full bg-green-500 transition-all duration-700 ease-out"
                                 style={{ width: `${c.pct}%` }}
                               ></div>
                             </div>
@@ -1107,7 +1438,7 @@ export default function NetProfitPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
                   {/* Project Profitability */}
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
+                  <div className="anim-fade-in-up bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
                     <div className="flex items-center justify-between mb-3">
                       <p className="text-sm font-bold text-gray-900">Project Profitability</p>
                       <Link href="/sales/projects" className="text-xs font-semibold text-orange-600">
@@ -1130,7 +1461,7 @@ export default function NetProfitPage() {
                           </thead>
                           <tbody>
                             {analytics.projectProfitability?.map((p, i) => (
-                              <tr key={i} className="border-t border-gray-100">
+                              <tr key={i} className="border-t border-gray-100 hover:bg-gray-50 transition-colors duration-150">
                                 <td className="py-2 pr-2 font-semibold text-gray-900">{p.name}</td>
                                 <td className="py-2 pr-2">{fmt(p.revenue)}</td>
                                 <td className="py-2 pr-2">{fmt(p.expense)}</td>
@@ -1149,7 +1480,7 @@ export default function NetProfitPage() {
                   </div>
 
                   {/* Budget Tracking */}
-                  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
+                  <div className="anim-fade-in-up bg-white rounded-2xl shadow-sm border border-gray-200 p-4" style={{ animationDelay: "80ms" }}>
                     <div className="flex items-center justify-between mb-3">
                       <div>
                         <p className="text-sm font-bold text-gray-900">Budget Tracking</p>
@@ -1180,7 +1511,7 @@ export default function NetProfitPage() {
                             {analytics.budgetTracking
                               .filter((b) => b.budget != null)
                               .map((b, i) => (
-                                <tr key={i} className="border-t border-gray-100">
+                                <tr key={i} className="border-t border-gray-100 hover:bg-gray-50 transition-colors duration-150">
                                   <td className="py-2 pr-2 font-semibold text-gray-900">
                                     {b.name}
                                     {b.is_recurring && (
@@ -1217,7 +1548,7 @@ export default function NetProfitPage() {
 
                 {/* Daily expense trend + KPIs + AI Recommendations */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  <div className="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
+                  <div className="anim-fade-in-up lg:col-span-1 bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
                     <p className="text-sm font-bold text-gray-900 mb-3">Expense Trend (Daily)</p>
                     {analytics.dailyTrend?.length ? (
                       <ResponsiveContainer width="100%" height={200}>
@@ -1245,7 +1576,7 @@ export default function NetProfitPage() {
                     )}
                   </div>
 
-                  <div className="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
+                  <div className="anim-fade-in-up lg:col-span-1 bg-white rounded-2xl shadow-sm border border-gray-200 p-4" style={{ animationDelay: "80ms" }}>
                     <p className="text-sm font-bold text-gray-900 mb-3">Important KPIs</p>
                     <div className="space-y-3">
                       {analytics.importantKPIs?.highestExpenseDay && (
@@ -1295,14 +1626,21 @@ export default function NetProfitPage() {
                     </div>
                   </div>
 
-                  <div className="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
+                  <div className="anim-fade-in-up lg:col-span-1 bg-white rounded-2xl shadow-sm border border-gray-200 p-4" style={{ animationDelay: "160ms" }}>
                     <div className="flex items-center justify-between mb-3">
-                      <p className="text-sm font-bold text-gray-900">AI Recommendations</p>
+                      <p className="text-sm font-bold text-gray-900 flex items-center gap-1.5">
+                        AI Recommendations
+                        <i className="bi bi-stars text-orange-400 text-xs"></i>
+                      </p>
                     </div>
                     {analytics.aiRecommendations?.length ? (
                       <ul className="space-y-2">
                         {analytics.aiRecommendations.map((r, i) => (
-                          <li key={i} className="flex items-start gap-2 text-xs text-gray-600">
+                          <li
+                            key={i}
+                            className="anim-fade-in-up flex items-start gap-2 text-xs text-gray-600"
+                            style={{ animationDelay: `${200 + i * 60}ms` }}
+                          >
                             <i className="bi bi-stars text-orange-400 mt-0.5"></i>
                             {r}
                           </li>
@@ -1313,9 +1651,10 @@ export default function NetProfitPage() {
                     )}
                     <Link
                       href="#"
-                      className="text-xs font-semibold text-orange-600 mt-3 inline-block"
+                      className="group text-xs font-semibold text-orange-600 mt-3 inline-flex items-center gap-1 transition-colors duration-150 hover:text-orange-700"
                     >
                       View Detailed Analysis
+                      <i className="bi bi-arrow-right transition-transform duration-150 group-hover:translate-x-1"></i>
                     </Link>
                   </div>
                 </div>
