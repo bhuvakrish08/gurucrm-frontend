@@ -299,13 +299,7 @@ export default function NetProfitPage() {
               >
                 <i className="bi bi-house"></i>
               </Link>
-              {/* <i className="bi bi-chevron-right text-[10px]"></i> */}
-              {/* <Link
-                href="/sales/projects"
-                className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
-              >
-                Projects
-              </Link> */}
+{/* general expense */}
               <i className="bi bi-chevron-right text-[10px]"></i>
               <Link
                 href="/sales/net-profit"
