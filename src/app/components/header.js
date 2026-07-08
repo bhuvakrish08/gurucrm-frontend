@@ -366,10 +366,7 @@ export default function Header() {
           Dashboard
         </Link>
 
-        {userRole !== "Leads Management" &&
-          userRole !== "Estimation" &&
-          userRole !== "Sales" &&
-          userRole !== "Proforma invoices" && (
+        
             <div className="relative" ref={customerRef}>
               <button
                 onClick={() => setCustomerOpen(!customerOpen)}
@@ -401,7 +398,7 @@ export default function Header() {
                 </div>
               )}
             </div>
-          )}
+          
 
         <div className="relative" ref={salesRef}>
           <button
@@ -666,10 +663,7 @@ export default function Header() {
             )}
           </Link>
 
-          {userRole !== "Leads Management" &&
-            userRole !== "Estimation" &&
-            userRole !== "Sales" &&
-            userRole !== "Proforma invoices" && (
+          
               <div className="w-full">
                 <button
                   onClick={() => setMobileCustomerOpen(!mobileCustomerOpen)}
@@ -706,7 +700,7 @@ export default function Header() {
                   </div>
                 )}
               </div>
-            )}
+            
 
           <div className="w-full">
             <button

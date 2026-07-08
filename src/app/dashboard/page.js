@@ -1059,40 +1059,36 @@ export default function Dashboard() {
   const completedTotal = completedData.reduce((acc, curr) => acc + curr.amount, 0);
 
   const getInvoiceProgressDetails = (isCompletedData = false) => {
-    const safePis = Array.isArray(pis) ? pis : [];
-    let totalPaid = 0;
-    let totalValue = 0;
+  const safePis = Array.isArray(pis) ? pis : [];
+  let totalPaid = 0;
+  let totalValue = 0;
+  let count = 0;
 
-    const now = new Date();
-    safePis.forEach((pi) => {
-      const isCompleted = (pi.status || "").toLowerCase() === "paid" || (pi.stage || "").toLowerCase() === "completed";
-      if (isCompletedData !== isCompleted) return;
+  safePis.forEach((pi) => {
+    const status = (pi.status || "").toLowerCase();
+    const stage = (pi.stage || "").toLowerCase();
 
-      const dateStr = pi.pi_date || pi.created_at;
-      if (!dateStr) return;
-      const d = new Date(dateStr);
+    const grandTotal = getPiGrandTotal(pi);
+    const paid = Number(pi.total || 0);
+    const isFullyPaid = grandTotal > 0 && paid >= grandTotal;
 
-      if (salesTimeframe === "weekly") {
-        const fourWeeksAgo = new Date();
-        fourWeeksAgo.setDate(now.getDate() - 28);
-        if (d < fourWeeksAgo) return;
-      } else if (salesTimeframe === "monthly") {
-        const fourMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 4, 1);
-        if (d < fourMonthsAgo) return;
-      } else {
-        const threeYearsAgo = new Date(now.getFullYear() - 3, 0, 1);
-        if (d < threeYearsAgo) return;
-      }
+    // Completed = explicitly moved to "completed" stage, marked paid,
+    // OR fully paid via follow-ups (100% collected) — covers drafts too,
+    // since a draft with 0% paid is simply "not completed" -> falls into Pending.
+    const isCompleted = stage === "completed" || status === "paid" || isFullyPaid;
 
-      const grandTotal = getPiGrandTotal(pi);
-      totalValue += grandTotal;
-      totalPaid += Number(pi.total || 0);
-    });
+    if (isCompletedData !== isCompleted) return;
 
-    const remaining = Math.max(0, totalValue - totalPaid);
-    const percentage = totalValue > 0 ? Math.round((totalPaid / totalValue) * 100) : 0;
-    return { totalValue, totalPaid, remaining, percentage };
-  };
+    totalValue += grandTotal;
+    totalPaid += paid;
+    count += 1;
+  });
+
+  const remaining = Math.max(0, totalValue - totalPaid);
+  const percentage = totalValue > 0 ? Math.round((totalPaid / totalValue) * 100) : 0;
+
+  return { totalValue, totalPaid, remaining, percentage, count };
+};
 
   const pendingProgress = getInvoiceProgressDetails(false);
   const completedProgress = getInvoiceProgressDetails(true);
@@ -2468,17 +2464,31 @@ export default function Dashboard() {
                       Proforma Collection
                     </p>
                   </div>
-
+                  <span className="text-[10px] font-bold inline-block py-0.5 px-2 uppercase rounded-full text-amber-700 bg-amber-50">
+                    {pendingProgress.percentage}% paid
+                  </span>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-5 mt-auto pt-6">
-                <div className="flex justify-between items-end">
+              <div className="flex flex-col gap-4 mt-auto pt-6">
+                <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
+                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
                       Total Amount
                     </p>
-                    <p className="text-lg font-extrabold text-amber-600 leading-none">
+                    <p className="text-sm sm:text-base font-extrabold text-gray-800 leading-none">
+                      ₹
+                      {pendingProgress.totalValue.toLocaleString("en-IN", {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
+                      Paid
+                    </p>
+                    <p className="text-sm sm:text-base font-extrabold text-amber-600 leading-none">
                       ₹
                       {pendingProgress.totalPaid.toLocaleString("en-IN", {
                         minimumFractionDigits: 0,
@@ -2487,10 +2497,10 @@ export default function Dashboard() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
+                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
                       Remaining
                     </p>
-                    <p className="text-lg font-extrabold text-red-500 leading-none">
+                    <p className="text-sm sm:text-base font-extrabold text-red-500 leading-none">
                       ₹
                       {pendingProgress.remaining.toLocaleString("en-IN", {
                         minimumFractionDigits: 0,
@@ -2501,22 +2511,6 @@ export default function Dashboard() {
                 </div>
 
                 <div className="relative pt-1">
-                  <div className="flex mb-1.5 items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-bold inline-block py-0.5 px-2 uppercase rounded-full text-amber-700 bg-amber-50">
-                        {pendingProgress.percentage}%
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-[10px] font-bold inline-block text-gray-500">
-                        Total: ₹
-                        {pendingProgress.totalValue.toLocaleString("en-IN", {
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        })}
-                      </span>
-                    </div>
-                  </div>
                   <div className="overflow-hidden h-2.5 mb-1 text-xs flex rounded-full bg-red-100">
                     <div
                       style={{
@@ -2525,6 +2519,9 @@ export default function Dashboard() {
                       className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-amber-500 transition-all duration-1000 ease-in-out"
                     ></div>
                   </div>
+                  <p className="text-[9px] text-gray-400 font-semibold text-right">
+                    {pendingProgress.count} invoice{pendingProgress.count === 1 ? "" : "s"} pending
+                  </p>
                 </div>
               </div>
             </div>
@@ -2544,16 +2541,31 @@ export default function Dashboard() {
                       Proforma Collection
                     </p>
                   </div>
+                  <span className="text-[10px] font-bold inline-block py-0.5 px-2 uppercase rounded-full text-emerald-700 bg-emerald-50">
+                    {completedProgress.percentage}% paid
+                  </span>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-5 mt-auto pt-6">
-                <div className="flex justify-between items-end">
+              <div className="flex flex-col gap-4 mt-auto pt-6">
+                <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
+                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
                       Total Amount
                     </p>
-                    <p className="text-lg font-extrabold text-emerald-600 leading-none">
+                    <p className="text-sm sm:text-base font-extrabold text-gray-800 leading-none">
+                      ₹
+                      {completedProgress.totalValue.toLocaleString("en-IN", {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
+                      Paid
+                    </p>
+                    <p className="text-sm sm:text-base font-extrabold text-emerald-600 leading-none">
                       ₹
                       {completedProgress.totalPaid.toLocaleString("en-IN", {
                         minimumFractionDigits: 0,
@@ -2562,10 +2574,10 @@ export default function Dashboard() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
+                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
                       Remaining
                     </p>
-                    <p className="text-lg font-extrabold text-red-500 leading-none">
+                    <p className="text-sm sm:text-base font-extrabold text-red-500 leading-none">
                       ₹
                       {completedProgress.remaining.toLocaleString("en-IN", {
                         minimumFractionDigits: 0,
@@ -2576,22 +2588,6 @@ export default function Dashboard() {
                 </div>
 
                 <div className="relative pt-1">
-                  <div className="flex mb-1.5 items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-bold inline-block py-0.5 px-2 uppercase rounded-full text-emerald-700 bg-emerald-50">
-                        {completedProgress.percentage}%
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-[10px] font-bold inline-block text-gray-500">
-                        Total: ₹
-                        {completedProgress.totalValue.toLocaleString("en-IN", {
-                          minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
-                        })}
-                      </span>
-                    </div>
-                  </div>
                   <div className="overflow-hidden h-2.5 mb-1 text-xs flex rounded-full bg-red-100">
                     <div
                       style={{
@@ -2600,6 +2596,9 @@ export default function Dashboard() {
                       className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-emerald-500 transition-all duration-1000 ease-in-out"
                     ></div>
                   </div>
+                  <p className="text-[9px] text-gray-400 font-semibold text-right">
+                    {completedProgress.count} invoice{completedProgress.count === 1 ? "" : "s"} completed
+                  </p>
                 </div>
               </div>
             </div>
@@ -2618,13 +2617,25 @@ export default function Dashboard() {
                   Proforma Collection
                 </p>
               </div>
-              <div className="flex flex-col gap-5 mt-auto">
-                <div className="flex justify-between items-end">
+              <div className="flex flex-col gap-4 mt-auto">
+                <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
+                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
                       Total Amount
                     </p>
-                    <p className="text-lg font-extrabold text-emerald-600 leading-none">
+                    <p className="text-sm sm:text-base font-extrabold text-gray-800 leading-none">
+                      ₹
+                      {paymentProgressData.totalProformaAmount.toLocaleString("en-IN", {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
+                      Paid
+                    </p>
+                    <p className="text-sm sm:text-base font-extrabold text-emerald-600 leading-none">
                       ₹
                       {paymentProgressData.totalPaid.toLocaleString("en-IN", {
                         minimumFractionDigits: 0,
@@ -2633,10 +2644,10 @@ export default function Dashboard() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
+                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
                       Remaining
                     </p>
-                    <p className="text-lg font-extrabold text-red-500 leading-none">
+                    <p className="text-sm sm:text-base font-extrabold text-red-500 leading-none">
                       ₹
                       {paymentProgressData.paymentDue.toLocaleString("en-IN", {
                         minimumFractionDigits: 0,
@@ -2651,18 +2662,6 @@ export default function Dashboard() {
                     <div>
                       <span className="text-[10px] font-bold inline-block py-0.5 px-2 uppercase rounded-full text-emerald-700 bg-emerald-50">
                         {paymentProgressData.progressPercentage}%
-                      </span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-[10px] font-bold inline-block text-gray-500">
-                        Total: ₹
-                        {paymentProgressData.totalProformaAmount.toLocaleString(
-                          "en-IN",
-                          {
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
-                          },
-                        )}
                       </span>
                     </div>
                   </div>
@@ -2835,12 +2834,27 @@ export default function Dashboard() {
                   </p>
                 </div>
                 <div className="flex flex-col gap-5 mt-auto">
-                  <div className="flex justify-between items-end">
+                  <div className="grid grid-cols-3 gap-2">
                     <div>
-                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
+                      <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
+                        Total PI Value
+                      </p>
+                      <p className="text-base sm:text-lg font-extrabold text-gray-800 leading-none">
+                        ₹
+                        {paymentProgressData.totalProformaAmount.toLocaleString(
+                          "en-IN",
+                          {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          },
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
                         Total Collected
                       </p>
-                      <p className="text-xl font-extrabold text-emerald-600 leading-none">
+                      <p className="text-base sm:text-lg font-extrabold text-emerald-600 leading-none">
                         ₹
                         {paymentProgressData.totalPaid.toLocaleString("en-IN", {
                           minimumFractionDigits: 2,
@@ -2849,10 +2863,10 @@ export default function Dashboard() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
+                      <p className="text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
                         Remaining Due
                       </p>
-                      <p className="text-xl font-extrabold text-red-500 leading-none">
+                      <p className="text-base sm:text-lg font-extrabold text-red-500 leading-none">
                         ₹
                         {paymentProgressData.paymentDue.toLocaleString("en-IN", {
                           minimumFractionDigits: 2,
@@ -2867,18 +2881,6 @@ export default function Dashboard() {
                       <div>
                         <span className="text-[10px] font-bold inline-block py-0.5 px-2 uppercase rounded-full text-emerald-700 bg-emerald-50">
                           {paymentProgressData.progressPercentage}% Collected
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[10px] font-bold inline-block text-gray-500">
-                          Total PI Value: ₹
-                          {paymentProgressData.totalProformaAmount.toLocaleString(
-                            "en-IN",
-                            {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            },
-                          )}
                         </span>
                       </div>
                     </div>
