@@ -234,13 +234,18 @@ export default function GeneralExpenseMasterPage() {
             </Link>
             <i className="bi bi-chevron-right text-[10px]"></i>
             <Link
-              href="/sales/projects/net-profit"
+              href="#"
               className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
             >
              Settings
             </Link>
             <i className="bi bi-chevron-right text-[10px]"></i>
-            <span className="mx-2 text-md text-gray-700 font-semibold">Gen. Expense Master</span>
+            <Link
+              href="#"
+              className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
+            >
+              <span className="mx-2 text-md text-gray-700 font-semibold">Gen. Expense Master</span>
+            </Link>
           </p>
 
           <div className="flex items-center gap-2">
