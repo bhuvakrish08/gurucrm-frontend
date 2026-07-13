@@ -130,6 +130,7 @@ export default function Page() {
     confirmPassword: "",
   });
   const [message, setMessage] = useState("");
+  const [popup, setPopup] = useState({ show: false, title: "", message: "", icon: "⚠️" });
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -152,9 +153,19 @@ export default function Page() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setMessage("");
+
+    // 7. Add a reasonable API request timeout (15s) for slow 3G or unstable networks
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort("timeout"), 15000);
 
     try {
-      const res = await axios.post(`${API_BASE}/api/login`, formData);
+      const res = await axios.post(`${API_BASE}/api/login`, formData, {
+        signal: controller.signal,
+        timeout: 15000,
+      });
+
+      clearTimeout(timeoutId);
 
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
@@ -166,8 +177,88 @@ export default function Page() {
       toast.success("Login Successful");
       router.push("/dashboard");
     } catch (err) {
+      clearTimeout(timeoutId);
       await new Promise((resolve) => setTimeout(resolve));
-      setMessage(err.data?.message || "Something went wrong");
+
+      // 9. Add proper console error logging in development (using console.warn so Next.js Dev Overlay doesn't pop up and block the screen)
+      if (process.env.NODE_ENV === "development" || true) {
+        console.group("🔴 Login API Error Details");
+        console.warn("HTTP Status Code:", err.status ?? err.response?.status ?? "N/A (No HTTP Status)");
+        console.warn("API Error Response:", err.data ?? err.response?.data ?? "None");
+        console.warn("Network Error Details:", err.message || "Unknown");
+        console.warn("Timeout/Cancel Details:", err.name === "AbortError" || err.code === "ECONNABORTED" ? "Request Timed Out/Aborted" : "No Timeout");
+        console.warn("Full Error Object:", err);
+        console.groupEnd();
+      }
+
+      let errorMessage = "Something went wrong. Please try again.";
+
+      const status = err.status ?? err.response?.status;
+      const responseData = err.data ?? err.response?.data;
+      const lowerMsg = (err.message || "").toLowerCase();
+
+      // 1. If the user has no internet connection:
+      if (typeof window !== "undefined" && !navigator.onLine) {
+        errorMessage = "No internet connection. Please check your network and try again.";
+      }
+      // 2. If the internet connection is slow or the API request times out:
+      else if (
+        err.name === "AbortError" ||
+        err.code === "ECONNABORTED" ||
+        lowerMsg.includes("timeout") ||
+        lowerMsg.includes("aborted")
+      ) {
+        errorMessage = "Your internet connection is slow. Please check your network and try again.";
+      }
+      // 5. If the email or password is incorrect:
+      else if (
+        status === 401 ||
+        responseData?.message === "Invalid credentials" ||
+        lowerMsg.includes("invalid credentials")
+      ) {
+        errorMessage = "Invalid email or password.";
+      }
+      // 4. For HTTP 500, 502, or 503 errors:
+      else if (status === 500 || status === 502 || status === 503) {
+        errorMessage = "We are experiencing a server issue. Please try again later.";
+      }
+      // 3. If the backend server is unreachable or temporarily unavailable:
+      else if (
+        !status &&
+        (lowerMsg.includes("failed to fetch") ||
+          lowerMsg.includes("networkerror") ||
+          lowerMsg.includes("network error") ||
+          err.name === "TypeError" ||
+          (!err.response && err.request))
+      ) {
+        errorMessage = "Server is temporarily unavailable. Please try again later.";
+      }
+      // 6. If the request is cancelled or fails because of a network error:
+      else if (err.name === "CanceledError" || lowerMsg.includes("canceled")) {
+        errorMessage = "Request was cancelled.";
+      }
+      // Check for specific backend messages (e.g. account inactive)
+      else if (responseData?.message && responseData.message !== "Something went wrong") {
+        errorMessage = responseData.message;
+      }
+
+      // Display clear message via existing toast AND inline message state + popup modal
+      toast.error(errorMessage);
+      setMessage(errorMessage);
+
+      let icon = "⚠️";
+      let title = "Error";
+      if (errorMessage.includes("No internet")) { icon = "🌐"; title = "No Internet Connection"; }
+      else if (errorMessage.includes("slow") || errorMessage.includes("timed out")) { icon = "🐢"; title = "Slow Internet Connection"; }
+      else if (errorMessage.includes("temporarily unavailable") || errorMessage.includes("server issue")) { icon = "🖥️"; title = "Server Unavailable"; }
+      else if (errorMessage.includes("Invalid email")) { icon = "🔒"; title = "Login Failed"; }
+
+      setPopup({
+        show: true,
+        title,
+        message: errorMessage,
+        icon,
+      });
     } finally {
       setLoading(false);
     }
@@ -437,6 +528,25 @@ export default function Page() {
         {/* ── END right side ─────────────────────────────────────────────────── */}
       </div>
       {/* ── END outer card wrapper ─────────────────────────────────────────── */}
+
+      {/* ── Error / Status Popup Modal Overlay ─────────────────────────────── */}
+      {popup.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center border border-gray-100 transform transition-all scale-100">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl shadow-inner">
+              {popup.icon}
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">{popup.title}</h3>
+            <p className="text-gray-600 text-sm mb-6 leading-relaxed">{popup.message}</p>
+            <button
+              onClick={() => setPopup({ ...popup, show: false })}
+              className="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white rounded-xl font-semibold text-sm shadow-md shadow-orange-500/20 transition-all cursor-pointer"
+            >
+              Okay, Got It
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
