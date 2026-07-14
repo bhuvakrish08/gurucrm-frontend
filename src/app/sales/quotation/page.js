@@ -63,6 +63,11 @@ export default function QuotationPage() {
   const [viewQuotation, setViewQuotation] = useState(null);
   const [viewLoading, setViewLoading] = useState(false);
 
+
+
+
+  
+
   // follow-up
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateForm, setUpdateForm] = useState({
