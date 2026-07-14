@@ -19,6 +19,13 @@ import {
   RefreshCw,
   TrendingUp as TrendUpIcon,
   BarChart as BarChartIcon,
+  Trophy,
+  User,
+  Calculator,
+  HelpCircle,
+  Activity,
+  FolderOpen,
+  Wallet,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -311,6 +318,7 @@ function Page() {
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
   const [analyticsError, setAnalyticsError] = useState(null);
   const [expenseTimeframe, setExpenseTimeframe] = useState("monthly"); // 'weekly', 'monthly', 'yearly'
+  const [financialTimeframe, setFinancialTimeframe] = useState("monthly"); // 'monthly', 'quarterly', 'yearly'
 
   const fetchAnalytics = async () => {
     try {
@@ -946,7 +954,7 @@ function Page() {
                   onClick={() => setViewMode("analytics")}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     viewMode === "analytics"
-                      ? "bg-white text-orange-600 shadow-md scale-100"
+                      ? "bg-white text-indigo-600 shadow-md scale-100"
                       : "text-slate-500 hover:text-slate-700"
                   }`}
                 >
@@ -961,7 +969,7 @@ function Page() {
             <div className="space-y-6">
               {loadingAnalytics && !analyticsData ? (
                 <div className="flex flex-col items-center justify-center py-24 gap-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
-                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-orange-500 border-t-transparent"></div>
+                  <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-500 border-t-transparent"></div>
                   <p className="text-sm font-semibold text-slate-500 animate-pulse">
                     Assembling financial dashboard...
                   </p>
@@ -985,343 +993,292 @@ function Page() {
                   {/* 1. Summary Cards */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                     {/* Total Projects */}
-                    <div className="bg-gradient-to-br from-white to-indigo-50/40 hover:to-indigo-50/80 rounded-2xl border border-slate-100 p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md relative overflow-hidden group">
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600 group-hover:scale-110 transition-transform duration-300">
-                          <Building size={20} />
+                    <div className="bg-indigo-50/40 rounded-2xl p-5 flex flex-col justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:-translate-y-1 hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1)] transition-all duration-300 border border-transparent hover:border-indigo-200">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="p-2.5 bg-indigo-50 rounded-xl text-indigo-500">
+                          <FolderOpen size={20} strokeWidth={2} />
                         </div>
+                        <span className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider mt-1">Total Projects</span>
                       </div>
-                      <div>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                          Total Projects
-                        </span>
-                        <h2 className="text-2xl font-extrabold text-slate-800 mt-0.5">
+                      <div className="mb-4">
+                        <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">
                           {analyticsData.stats.total_projects}
                         </h2>
                       </div>
+                      <div className="flex items-end justify-between mt-auto">
+                        <span className="text-xs font-semibold text-slate-500">Active Projects</span>
+                        <svg className="w-20 h-6" viewBox="0 0 100 30" preserveAspectRatio="none">
+                          <path d="M0,25 C20,25 30,5 50,15 C70,25 80,5 100,10" fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
                     </div>
 
-                    {/* Total Revenue */}
-                    <div className="bg-gradient-to-br from-white to-orange-50/40 hover:to-orange-50/80 rounded-2xl border border-slate-100 p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md relative overflow-hidden group">
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="p-3 bg-orange-50 rounded-xl text-orange-600 group-hover:scale-110 transition-transform duration-300">
-                          <Coins size={20} />
+                    {/* Project Value */}
+                    <div className="bg-emerald-50/40 rounded-2xl p-5 flex flex-col justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:-translate-y-1 hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1)] transition-all duration-300 border border-transparent hover:border-emerald-200">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="p-2.5 bg-emerald-50 rounded-xl text-emerald-500">
+                          <Wallet size={20} strokeWidth={2} />
                         </div>
+                        <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider mt-1">Project Value</span>
                       </div>
-                      <div>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                          Total Revenue
-                        </span>
-                        <h2 className="text-2xl font-extrabold text-slate-800 mt-0.5">
+                      <div className="mb-4">
+                        <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight truncate">
                           {formatCurrency(analyticsData.stats.total_revenue)}
                         </h2>
                       </div>
-                    </div>
-
-                    {/* Architecture Net */}
-                    <div className="bg-gradient-to-br from-white to-amber-50/40 hover:to-amber-50/80 rounded-2xl border border-slate-100 p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md relative overflow-hidden group">
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="p-3 bg-amber-50 rounded-xl text-amber-600 group-hover:scale-110 transition-transform duration-300">
-                          <Percent size={20} />
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                          Architecture Net
-                        </span>
-                        <h2 className="text-2xl font-extrabold text-slate-800 mt-0.5">
-                          {formatCurrency(
-                            analyticsData.stats.total_architecture_net,
-                          )}
-                        </h2>
+                      <div className="flex items-end justify-between mt-auto">
+                        <span className="text-xs font-semibold text-slate-500">Total Value</span>
+                        <svg className="w-20 h-6" viewBox="0 0 100 30" preserveAspectRatio="none">
+                          <path d="M0,25 C20,15 30,25 50,10 C70,20 80,5 100,15" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
                       </div>
                     </div>
 
-                    {/* Total Expenses */}
-                    <div className="bg-gradient-to-br from-white to-rose-50/40 hover:to-rose-50/80 rounded-2xl border border-slate-100 p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md relative overflow-hidden group">
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="p-3 bg-rose-50 rounded-xl text-rose-600 group-hover:scale-110 transition-transform duration-300">
-                          <TrendingDown size={20} />
+                    {/* Architect Cost */}
+                    <div className="bg-orange-50/40 rounded-2xl p-5 flex flex-col justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:-translate-y-1 hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1)] transition-all duration-300 border border-transparent hover:border-orange-200">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="p-2.5 bg-orange-50 rounded-xl text-orange-500">
+                          <Building size={20} strokeWidth={2} />
                         </div>
+                        <span className="text-[11px] font-bold text-orange-400 uppercase tracking-wider mt-1">Architect Cost</span>
                       </div>
-                      <div>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                          Total Expenses
-                        </span>
-                        <h2 className="text-2xl font-extrabold text-slate-800 mt-0.5">
-                          {formatCurrency(
-                            analyticsData.stats.total_expense_net,
-                          )}
+                      <div className="mb-4">
+                        <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight truncate">
+                          {formatCurrency(analyticsData.stats.total_architecture_net)}
                         </h2>
+                      </div>
+                      <div className="flex items-end justify-between mt-auto">
+                        <span className="text-xs font-semibold text-slate-500">Total Cost</span>
+                        <svg className="w-20 h-6" viewBox="0 0 100 30" preserveAspectRatio="none">
+                          <path d="M0,15 C20,25 30,5 50,20 C70,10 80,25 100,15" fill="none" stroke="#f97316" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
                       </div>
                     </div>
 
-                    {/* Net Revenue */}
-                    <div className="bg-gradient-to-br from-white to-emerald-50/40 hover:to-emerald-50/80 rounded-2xl border border-slate-100 p-5 flex flex-col justify-between shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md relative overflow-hidden group">
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600 group-hover:scale-110 transition-transform duration-300">
-                          <TrendingUp size={20} />
+                    {/* Total Operation Cost */}
+                    <div className="bg-rose-50/40 rounded-2xl p-5 flex flex-col justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:-translate-y-1 hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1)] transition-all duration-300 border border-transparent hover:border-rose-200">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="p-2.5 bg-rose-50 rounded-xl text-rose-500">
+                          <Calculator size={20} strokeWidth={2} />
                         </div>
+                        <span className="text-[11px] font-bold text-rose-400 uppercase tracking-wider mt-1">Total Operation Cost</span>
                       </div>
-                      <div>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                          Net Revenue
-                        </span>
-                        <h2 className="text-2xl font-extrabold text-emerald-600 mt-0.5">
-                          {formatCurrency(
-                            analyticsData.stats.total_net_revenue,
-                          )}
+                      <div className="mb-4">
+                        <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight truncate">
+                          {formatCurrency(analyticsData.stats.total_expense_net)}
                         </h2>
+                      </div>
+                      <div className="flex items-end justify-between mt-auto">
+                        <span className="text-xs font-semibold text-slate-500">Total Operations</span>
+                        <svg className="w-20 h-6" viewBox="0 0 100 30" preserveAspectRatio="none">
+                          <path d="M0,20 C20,10 30,25 50,5 C70,25 80,15 100,10" fill="none" stroke="#f43f5e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    </div>
+
+                    {/* Balance Amount */}
+                    <div className="bg-blue-50/40 rounded-2xl p-5 flex flex-col justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:-translate-y-1 hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1)] transition-all duration-300 border border-transparent hover:border-blue-200">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="p-2.5 bg-blue-50 rounded-xl text-blue-500">
+                          <Activity size={20} strokeWidth={2} />
+                        </div>
+                        <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider mt-1">Balance Amount</span>
+                      </div>
+                      <div className="mb-4">
+                        <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight truncate">
+                          {formatCurrency(analyticsData.stats.total_net_revenue)}
+                        </h2>
+                      </div>
+                      <div className="flex items-end justify-between mt-auto">
+                        <span className="text-xs font-semibold text-slate-500">Net Balance</span>
+                        <svg className="w-20 h-6" viewBox="0 0 100 30" preserveAspectRatio="none">
+                          <path d="M0,25 C20,20 30,5 50,15 C70,25 80,10 100,5" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
                       </div>
                     </div>
                   </div>
 
-                  {/* Parse numeric values for Recharts to render correctly (not as strings) */}
+                  {/* Parse numeric values for Recharts to render correctly */}
                   {(() => {
-                    const monthlyFinancialsParsed = (
-                      analyticsData.monthlyFinancials || []
-                    ).map((m) => ({
+                    const activeFinancials = analyticsData.financialsOverTime?.[financialTimeframe] || [];
+                    const financialsParsed = activeFinancials.map((m) => ({
                       ...m,
                       revenue: Number(m.revenue) || 0,
+                      architecture: Number(m.architecture) || 0,
                       expenses: Number(m.expenses) || 0,
                       net_revenue: Number(m.net_revenue) || 0,
                     }));
 
-                    const expenseByCategoryParsed = (
-                      analyticsData.expenseByCategory || []
-                    ).map((e) => ({
+                    const expenseByCategoryParsed = (analyticsData.expenseByCategory || []).map((e) => ({
                       ...e,
                       total_amount: Number(e.total_amount) || 0,
                     }));
 
-                    const totalExpensesSum = expenseByCategoryParsed.reduce(
-                      (sum, item) => sum + item.total_amount,
-                      0,
-                    );
+                    const totalExpensesSum = expenseByCategoryParsed.reduce((sum, item) => sum + item.total_amount, 0);
 
-                    const expensesOverTimeParsed = (
-                      analyticsData.expensesOverTime[expenseTimeframe] || []
-                    ).map((item) => ({
+                    const expensesOverTimeParsed = (analyticsData.expensesOverTime[expenseTimeframe] || []).map((item) => ({
                       ...item,
                       amount: Number(item.amount) || 0,
-                    }));
-
-                    const architectureByArchitectParsed = (
-                      analyticsData.architectureByArchitect || []
-                    ).map((item) => ({
-                      ...item,
-                      total_amount: Number(item.total_amount) || 0,
                     }));
 
                     return (
                       <>
                         {/* 2. Charts Row 1: Monthly Financial Trend & Expense Category breakdown */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                          {/* Monthly Financial Trend Chart */}
-                          <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col justify-between">
+                        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 mt-4">
+                          {/* Financial Trend Chart */}
+                          <div className="xl:col-span-6 bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col justify-between group hover:border-slate-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-0.5">
                             <div className="flex items-center justify-between border-b border-slate-50 pb-3 mb-4">
                               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                <BarChart2
-                                  size={16}
-                                  className="text-orange-500"
-                                />
-                                Monthly Financial Performance Trend
+                                <BarChart2 size={16} className="text-indigo-500" />
+                                Financial Performance Trend
                               </h3>
+                              <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200/50">
+                                {["monthly", "quarterly", "yearly"].map((t) => (
+                                  <button
+                                    key={t}
+                                    onClick={() => setFinancialTimeframe(t)}
+                                    className={`px-3 py-1 rounded-md text-[10px] font-bold capitalize transition-all cursor-pointer ${
+                                      financialTimeframe === t
+                                        ? "bg-white text-slate-800 shadow-sm"
+                                        : "text-slate-500 hover:text-slate-700"
+                                    }`}
+                                  >
+                                    {t}
+                                  </button>
+                                ))}
+                              </div>
                             </div>
-                            <div className="h-80 w-full">
+                            <div className="h-[260px] w-full">
                               <ResponsiveContainer width="100%" height="100%">
-                                <BarChart
-                                  data={monthlyFinancialsParsed}
-                                  margin={{
-                                    top: 10,
-                                    right: 10,
-                                    left: -20,
-                                    bottom: 0,
-                                  }}
-                                >
-                                  <CartesianGrid
-                                    strokeDasharray="3 3"
-                                    stroke="#f1f5f9"
+                                <BarChart data={financialsParsed} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                                  <XAxis dataKey="time_label" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
+                                  <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => {
+                                      if (val >= 10000000) return (val / 10000000).toFixed(1) + 'Cr';
+                                      if (val >= 100000) return (val / 100000).toFixed(1) + 'L';
+                                      return val;
+                                    }} 
                                   />
-                                  <XAxis
-                                    dataKey="month_name"
-                                    stroke="#94a3b8"
-                                    fontSize={11}
-                                    tickLine={false}
-                                  />
-                                  <YAxis
-                                    stroke="#94a3b8"
-                                    fontSize={11}
-                                    tickLine={false}
-                                  />
-                                  <Tooltip
-                                    contentStyle={{
-                                      background: "#fff",
-                                      borderRadius: "12px",
-                                      border: "1px solid #f1f5f9",
-                                      boxShadow:
-                                        "0 10px 15px -3px rgb(0 0 0 / 0.05)",
-                                    }}
-                                    formatter={(value) => formatCurrency(value)}
-                                  />
-                                  <Legend
-                                    wrapperStyle={{
-                                      fontSize: 11,
-                                      paddingTop: 10,
-                                    }}
-                                  />
-                                  <Bar
-                                    dataKey="revenue"
-                                    name="Grand Total"
-                                    fill="#4f46e5"
-                                    radius={[4, 4, 0, 0]}
-                                    maxBarSize={20}
-                                  />
-                                  <Bar
-                                    dataKey="expenses"
-                                    name="Expenses"
-                                    fill="#f43f5e"
-                                    radius={[4, 4, 0, 0]}
-                                    maxBarSize={20}
-                                  />
-                                  <Bar
-                                    dataKey="net_revenue"
-                                    name="Net Revenue"
-                                    fill="#10b981"
-                                    radius={[4, 4, 0, 0]}
-                                    maxBarSize={20}
-                                  />
+                                  <Tooltip contentStyle={{ background: "#fff", borderRadius: "12px", border: "1px solid #f1f5f9", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.05)" }} formatter={(value) => formatCurrency(value)} />
+                                  <Legend wrapperStyle={{ fontSize: 10, paddingTop: 10 }} iconType="circle" />
+                                  <Bar dataKey="revenue" name="Project Value" fill="#10b981" radius={[2, 2, 0, 0]} maxBarSize={12} />
+                                  <Bar dataKey="architecture" name="Architect Cost" fill="#f59e0b" radius={[2, 2, 0, 0]} maxBarSize={12} />
+                                  <Bar dataKey="expenses" name="Operation Cost" fill="#f43f5e" radius={[2, 2, 0, 0]} maxBarSize={12} />
+                                  <Bar dataKey="net_revenue" name="Balance Amount" fill="#3b82f6" radius={[2, 2, 0, 0]} maxBarSize={12} />
                                 </BarChart>
                               </ResponsiveContainer>
                             </div>
                           </div>
 
                           {/* Expense Category distribution */}
-                          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col justify-between">
+                          <div className="xl:col-span-3 bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col justify-between group hover:border-slate-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-0.5">
                             <div className="flex items-center justify-between border-b border-slate-50 pb-3 mb-2">
                               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                <PieChartIcon
-                                  size={16}
-                                  className="text-rose-500"
-                                />
+                                <PieChartIcon size={16} className="text-rose-500" />
                                 Expense Category Distribution
                               </h3>
                             </div>
-                            <div className="h-60 w-full relative flex items-center justify-center">
+                            <div className="h-[180px] w-full relative flex items-center justify-center">
                               {expenseByCategoryParsed.length === 0 ? (
-                                <p className="text-xs text-slate-400 font-medium">
-                                  No expenses data available.
-                                </p>
+                                <p className="text-xs text-slate-400 font-medium">No expenses data available.</p>
                               ) : (
                                 <>
-                                  <ResponsiveContainer
-                                    width="100%"
-                                    height="100%"
-                                  >
+                                  <ResponsiveContainer width="100%" height="100%">
                                     <PieChart>
-                                      <Pie
-                                        data={expenseByCategoryParsed}
-                                        dataKey="total_amount"
-                                        nameKey="expense_category"
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={55}
-                                        outerRadius={75}
-                                        paddingAngle={3}
-                                      >
-                                        {expenseByCategoryParsed.map(
-                                          (entry, index) => {
-                                            const COLORS = [
-                                              "#f43f5e",
-                                              "#3b82f6",
-                                              "#10b981",
-                                              "#f59e0b",
-                                              "#8b5cf6",
-                                              "#06b6d4",
-                                              "#64748b",
-                                            ];
-                                            return (
-                                              <Cell
-                                                key={`cell-${index}`}
-                                                fill={
-                                                  COLORS[index % COLORS.length]
-                                                }
-                                              />
-                                            );
-                                          },
-                                        )}
+                                      <Pie data={expenseByCategoryParsed} dataKey="total_amount" nameKey="expense_category" cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={2}>
+                                        {expenseByCategoryParsed.map((entry, index) => {
+                                          const COLORS = ["#f43f5e", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#64748b"];
+                                          return <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />;
+                                        })}
                                       </Pie>
-                                      <Tooltip
-                                        formatter={(value) =>
-                                          formatCurrency(value)
-                                        }
-                                      />
+                                      <Tooltip formatter={(value) => formatCurrency(value)} />
                                     </PieChart>
                                   </ResponsiveContainer>
-                                  {/* Center text */}
                                   <div className="absolute flex flex-col items-center justify-center">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                      Total
-                                    </span>
-                                    <span className="text-sm font-extrabold text-slate-800">
-                                      {formatCurrency(totalExpensesSum)}
-                                    </span>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total</span>
+                                    <span className="text-xs font-extrabold text-slate-800">{formatCurrency(totalExpensesSum)}</span>
                                   </div>
                                 </>
                               )}
                             </div>
-                            {/* Tiny Legend */}
-                            <div className="max-h-24 overflow-y-auto space-y-1 bg-slate-50/50 p-2.5 rounded-xl border border-slate-100/50 custom-scroll mt-2">
+                            <div className="max-h-24 overflow-y-auto space-y-1.5 custom-scroll mt-2 pr-1">
                               {expenseByCategoryParsed.map((cat, idx) => {
-                                const COLORS = [
-                                  "#f43f5e",
-                                  "#3b82f6",
-                                  "#10b981",
-                                  "#f59e0b",
-                                  "#8b5cf6",
-                                  "#06b6d4",
-                                  "#64748b",
-                                ];
+                                const COLORS = ["#f43f5e", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#64748b"];
+                                const pct = totalExpensesSum > 0 ? Math.round((cat.total_amount / totalExpensesSum) * 100) : 0;
                                 return (
-                                  <div
-                                    key={idx}
-                                    className="flex items-center justify-between text-[11px] font-semibold text-slate-600"
-                                  >
+                                  <div key={idx} className="flex items-center justify-between text-[10px] font-medium text-slate-600">
                                     <div className="flex items-center gap-1.5">
-                                      <span
-                                        className="w-2.5 h-2.5 rounded-full"
-                                        style={{
-                                          backgroundColor:
-                                            COLORS[idx % COLORS.length],
-                                        }}
-                                      ></span>
-                                      <span className="truncate max-w-[120px]">
-                                        {cat.expense_category}
-                                      </span>
+                                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></span>
+                                      <span className="truncate max-w-[100px]">{cat.expense_category}</span>
                                     </div>
-                                    <span className="text-slate-800">
-                                      {formatCurrency(cat.total_amount)}
-                                    </span>
+                                    <span className="text-slate-500 font-semibold">{pct}%</span>
                                   </div>
                                 );
                               })}
                             </div>
                           </div>
+
+                          {/* Quick Summary */}
+                          <div className="xl:col-span-3 bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col justify-between group hover:border-slate-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-0.5">
+                            <div className="flex items-center justify-between border-b border-slate-50 pb-3 mb-3">
+                              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                <Activity size={16} className="text-emerald-500 group-hover:animate-pulse" />
+                                Quick Summary
+                              </h3>
+                            </div>
+                            <div className="flex flex-col space-y-2.5 flex-1 justify-center">
+                              <div className="flex justify-between items-center bg-emerald-50/40 p-2.5 rounded-lg border border-emerald-100/50 hover:bg-emerald-50 hover:scale-[1.02] transition-all cursor-default">
+                                <div className="flex items-center gap-2">
+                                  <Trophy size={14} className="text-emerald-600" />
+                                  <span className="text-[10px] font-semibold text-slate-700">Highest Project Value</span>
+                                </div>
+                                <span className="text-[10px] font-bold text-emerald-600">{formatCurrency(analyticsData.quickSummary?.highest_project_value)}</span>
+                              </div>
+
+                              <div className="flex justify-between items-center bg-amber-50/40 p-2.5 rounded-lg border border-amber-100/50 hover:bg-amber-50 hover:scale-[1.02] transition-all cursor-default">
+                                <div className="flex items-center gap-2">
+                                  <User size={14} className="text-amber-600" />
+                                  <span className="text-[10px] font-semibold text-slate-700">Highest Architect Cost</span>
+                                </div>
+                                <span className="text-[10px] font-bold text-amber-600">{formatCurrency(analyticsData.quickSummary?.highest_architect_cost)}</span>
+                              </div>
+
+                              <div className="flex justify-between items-center bg-rose-50/40 p-2.5 rounded-lg border border-rose-100/50 hover:bg-rose-50 hover:scale-[1.02] transition-all cursor-default">
+                                <div className="flex items-center gap-2">
+                                  <Calculator size={14} className="text-rose-600" />
+                                  <span className="text-[10px] font-semibold text-slate-700">Total Operation Cost</span>
+                                </div>
+                                <span className="text-[10px] font-bold text-rose-600">{formatCurrency(analyticsData.quickSummary?.total_operation_cost)}</span>
+                              </div>
+
+                              <div className="flex justify-between items-center bg-indigo-50/40 p-2.5 rounded-lg border border-indigo-100/50 hover:bg-indigo-50 hover:scale-[1.02] transition-all cursor-default">
+                                <div className="flex items-center gap-2">
+                                  <BarChartIcon size={14} className="text-indigo-600" />
+                                  <span className="text-[10px] font-semibold text-slate-700">Average Project Value</span>
+                                </div>
+                                <span className="text-[10px] font-bold text-indigo-600">{formatCurrency(analyticsData.quickSummary?.average_project_value)}</span>
+                              </div>
+
+                              <div className="flex justify-between items-center bg-blue-50/40 p-2.5 rounded-lg border border-blue-100/50 hover:bg-blue-50 hover:scale-[1.02] transition-all cursor-default">
+                                <div className="flex items-center gap-2">
+                                  <HelpCircle size={14} className="text-blue-600" />
+                                  <span className="text-[10px] font-semibold text-slate-700">Balance Amount</span>
+                                </div>
+                                <span className="text-[10px] font-bold text-blue-600">{formatCurrency(analyticsData.quickSummary?.balance_amount)}</span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
 
-                        {/* 3. Charts Row 2: Expense timeframe & Architect breakdown */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                        {/* 3. Charts Row 2: Expense timeframe & Leaderboards */}
+                        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 mt-4">
                           {/* Expense timeframe analysis */}
-                          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
-                            <div className="flex items-center justify-between border-b border-slate-50 pb-3">
+                          <div className="xl:col-span-4 bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col justify-between group hover:border-slate-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-0.5">
+                            <div className="flex items-center justify-between border-b border-slate-50 pb-3 mb-3">
                               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                <Calendar
-                                  size={16}
-                                  className="text-orange-500"
-                                />
+                                <Calendar size={16} className="text-orange-500" />
                                 Expenses Over Time
                               </h3>
-                              {/* Timeframe selector */}
                               <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200/50">
                                 {["weekly", "monthly", "yearly"].map((t) => (
                                   <button
@@ -1338,218 +1295,164 @@ function Page() {
                                 ))}
                               </div>
                             </div>
-                            <div className="h-64 w-full">
+                            <div className="h-[200px] w-full">
                               {expensesOverTimeParsed.length === 0 ? (
                                 <div className="flex items-center justify-center h-full">
-                                  <p className="text-xs text-slate-400 font-medium">
-                                    No expense entries found in this range.
-                                  </p>
+                                  <p className="text-xs text-slate-400 font-medium">No expense entries found in this range.</p>
                                 </div>
                               ) : (
                                 <ResponsiveContainer width="100%" height="100%">
-                                  <BarChart
-                                    data={expensesOverTimeParsed}
-                                    margin={{
-                                      top: 10,
-                                      right: 10,
-                                      left: -20,
-                                      bottom: 0,
-                                    }}
-                                  >
-                                    <CartesianGrid
-                                      strokeDasharray="3 3"
-                                      stroke="#f1f5f9"
-                                    />
-                                    <XAxis
-                                      dataKey={
-                                        expenseTimeframe === "weekly"
-                                          ? "week_start"
-                                          : expenseTimeframe === "monthly"
-                                            ? "month_name"
-                                            : "year_key"
-                                      }
-                                      stroke="#94a3b8"
-                                      fontSize={10}
-                                      tickLine={false}
-                                    />
-                                    <YAxis
-                                      stroke="#94a3b8"
-                                      fontSize={10}
-                                      tickLine={false}
-                                    />
-                                    <Tooltip
-                                      contentStyle={{
-                                        background: "#fff",
-                                        borderRadius: "12px",
-                                        border: "1px solid #f1f5f9",
-                                      }}
-                                      formatter={(value) =>
-                                        formatCurrency(value)
-                                      }
-                                    />
-                                    <Bar
-                                      dataKey="amount"
-                                      name="Expense Cost"
-                                      fill="#f43f5e"
-                                      radius={[4, 4, 0, 0]}
-                                      maxBarSize={30}
-                                    />
-                                  </BarChart>
+                                  <LineChart data={expensesOverTimeParsed} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                                    <XAxis dataKey={expenseTimeframe === "weekly" ? "week_start" : expenseTimeframe === "monthly" ? "month_name" : "year_key"} stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
+                                    <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => {
+                                      if (val >= 10000000) return (val / 10000000).toFixed(1) + 'Cr';
+                                      if (val >= 100000) return (val / 100000).toFixed(1) + 'L';
+                                      return val;
+                                    }}/>
+                                    <Tooltip contentStyle={{ background: "#fff", borderRadius: "12px", border: "1px solid #f1f5f9", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.05)" }} formatter={(value) => formatCurrency(value)} />
+                                    <Line type="monotone" dataKey="amount" name="Expense Cost" stroke="#f43f5e" strokeWidth={2} dot={{ r: 3, fill: "#f43f5e", strokeWidth: 2, stroke: "#fff" }} activeDot={{ r: 5 }} />
+                                  </LineChart>
                                 </ResponsiveContainer>
                               )}
                             </div>
                           </div>
 
-                          {/* Architecture Commission by Architect */}
-                          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
-                            <div className="flex items-center justify-between border-b border-slate-50 pb-3">
+                          {/* Top Projects by Balance Amount */}
+                          <div className="xl:col-span-4 bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col justify-between group hover:border-slate-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-0.5">
+                            <div className="flex items-center justify-between border-b border-slate-50 pb-3 mb-2">
                               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                <Users size={16} className="text-amber-500" />
-                                Architect Commission Rankings
+                                <Layers size={16} className="text-indigo-500" />
+                                Top Projects by Balance Amount
                               </h3>
                             </div>
-                            <div className="h-64 w-full">
-                              {architectureByArchitectParsed.length === 0 ? (
-                                <div className="flex items-center justify-center h-full">
-                                  <p className="text-xs text-slate-400 font-medium">
-                                    No architecture commissions assigned.
-                                  </p>
-                                </div>
-                              ) : (
-                                <ResponsiveContainer width="100%" height="100%">
-                                  <BarChart
-                                    data={architectureByArchitectParsed}
-                                    layout="vertical"
-                                    margin={{
-                                      top: 10,
-                                      right: 10,
-                                      left: 10,
-                                      bottom: 0,
-                                    }}
-                                  >
-                                    <CartesianGrid
-                                      strokeDasharray="3 3"
-                                      stroke="#f1f5f9"
-                                      horizontal={true}
-                                      vertical={false}
-                                    />
-                                    <XAxis
-                                      type="number"
-                                      stroke="#94a3b8"
-                                      fontSize={10}
-                                      tickLine={false}
-                                    />
-                                    <YAxis
-                                      dataKey="architecture_name"
-                                      type="category"
-                                      stroke="#94a3b8"
-                                      fontSize={10}
-                                      tickLine={false}
-                                      width={100}
-                                    />
-                                    <Tooltip
-                                      contentStyle={{
-                                        background: "#fff",
-                                        borderRadius: "12px",
-                                        border: "1px solid #f1f5f9",
-                                      }}
-                                      formatter={(value) =>
-                                        formatCurrency(value)
-                                      }
-                                    />
-                                    <Bar
-                                      dataKey="total_amount"
-                                      name="Total Commission"
-                                      fill="#f59e0b"
-                                      radius={[0, 4, 4, 0]}
-                                      maxBarSize={20}
-                                    />
-                                  </BarChart>
-                                </ResponsiveContainer>
-                              )}
-                            </div>
+                            {(!analyticsData.topProjects || analyticsData.topProjects.length === 0) ? (
+                              <p className="text-xs text-slate-400 font-medium py-4 text-center flex-1 flex items-center justify-center">No projects found.</p>
+                            ) : (
+                              <div className="overflow-x-auto h-[200px] custom-scroll">
+                                <table className="w-full text-[10px] text-left text-slate-600">
+                                  <thead className="bg-slate-50 text-[10px] uppercase font-semibold text-slate-500 tracking-wider sticky top-0">
+                                    <tr>
+                                      <th className="py-2 px-3">Project Name</th>
+                                      <th className="py-2 px-3">Customer</th>
+                                      <th className="py-2 px-3 text-right">Balance Amount</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-100 text-slate-700 bg-white">
+                                    {analyticsData.topProjects.map((p, idx) => (
+                                      <tr key={idx} className="hover:bg-indigo-50/50 hover:scale-[1.01] transition-all cursor-default duration-200 group">
+                                        <td className="py-2 px-3 font-semibold text-slate-800 truncate max-w-[120px]">{p.company_name || "-"}</td>
+                                        <td className="py-2 px-3 text-slate-500 truncate max-w-[100px]">{p.customer_name || "-"}</td>
+                                        <td className="py-2 px-3 text-right font-bold text-emerald-600 whitespace-nowrap">{formatCurrency(p.net_revenue_amount)}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
                           </div>
+
+                          {/* Recent Projects */}
+                          <div className="xl:col-span-4 bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col justify-between group hover:border-slate-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-0.5">
+                            <div className="flex items-center justify-between border-b border-slate-50 pb-3 mb-2">
+                              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                                <RefreshCw size={16} className="text-rose-500" />
+                                Recent Projects
+                              </h3>
+                            </div>
+                            {(!analyticsData.recentProjects || analyticsData.recentProjects.length === 0) ? (
+                              <p className="text-xs text-slate-400 font-medium py-4 text-center flex-1 flex items-center justify-center">No recent projects.</p>
+                            ) : (
+                              <div className="overflow-x-auto h-[200px] custom-scroll">
+                                <table className="w-full text-[10px] text-left text-slate-600">
+                                  <thead className="bg-slate-50 text-[10px] uppercase font-semibold text-slate-500 tracking-wider sticky top-0">
+                                    <tr>
+                                      <th className="py-2 px-3">Project No</th>
+                                      <th className="py-2 px-3">Customer</th>
+                                      <th className="py-2 px-3 text-right">Project Value</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-slate-100 text-slate-700 bg-white">
+                                    {analyticsData.recentProjects.map((p, idx) => (
+                                      <tr key={idx} className="hover:bg-rose-50/50 hover:scale-[1.01] transition-all cursor-default duration-200">
+                                        <td className="py-2 px-3 font-semibold text-slate-800 group-hover:text-rose-600 transition-colors">{p.quotation_no || "-"}</td>
+                                        <td className="py-2 px-3 text-slate-500 truncate max-w-[100px]">{p.customer_name || "-"}</td>
+                                        <td className="py-2 px-3 text-right font-semibold text-slate-800 whitespace-nowrap">{formatCurrency(p.amount)}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {/* 4. Top Projects Leaderboard */}
+                        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4 mt-4 group hover:border-slate-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-0.5">
+                          <div className="flex items-center gap-2 border-b border-slate-50 pb-3">
+                            <Layers size={18} className="text-indigo-600" />
+                            <h3 className="text-sm font-bold text-slate-800">
+                              Top Performing Projects (by Net Revenue)
+                            </h3>
+                          </div>
+                          {(!analyticsData.topProjects || analyticsData.topProjects.length === 0) ? (
+                            <p className="text-xs text-slate-400 font-medium py-4 text-center">
+                              No projects found.
+                            </p>
+                          ) : (
+                            <div className="overflow-x-auto">
+                              <table className="w-full text-xs text-left text-slate-600">
+                                <thead className="bg-[#f8f9fa] text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                                  <tr>
+                                    <th className="py-3 px-4 rounded-tl-lg">Company Name</th>
+                                    <th className="py-3 px-4">Customer Name</th>
+                                    <th className="py-3 px-4 text-right">Amount</th>
+                                    <th className="py-3 px-4 text-right">Net Revenue</th>
+                                    <th className="py-3 px-4 w-48 rounded-tr-lg">Profit Margin %</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50 text-slate-700 bg-white">
+                                  {analyticsData.topProjects.map((p, idx) => {
+                                    const marginPct = p.amount > 0 ? Math.round((p.net_revenue_amount / p.amount) * 100) : 0;
+                                    return (
+                                      <tr key={idx} className="hover:bg-indigo-50/30 hover:scale-[1.005] transition-all duration-300 cursor-default group">
+                                        <td className="py-2.5 px-4 font-semibold text-slate-800">
+                                          {p.company_name || "-"}
+                                        </td>
+                                        <td className="py-2.5 px-4 text-slate-500">
+                                          {p.customer_name || "-"}
+                                        </td>
+                                        <td className="py-2.5 px-4 text-right font-medium">
+                                          {formatCurrency(p.amount)}
+                                        </td>
+                                        <td className="py-2.5 px-4 text-right font-bold text-emerald-600">
+                                          {formatCurrency(p.net_revenue_amount)}
+                                        </td>
+                                        <td className="py-2.5 px-4">
+                                          <div className="flex items-center gap-3">
+                                            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                              <div
+                                                className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                                                style={{
+                                                  width: `${Math.min(100, Math.max(0, marginPct))}%`,
+                                                }}
+                                              ></div>
+                                            </div>
+                                            <span className="text-[10px] font-bold text-slate-600 w-8">
+                                              {marginPct}%
+                                            </span>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
                         </div>
                       </>
                     );
                   })()}
-
-                  {/* 4. Top Projects Leaderboard */}
-                  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
-                    <div className="flex items-center justify-between border-b border-slate-50 pb-3">
-                      <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                        <Layers size={16} className="text-indigo-500" />
-                        Top Performing Projects (by Net Revenue)
-                      </h3>
-                    </div>
-                    {analyticsData.topProjects.length === 0 ? (
-                      <p className="text-xs text-slate-400 font-medium py-4 text-center">
-                        No projects found.
-                      </p>
-                    ) : (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-sm text-left text-slate-600">
-                          <thead className="bg-slate-50 text-[10px] uppercase font-semibold text-slate-500 tracking-wider">
-                            <tr>
-                              <th className="py-2.5 px-4">Company Name</th>
-                              <th className="py-2.5 px-4">Customer Name</th>
-                              <th className="py-2.5 px-4 text-right">Amount</th>
-                              <th className="py-2.5 px-4 text-right">
-                                Net Revenue
-                              </th>
-                              <th className="py-2.5 px-4 w-48">
-                                Profit Margin %
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100 text-slate-700 bg-white">
-                            {analyticsData.topProjects.map((p, idx) => {
-                              const marginPct =
-                                p.amount > 0
-                                  ? Math.round(
-                                      (p.net_revenue_amount / p.amount) * 100,
-                                    )
-                                  : 0;
-                              return (
-                                <tr
-                                  key={idx}
-                                  className="hover:bg-slate-50/50 transition-colors"
-                                >
-                                  <td className="py-2.5 px-4 font-semibold text-slate-800">
-                                    {p.company_name || "-"}
-                                  </td>
-                                  <td className="py-2.5 px-4 text-xs text-slate-500">
-                                    {p.customer_name || "-"}
-                                  </td>
-                                  <td className="py-2.5 px-4 text-right font-medium">
-                                    {formatCurrency(p.amount)}
-                                  </td>
-                                  <td className="py-2.5 px-4 text-right font-bold text-emerald-600">
-                                    {formatCurrency(p.net_revenue_amount)}
-                                  </td>
-                                  <td className="py-2.5 px-4">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                                        <div
-                                          className="bg-emerald-500 h-full rounded-full transition-all duration-500"
-                                          style={{
-                                            width: `${Math.min(100, Math.max(0, marginPct))}%`,
-                                          }}
-                                        ></div>
-                                      </div>
-                                      <span className="text-[10px] font-bold text-slate-500 w-8">
-                                        {marginPct}%
-                                      </span>
-                                    </div>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
                 </>
               ) : null}
             </div>
