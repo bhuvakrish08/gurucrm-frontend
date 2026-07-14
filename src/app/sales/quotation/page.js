@@ -2240,6 +2240,12 @@ export default function QuotationPage() {
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
                         Reference
                       </th>
+                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        location
+                      </th>
+                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        architecture
+                      </th>
                       <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
                         Create Quotation
                       </th>
@@ -2332,6 +2338,9 @@ export default function QuotationPage() {
                               {q.customer_name || "-"}
                             </td>
                             <td className="px-3">{q.reference || "-"}</td>
+
+                            <td className="px-3">{q.location || "-"}</td>
+                            <td className="px-3">{q.architecture || "-"}</td>
 
                             <td className="text-lg px-3 text-center">
                               {q.latest_quotation_id ? (
@@ -5059,6 +5068,16 @@ export default function QuotationPage() {
                   icon: "bi-file-text",
                   label: "Reference",
                   value: viewQuotation.reference,
+                },
+                {
+                  icon: "bi-file-text",
+                  label: "location",
+                  value: viewQuotation.location,
+                },
+                {
+                  icon: "bi-file-text",
+                  label: "architecture",
+                  value: viewQuotation.architecture,
                 },
                 {
                   icon: "bi-receipt",
