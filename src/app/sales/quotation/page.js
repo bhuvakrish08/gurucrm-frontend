@@ -97,6 +97,16 @@ export default function QuotationPage() {
     work_description: "",
   });
 
+  // ===== LOST REASON FEATURE STATES =====
+  const [showLostReasonModal, setShowLostReasonModal] = useState(false);
+  const [lostReasonText, setLostReasonText] = useState("");
+  const [lostReasonTargetId, setLostReasonTargetId] = useState(null);
+  const [isSubmittingLostReason, setIsSubmittingLostReason] = useState(false);
+
+  const [showViewReasonModal, setShowViewReasonModal] = useState(false);
+  const [viewReasonText, setViewReasonText] = useState("");
+  // ===== END LOST REASON FEATURE STATES =====
+
 
 
   // Assignee Popover States
@@ -308,14 +318,6 @@ export default function QuotationPage() {
             : item.quotation_status === "Declined"
               ? "Pending"
               : item.quotation_status || "Pending";
-        // const finalStatus =
-        //   item.quotation_status === "Approved"
-        //     ? "Won"
-
-
-        //     : item.quotation_status === "Declined"
-        //       ? "Declined"
-        //       : item.quotation_status || "Pending";
         return {
           ...item,
           displayStatus: finalStatus,
@@ -615,12 +617,6 @@ export default function QuotationPage() {
             : item.quotation_status === "Declined"
               ? "Pending"
               : item.quotation_status || "Pending";
-        // const finalStatus =
-        //   item.quotation_status === "Approved"
-        //     ? "Won"
-        //     : item.quotation_status === "Declined"
-        //       ? "Pending"
-        //       : item.quotation_status || "Pending";
         return {
           ...item,
           displayStatus: finalStatus,
@@ -732,11 +728,16 @@ export default function QuotationPage() {
     fetchQuotations();
   };
 
-  const handleTableStatusChange = async (id, newStatus) => {
+  // ===== UPDATED: now supports optional reason (for Lost status) =====
+  const handleTableStatusChange = async (id, newStatus, reason = "") => {
     try {
+      const payload = { quotation_status: newStatus };
+      if (newStatus === "Lost") {
+        payload.lost_reason = reason;
+      }
       await axios.put(
         `${API_BASE}/api/quotation/update-status/${id}`,
-        { quotation_status: newStatus },
+        payload,
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         },
@@ -749,6 +750,7 @@ export default function QuotationPage() {
             ...q,
             quotation_status: newStatus,
             displayStatus: newStatus,
+            lost_reason: newStatus === "Lost" ? reason : q.lost_reason,
             wasApprovedOnce:
               q.wasApprovedOnce || newStatus === "Won" || newStatus === "Lost",
           };
@@ -757,6 +759,35 @@ export default function QuotationPage() {
     } catch (err) {
       toast.error("Failed to update status");
     }
+  };
+
+  // ===== NEW: wrapper that intercepts "Lost" selection to open reason modal =====
+  const handleStatusSelectChange = (id, newStatus) => {
+    if (newStatus === "Lost") {
+      setLostReasonTargetId(id);
+      setLostReasonText("");
+      setShowLostReasonModal(true);
+    } else {
+      handleTableStatusChange(id, newStatus);
+    }
+  };
+
+  // ===== NEW: submit handler for the Lost Reason modal =====
+  const handleSubmitLostReason = async () => {
+    if (!lostReasonText.trim()) {
+      toast.error("Please enter a reason for losing this quotation");
+      return;
+    }
+    setIsSubmittingLostReason(true);
+    await handleTableStatusChange(
+      lostReasonTargetId,
+      "Lost",
+      lostReasonText.trim(),
+    );
+    setIsSubmittingLostReason(false);
+    setShowLostReasonModal(false);
+    setLostReasonText("");
+    setLostReasonTargetId(null);
   };
 
   // ========================
@@ -1204,13 +1235,6 @@ export default function QuotationPage() {
 
       setFollowUpHistory(historyRes.data.result || []);
 
-      // if (status === "Approved") {
-      //   await axios.put(
-      //     `${API_BASE}/api/quotation/update-main-status/${selectedLead.latest_quotation_id}`,
-      //     { quotation_status: "Declined" },
-      //   );
-      // }
-
       toast.success(`Quotation marked as ${status}`);
 
       setQuotations((prev) =>
@@ -1536,7 +1560,6 @@ export default function QuotationPage() {
     e.preventDefault();
     if (!filePath) return;
 
-    // Ensure all Cloudinary URLs are accessed securely via HTTPS
     let secureFilePath = filePath;
     if (filePath.startsWith("http://")) {
       secureFilePath = filePath.replace("http://", "https://");
@@ -1708,7 +1731,6 @@ export default function QuotationPage() {
       return;
     }
     try {
-      // Use the backend assign route to update assignee and set status to Pending
       await axios.put(
         `${API_BASE}/api/quotation/assign/${selectedAssignQuotation.latest_quotation_id}`,
         { assignee: assignForm.assigned_to },
@@ -1720,7 +1742,6 @@ export default function QuotationPage() {
       );
       toast.success("Quotation assigned successfully");
       setShowAssignModal(false);
-      // Refresh data to reflect changes in both Estimation and Sales views
       await fetchQuotations();
     } catch (err) {
       console.log(err);
@@ -1819,7 +1840,6 @@ export default function QuotationPage() {
         });
         setAsignee(formatted);
 
-        // Fetch all role users (exclude super admin) for follow up dropdown
         const resFollowUp = await axios.get(
           `${API_BASE}/api/manage-user/asignee`,
           {
@@ -2514,7 +2534,7 @@ export default function QuotationPage() {
                                     <select
                                       value="Pending"
                                       onChange={(e) =>
-                                        handleTableStatusChange(
+                                        handleStatusSelectChange(
                                           q.latest_quotation_id,
                                           e.target.value,
                                         )
@@ -2535,7 +2555,7 @@ export default function QuotationPage() {
                                     <select
                                       value="Sent"
                                       onChange={(e) =>
-                                        handleTableStatusChange(
+                                        handleStatusSelectChange(
                                           q.latest_quotation_id,
                                           e.target.value,
                                         )
@@ -2556,7 +2576,7 @@ export default function QuotationPage() {
                                     <select
                                       value="Revision"
                                       onChange={(e) =>
-                                        handleTableStatusChange(
+                                        handleStatusSelectChange(
                                           q.latest_quotation_id,
                                           e.target.value,
                                         )
@@ -2582,53 +2602,6 @@ export default function QuotationPage() {
 
                             <td className="px-3 text-center">
                               <div className="flex items-center justify-center gap-2">
-                                {/* {q.displayStatus === "Won" &&
-                                q.latest_quotation_id &&
-                                (() => {
-                                  const percentage = Number(
-                                    q.proforma_percentage || 0,
-                                  );
-                                  if (!q.pi_exists || percentage === 0) {
-                                    return (
-                                      <button
-                                        onClick={() => {
-                                          setSelectedPIQuotation(q);
-                                          setPiPercentage("");
-                                          setPiRupees("");
-                                          setShowPIModal(true);
-                                        }}
-                                        className="flex items-center gap-1 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all shadow-sm whitespace-nowrap"
-                                        title="Create Proforma Invoice"
-                                      >
-                                        <i className="bi bi-file-earmark-plus text-sm"></i>
-                                      </button>
-                                    );
-                                  }
-                                  if (percentage > 0 && percentage < 100) {
-                                    return (
-                                      <button
-                                        disabled
-                                        className="flex items-center gap-1 bg-gray-300 text-gray-600 text-xs font-semibold px-2.5 py-1.5 rounded-lg cursor-not-allowed whitespace-nowrap"
-                                        title={`PI In Progress (${percentage}%)`}
-                                      >
-                                        <i className="bi bi-hourglass-split text-sm"></i>
-                                        {percentage}%
-                                      </button>
-                                    );
-                                  }
-                                  if (percentage === 100) {
-                                    return (
-                                      <span
-                                        className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap"
-                                        title="Proforma Invoice Completed"
-                                      >
-                                        <i className="bi bi-check-circle-fill text-emerald-500"></i>
-                                        Completed
-                                      </span>
-                                    );
-                                  }
-                                })()} */}
-
                                 {/* VIEW BUTTON */}
 
                                 {q.latest_quotation_id && (
@@ -2651,15 +2624,28 @@ export default function QuotationPage() {
                                     // existing PI logic
                                   })()}
 
+                                {/* ===== ACTION: Lock (Won) / View Reason (Lost) / Delete (Others) ===== */}
                                 {q.latest_quotation_id ? (
-                                  q.displayStatus === "Won" ||
-                                    q.displayStatus === "Lost" ? (
+                                  q.displayStatus === "Won" ? (
                                     <div
                                       className="text-gray-300 w-8 h-8 rounded-full flex items-center justify-center"
                                       title="Locked"
                                     >
                                       <i className="bi bi-lock-fill"></i>
                                     </div>
+                                  ) : q.displayStatus === "Lost" ? (
+                                    <button
+                                      onClick={() => {
+                                        setViewReasonText(
+                                          q.lost_reason || "No reason provided",
+                                        );
+                                        setShowViewReasonModal(true);
+                                      }}
+                                      className="text-red-500 hover:text-red-700 transition-all"
+                                      title="View Lost Reason"
+                                    >
+                                      <i className="bi bi-info-circle text-lg"></i>
+                                    </button>
                                   ) : (
                                     <button
                                       onClick={() =>
@@ -2758,7 +2744,6 @@ export default function QuotationPage() {
 
       {/* ================== FOLLOW-UP MODAL ================== */}
       {showUpdateModal && (
-        // BUG FIX #6: Full modal is scrollable with overflow-y-auto on inner container
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 p-4">
           <div className="bg-white w-full max-w-[820px] rounded-sm shadow-xl border border-gray-100 overflow-hidden flex flex-col max-h-[70vh]">
             {/* Header */}
@@ -2814,7 +2799,6 @@ export default function QuotationPage() {
             </div>
 
             {/* Body — scrollable */}
-            {/* BUG FIX #6: overflow-y-auto on this body div makes modal content scroll */}
             <div className="flex flex-row flex-1 overflow-hidden">
               {/* LEFT: Form */}
               <div className="w-1/2 px-3 sm:px-6 py-3 sm:py-5 border-r border-gray-100 overflow-y-auto">
@@ -2986,41 +2970,11 @@ export default function QuotationPage() {
                         className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50 h-16 sm:h-20 resize-none"
                       />
                     </div>
-                    {/* <div className="col-span-2 border-2 border-dashed border-orange-300 rounded-xl p-3 text-center bg-orange-50/40">
-                      <button
-                        onClick={() => setShowFileModal(true)}
-                        className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 mx-auto transition-all shadow-md shadow-orange-200"
-                      >
-                        <i className="bi bi-cloud-upload"></i> Browse Files
-                      </button>
-                      {selectedFiles.length > 0 && (
-                        <div className="mt-2 space-y-1 text-left">
-                          {selectedFiles.map((file, index) => (
-                            <div
-                              key={index}
-                              className="flex justify-between items-center bg-white px-3 py-1 text-xs rounded-lg border border-gray-100 shadow-sm"
-                            >
-                              <span className="text-gray-600 truncate">{file.name}</span>
-                              <button
-                                onClick={() =>
-                                  setSelectedFiles(selectedFiles.filter((_, i) => i !== index))
-                                }
-                                className="text-orange-400 hover:text-orange-600 ml-2"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      <p className="text-xs text-gray-400 mt-1.5">Max 2MB · JPG, PNG, PDF</p>
-                    </div> */}
                   </div>
                 )}
               </div>
 
               {/* RIGHT: History Panel */}
-              {/* BUG FIX #5 & #6: Proper overflow-y-auto, aligned layout */}
               <div className="w-1/2 px-2 sm:px-6 py-3 sm:py-5 flex flex-col overflow-hidden">
                 {followUpTab === "lead" && (
                   <div className="flex flex-wrap justify-between items-center gap-1 mb-2 sm:mb-4 flex-shrink-0">
@@ -3129,7 +3083,6 @@ export default function QuotationPage() {
                             </p>
                           </div>
 
-                          {/* BUG FIX #5: Preview panel rendered inline below each card for proper alignment */}
                           {isActive && (
                             <div className="mt-1 mb-2 border border-orange-200 rounded-xl bg-gradient-to-br from-orange-50 to-white p-4 text-sm shadow-sm">
                               <div className="flex justify-between items-center mb-3">
@@ -3210,7 +3163,6 @@ export default function QuotationPage() {
                                 </p>
                               </div>
 
-                              {/* BUG FIX #4: File URLs as clickable links that open in new tab */}
                               {previewFollowUp.files &&
                                 previewFollowUp.files.length > 0 && (
                                   <div className="mt-3">
@@ -3868,7 +3820,6 @@ export default function QuotationPage() {
                             )}
                           </div>
 
-                          {/* BUG FIX #4: Files in quotation history cards also open in new tab */}
                           {item.files?.length > 0 && (
                             <div className="mt-3">
                               <p className="text-xs font-semibold text-gray-400 uppercase mb-1.5">
@@ -4014,7 +3965,6 @@ export default function QuotationPage() {
 
             {/* Body */}
             <div className="p-6 space-y-4 text-left">
-              {/* Total Amount Editable / Readonly */}
               <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex justify-between items-center gap-4">
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
                   Total Base Amount
@@ -4037,9 +3987,7 @@ export default function QuotationPage() {
                 )}
               </div>
 
-              {/* Grid for Splits */}
               <div className="grid grid-cols-2 gap-4">
-                {/* Part B */}
                 <div className="bg-blue-50/20 p-4 rounded-xl border border-blue-100 space-y-3">
                   <div>
                     <label className="text-[11px] font-bold text-blue-700 uppercase tracking-wide block mb-1">
@@ -4106,7 +4054,6 @@ export default function QuotationPage() {
                   </div>
                 </div>
 
-                {/* Part A */}
                 <div className="bg-orange-50/20 p-4 rounded-xl border border-orange-100 space-y-3">
                   <div>
                     <label className="text-[11px] font-bold text-orange-700 uppercase tracking-wide block mb-1">
@@ -4174,7 +4121,6 @@ export default function QuotationPage() {
                 </div>
               </div>
 
-              {/* Grand Total */}
               <div className="bg-green-50 p-4 rounded-xl border border-green-100 flex justify-between items-center">
                 <span className="text-xs font-semibold text-green-700 uppercase tracking-wide">
                   Project Value
@@ -4331,6 +4277,94 @@ export default function QuotationPage() {
                   Yes Change
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== LOST REASON MODAL (NEW) ===== */}
+      {showLostReasonModal && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white w-[420px] rounded-sm shadow-xl overflow-hidden border border-gray-100">
+            <div className="flex justify-between items-center px-5 py-3 bg-gradient-to-r from-red-100 to-white border-b border-gray-100">
+              <h3 className="text-sm font-semibold text-gray-700 tracking-wide flex items-center gap-2">
+                <i className="bi bi-x-circle text-red-500 text-sm"></i>
+                Mark Quotation as Lost
+              </h3>
+              <button
+                onClick={() => {
+                  setShowLostReasonModal(false);
+                  setLostReasonText("");
+                  setLostReasonTargetId(null);
+                }}
+                className="w-7 h-7 flex items-center justify-center text-red-500"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-5">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Reason for Loss <span className="text-red-400">*</span>
+              </label>
+              <textarea
+                value={lostReasonText}
+                onChange={(e) => setLostReasonText(e.target.value)}
+                rows={4}
+                placeholder="e.g. Price too high, Client chose another vendor..."
+                className="w-full mt-1.5 border border-red-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50 resize-none"
+              />
+            </div>
+            <div className="flex justify-end gap-3 px-5 py-3 border-t border-gray-100 bg-gray-50">
+              <button
+                onClick={() => {
+                  setShowLostReasonModal(false);
+                  setLostReasonText("");
+                  setLostReasonTargetId(null);
+                }}
+                className="px-4 py-2 rounded-sm text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitLostReason}
+                disabled={isSubmittingLostReason}
+                className="px-5 py-2 rounded-sm text-sm font-semibold bg-red-500 hover:bg-red-600 text-white shadow-md transition flex items-center gap-2"
+              >
+                {isSubmittingLostReason ? "Saving..." : "Confirm Lost"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== VIEW LOST REASON MODAL (NEW) ===== */}
+      {showViewReasonModal && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white w-[400px] rounded-sm shadow-xl overflow-hidden border border-gray-100">
+            <div className="flex justify-between items-center px-5 py-3 bg-gradient-to-r from-red-100 to-white border-b border-gray-100">
+              <h3 className="text-sm font-semibold text-gray-700 tracking-wide flex items-center gap-2">
+                <i className="bi bi-info-circle text-red-500 text-sm"></i>
+                Lost Reason
+              </h3>
+              <button
+                onClick={() => setShowViewReasonModal(false)}
+                className="w-7 h-7 flex items-center justify-center text-red-500"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-5">
+              <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                {viewReasonText}
+              </p>
+            </div>
+            <div className="flex justify-end gap-3 px-5 py-3 border-t border-gray-100 bg-gray-50">
+              <button
+                onClick={() => setShowViewReasonModal(false)}
+                className="px-4 py-2 rounded-sm text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

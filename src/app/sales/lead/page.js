@@ -3367,6 +3367,15 @@ export default function Page() {
   const [statusChangeLeadId, setStatusChangeLeadId] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState("");
 
+  // ✅ NEW: Lost reason popup states
+  const [showLostReasonPopup, setShowLostReasonPopup] = useState(false);
+  const [lostReason, setLostReason] = useState("");
+  const [lostReasonError, setLostReasonError] = useState("");
+
+  // ✅ NEW: View lost reason modal states
+  const [showViewReasonModal, setShowViewReasonModal] = useState(false);
+  const [viewReasonLead, setViewReasonLead] = useState(null);
+
   const [selectedLead, setSelectedLead] = useState(null);
 
   const router = useRouter();
@@ -4073,11 +4082,20 @@ export default function Page() {
 
   // ===================================================
   // ✅ FIXED: STATUS CHANGE — now sends Authorization header
+  // ✅ UPDATED: "Lost" status now opens the Lost Reason popup
+  //    instead of the normal confirm popup
   // ===================================================
   const handleStatusChange = (lead_id, newStatus) => {
     setStatusChangeLeadId(lead_id); // ✅ separate state — no conflict with selectedLead
     setSelectedStatus(newStatus);
-    setShowPopup(true);
+
+    if (newStatus === "Lost") {
+      setLostReason("");
+      setLostReasonError("");
+      setShowLostReasonPopup(true);
+    } else {
+      setShowPopup(true);
+    }
   };
 
   const confirmStatusChange = async () => {
@@ -4104,6 +4122,50 @@ export default function Page() {
       console.log(err);
       toast.error("Failed to update status");
     }
+  };
+
+  // ===================================================
+  // ✅ NEW: CONFIRM LOST STATUS CHANGE (with reason)
+  // ===================================================
+  const confirmLostStatusChange = async () => {
+    if (!lostReason.trim()) {
+      setLostReasonError("Please enter a reason");
+      return;
+    }
+
+    try {
+      await axios.put(
+        `${API_BASE}/api/lead/update-status/${statusChangeLeadId}`,
+        { status: "Lost", lost_reason: lostReason.trim() },
+        {
+          headers: { Authorization: `Bearer ${getToken()}` },
+        },
+      );
+
+      setLeads((prev) =>
+        prev.map((lead) =>
+          lead.lead_id === statusChangeLeadId
+            ? { ...lead, status: "Lost", lost_reason: lostReason.trim() }
+            : lead,
+        ),
+      );
+
+      setShowLostReasonPopup(false);
+      setLostReason("");
+      setLostReasonError("");
+      toast.success("Lead marked as Lost");
+    } catch (err) {
+      console.log(err);
+      toast.error("Failed to update status");
+    }
+  };
+
+  // ===================================================
+  // ✅ NEW: VIEW LOST REASON
+  // ===================================================
+  const handleViewReason = (lead) => {
+    setViewReasonLead(lead);
+    setShowViewReasonModal(true);
   };
 
   // ===================================================
@@ -4811,6 +4873,8 @@ export default function Page() {
                             <div className="flex items-center gap-2 flex-nowrap">
                               {lead.status === "Pending" ? (
                                 <>
+
+
                                   <button
                                     onClick={() => handleView(lead)}
                                     className="text-gray-400 hover:text-green-600 cursor-pointer"
@@ -4831,6 +4895,27 @@ export default function Page() {
                                   >
                                     <i className="bi bi-trash3"></i>
                                   </button>
+                                </>
+                              ) : lead.status === "Lost" ? (
+                                // ✅ NEW: View Reason button for Lost leads
+
+                                <>
+                                
+
+
+                                <button onClick={() => handleView(lead)} className="text-gray-400 hover:text-green-600 cursor-pointer" > <i className="bi bi-eye text-xl"></i> </button>
+
+                                <button
+                                  onClick={() => handleViewReason(lead)}
+                                  className="text-gray-400 hover:text-red-600 cursor-pointer flex items-center gap-1"
+                                  title="View Lost Reason"
+                                >
+                                  <i className="bi bi-info-circle text-lg"></i>
+                                  <span className="text-xs font-medium hidden lg:inline">
+                                  
+                                  </span>
+                                </button>
+
                                 </>
                               ) : (
                                 <span className="text-gray-300 cursor-not-allowed">
@@ -6301,7 +6386,7 @@ export default function Page() {
         </div>
       )}
 
-      {/* STATUS CHANGE POPUP */}
+      {/* STATUS CHANGE POPUP (Won / Pending) */}
       {showPopup && (
         <div className="fixed inset-0 bg-gray-900/30 flex items-center justify-center backdrop-blur-sm z-50">
           <div className="bg-white rounded-lg shadow-lg p-6 w-80">
@@ -6323,6 +6408,83 @@ export default function Page() {
                 className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-md shadow-orange-200"
               >
                 Yes Change
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ NEW: LOST REASON POPUP */}
+      {showLostReasonPopup && (
+        <div className="fixed inset-0 bg-gray-900/30 flex items-center justify-center backdrop-blur-sm z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-96">
+            <h2 className="text-lg font-semibold mb-3 text-center text-red-600">
+              Mark Lead as Lost
+            </h2>
+            <p className="text-sm text-gray-600 mb-3">
+              Please provide a reason for marking this lead as Lost.
+            </p>
+            <textarea
+              value={lostReason}
+              onChange={(e) => {
+                setLostReason(e.target.value);
+                if (e.target.value.trim()) setLostReasonError("");
+              }}
+              placeholder="Enter lost reason..."
+              className="w-full border border-gray-300 rounded-sm px-3 py-2 text-sm outline-none h-24 resize-none focus:border-red-400"
+            />
+            {lostReasonError && (
+              <p className="text-xs text-red-500 mt-1">{lostReasonError}</p>
+            )}
+            <div className="flex justify-end gap-3 mt-4">
+              <button
+                onClick={() => {
+                  setShowLostReasonPopup(false);
+                  setLostReason("");
+                  setLostReasonError("");
+                }}
+                className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmLostStatusChange}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-md shadow-red-200"
+              >
+                Confirm Lost
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ NEW: VIEW LOST REASON MODAL */}
+      {showViewReasonModal && viewReasonLead && (
+        <div className="fixed inset-0 bg-gray-900/30 flex items-center justify-center backdrop-blur-sm z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-96">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-lg font-semibold text-red-600">
+                Lost Reason
+              </h2>
+              <button
+                onClick={() => setShowViewReasonModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-xs text-gray-400 uppercase font-semibold mb-1">
+              {viewReasonLead.customer_name}
+            </p>
+            <p className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 rounded-sm p-3 border border-gray-100">
+              {viewReasonLead.lost_reason || "No reason provided"}
+            </p>
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={() => setShowViewReasonModal(false)}
+                className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
+              >
+                Close
               </button>
             </div>
           </div>
