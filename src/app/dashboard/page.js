@@ -3944,13 +3944,31 @@ export default function Dashboard() {
                 </div>
               </div>
               {/* ROW 4: Recent Leads — full width closing row */}
-              <div
+           <div
                 className="lg:col-span-12 bg-gradient-to-br from-white to-slate-50/40 backdrop-blur-xl rounded-xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 border border-slate-100 p-5 flex flex-col animate-fade-in-up"
                 style={{ animationDelay: "0.5s" }}
               >
+                {/* ===== Section-scoped animation styles (UI only) ===== */}
+                <style>{`
+                  @keyframes rlCardIn {
+                    from { opacity: 0; transform: translateY(18px) scale(0.97); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
+                  }
+                  @keyframes rlBadgePop {
+                    0% { opacity: 0; transform: scale(0.6); }
+                    70% { transform: scale(1.12); }
+                    100% { opacity: 1; transform: scale(1); }
+                  }
+                  .rl-card { animation: rlCardIn 0.55s ease-out both; }
+                  .rl-badge { animation: rlBadgePop 0.5s ease-out both; }
+                  @media (prefers-reduced-motion: reduce) {
+                    .rl-card, .rl-badge { animation: none; }
+                  }
+                `}</style>
+
                 <div className="flex justify-between items-center mb-4">
                   <div>
-                    <h3 className="text-lg font-extrabold text-gray-800">
+                    <h3 className="text-lg font-extrabold text-gray-900">
                       Recent Leads
                     </h3>
                     <p className="text-[10px] text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
@@ -3959,61 +3977,109 @@ export default function Dashboard() {
                   </div>
                   <button
                     onClick={() => router.push("/sales/lead")}
-                    className="text-[10px] text-indigo-600 hover:text-white bg-indigo-50 hover:bg-indigo-600 px-3 py-1.5 rounded-lg font-bold transition-all uppercase tracking-wider"
+                    className="text-[10px] text-white bg-indigo-600 px-2 py-1.5 rounded-lg font-bold transition-all uppercase tracking-wider"
                   >
                     View All Leads
                   </button>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {safeLeads.slice(0, 3).map((lead, idx) => (
-                    <div
-                      key={idx}
-                      className="bg-white/60 backdrop-blur-sm border border-slate-100 p-4 rounded-xl shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
-                    >
-                      <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <UserPlus size={40} className="text-indigo-500" />
-                      </div>
-                      <h4 className="font-bold text-gray-800 text-sm mb-1 truncate pr-8">
-                        {lead.lead_title || "Untitled Lead"}
-                      </h4>
-                      <p className="text-indigo-600 text-xs font-bold mb-3">
-                        {lead.company_name}
-                      </p>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-[10px] text-gray-500 font-medium">
-                          <Users size={12} className="text-gray-400" />
-                          <span className="truncate">{lead.customer_name}</span>
+                  {safeLeads.slice(0, 3).map((lead, idx) => {
+                    // Rotating accent palette per card (UI only)
+                    const accents = [
+                      {
+                        icon: "text-indigo-500",
+                        iconBg: "from-indigo-50 to-blue-50",
+                        company: "text-indigo-600",
+                        hoverShadow: "hover:shadow-indigo-100",
+                        hoverBorder: "border-indigo-200",
+                        detail: "hover:text-indigo-500",
+                      },
+                      {
+                        icon: "text-emerald-500",
+                        iconBg: "from-emerald-50 to-teal-50",
+                        company: "text-emerald-600",
+                        hoverShadow: "hover:shadow-emerald-100",
+                        hoverBorder: "border-emerald-200",
+                        detail: "hover:text-emerald-500",
+                      },
+                      {
+                        icon: "text-fuchsia-500",
+                        iconBg: "from-fuchsia-50 to-pink-50",
+                        company: "text-fuchsia-600",
+                        hoverShadow: "hover:shadow-fuchsia-100",
+                        hoverBorder: "border-fuchsia-200",
+                        detail: "hover:text-fuchsia-500",
+                      },
+                    ];
+                    const accent = accents[idx % accents.length];
+
+                    return (
+                      <div
+                        key={idx}
+                        className={`rl-card bg-white/60 backdrop-blur-sm border  ${accent.hoverBorder} p-4 rounded-xl shadow-sm hover:shadow-lg ${accent.hoverShadow} hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden`}
+                        style={{ animationDelay: `${0.6 + idx * 0.12}s` }}
+                      >
+                        <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-25 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
+                          <UserPlus size={40} className={accent.icon} />
                         </div>
-                        <div className="flex items-center gap-2 text-[10px] text-gray-500 font-medium">
-                          <Clock size={12} className="text-gray-400" />
-                          <span>
-                            {new Date(lead.created_at).toLocaleDateString()}
+                        <h4 className="font-bold text-gray-800 text-sm mb-1 truncate pr-8">
+                          {lead.lead_title || "Untitled Lead"}
+                        </h4>
+                        <p className={`${accent.company} text-xs font-bold mb-3`}>
+                          {lead.company_name}
+                        </p>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-[10px] text-gray-500 font-medium">
+                            <span
+                              className={`p-1 rounded-md bg-gradient-to-br ${accent.iconBg}`}
+                            >
+                              <Users size={11} className={accent.icon} />
+                            </span>
+                            <span className="truncate">
+                              {lead.customer_name}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-[10px] text-gray-500 font-medium">
+                            <span
+                              className={`p-1 rounded-md bg-gradient-to-br ${accent.iconBg}`}
+                            >
+                              <Clock size={11} className={accent.icon} />
+                            </span>
+                            <span>
+                              {new Date(lead.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">
+                          <span
+                            className={`rl-badge px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter shadow-sm ${
+                              lead.status === "Won"
+                                ? "bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border border-green-200"
+                                : lead.status === "Lost"
+                                  ? "bg-gradient-to-r from-red-100 to-rose-100 text-red-700 border border-red-200"
+                                  : "bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-700 border border-amber-200"
+                            }`}
+                            style={{
+                              animationDelay: `${0.85 + idx * 0.12}s`,
+                            }}
+                          >
+                            {lead.status}
                           </span>
+                          <button
+                            onClick={() =>
+                              router.push(`/sales/lead?id=${lead.lead_id}`)
+                            }
+                            className={`text-[10px] font-bold text-gray-400 ${accent.detail} transition-all group/btn flex items-center gap-0.5`}
+                          >
+                            Details{" "}
+                            <span className="inline-block transition-transform duration-200 group-hover/btn:translate-x-1">
+                              →
+                            </span>
+                          </button>
                         </div>
                       </div>
-                      <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter ${
-                            lead.status === "Won"
-                              ? "bg-green-100 text-green-700"
-                              : lead.status === "Lost"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-amber-100 text-amber-700"
-                          }`}
-                        >
-                          {lead.status}
-                        </span>
-                        <button
-                          onClick={() =>
-                            router.push(`/sales/lead?id=${lead.lead_id}`)
-                          }
-                          className="text-[10px] font-bold text-gray-400 hover:text-indigo-500 transition-colors"
-                        >
-                          Details →
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {safeLeads.length === 0 && (
                     <div className="col-span-3 py-10 text-center bg-white/40 rounded-xl border border-dashed border-gray-200">
                       <p className="text-gray-400 text-sm font-medium">
@@ -5018,30 +5084,75 @@ export default function Dashboard() {
           role === "Leads Management") &&
           trafficLightStats.length > 0 && (
             <div className="mt-6 mb-8 animate-fade-in">
+              {/* ===== Section-scoped animation styles (UI only) ===== */}
+              <style>{`
+                @keyframes tpFadeUp {
+                  from { opacity: 0; transform: translateY(16px); }
+                  to { opacity: 1; transform: translateY(0); }
+                }
+                @keyframes tpSlideIn {
+                  from { opacity: 0; transform: translateX(-12px); }
+                  to { opacity: 1; transform: translateX(0); }
+                }
+                @keyframes tpGlow {
+0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.35); }
+                  50% { box-shadow: 0 0 0 6px rgba(99, 102, 241, 0); }
+                }
+                @keyframes tpPulseDot {
+                  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+                  70% { box-shadow: 0 0 0 5px rgba(239, 68, 68, 0); }
+                }
+                @keyframes tpPulseDotYellow {
+                  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.5); }
+                  70% { box-shadow: 0 0 0 5px rgba(245, 158, 11, 0); }
+                }
+                @keyframes tpShimmer {
+                  0% { background-position: -200% center; }
+                  100% { background-position: 200% center; }
+                }
+                .tp-card { animation: tpFadeUp 0.6s ease-out both; }
+                .tp-row { animation: tpSlideIn 0.45s ease-out both; }
+                .tp-glow-icon { animation: tpGlow 2.5s ease-in-out infinite; }
+                .tp-dot-red { animation: tpPulseDot 1.8s ease-out infinite; }
+                .tp-dot-yellow { animation: tpPulseDotYellow 2.2s ease-out infinite; }
+  
+                @media (prefers-reduced-motion: reduce) {
+                  .tp-card, .tp-row, .tp-glow-icon, .tp-dot-red, .tp-dot-yellow, .tp-gradient-text {
+                    animation: none;
+                  }
+                }
+              `}</style>
+
+              {/* ===== Section Header ===== */}
               <div className="flex items-center gap-3 mb-4 pl-1">
-                <div className="p-2 bg-gradient-to-br from-indigo-50 to-blue-50 border border-blue-100 rounded-lg shadow-sm">
-                  <Activity size={18} className="text-blue-600" />
+<div className=" p-2  to-red-500 rounded-lg shadow-md">
+                  <Activity size={18} className="text-indigo-500  " />
                 </div>
                 <div>
-                  <h2 className="text-lg font-black text-gray-800 tracking-tight leading-tight">
-                    Team Performance{" "}
-                    <span className="text-gray-400 font-medium text-sm ml-1">
+                  <h2 className="text-lg font-black tracking-tight leading-tight">
+                    <span className="text-black">Team Performance</span>{" "}
+                    {/* <span className="text-gray-400 font-medium text-sm ml-1">
                       (Traffic Light System)
-                    </span>
+                    </span> */}
                   </h2>
-                  <p className="text-[11px] font-medium text-gray-400 mt-0.5">
+                  {/* <p className="text-[11px] font-medium text-gray-400 mt-0.5">
                     Analyze response times and follow-up efficiency across the
                     sales team
-                  </p>
+                  </p> */}
                 </div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {/* Chart Card */}
-                <div className="bg-white/60 backdrop-blur-xl border border-gray-100 p-4 rounded-2xl shadow-sm flex flex-col">
+                {/* ===== Chart Card ===== */}
+                <div
+                  className="tp-card bg-white/70 backdrop-blur-xl border border-indigo-100/60 p-4 rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 flex flex-col"
+                  style={{ animationDelay: "0.1s" }}
+                >
                   <h3 className="text-[11px] font-bold text-gray-800 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <Activity size={14} className="text-gray-400" /> Follow-Up
-                    Status Distribution
+                    <span className="p-1 rounded-md bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100">
+                      <Activity size={13} className="text-emerald-500" />
+                    </span>
+                    Follow-Up Status Distribution
                   </h3>
                   <div className="h-[250px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
@@ -5049,10 +5160,42 @@ export default function Dashboard() {
                         data={trafficLightStats}
                         margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
                       >
+                        <defs>
+                          <linearGradient
+                            id="tpGreenGrad"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                          >
+                            <stop offset="0%" stopColor="#34D399" />
+                            <stop offset="100%" stopColor="#059669" />
+                          </linearGradient>
+                          <linearGradient
+                            id="tpYellowGrad"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                          >
+                            <stop offset="0%" stopColor="#FBBF24" />
+                            <stop offset="100%" stopColor="#D97706" />
+                          </linearGradient>
+                          <linearGradient
+                            id="tpRedGrad"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                          >
+                            <stop offset="0%" stopColor="#F87171" />
+                            <stop offset="100%" stopColor="#DC2626" />
+                          </linearGradient>
+                        </defs>
                         <CartesianGrid
                           strokeDasharray="3 3"
                           vertical={false}
-                          stroke="#f1f5f9"
+                          stroke="#eef2ff"
                         />
                         <XAxis
                           dataKey="assignee"
@@ -5070,12 +5213,14 @@ export default function Dashboard() {
                           tick={{ fontSize: 10, fill: "#94a3b8" }}
                         />
                         <Tooltip
-                          cursor={{ fill: "#f8fafc" }}
+                          cursor={{ fill: "rgba(99, 102, 241, 0.05)" }}
                           contentStyle={{
-                            borderRadius: "12px",
-                            border: "none",
-                            boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)",
+                            borderRadius: "14px",
+                            border: "1px solid #e0e7ff",
+                            boxShadow:
+                              "0 15px 35px -5px rgba(79, 70, 229, 0.15)",
                             padding: "12px",
+                            backdropFilter: "blur(8px)",
                           }}
                         />
                         <Legend
@@ -5083,51 +5228,66 @@ export default function Dashboard() {
                           wrapperStyle={{
                             fontSize: "11px",
                             paddingTop: "10px",
+                            fontWeight: 600,
                           }}
                         />
                         <Bar
                           dataKey="green_count"
                           name="On Time (< 24h)"
                           stackId="a"
-                          fill="#10B981"
+                          fill="url(#tpGreenGrad)"
                           radius={[0, 0, 4, 4]}
                           barSize={32}
+                          animationDuration={900}
+                          animationBegin={200}
+                          animationEasing="ease-out"
                         />
                         <Bar
                           dataKey="yellow_count"
                           name="Late (24h-48h)"
                           stackId="a"
-                          fill="#F59E0B"
+                          fill="url(#tpYellowGrad)"
+                          animationDuration={900}
+                          animationBegin={500}
+                          animationEasing="ease-out"
                         />
                         <Bar
                           dataKey="red_count"
                           name="Very Late (> 48h)"
                           stackId="a"
-                          fill="#EF4444"
+                          fill="url(#tpRedGrad)"
                           radius={[4, 4, 0, 0]}
+                          animationDuration={900}
+                          animationBegin={800}
+                          animationEasing="ease-out"
                         />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
 
-                {/* Table Card */}
-                <div className="bg-white/60 backdrop-blur-xl border border-gray-100 p-4 rounded-2xl shadow-sm flex flex-col">
+                {/* ===== Table Card ===== */}
+                <div
+                  className="tp-card bg-white/70 backdrop-blur-xl border border-violet-100/60 p-4 rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 flex flex-col"
+                  style={{ animationDelay: "0.25s" }}
+                >
                   <h3 className="text-[11px] font-bold text-gray-800 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <Clock size={14} className="text-gray-400" /> Average
-                    Response Times
+                    <span className="p-1 rounded-md bg-gradient-to-br from-violet-50 to-fuchsia-50 border border-violet-100">
+                      <Clock size={13} className="text-violet-500" />
+                    </span>
+                    Average Response Times
                   </h3>
-                  <div className="overflow-x-auto rounded-xl border border-gray-100 shadow-sm">
+                  <div className="overflow-x-auto rounded-xl border border-violet-100/60 shadow-sm">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="bg-gray-50/80 border-b border-gray-100">
-                          <th className="px-4 py-3 text-[10px] font-extrabold text-gray-500 uppercase tracking-widest whitespace-nowrap">
+                        <tr className="bg-gradient-to-r from-indigo-50/80 via-violet-50/80 to-fuchsia-50/80 border-b border-violet-100">
+                          <th className="px-4 py-3 text-[10px] font-extrabold text-indigo-500 uppercase tracking-widest whitespace-nowrap">
                             Employee
                           </th>
-                          <th className="px-4 py-3 text-[10px] font-extrabold text-gray-500 uppercase tracking-widest whitespace-nowrap">
+                          <th className="px-4 py-3 text-[10px] font-extrabold text-indigo-500 uppercase tracking-widest whitespace-nowrap">
                             Avg Response
                           </th>
-                          <th className="px-4 py-3 text-[10px] font-extrabold text-gray-500 uppercase tracking-widest whitespace-nowrap text-right">
+                          <th className="px-4 py-3 text-[10px] font-extrabold text-indigo-500 uppercase tracking-widest whitespace-nowrap text-right">
                             Total Logs
                           </th>
                         </tr>
@@ -5145,18 +5305,41 @@ export default function Dashboard() {
                           }
 
                           let statusDot = "bg-green-500";
-                          if (avgHours >= 48) statusDot = "bg-red-500";
-                          else if (avgHours >= 24) statusDot = "bg-yellow-500";
+                          let dotAnim = "";
+                          if (avgHours >= 48) {
+                            statusDot = "bg-red-500";
+                            dotAnim = "tp-dot-red";
+                          } else if (avgHours >= 24) {
+                            statusDot = "bg-yellow-500";
+                            dotAnim = "tp-dot-yellow";
+                          }
+
+                          // Colorful avatar palette — rotates per row (UI only)
+                          const avatarPalettes = [
+                            "from-indigo-400 to-blue-500",
+                            "from-emerald-400 to-teal-500",
+                            "from-amber-400 to-orange-500",
+                            "from-rose-400 to-pink-500",
+                            "from-violet-400 to-purple-500",
+                            "from-cyan-400 to-sky-500",
+                          ];
+                          const avatarGrad =
+                            avatarPalettes[idx % avatarPalettes.length];
 
                           return (
                             <tr
                               key={idx}
-                              className="hover:bg-gray-50/50 transition-colors"
+                              className="tp-row hover:bg-gradient-to-r hover:from-indigo-50/50 hover:via-violet-50/40 hover:to-transparent transition-all duration-200 group"
+                              style={{
+                                animationDelay: `${0.35 + idx * 0.08}s`,
+                              }}
                             >
                               <td className="px-4 py-3 whitespace-nowrap">
                                 <div className="flex items-center gap-2">
-                                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-100 to-blue-100 border border-blue-200 flex items-center justify-center">
-                                    <span className="text-[10px] font-bold text-blue-700">
+                                  <div
+                                    className={`w-6 h-6 rounded-full bg-gradient-to-br ${avatarGrad} shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform duration-200`}
+                                  >
+                                    <span className="text-[10px] font-bold text-white">
                                       {stat.assignee
                                         ? stat.assignee.charAt(0).toUpperCase()
                                         : "?"}
@@ -5170,7 +5353,7 @@ export default function Dashboard() {
                               <td className="px-4 py-3 whitespace-nowrap">
                                 <div className="flex items-center gap-2">
                                   <span
-                                    className={`w-2 h-2 rounded-full ${statusDot} shadow-sm`}
+                                    className={`w-2 h-2 rounded-full ${statusDot} ${dotAnim} shadow-sm`}
                                   ></span>
                                   <span className="text-[12px] font-medium text-gray-600">
                                     {timeString}
@@ -5178,7 +5361,15 @@ export default function Dashboard() {
                                 </div>
                               </td>
                               <td className="px-4 py-3 whitespace-nowrap text-right">
-                                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-[11px] font-bold">
+                                <span
+                                  className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-[11px] font-bold group-hover:scale-110 transition-transform duration-200 ${
+                                    avgHours >= 48
+                                      ? "bg-red-50 text-red-600 border border-red-100"
+                                      : avgHours >= 24
+                                        ? "bg-amber-50 text-amber-600 border border-amber-100"
+                                        : "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                                  }`}
+                                >
                                   {stat.total_logs}
                                 </span>
                               </td>

@@ -232,7 +232,7 @@ export default function CommonMasterPage({
               <i className="bi bi-chevron-right text-[10px]"></i>
               <Link
                 href="/setup"
-                className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
+                className="mx-2 text-md text-gray-700 hover:text-indigo-600 font-semibold"
               >
                 Setup
               </Link>
@@ -240,7 +240,7 @@ export default function CommonMasterPage({
               {breadcrumbs.map((b, i) => (
                 <span
                   key={i}
-                  className="flex items-center text-gray-700 hover:text-orange-500 font-semibold"
+                  className="flex items-center text-gray-700 hover:text-indigo-600 font-semibold"
                 >
                   <span className="mx-2">{b}</span>
                   {i < breadcrumbs.length - 1 && (
@@ -255,7 +255,7 @@ export default function CommonMasterPage({
             <button
               type="button"
               onClick={() => setShowForm(true)}
-              className="w-full sm:w-auto bg-orange-500 text-white px-5 py-2 rounded-sm shadow hover:bg-orange-600 font-bold text-sm"
+              className="w-full sm:w-auto text-white px-5 py-2 rounded-sm shadow font-bold text-sm  bg-gradient-to-br from-indigo-500 to-violet-600"
             >
               + Add {title}
             </button>
@@ -293,13 +293,13 @@ export default function CommonMasterPage({
           <input
             type="text"
             placeholder={`Enter ${title}`}
-            className="p-2 w-full md:w-50 mb-0 md:mb-3 border text-gray-400 bg-white border-orange-300 rounded-sm outline-none text-sm"
+            className="p-2 w-full md:w-50 mb-0 md:mb-3 border text-gray-400 bg-white border-indigo-400 rounded-sm outline-none text-sm"
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
 
           <select
-            className="w-full md:w-48 md:mx-3 md:mb-3 p-2 border text-gray-400 bg-white rounded-sm border-orange-300 outline-none text-sm"
+            className="w-full md:w-48 md:mx-3 md:mb-3 p-2 border text-gray-400 bg-white rounded-sm border-indigo-400 outline-none text-sm"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >

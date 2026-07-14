@@ -1,498 +1,606 @@
-"use client";
+// "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import Link from "next/link";
-import Header from "@/app/components/header";
-import { useRouter } from "next/navigation";
-import Select from "react-select";
-import axios from "redaxios";
-import { toast } from "react-toastify";
-import useAuth from "@/app/components/useAuth";
+// import React, { useState, useEffect, useRef } from "react";
+// import Link from "next/link";
+// import Header from "@/app/components/header";
+// import { useRouter } from "next/navigation";
+// import Select from "react-select";
+// import axios from "redaxios";
+// import { toast } from "react-toastify";
+// import useAuth from "@/app/components/useAuth";
+// import {
+//   Building2,
+//   User,
+//   Phone,
+//   Radio,
+//   Bookmark,
+//   ShieldCheck,
+//   Star,
+//   FolderOpen,
+//   FileText,
+//   X,
+//   Save,
+// } from "lucide-react";
+// export default function Page() {
+//   const companyRef = useRef(null);
+//   const categoryRef = useRef(null);
 
-export default function Page() {
-  const companyRef = useRef(null);
-  const categoryRef = useRef(null);
+//   const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL;
+//   useAuth();
+//   const router = useRouter();
 
-  const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL;
-  useAuth();
-  const router = useRouter();
+//   const [leadSource, setLeadSource] = useState([]);
+//   const [leadCategory, setLeadCategory] = useState([]);
+//   const [category, setCategory] = useState([]);
+//   const [productList, setProductList] = useState([]);
+//   const [asignee, setAsignee] = useState([]);
+//   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [leadSource, setLeadSource] = useState([]);
-  const [leadCategory, setLeadCategory] = useState([]);
-  const [category, setCategory] = useState([]);
-  const [productList, setProductList] = useState([]);
-  const [asignee, setAsignee] = useState([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+//   const [formData, setFormData] = useState({
+//     lead_id: "",
+//     company_name: "",
+//     customer_name: "",
+//     mobile_no: "",
+//     reference: "",
+//     source: "",
+//     status: "",
+//     priority: "",
+//     assignee: "",
+//     category: "",
+//     description: "",
+//   });
 
-  const [formData, setFormData] = useState({
-    lead_id: "",
-    company_name: "",
-    customer_name: "",
-    mobile_no: "",
-    reference: "",
-    source: "",
-    status: "",
-    priority: "",
-    assignee: "",
-    category: "",
-    description: "",
-  });
+//   // ✅ Helper: get token from localStorage/sessionStorage
+//   const getToken = () => {
+//     return (
+//       localStorage.getItem("token") ||
+//       sessionStorage.getItem("token") ||
+//       ""
+//     );
+//   };
 
-  // ✅ Helper: get token from localStorage/sessionStorage
-  const getToken = () => {
-    return (
-      localStorage.getItem("token") ||
-      sessionStorage.getItem("token") ||
-      ""
-    );
-  };
+//   // ✅ Load lead data from sessionStorage on mount
+//   useEffect(() => {
+//     const lead = sessionStorage.getItem("editLead");
+//     if (!lead) {
+//       router.push("/sales/lead");
+//       return;
+//     }
+//     const parsedLead = JSON.parse(lead);
+//     setFormData({
+//       lead_id: parsedLead.lead_id || "",
+//       company_name: parsedLead.company_id || parsedLead.company_name || "",
+//       customer_name: parsedLead.customer_name || "",
+//       mobile_no: parsedLead.mobile_no || "",
+//       reference: parsedLead.reference || "",
+//       source: parsedLead.source_id || parsedLead.source || "",
+//       status: parsedLead.status || "",
+//       priority: parsedLead.priority || "",
+//       assignee: parsedLead.assignee || "",
+//       category: parsedLead.category_id || parsedLead.category || "",
+//       description: parsedLead.description || "",
+//     });
+//   }, []);
 
-  // ✅ Load lead data from sessionStorage on mount
-  useEffect(() => {
-    const lead = sessionStorage.getItem("editLead");
-    if (!lead) {
-      router.push("/sales/lead");
-      return;
-    }
-    const parsedLead = JSON.parse(lead);
-    setFormData({
-      lead_id: parsedLead.lead_id || "",
-      company_name: parsedLead.company_id || parsedLead.company_name || "",
-      customer_name: parsedLead.customer_name || "",
-      mobile_no: parsedLead.mobile_no || "",
-      reference: parsedLead.reference || "",
-      source: parsedLead.source_id || parsedLead.source || "",
-      status: parsedLead.status || "",
-      priority: parsedLead.priority || "",
-      assignee: parsedLead.assignee || "",
-      category: parsedLead.category_id || parsedLead.category || "",
-      description: parsedLead.description || "",
-    });
-  }, []);
+//   const handleChange = (e) => {
+//     let { name, value } = e.target;
 
-  const handleChange = (e) => {
-    let { name, value } = e.target;
+//     if (name === "mobile_no") {
+//       value = value.replace(/[^0-9]/g, "").slice(0, 10);
+//     }
 
-    if (name === "mobile_no") {
-      value = value.replace(/[^0-9]/g, "").slice(0, 10);
-    }
+//     setFormData((prev) => ({
+//       ...prev,
+//       [name]: value,
+//     }));
+//   };
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+//   // ✅ FIXED: Authorization header added to fetch
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
 
-  // ✅ FIXED: Authorization header added to fetch
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+//     if (!formData.lead_id) {
+//       toast.error("Lead ID missing. Cannot update.");
+//       return;
+//     }
 
-    if (!formData.lead_id) {
-      toast.error("Lead ID missing. Cannot update.");
-      return;
-    }
+//     const timeout = setTimeout(() => {
+//       setIsSubmitting(false);
+//       toast.error("Request timed out. Please try again.");
+//     }, 60000);
 
-    const timeout = setTimeout(() => {
-      setIsSubmitting(false);
-      toast.error("Request timed out. Please try again.");
-    }, 60000);
+//     try {
+//       setIsSubmitting(true);
 
-    try {
-      setIsSubmitting(true);
+//       const token = getToken();
 
-      const token = getToken();
+//       const response = await fetch(
+//         `${API_BASE}/api/lead/update/${formData.lead_id}`,
+//         {
+//           method: "PUT",
+//           headers: {
+//             "Content-Type": "application/json",
+//             Authorization: `Bearer ${token}`, // ✅ Token added here
+//           },
+//           body: JSON.stringify({
+//             company_name: formData.company_name,
+//             customer_name: formData.customer_name,
+//             mobile_no: formData.mobile_no || null, // ✅ ADD
+//             reference: formData.reference,
+//             source: formData.source,
+//             status: formData.status,
+//             priority: formData.priority,
+//             assignee: formData.assignee,
+//             category: formData.category,
+//             description: formData.description,
+//           }),
+//         }
+//       );
 
-      const response = await fetch(
-        `${API_BASE}/api/lead/update/${formData.lead_id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`, // ✅ Token added here
-          },
-          body: JSON.stringify({
-            company_name: formData.company_name,
-            customer_name: formData.customer_name,
-            mobile_no: formData.mobile_no || null, // ✅ ADD
-            reference: formData.reference,
-            source: formData.source,
-            status: formData.status,
-            priority: formData.priority,
-            assignee: formData.assignee,
-            category: formData.category,
-            description: formData.description,
-          }),
-        }
-      );
+//       const data = await response.json();
 
-      const data = await response.json();
+//       if (data.success) {
+//         toast.success("Lead Updated Successfully");
+//         clearTimeout(timeout);
+//         sessionStorage.removeItem("editLead");
+//         router.push("/sales/lead");
+//       } else {
+//         toast.error(data.message || "Update Failed");
+//       }
+//     } catch (error) {
+//       console.error("Update error:", error);
+//       toast.error("Something went wrong");
+//     } finally {
+//       clearTimeout(timeout);
+//       setIsSubmitting(false);
+//     }
+//   };
 
-      if (data.success) {
-        toast.success("Lead Updated Successfully");
-        clearTimeout(timeout);
-        sessionStorage.removeItem("editLead");
-        router.push("/sales/lead");
-      } else {
-        toast.error(data.message || "Update Failed");
-      }
-    } catch (error) {
-      console.error("Update error:", error);
-      toast.error("Something went wrong");
-    } finally {
-      clearTimeout(timeout);
-      setIsSubmitting(false);
-    }
-  };
+//   // ✅ Fetch Lead Sources
+//   useEffect(() => {
+//     const fetchSource = async () => {
+//       try {
+//         const res = await axios.get(
+//           `${API_BASE}/api/inquiry-lead-source/read`,
+//           { params: { status: 1 } }
+//         );
+//         setLeadSource(res.data);
+//       } catch { }
+//     };
+//     fetchSource();
+//   }, []);
 
-  // ✅ Fetch Lead Sources
-  useEffect(() => {
-    const fetchSource = async () => {
-      try {
-        const res = await axios.get(
-          `${API_BASE}/api/inquiry-lead-source/read`,
-          { params: { status: 1 } }
-        );
-        setLeadSource(res.data);
-      } catch { }
-    };
-    fetchSource();
-  }, []);
+//   // ✅ Fetch Lead Categories
+//   useEffect(() => {
+//     const fetchCategory = async () => {
+//       try {
+//         const res = await axios.get(
+//           `${API_BASE}/api/inquiry-lead-category/read`,
+//           { params: { status: 1 } }
+//         );
+//         setLeadCategory(res.data);
+//       } catch { }
+//     };
+//     fetchCategory();
+//   }, []);
 
-  // ✅ Fetch Lead Categories
-  useEffect(() => {
-    const fetchCategory = async () => {
-      try {
-        const res = await axios.get(
-          `${API_BASE}/api/inquiry-lead-category/read`,
-          { params: { status: 1 } }
-        );
-        setLeadCategory(res.data);
-      } catch { }
-    };
-    fetchCategory();
-  }, []);
+//   // ✅ Fetch Product Categories
+//   // useEffect(() => {
+//   //   const fetchProductCategory = async () => {
+//   //     try {
+//   //       const res = await axios.get(
+//   //         `${API_BASE}/api/product-category/read`,
+//   //         { params: { status: 1 } }
+//   //       );
+//   //       setCategory(res.data);
+//   //     } catch {}
+//   //   };
+//   //   fetchProductCategory();
+//   // }, []);
 
-  // ✅ Fetch Product Categories
-  // useEffect(() => {
-  //   const fetchProductCategory = async () => {
-  //     try {
-  //       const res = await axios.get(
-  //         `${API_BASE}/api/product-category/read`,
-  //         { params: { status: 1 } }
-  //       );
-  //       setCategory(res.data);
-  //     } catch {}
-  //   };
-  //   fetchProductCategory();
-  // }, []);
+//   // ✅ Fetch Products filtered by selected category
+//   // useEffect(() => {
+//   //   if (!formData.product_category) {
+//   //     setProductList([]);
+//   //     return;
+//   //   }
+//   //   axios
+//   //     .get(`${API_BASE}/api/product-master/read`, {
+//   //       params: { search2: formData.product_category },
+//   //     })
+//   //     .then((res) => setProductList(res.data))
+//   //     .catch(() => setProductList([]));
+//   // }, [formData.product_category]);
 
-  // ✅ Fetch Products filtered by selected category
-  // useEffect(() => {
-  //   if (!formData.product_category) {
-  //     setProductList([]);
-  //     return;
-  //   }
-  //   axios
-  //     .get(`${API_BASE}/api/product-master/read`, {
-  //       params: { search2: formData.product_category },
-  //     })
-  //     .then((res) => setProductList(res.data))
-  //     .catch(() => setProductList([]));
-  // }, [formData.product_category]);
+//   // ✅ Fetch Assignees
+//   useEffect(() => {
+//     const fetchAssignee = async () => {
+//       try {
+//         const res = await axios.get(`${API_BASE}/api/manage-user/asignee`, {
+//           params: { status: 1 },
+//         });
+//         const data = res.data.data || res.data || [];
+//         const formatted = data.map((item) => {
+//           const firstName = item.name.split(" ")[0];
+//           return { value: firstName, label: firstName };
+//         });
+//         setAsignee(formatted);
+//       } catch (error) {
+//         console.log(error);
+//         setAsignee([]);
+//       }
+//     };
+//     fetchAssignee();
+//   }, []);
 
-  // ✅ Fetch Assignees
-  useEffect(() => {
-    const fetchAssignee = async () => {
-      try {
-        const res = await axios.get(`${API_BASE}/api/manage-user/asignee`, {
-          params: { status: 1 },
-        });
-        const data = res.data.data || res.data || [];
-        const formatted = data.map((item) => {
-          const firstName = item.name.split(" ")[0];
-          return { value: firstName, label: firstName };
-        });
-        setAsignee(formatted);
-      } catch (error) {
-        console.log(error);
-        setAsignee([]);
-      }
-    };
-    fetchAssignee();
-  }, []);
+//   return (
+//     <>
+//       <Header />
 
-  return (
-    <>
-      <Header />
+//       <div className="bg-gray-100">
+//         {/* Breadcrumb */}
+//         <div className="bg-white w-full rounded-xl shadow-md p-2 mt-1 mb-2 flex justify-between items-center">
+//           <p className="text-gray-700">
+//             <Link
+//               href="/dashboard"
+//               className="mx-3 text-xl text-gray-400 hover:text-indigo-600"
+//             >
+//               <i className="bi bi-house"></i>
+//             </Link>
+//             <i className="bi bi-chevron-right"></i> Sales
+//             <i className="bi bi-chevron-right"></i>
+//             <button
+//               onClick={() => router.push("/sales/lead")}
+//               className="mx-3 hover:text-indigo-600"
+//             >
+//               Lead
+//             </button>
+//             <i className="bi bi-chevron-right"></i> Edit Lead
+//           </p>
+//         </div>
 
-      <div className="bg-gray-100">
-        {/* Breadcrumb */}
-        <div className="bg-white w-full rounded-xl shadow-md p-2 mt-1 mb-2 flex justify-between items-center">
-          <p className="text-gray-700">
-            <Link
-              href="/dashboard"
-              className="mx-3 text-xl text-gray-400 hover:text-indigo-600"
-            >
-              <i className="bi bi-house"></i>
-            </Link>
-            <i className="bi bi-chevron-right"></i> Sales
-            <i className="bi bi-chevron-right"></i>
-            <button
-              onClick={() => router.push("/sales/lead")}
-              className="mx-3 hover:text-indigo-600"
-            >
-              Lead
-            </button>
-            <i className="bi bi-chevron-right"></i> Edit Lead
-          </p>
-        </div>
+//       <form
+//           onSubmit={handleSubmit}
+//           className="px-3 pb-3 mx-auto max-w-5xl max-h-[85vh] overflow-y-scroll"
+//         >
+//           <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+//             <h2 className="text-lg font-semibold text-gray-800 mb-1">
+//               Lead Information
+//             </h2>
+//             <hr className="border-gray-200 mt-1 mb-3" />
 
-        <form
-          onSubmit={handleSubmit}
-          className="px-3 pb-3 mx-auto max-w-5xl max-h-[85vh] overflow-y-scroll"
-        >
-          <div className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-800 mb-1">
-              Lead Information
-            </h2>
-            <hr className="border-gray-200 mt-1 mb-3" />
+//             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
+//               {/* Company Name */}
+//               <div>
+//                 <label className="block mb-1 text-xs font-medium text-gray-600">
+//                   Company Name
+//                 </label>
+//                 <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+//                   <span className="flex items-center justify-center w-10 shrink-0 bg-blue-50 border-r border-gray-100">
+//                     <Building2 size={16} className="text-blue-500" />
+//                   </span>
+//                   <input
+//                     name="company_name"
+//                     value={formData.company_name}
+//                     onChange={handleChange}
+//                     placeholder="Company Name"
+//                     className="w-full px-3 py-2 text-sm text-gray-700 outline-none bg-transparent"
+//                   />
+//                 </div>
+//               </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
-              {/* Company Name */}
-              <div>
-                <label className="block mb-1 text-xs font-medium text-gray-600">
-                  Company Name
-                </label>
-                <input
-                  name="company_name"
-                  value={formData.company_name}
-                  onChange={handleChange}
-                  placeholder="Company Name"
-                  className="w-full border border-orange-300 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-none bg-white"
-                />
-              </div>
+//               {/* Customer Name */}
+//               <div>
+//                 <label className="block mb-1 text-xs font-medium text-gray-600">
+//                   Customer Name <span className="text-red-500">*</span>
+//                 </label>
+//                 <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+//                   <span className="flex items-center justify-center w-10 shrink-0 bg-violet-50 border-r border-gray-100">
+//                     <User size={16} className="text-violet-500" />
+//                   </span>
+//                   <input
+//                     name="customer_name"
+//                     value={formData.customer_name}
+//                     onChange={handleChange}
+//                     placeholder="Customer Name"
+//                     className="w-full px-3 py-2 text-sm text-gray-700 outline-none bg-transparent"
+//                   />
+//                 </div>
+//               </div>
 
-              {/* Customer Name */}
-              <div>
-                <label className="block mb-1 text-xs font-medium text-gray-600">
-                  Customer Name *
-                </label>
-                <input
-                  name="customer_name"
-                  value={formData.customer_name}
-                  onChange={handleChange}
-                  placeholder="Customer Name"
-                  className="w-full border border-orange-300 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-none bg-white"
-                />
-              </div>
+//               {/*  Mobile No  */}
+//               <div>
+//                 <label className="block mb-1 text-xs font-medium text-gray-600">
+//                   Mobile No.
+//                 </label>
+//                 <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+//                   <span className="flex items-center justify-center w-10 shrink-0 bg-green-50 border-r border-gray-100">
+//                     <Phone size={16} className="text-green-500" />
+//                   </span>
+//                   <input
+//                     name="mobile_no"
+//                     value={formData.mobile_no}
+//                     onChange={handleChange}
+//                     placeholder="Mobile No."
+//                     className="w-full px-3 py-2 text-sm text-gray-700 outline-none bg-transparent"
+//                   />
+//                 </div>
+//               </div>
 
-              {/*  Mobile No  */}
-              <div>
-                <label className="block mb-1 text-xs font-medium text-gray-600">
-                  Mobile No.
-                </label>
-                <input
-                  name="mobile_no"
-                  value={formData.mobile_no}
-                  onChange={handleChange}
-                  placeholder="Mobile No."
-                  className="w-full border border-orange-300 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-none bg-white"
-                />
-              </div>
+//               {/* Source */}
+//               <div>
+//                 <label className="block mb-1 text-xs font-medium text-gray-600">
+//                   Source <span className="text-red-500">*</span>
+//                 </label>
+//                 <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+//                   <span className="flex items-center justify-center w-10 shrink-0 bg-cyan-50 border-r border-gray-100">
+//                     <Radio size={16} className="text-cyan-500" />
+//                   </span>
+//                   <select
+//                     name="source"
+//                     value={formData.source}
+//                     onChange={handleChange}
+//                     className="w-full px-3 py-2 text-sm text-gray-700 outline-none bg-transparent cursor-pointer"
+//                   >
+//                     <option value="">-- Select --</option>
+//                     {leadSource.map((item) => (
+//                       <option key={item.id} value={item.id}>
+//                         {item.name}
+//                       </option>
+//                     ))}
+//                   </select>
+//                 </div>
+//               </div>
 
-              {/* Source */}
-              <div>
-                <label className="block mb-1 text-xs font-medium text-gray-600">
-                  Source *
-                </label>
-                <select
-                  name="source"
-                  value={formData.source}
-                  onChange={handleChange}
-                  className="w-full border border-orange-300 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-none bg-white"
-                >
-                  <option value="">-- Select --</option>
-                  {leadSource.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+//               {/* Lead Title */}
+//               <div>
+//                 <label className="block mb-1 text-xs font-medium text-gray-600">
+//                   Reference
+//                 </label>
+//                 <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+//                   <span className="flex items-center justify-center w-10 shrink-0 bg-amber-50 border-r border-gray-100">
+//                     <Bookmark size={16} className="text-amber-500" />
+//                   </span>
+//                   <input
+//                     type="text"
+//                     name="reference"
+//                     value={formData.reference}
+//                     onChange={handleChange}
+//                     className="w-full px-3 py-2 text-sm text-gray-700 outline-none bg-transparent"
+//                   />
+//                 </div>
+//               </div>
 
-              {/* Lead Title */}
-              <div>
-                <label className="block mb-1 text-xs font-medium text-gray-600">
-                  Reference
-                </label>
-                <input
-                  type="text"
-                  name="reference"
-                  value={formData.reference}
-                  onChange={handleChange}
-                  className="w-full border border-orange-300 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-none bg-white"
-                />
-              </div>
+//               {/* Status */}
+//               <div>
+//                 <label className="block mb-1 text-xs font-medium text-gray-600">
+//                   Status
+//                 </label>
+//                 <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+//                   <span
+//                     className={`flex items-center justify-center w-10 shrink-0 border-r border-gray-100 transition-colors duration-300 ${
+//                       formData.status === "Lost"
+//                         ? "bg-red-50"
+//                         : formData.status === "Pending"
+//                           ? "bg-amber-50"
+//                           : formData.status === "Quotation Send"
+//                             ? "bg-blue-50"
+//                             : formData.status === "Technical Discussion"
+//                               ? "bg-violet-50"
+//                               : formData.status === "Call Initiated"
+//                                 ? "bg-cyan-50"
+//                                 : "bg-green-50"
+//                     }`}
+//                   >
+//                     <ShieldCheck
+//                       size={16}
+//                       className={`transition-colors duration-300 ${
+//                         formData.status === "Lost"
+//                           ? "text-red-500"
+//                           : formData.status === "Pending"
+//                             ? "text-amber-500"
+//                             : formData.status === "Quotation Send"
+//                               ? "text-blue-500"
+//                               : formData.status === "Technical Discussion"
+//                                 ? "text-violet-500"
+//                                 : formData.status === "Call Initiated"
+//                                   ? "text-cyan-500"
+//                                   : "text-green-500"
+//                       }`}
+//                     />
+//                   </span>
+//                   <select
+//                     name="status"
+//                     value={formData.status}
+//                     onChange={handleChange}
+//                     className="w-full px-3 py-2 text-sm text-gray-700 outline-none bg-transparent cursor-pointer"
+//                   >
+//                     <option value="">-- Select --</option>
+//                     <option>Qualified</option>
+//                     <option>Pending</option>
+//                     <option>Won</option>
+//                     <option>Lost</option>
+//                     <option>Quotation Send</option>
+//                     <option>Technical Discussion</option>
+//                     <option>Call Initiated</option>
+//                   </select>
+//                 </div>
+//               </div>
 
-              {/* Status */}
-              <div>
-                <label className="block mb-1 text-xs font-medium text-gray-600">
-                  Status
-                </label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  className="w-full border border-orange-300 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-none bg-white"
-                >
-                  <option value="">-- Select --</option>
-                  <option>Qualified</option>
-                  <option>Pending</option>
-                  <option>Won</option>
-                  <option>Lost</option>
-                  <option>Quotation Send</option>
-                  <option>Technical Discussion</option>
-                  <option>Call Initiated</option>
-                </select>
-              </div>
+//               {/* Product Category */}
+//               {/* <div>
+//                 <label className="block mb-1 text-xs font-medium text-gray-600">
+//                   Product Category *
+//                 </label>
+//                 <select
+//                   name="product_category"
+//                   value={formData.product_category}
+//                   onChange={handleChange}
+//                   className="w-full border border-orange-300 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-none bg-white"
+//                 >
+//                   <option value="">-- Select --</option>
+//                   {category.map((item) => (
+//                     <option key={item.id} value={item.id}>
+//                       {item.name}
+//                     </option>
+//                   ))}
+//                 </select>
+//               </div> */}
 
-              {/* Product Category */}
-              {/* <div>
-                <label className="block mb-1 text-xs font-medium text-gray-600">
-                  Product Category *
-                </label>
-                <select
-                  name="product_category"
-                  value={formData.product_category}
-                  onChange={handleChange}
-                  className="w-full border border-orange-300 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-none bg-white"
-                >
-                  <option value="">-- Select --</option>
-                  {category.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </div> */}
+//               {/* Product Name */}
+//               {/* <div>
+//                 <label className="block mb-1 text-xs font-medium text-gray-600">
+//                   Product Name
+//                 </label>
+//                 <select
+//                   name="product_name"
+//                   value={formData.product_name}
+//                   onChange={handleChange}
+//                   className="w-full border border-orange-300 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-none bg-white"
+//                 >
+//                   <option value="">-- Select Product --</option>
+//                   {productList.map((item) => (
+//                     <option key={item.id} value={item.id}>
+//                       {item.product_name}
+//                     </option>
+//                   ))}
+//                 </select>
+//               </div> */}
 
-              {/* Product Name */}
-              {/* <div>
-                <label className="block mb-1 text-xs font-medium text-gray-600">
-                  Product Name
-                </label>
-                <select
-                  name="product_name"
-                  value={formData.product_name}
-                  onChange={handleChange}
-                  className="w-full border border-orange-300 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-none bg-white"
-                >
-                  <option value="">-- Select Product --</option>
-                  {productList.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.product_name}
-                    </option>
-                  ))}
-                </select>
-              </div> */}
+//               {/* Priority */}
+//               <div>
+//                 <label className="block mb-1 text-xs font-medium text-gray-600">
+//                   Priority <span className="text-red-500">*</span>
+//                 </label>
+//                 <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+//                   <span
+//                     className={`flex items-center justify-center w-10 shrink-0 border-r border-gray-100 transition-colors duration-300 ${
+//                       formData.priority === "High"
+//                         ? "bg-red-50"
+//                         : formData.priority === "Medium"
+//                           ? "bg-amber-50"
+//                           : formData.priority === "Low"
+//                             ? "bg-green-50"
+//                             : "bg-rose-50"
+//                     }`}
+//                   >
+//                     <Star
+//                       size={16}
+//                       className={`transition-colors duration-300 ${
+//                         formData.priority === "High"
+//                           ? "text-red-500"
+//                           : formData.priority === "Medium"
+//                             ? "text-amber-500"
+//                             : formData.priority === "Low"
+//                               ? "text-green-500"
+//                               : "text-rose-500"
+//                       }`}
+//                     />
+//                   </span>
+//                   <select
+//                     name="priority"
+//                     value={formData.priority}
+//                     onChange={handleChange}
+//                     className="w-full px-3 py-2 text-sm text-gray-700 outline-none bg-transparent cursor-pointer"
+//                   >
+//                     <option value="">-- Select --</option>
+//                     <option>High</option>
+//                     <option>Medium</option>
+//                     <option>Low</option>
+//                   </select>
+//                 </div>
+//               </div>
 
-              {/* Priority */}
-              <div>
-                <label className="block mb-1 text-xs font-medium text-gray-600">
-                  Priority *
-                </label>
-                <select
-                  name="priority"
-                  value={formData.priority}
-                  onChange={handleChange}
-                  className="w-full border border-orange-300 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-none bg-white"
-                >
-                  <option value="">-- Select --</option>
-                  <option>High</option>
-                  <option>Medium</option>
-                  <option>Low</option>
-                </select>
-              </div>
+//               {/* Category */}
+//               <div>
+//                 <label className="block mb-1 text-xs font-medium text-gray-600">
+//                   Category
+//                 </label>
+//                 <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+//                   <span className="flex items-center justify-center w-10 shrink-0 bg-violet-50 border-r border-gray-100">
+//                     <FolderOpen size={16} className="text-violet-500" />
+//                   </span>
+//                   <select
+//                     name="category"
+//                     value={formData.category}
+//                     onChange={handleChange}
+//                     className="w-full px-3 py-2 text-sm text-gray-700 outline-none bg-transparent cursor-pointer"
+//                   >
+//                     <option value="">-- Select --</option>
+//                     {leadCategory.map((item) => (
+//                       <option key={item.id} value={item.id}>
+//                         {item.name}
+//                       </option>
+//                     ))}
+//                   </select>
+//                 </div>
+//               </div>
+//             </div>
 
+//             {/* Description */}
+//             <div className="mt-3">
+//               <label className="block mb-1 text-xs font-medium text-gray-600">
+//                 Description
+//               </label>
+//               <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+//                 <span className="flex items-start justify-center w-10 shrink-0 pt-2.5 bg-blue-50 border-r border-gray-100">
+//                   <FileText size={16} className="text-blue-500" />
+//                 </span>
+//                 <textarea
+//                   name="description"
+//                   rows="2"
+//                   value={formData.description}
+//                   onChange={handleChange}
+//                   placeholder="Enter description..."
+//                   className="w-full px-3 py-2 text-sm text-gray-700 outline-none bg-transparent resize-y"
+//                 />
+//               </div>
+//             </div>
 
-
-              {/* Category */}
-              <div>
-                <label className="block mb-1 text-xs font-medium text-gray-600">
-                  Category
-                </label>
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
-                  className="w-full border border-orange-300 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-none bg-white"
-                >
-                  <option value="">-- Select --</option>
-                  {leadCategory.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Description */}
-            <div className="mt-3">
-              <label className="block mb-1 text-xs font-medium text-gray-600">
-                Description
-              </label>
-              <textarea
-                name="description"
-                rows="2"
-                value={formData.description}
-                onChange={handleChange}
-                className="w-full border border-orange-300 rounded-md px-2 py-1.5 text-sm text-gray-700 outline-none bg-white"
-              />
-            </div>
-
-            {/* Buttons */}
-            <div className="mt-3 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => router.push("/sales/lead")}
-                className="px-5 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className={`px-5 py-1.5 rounded-lg bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold transition flex items-center gap-2
-                  ${isSubmitting ? "opacity-70 cursor-not-allowed" : ""}`}
-              >
-                {isSubmitting ? (
-                  <svg
-                    className="animate-spin h-4 w-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="white"
-                      strokeWidth="4"
-                      opacity="0.25"
-                    />
-                    <path
-                      fill="white"
-                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                    />
-                  </svg>
-                ) : (
-                  "Save"
-                )}
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </>
-  );
-}
+//             {/* Buttons */}
+//             <div className="mt-3 flex justify-end gap-3">
+//               <button
+//                 type="button"
+//                 onClick={() => router.push("/sales/lead")}
+//                 className="px-5 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition flex items-center gap-2"
+//               >
+//                 <X size={15} /> Cancel
+//               </button>
+//               <button
+//                 type="submit"
+//                 disabled={isSubmitting}
+//                 className={`px-5 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-600 hover:to-violet-800 text-white text-sm font-semibold transition-all shadow-sm hover:shadow-md flex items-center gap-2
+//                   ${isSubmitting ? "opacity-70 cursor-not-allowed" : ""}`}
+//               >
+//                 {isSubmitting ? (
+//                   <svg
+//                     className="animate-spin h-4 w-4"
+//                     viewBox="0 0 24 24"
+//                     fill="none"
+//                   >
+//                     <circle
+//                       cx="12"
+//                       cy="12"
+//                       r="10"
+//                       stroke="white"
+//                       strokeWidth="4"
+//                       opacity="0.25"
+//                     />
+//                     <path
+//                       fill="white"
+//                       d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+//                     />
+//                   </svg>
+//                 ) : (
+//                   <>
+//                     <Save size={15} /> Save Changes
+//                   </>
+//                 )}
+//               </button>
+//             </div>
+//           </div>
+//         </form>
+//       </div>
+//     </>
+//   );
+// }
