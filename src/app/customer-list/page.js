@@ -1,13 +1,965 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Header from "../components/header";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import axios from "redaxios";
 import useAuth from "../components/useAuth";
+import "react-phone-input-2/lib/style.css";
+import PhoneInput from "react-phone-input-2";
+import {
+  UserPlus, X, Save, Eye, Building2, User, Mail, Phone, Tag, Globe,
+  Briefcase, FileText, UserRound, Trash2, MapPin, Receipt, Hash,
+} from "lucide-react";
 
+// =======================================================================
+// ✅ ADD CUSTOMER POPUP — defined right here in the same file, no separate
+// component file needed. Rendered conditionally inside CustomerList below.
+// Slide-in on mount, slide-out (300ms) before onClose fires.
+// ✅ Theme: indigo-to-violet gradient header + colored field icons,
+// matching the Add Lead popup reference.
+// =======================================================================
+function AddCustomerModal({ onClose, onSuccess }) {
+  const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL;
+  const API_base = `${API_BASE}/api/customers`;
+
+  const [activeTab, setActiveTab] = useState("customer");
+  const [designations, setDesignations] = useState([]);
+  const [industries, setIndustries] = useState([]);
+  const [companyname, setCompanyname] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Slide in / out
+  const [panelVisible, setPanelVisible] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setPanelVisible(true), 10);
+    return () => clearTimeout(t);
+  }, []);
+
+  const handleClose = () => {
+    setPanelVisible(false);
+    setTimeout(() => {
+      onClose?.();
+    }, 300);
+  };
+
+  // Website Validation >>>
+  const websiteRef = useRef();
+  const [error, setError] = useState("");
+
+  const handleBlur = () => {
+    let value = formData.website;
+
+    if (!value.startsWith("https://")) {
+      value = "https://" + value.replace(/^https?:\/\//, "");
+    }
+
+    setFormData((prev) => ({ ...prev, website: value }));
+
+    const domain = value.replace(/^https:\/\//, "");
+    const domainRegex = /^(www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}$/;
+    if (!domainRegex.test(domain)) {
+      setError("Invalid website (e.g., google.com or www.google.com)");
+    } else {
+      setError("");
+    }
+  };
+
+  const handleFocus = (e) => {
+    const el = websiteRef.current;
+    const length = el.value.length;
+    el.setSelectionRange(length, length);
+  };
+  //  <<< Website Validation
+
+  const [formData, setFormData] = useState({
+    customer_type: "",
+    company_name: "",
+    customer_name: "",
+    email: "",
+    mobile: "",
+    industry: "",
+    address_type: "",
+    address: "",
+    gst_type: "",
+    gst_number: "",
+    gst_state: "",
+    website: "https://",
+    remarks: "",
+    contact_person: "",
+    contact_number: "",
+    contact_email: "",
+    contact_designation: "",
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleMobileChange = (value) => {
+    setFormData((prev) => ({ ...prev, mobile: value }));
+  };
+
+  const resetForm = () => {
+    setFormData({
+      customer_type: "",
+      company_name: "",
+      customer_name: "",
+      email: "",
+      mobile: "",
+      industry: "",
+      address_type: "",
+      address: "",
+      gst_type: "",
+      gst_number: "",
+      gst_state: "",
+      website: "https://",
+      remarks: "",
+      contact_person: "",
+      contact_number: "",
+      contact_email: "",
+      contact_designation: "",
+    });
+    setActiveTab("customer");
+    setError("");
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      setIsSubmitting(true);
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        toast.error("User not logged in. Please login first");
+        setIsSubmitting(false);
+        return;
+      }
+
+      const dataToSend = {
+        ...formData,
+        website: formData.website === "https://" ? "" : formData.website,
+      };
+
+      await axios.post(`${API_base}/add`, dataToSend, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      toast.success("Customer added successfully");
+
+      resetForm();
+      onSuccess?.(); // refresh customer list in parent
+      handleClose(); // slide out, then unmount
+    } catch (err) {
+      const status = err?.response?.status || err?.status;
+      toast.error("Failed to add customer. Please try again.");
+      console.log(err, status);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Fetch designations
+  useEffect(() => {
+    const fetchDesignations = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/api/contact/read`, {
+          params: { status: 1 },
+        });
+        setDesignations(res.data);
+      } catch (err) {
+        console.error("Failed to fetch designations:", err);
+      }
+    };
+    fetchDesignations();
+  }, []);
+
+  // Fetch industries
+  useEffect(() => {
+    const fetchIndustry = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/api/Industries/industries`, {
+          params: { status: 1 },
+        });
+        setIndustries(res.data.data || res.data);
+      } catch (err) {
+        console.error("Failed to fetch industries:", err);
+        setIndustries([]);
+      }
+    };
+    fetchIndustry();
+  }, []);
+
+  useEffect(() => {
+    const fetchCompanyName = async () => {
+      try {
+        const res = await axios.get(
+          `${API_BASE}/api/organizations/organization-name`,
+          { params: { status: 1 } },
+        );
+        setCompanyname(res.data.data || res.data);
+      } catch (err) {
+        console.error("Failed to fetch company names:", err);
+        setCompanyname([]);
+      }
+    };
+    fetchCompanyName();
+  }, []);
+
+  return (
+    <div
+      className={`fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${
+        panelVisible ? "opacity-100" : "opacity-0"
+      }`}
+      onClick={handleClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`bg-gray-100 h-full w-full lg:max-w-[900px]  shadow-2xl overflow-y-auto pb-6 transform transition-transform duration-300 ease-in-out ${
+          panelVisible ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        {/* ✅ Header — indigo-to-violet gradient icon box, matches Add Lead popup */}
+        <div className="bg-white w-full  p-3 mt-1 mb-2 flex items-center justify-between  ">
+          <div className="flex items-center gap-3 ">
+            <span className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-md shadow-indigo-200 shrink-0">
+              <UserPlus size={20} className="text-white" />
+            </span>
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-gray-900">
+                Add Customer
+              </h2>
+              {/* <p className="text-xs text-gray-500 mt-0.5">
+                Fill in the details to create a new customer
+              </p> */}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleClose}
+            className="w-8 h-8 flex items-center justify-center rounded-full text-indigo-600 hover:bg-indigo-50 transition-all shrink-0"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <form
+          onSubmit={handleSubmit}
+          className="w-full max-w-6xl mx-auto px-3 sm:px-5 lg:px-6"
+        >
+          {/* Tab Header */}
+          <div className="flex mb-4 overflow-x-auto border-b border-gray-200">
+            <button
+              type="button"
+              onClick={() => setActiveTab("customer")}
+              className={`min-w-max flex-1 sm:flex-none px-3 sm:px-5 py-2.5 text-sm font-semibold transition-all ${
+                activeTab === "customer"
+                  ? "text-indigo-600 border-b-2 border-indigo-600 -mb-px"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Personal Information
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("contact")}
+              className={`min-w-max flex-1 sm:flex-none px-3 sm:px-5 py-2.5 text-sm font-semibold transition-all ${
+                activeTab === "contact"
+                  ? "text-indigo-600 border-b-2 border-indigo-600 -mb-px"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              Contact Details
+            </button>
+          </div>
+
+          {/* ── PERSONAL INFORMATION TAB ── */}
+          {activeTab === "customer" && (
+            <div className="w-full max-w-[900px] mx-auto bg-white rounded-sm border border-gray-200 shadow-sm p-4 sm:p-6 space-y-5 max-h-none lg:max-h-[calc(100vh-220px)] overflow-y-visible lg:overflow-y-auto custom-scroll">
+              {/* Customer Type */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                  Customer Type
+                </label>
+                <div className="grid grid-cols-1 sm:flex gap-3 sm:gap-4">
+                  {["Individual", "Business"].map((type) => (
+                    <label
+                      key={type}
+                      className={`flex items-center justify-center sm:justify-start gap-2.5 px-4 py-2.5 rounded-lg border-2 cursor-pointer transition-all ${
+                        formData.customer_type === type
+                          ? "border-indigo-400 bg-indigo-50 text-indigo-600"
+                          : "border-gray-200 text-gray-600 hover:border-gray-300"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="customer_type"
+                        value={type}
+                        checked={formData.customer_type === type}
+                        onChange={handleChange}
+                        className="hidden"
+                      />
+                      <div
+                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                          formData.customer_type === type
+                            ? "border-indigo-600"
+                            : "border-gray-300"
+                        }`}
+                      >
+                        {formData.customer_type === type && (
+                          <div className="w-2 h-2 rounded-full bg-indigo-600"></div>
+                        )}
+                      </div>
+                      <span className="text-sm font-medium">{type}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Row 1 — Company / Customer / Email */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-600">
+                    Company Name <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                    <span className="flex items-center justify-center w-10 shrink-0 bg-blue-50 border-r border-gray-100">
+                      <Building2 size={16} className="text-blue-500" />
+                    </span>
+                    <input
+                      name="company_name"
+                      value={formData.company_name}
+                      onChange={handleChange}
+                      placeholder="Enter Company name"
+                      className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-600">
+                    Customer Name <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                    <span className="flex items-center justify-center w-10 shrink-0 bg-violet-50 border-r border-gray-100">
+                      <User size={16} className="text-violet-500" />
+                    </span>
+                    <input
+                      type="text"
+                      name="customer_name"
+                      value={formData.customer_name}
+                      onChange={handleChange}
+                      placeholder="Enter customer name"
+                      className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-600">
+                    Email <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                    <span className="flex items-center justify-center w-10 shrink-0 bg-cyan-50 border-r border-gray-100">
+                      <Mail size={16} className="text-cyan-500" />
+                    </span>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="Enter email address"
+                      className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-600">
+                    Mobile No.
+                  </label>
+                  <PhoneInput
+                    country={"in"}
+                    value={formData.mobile}
+                    onChange={handleMobileChange}
+                    inputStyle={{
+                      width: "100%",
+                      height: "42px",
+                      borderRadius: "0.5rem",
+                      border: "1px solid #e5e7eb",
+                      backgroundColor: "#fff",
+                      fontSize: "14px",
+                      color: "#374151",
+                    }}
+                    buttonStyle={{
+                      borderTopLeftRadius: "0.5rem",
+                      borderBottomLeftRadius: "0.5rem",
+                      border: "1px solid #e5e7eb",
+                      backgroundColor: "#f0fdf4",
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-600">
+                    Industry <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                    <span className="flex items-center justify-center w-10 shrink-0 bg-emerald-50 border-r border-gray-100">
+                      <Briefcase size={16} className="text-emerald-500" />
+                    </span>
+                    <select
+                      name="industry"
+                      value={formData.industry}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent cursor-pointer"
+                    >
+                      <option value="">Select Industry</option>
+                      {industries.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Address Details */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                  Address Details
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg sm:rounded-xl border border-gray-100">
+                  <div>
+                    <label className="block mb-1 text-sm font-medium text-gray-600">
+                      Address Type <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                      <span className="flex items-center justify-center w-10 shrink-0 bg-amber-50 border-r border-gray-100">
+                        <Tag size={16} className="text-amber-500" />
+                      </span>
+                      <select
+                        name="address_type"
+                        value={formData.address_type}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent cursor-pointer"
+                      >
+                        <option value="">Select Address Type</option>
+                        <option>Billing</option>
+                        <option>Shipping</option>
+                        <option>Corporate</option>
+                        <option>Warehouse</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block mb-1 text-sm font-medium text-gray-600">
+                      Address <span className="text-red-500">*</span>
+                    </label>
+                    <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                      <span className="flex items-start justify-center w-10 shrink-0 pt-2.5 bg-blue-50 border-r border-gray-100">
+                        <MapPin size={16} className="text-blue-500" />
+                      </span>
+                      <textarea
+                        name="address"
+                        value={formData.address}
+                        onChange={handleChange}
+                        placeholder="Enter address"
+                        rows="2"
+                        className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent resize-none"
+                      ></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* GST Details */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                  GST Details
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg sm:rounded-xl border border-gray-100">
+                  <div>
+                    <label className="block mb-1 text-sm font-medium text-gray-600">
+                      GST Type
+                    </label>
+                    <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                      <span className="flex items-center justify-center w-10 shrink-0 bg-violet-50 border-r border-gray-100">
+                        <Receipt size={16} className="text-violet-500" />
+                      </span>
+                      <select
+                        name="gst_type"
+                        value={formData.gst_type}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent cursor-pointer"
+                      >
+                        <option value="">Select GST Type</option>
+                        <option>Registered Regular</option>
+                        <option>Registered Composite</option>
+                        <option>Unregistered / Consumer</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block mb-1 text-sm font-medium text-gray-600">
+                      GST Number
+                    </label>
+                    <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                      <span className="flex items-center justify-center w-10 shrink-0 bg-cyan-50 border-r border-gray-100">
+                        <Hash size={16} className="text-cyan-500" />
+                      </span>
+                      <input
+                        type="text"
+                        name="gst_number"
+                        value={formData.gst_number}
+                        onChange={handleChange}
+                        placeholder="Enter GST number"
+                        className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block mb-1 text-sm font-medium text-gray-600">
+                      State
+                    </label>
+                    <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                      <span className="flex items-center justify-center w-10 shrink-0 bg-amber-50 border-r border-gray-100">
+                        <MapPin size={16} className="text-amber-500" />
+                      </span>
+                      <input
+                        type="text"
+                        name="gst_state"
+                        value={formData.gst_state}
+                        onChange={handleChange}
+                        placeholder="Enter State"
+                        className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Details */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                  More Details
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block mb-1 text-sm font-medium text-gray-600">
+                      Website
+                    </label>
+                    <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                      <span className="flex items-center justify-center w-10 shrink-0 bg-cyan-50 border-r border-gray-100">
+                        <Globe size={16} className="text-cyan-500" />
+                      </span>
+                      <input
+                        type="text"
+                        name="website"
+                        ref={websiteRef}
+                        value={formData.website}
+                        onFocus={handleFocus}
+                        onBlur={handleBlur}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
+                      />
+                    </div>
+                    {error && (
+                      <p className="text-red-500 text-xs mt-1.5 flex items-center gap-1">
+                        <i className="bi bi-exclamation-circle"></i> {error}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="block mb-1 text-sm font-medium text-gray-600">
+                      Remarks
+                    </label>
+                    <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                      <span className="flex items-start justify-center w-10 shrink-0 pt-2.5 bg-blue-50 border-r border-gray-100">
+                        <FileText size={16} className="text-blue-500" />
+                      </span>
+                      <textarea
+                        name="remarks"
+                        value={formData.remarks}
+                        onChange={handleChange}
+                        placeholder="Enter remarks"
+                        rows="3"
+                        className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent resize-none"
+                      ></textarea>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled
+                  className="w-full sm:w-auto px-6 py-2.5 text-sm text-gray-400 border border-gray-200 rounded-lg bg-gray-50 cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("contact")}
+                  className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-600 hover:to-violet-800 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-md cursor-pointer"
+                >
+                  Next
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition flex items-center justify-center gap-2 bg-white"
+                >
+                  <X size={15} /> Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── CONTACT DETAILS TAB ── */}
+          {activeTab === "contact" && (
+            <div className="w-full max-w-[900px] mx-auto bg-white rounded-sm border border-gray-200 shadow-sm p-4 sm:p-6 space-y-5 max-h-none lg:max-h-[calc(100vh-220px)] overflow-y-visible lg:overflow-y-auto custom-scroll">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-600">
+                    Contact Person <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                    <span className="flex items-center justify-center w-10 shrink-0 bg-amber-50 border-r border-gray-100">
+                      <UserRound size={16} className="text-amber-500" />
+                    </span>
+                    <input
+                      type="text"
+                      name="contact_person"
+                      value={formData.contact_person}
+                      onChange={handleChange}
+                      placeholder="Enter contact person name"
+                      className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-600">
+                    Contact Number <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                    <span className="flex items-center justify-center w-10 shrink-0 bg-green-50 border-r border-gray-100">
+                      <Phone size={16} className="text-green-500" />
+                    </span>
+                    <input
+                      type="text"
+                      name="contact_number"
+                      value={formData.contact_number}
+                      onChange={handleChange}
+                      placeholder="Enter contact number"
+                      className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-600">
+                    Email <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                    <span className="flex items-center justify-center w-10 shrink-0 bg-cyan-50 border-r border-gray-100">
+                      <Mail size={16} className="text-cyan-500" />
+                    </span>
+                    <input
+                      type="email"
+                      name="contact_email"
+                      value={formData.contact_email}
+                      onChange={handleChange}
+                      placeholder="Enter email"
+                      className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-600">
+                    Contact Designation <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                    <span className="flex items-center justify-center w-10 shrink-0 bg-violet-50 border-r border-gray-100">
+                      <Briefcase size={16} className="text-violet-500" />
+                    </span>
+                    <select
+                      name="contact_designation"
+                      value={formData.contact_designation}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent cursor-pointer"
+                    >
+                      <option value="">Select Contact Designation</option>
+                      {designations.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("customer")}
+                  className="w-full sm:w-auto px-6 py-2.5 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer transition-all"
+                >
+                  Previous
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-600 hover:to-violet-800 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2 ${
+                    isSubmitting ? "opacity-70 cursor-not-allowed" : "cursor-pointer"
+                  }`}
+                >
+                  {isSubmitting ? (
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" opacity="0.25" />
+                      <path fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                    </svg>
+                  ) : (
+                    <>
+                      <Save size={15} /> Save
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClose}
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition flex items-center justify-center gap-2 bg-white"
+                >
+                  <X size={15} /> Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// =======================================================================
+// ✅ VIEW CUSTOMER POPUP — same right-side slide-in / slide-out pattern as
+// AddCustomerModal above. Rendered conditionally inside CustomerList below.
+// ✅ Theme: indigo-to-violet gradient header, matches the Add Lead popup.
+// =======================================================================
+function ViewCustomerModal({ data, onClose }) {
+  // Slide in / out
+  const [panelVisible, setPanelVisible] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setPanelVisible(true), 10);
+    return () => clearTimeout(t);
+  }, []);
+
+  const handleClose = () => {
+    setPanelVisible(false);
+    setTimeout(() => {
+      onClose?.();
+    }, 300);
+  };
+
+  const details = [
+    { icon: Building2, label: "Company", value: data.company_name, color: "blue" },
+    { icon: User, label: "Customer Name", value: data.customer_name, color: "violet" },
+    { icon: Mail, label: "Email", value: data.email, color: "cyan" },
+    { icon: Phone, label: "Mobile", value: data.mobile, color: "green" },
+    { icon: Tag, label: "Customer Type", value: data.customer_type, color: "amber" },
+    { icon: Globe, label: "Website", value: data.website, color: "cyan" },
+    { icon: Briefcase, label: "Industry", value: data.industry_name, color: "emerald" },
+  ];
+
+  const colorMap = {
+    blue: { bg: "bg-blue-50", text: "text-blue-500" },
+    violet: { bg: "bg-violet-50", text: "text-violet-500" },
+    cyan: { bg: "bg-cyan-50", text: "text-cyan-500" },
+    green: { bg: "bg-green-50", text: "text-green-500" },
+    amber: { bg: "bg-amber-50", text: "text-amber-500" },
+    emerald: { bg: "bg-emerald-50", text: "text-emerald-500" },
+  };
+
+  return (
+    <div
+      className={`fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${
+        panelVisible ? "opacity-100" : "opacity-0"
+      }`}
+      onClick={handleClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`bg-gray-100 h-full w-full sm:max-w-[520px] shadow-2xl overflow-y-auto pb-6 transform transition-transform duration-300 ease-in-out ${
+          panelVisible ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        {/* Header — indigo-to-violet gradient, matches Add Customer / Add Lead */}
+        <div className="bg-white w-full shadow-lg p-4 mt-1 mb-5 flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-md shadow-indigo-200 shrink-0">
+              <Eye size={20} className="text-white" />
+            </span>
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-bold text-gray-900 truncate">
+                {data.customer_name || "Customer Details"}
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {data.customer_type || "—"}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleClose}
+            className="w-8 h-8 flex items-center justify-center rounded-full text-indigo-600  transition-all shrink-0"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-4 sm:px-5">
+          <div className="bg-white rounded-sm border border-gray-200 shadow-sm p-4 sm:p-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {details.map(({ icon: Icon, label, value, color }) => {
+                const c = colorMap[color];
+                return (
+                  <div
+                    key={label}
+                    className="bg-gray-50 rounded-sm px-4 py-3 flex items-center gap-3"
+                  >
+                    <span className={`w-9 h-9 rounded-lg ${c.bg} flex items-center justify-center shrink-0`}>
+                      <Icon size={16} className={c.text} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-xs text-gray-400 uppercase tracking-wide">
+                        {label}
+                      </p>
+                      <p className="text-sm font-semibold text-gray-700 break-words">
+                        {value || "—"}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-end pt-5">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="px-6 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-all flex items-center gap-2"
+              >
+                <X size={15} /> Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =======================================================================
+// ✅ DELETE CUSTOMER POPUP — animated center dialog (fade + scale-in on
+// mount, fade + scale-out before the confirm/cancel action actually fires).
+// ✅ Theme: red/rose gradient icon box (keeps the destructive "danger"
+// meaning), rounded-full pill buttons — matches the reference screenshot.
+// =======================================================================
+function DeleteCustomerModal({ name, onCancel, onConfirm }) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 10);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Plays the fade+scale-out animation first, then fires the real action
+  // (cancel or confirm) so the dialog is always fully closed before the
+  // parent state actually unmounts it.
+  const closeWith = (action) => {
+    setVisible(false);
+    setTimeout(() => {
+      action?.();
+    }, 200);
+  };
+
+  return (
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 px-4 transition-opacity duration-200 ease-out ${
+        visible ? "opacity-100" : "opacity-0"
+      }`}
+      onClick={() => closeWith(onCancel)}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-200 ease-out ${
+          visible ? "opacity-100 scale-100" : "opacity-0 scale-95"
+        }`}
+      >
+        <div className="px-6 pt-6 pb-4 border-b border-gray-100">
+          <div className="flex justify-between items-start">
+            <div className="flex items-center gap-3">
+              <span className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-md shadow-red-200 shrink-0">
+                <Trash2 size={20} className="text-white" />
+              </span>
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Delete Customer</h2>
+                <p className="text-sm text-gray-400 mt-0.5">This action cannot be undone</p>
+              </div>
+            </div>
+            <button
+              onClick={() => closeWith(onCancel)}
+              className="text-red-500 hover:text-red-600 transition-all shrink-0"
+            >
+              <X size={20} />
+            </button>
+          </div>
+        </div>
+
+        <div className="px-6 py-6 text-center">
+          <p className="font-bold text-gray-900 text-base mb-2 tracking-wide">
+            {name?.toUpperCase() || "THIS CUSTOMER"}
+          </p>
+          <p className="text-sm text-gray-400">
+            Are you sure you want to delete this customer?
+          </p>
+        </div>
+
+        <div className="flex gap-3 px-6 pb-6">
+          <button
+            onClick={() => closeWith(onCancel)}
+            className="flex-1 px-4 py-3 text-sm font-medium text-gray-600 border border-gray-200 rounded-full hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
+          >
+            <X size={16} /> Cancel
+          </button>
+          <button
+            onClick={() => closeWith(onConfirm)}
+            className="flex-1 px-4 py-3 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-full transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2"
+          >
+            <Trash2 size={16} /> Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =======================================================================
+// ✅ MAIN CUSTOMER LIST PAGE
+// =======================================================================
 export default function CustomerList() {
   const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL;
   const router = useRouter();
@@ -23,6 +975,9 @@ export default function CustomerList() {
 
   const [viewModal, setViewModal] = useState({ open: false, data: null });
   const [deleteModal, setDeleteModal] = useState({ open: false, id: null, name: "" });
+
+  // ✅ NEW: controls the Add Customer slide-in/out popup
+  const [showAddCustomer, setShowAddCustomer] = useState(false);
 
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [filters, setFilters] = useState({
@@ -174,7 +1129,7 @@ export default function CustomerList() {
                 <i className="bi bi-house"></i>
               </Link>
               <i className="bi bi-chevron-right text-[10px]"></i>
-              <Link href="/customer-list" className="mx-3 text-md text-gray-700 hover:text-orange-500 font-semibold">
+              <Link href="/customer-list" className="mx-3 text-md text-gray-700 hover:text-indigo-600 ">
                 Customer List
               </Link>
             </p>
@@ -184,14 +1139,16 @@ export default function CustomerList() {
                 placeholder="🔍 Search..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="border w-full sm:w-64 border-gray-300 text-gray-700 placeholder-gray-400 p-2 sm:p-1 px-3 rounded-sm focus:ring-1 outline-none focus:ring-orange-200 transition-all text-sm"
+                className="border w-full sm:w-64 border-gray-300 text-gray-700 placeholder-gray-400 p-2 sm:p-1 px-3 rounded-sm  outline-none  transition-all text-sm  focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100"
               />
-              <Link
-                href="/customer"
-                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-sm w-full sm:w-auto text-center font-bold text-sm"
+              {/* ✅ CHANGED: was <Link href="/customer">, now opens the slide-in popup defined above in this same file */}
+              <button
+                type="button"
+                onClick={() => setShowAddCustomer(true)}
+                className="bg-gradient-to-br from-indigo-500 to-violet-600 text-white px-4 py-2 rounded-sm w-full sm:w-auto text-center font-bold text-sm cursor-pointer"
               >
                 + ADD CUSTOMER
-              </Link>
+              </button>
             </div>
           </div>
         </div>
@@ -216,14 +1173,14 @@ export default function CustomerList() {
             value={filters.customer_name}
             onChange={handleChange}
             placeholder="Enter Name"
-            className="border bg-white border-orange-300 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 text-sm outline-none"
+            className="border bg-white border-indigo-400 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 text-sm outline-none"
           />
 
           <input
             type="text"
             name="mobile"
             placeholder="Contact No."
-            className="border bg-white border-orange-300 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 text-sm outline-none"
+            className="border bg-white border-indigo-400 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 text-sm outline-none"
             value={filters.mobile || ""}
             onChange={(e) => {
               const val = e.target.value;
@@ -241,14 +1198,14 @@ export default function CustomerList() {
             value={filters.email}
             onChange={handleChange}
             placeholder="Enter Email"
-            className="border bg-white border-orange-300 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 text-sm outline-none"
+            className="border bg-white border-indigo-400 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 text-sm outline-none"
           />
 
           <select
             name="industry"
             value={filters.industry}
             onChange={handleChange}
-            className="border bg-white border-orange-300 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 text-gray-500 text-sm outline-none"
+            className="border bg-white border-indigo-400 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 text-gray-500 text-sm outline-none"
           >
             <option value="">Industry</option>
             {industries.map((item) => (
@@ -425,144 +1382,34 @@ export default function CustomerList() {
         </form>
       </div>
 
-      {/* Delete Modal */}
+      {/* ✅ Delete Modal — now animated (fade + scale-in/out) and uses
+          rounded-full pill buttons matching the reference design */}
       {deleteModal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30">
-          <div className="bg-white rounded-sm shadow-xl w-full max-w-[95vw] mx-auto border border-gray-100 overflow-hidden">
-            <div className="flex justify-between items-center px-3 py-4 bg-gradient-to-r from-orange-100 to-white">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-orange-500 inline-block"></span>
-                <span className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                  Delete Customer
-                </span>
-              </div>
-              <button
-                onClick={() => setDeleteModal({ open: false, id: null, name: "" })}
-                className="w-7 h-7 flex items-center justify-center text-orange-500 text-md"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="p-6 text-center">
-              <div className="w-16 h-16 rounded-full bg-orange-50 flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-orange-400" fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
-                  <polyline points="3 6 5 6 21 6" />
-                  <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
-                  <path d="M10 11v6M14 11v6" />
-                  <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
-                </svg>
-              </div>
-              <p className="font-semibold text-gray-800 text-base mb-1">{deleteModal.name}</p>
-              <p className="text-sm text-gray-400">This action cannot be undone. Are you sure?</p>
-            </div>
-            <div className="flex gap-3 px-5 pb-5">
-              <button
-                onClick={() => setDeleteModal({ open: false, id: null, name: "" })}
-                className="flex-1 px-4 py-2 text-sm text-gray-500 border border-gray-200 rounded-sm hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  handleDelete(deleteModal.id);
-                  setDeleteModal({ open: false, id: null, name: "" });
-                }}
-                className="flex-1 px-4 py-2 text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 rounded-sm transition-colors"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeleteCustomerModal
+          name={deleteModal.name}
+          onCancel={() => setDeleteModal({ open: false, id: null, name: "" })}
+          onConfirm={() => {
+            handleDelete(deleteModal.id);
+            setDeleteModal({ open: false, id: null, name: "" });
+          }}
+        />
       )}
 
-      {/* View Customer Modal */}
+      {/* ✅ View Customer popup — slides in/out from the right, indigo-violet theme */}
       {viewModal.open && viewModal.data && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30">
-          <div className="bg-white rounded-sm shadow-xl w-full max-w-[95vw] mx-auto overflow-hidden border border-gray-100">
-            <div className="flex items-center justify-between px-6 py-3 from-orange-100 to-white bg-gradient-to-r">
-              <div className="flex items-center gap-3">
-                <div className="w-7 h-7 flex items-center justify-center">
-                  <i className="bi bi-person text-orange-500 text-md"></i>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    {viewModal.data.customer_name}
-                  </p>
-                  <p className="text-gray-400 text-md">{viewModal.data.customer_type}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setViewModal({ open: false, data: null })}
-                className="w-7 h-7 flex items-center justify-center text-orange-500 text-md"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="p-6 grid grid-cols-2 gap-4">
-              <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-center gap-3">
-                <i className="bi bi-building text-orange-400 text-lg"></i>
-                <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wide">Company</p>
-                  <p className="text-sm font-semibold text-gray-700">{viewModal.data.company_name || "—"}</p>
-                </div>
-              </div>
-              <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-center gap-3">
-                <i className="bi bi-person-circle text-orange-400 text-lg"></i>
-                <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wide">Customer Name</p>
-                  <p className="text-sm font-semibold text-gray-700">{viewModal.data.customer_name || "—"}</p>
-                </div>
-              </div>
-              <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-center gap-3">
-                <i className="bi bi-envelope text-orange-400 text-lg"></i>
-                <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wide">Email</p>
-                  <p className="text-sm font-semibold text-gray-700 break-all">{viewModal.data.email || "—"}</p>
-                </div>
-              </div>
-              <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-center gap-3">
-                <i className="bi bi-telephone text-orange-400 text-lg"></i>
-                <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wide">Mobile</p>
-                  <p className="text-sm font-semibold text-gray-700">{viewModal.data.mobile || "—"}</p>
-                </div>
-              </div>
-              <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-center gap-3">
-                <i className="bi bi-tag text-orange-400 text-lg"></i>
-                <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wide">Customer Type</p>
-                  <p className="text-sm font-semibold text-gray-700">{viewModal.data.customer_type || "—"}</p>
-                </div>
-              </div>
-              <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-center gap-3">
-                <i className="bi bi-globe text-orange-400 text-lg"></i>
-                <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wide">Website</p>
-                  <p className="text-sm font-semibold text-gray-700">{viewModal.data.website || "—"}</p>
-                </div>
-              </div>
-              <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-center gap-3">
-                <i className="bi bi-briefcase text-orange-400 text-lg"></i>
-                <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wide">Industry</p>
-                  <p className="text-sm font-semibold text-gray-700">{viewModal.data.industry_name || "—"}</p>
-                </div>
-              </div>
-            </div>
-            <div className="px-6 pb-5 flex justify-end gap-3">
-              <button
-                onClick={() => setViewModal({ open: false, data: null })}
-                className="px-5 py-2 rounded-sm text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
+        <ViewCustomerModal
+          data={viewModal.data}
+          onClose={() => setViewModal({ open: false, data: null })}
+        />
+      )}
+
+      {/* ✅ Add Customer popup — component defined at the top of this same file */}
+      {showAddCustomer && (
+        <AddCustomerModal
+          onClose={() => setShowAddCustomer(false)}
+          onSuccess={fetchCustomers}
+        />
       )}
     </>
   );
 }
-
-

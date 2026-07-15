@@ -682,14 +682,14 @@ export default function Page() {
             <i className="bi bi-chevron-right text-[10px]"></i>
             <Link
               href="#"
-              className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
+              className="mx-2 text-md text-gray-700 hover:text-indigo-600 "
             >
               Tasks
             </Link>
             <i className="bi bi-chevron-right text-[10px]"></i>
             <Link
               href="#"
-              className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
+              className="mx-2 text-md text-gray-700 hover:text-indigo-600 "
             >
               Tasks List
             </Link>
@@ -702,7 +702,7 @@ export default function Page() {
             placeholder="🔍 Search..."
             value={filters.search || ""}
             onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-            className="border w-full sm:w-64 p-2 px-3 border-gray-300 text-gray-700 placeholder-gray-400 rounded-sm focus:ring-1 outline-none focus:ring-orange-200 transition-all text-sm"
+            className="border w-full sm:w-64 p-2 px-3 border-gray-300 text-gray-700 placeholder-gray-400 rounded-sm  outline-none  transition-all text-sm   focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100"
           />
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -748,7 +748,7 @@ export default function Page() {
             <button
               type="button"
               onClick={() => setShowForm(true)}
-              className="flex-1 sm:flex-none bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-sm text-sm font-bold shadow-md transition-all text-center"
+              className="flex-1 sm:flex-none  text-white px-5 py-2 rounded-sm text-sm font-bold shadow-md transition-all text-center    bg-gradient-to-br from-indigo-500 to-violet-600"
             >
               + ADD TASK
             </button>
@@ -785,7 +785,7 @@ export default function Page() {
           onChange={(e) =>
             setFilters({ ...filters, task_name: e.target.value })
           }
-          className="p-2 w-full md:w-52 border border-orange-300 md:border text-gray-600 bg-white rounded-sm  transition-all outline-none text-sm"
+          className="p-2 w-full md:w-52 border border-indigo-400 md:border text-gray-600 bg-white rounded-sm  transition-all outline-none text-sm"
         />
 
         {/* Status */}
@@ -793,7 +793,7 @@ export default function Page() {
           name="status"
           value={filters.status || ""}
           onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-          className="p-2 w-full md:w-52 border border-orange-300 md:border text-gray-400 bg-white rounded-sm  transition-all outline-none text-sm"
+          className="p-2 w-full md:w-52 border border-indigo-400 md:border text-gray-400 bg-white rounded-sm  transition-all outline-none text-sm"
         >
           <option value="">Status</option>
 
@@ -809,7 +809,7 @@ export default function Page() {
           name="priority"
           value={filters.priority || ""}
           onChange={(e) => setFilters({ ...filters, priority: e.target.value })}
-          className="p-2 w-full md:w-52 border border-orange-300 md:border text-gray-400 bg-white rounded-sm  transition-all outline-none text-sm"
+          className="p-2 w-full md:w-52 border border-indigo-400 md:border text-gray-400 bg-white rounded-sm  transition-all outline-none text-sm"
         >
           <option value="">Priority</option>
           <option value="High">High</option>
@@ -822,7 +822,7 @@ export default function Page() {
           name="assignee"
           value={filters.assignee || "-"}
           onChange={(e) => setFilters({ ...filters, assignee: e.target.value })}
-          className="p-2 w-full md:w-52 border border-orange-300 md:border text-gray-400 bg-white rounded-sm  transition-all outline-none text-sm"
+          className="p-2 w-full md:w-52 border border-indigo-400 md:border text-gray-400 bg-white rounded-sm  transition-all outline-none text-sm"
         >
           <option value="">Assignee</option>
 
@@ -834,7 +834,7 @@ export default function Page() {
         </select>
 
         {/* Start Date Range */}
-        <div className="p-1 w-full md:w-54 border border-orange-300 md:border  text-gray-400 bg-white rounded-sm  transition-all outline-none">
+        <div className="p-1 w-full md:w-54 border border-indigo-400 md:border  text-gray-400 bg-white rounded-sm  transition-all outline-none">
           <span className="text-[10px] text-gray-400 uppercase font-bold pt-1 mx-2">
             Start Date
           </span>
@@ -848,7 +848,7 @@ export default function Page() {
           />
         </div>
         {/* Due Date Range */}
-        <div className="p-1 w-full md:w-54 border border-orange-300 md:border  text-gray-400 bg-white rounded-sm  transition-all outline-none">
+        <div className="p-1 w-full md:w-54 border border-indigo-400 md:border  text-gray-400 bg-white rounded-sm  transition-all outline-none">
           <span className="text-[10px] text-gray-400 uppercase font-bold pt-1 mx-2">
             Due Date
           </span>
@@ -870,7 +870,7 @@ export default function Page() {
           onChange={(e) =>
             setFilters({ ...filters, created_by_name: e.target.value })
           }
-          className="p-2 w-full md:w-52 border border-orange-300 md:border text-gray-400 bg-white rounded-sm  transition-all outline-none text-sm"
+          className="p-2 w-full md:w-52 border border-indigo-400 md:border text-gray-400 bg-white rounded-sm  transition-all outline-none text-sm"
         >
           <option value="">Select Created By</option>
 
@@ -882,7 +882,7 @@ export default function Page() {
         </select>
 
         {/* created Date Range */}
-        <div className="p-1 w-full md:w-62 border border-orange-300 md:border  text-gray-400 bg-white rounded-sm  transition-all outline-none">
+        <div className="p-1 w-full md:w-62 border border-indigo-400 md:border  text-gray-400 bg-white rounded-sm  transition-all outline-none">
           <span className="text-[10px] text-gray-400 uppercase font-bold pt-1 mx-2">
             Created Date
           </span>

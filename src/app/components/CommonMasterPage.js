@@ -232,7 +232,7 @@ export default function CommonMasterPage({
               <i className="bi bi-chevron-right text-[10px]"></i>
               <Link
                 href="/setup"
-                className="mx-2 text-md text-gray-700 hover:text-indigo-600 font-semibold"
+                className="mx-2 text-md text-gray-700 hover:text-indigo-600 "
               >
                 Setup
               </Link>
@@ -240,7 +240,7 @@ export default function CommonMasterPage({
               {breadcrumbs.map((b, i) => (
                 <span
                   key={i}
-                  className="flex items-center text-gray-700 hover:text-indigo-600 font-semibold"
+                  className="flex items-center text-gray-700 hover:text-indigo-600 "
                 >
                   <span className="mx-2">{b}</span>
                   {i < breadcrumbs.length - 1 && (
