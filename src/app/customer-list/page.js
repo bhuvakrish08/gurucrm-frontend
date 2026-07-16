@@ -897,63 +897,76 @@ function DeleteCustomerModal({ name, onCancel, onConfirm }) {
   };
 
   return (
-    <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 px-4 transition-opacity duration-200 ease-out ${
-        visible ? "opacity-100" : "opacity-0"
-      }`}
-      onClick={() => closeWith(onCancel)}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className={`bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-200 ease-out ${
-          visible ? "opacity-100 scale-100" : "opacity-0 scale-95"
-        }`}
-      >
-        <div className="px-6 pt-6 pb-4 border-b border-gray-100">
-          <div className="flex justify-between items-start">
-            <div className="flex items-center gap-3">
-              <span className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-md shadow-red-200 shrink-0">
-                <Trash2 size={20} className="text-white" />
-              </span>
-              <div>
-                <h2 className="text-lg font-bold text-gray-900">Delete Customer</h2>
-                <p className="text-sm text-gray-400 mt-0.5">This action cannot be undone</p>
-              </div>
-            </div>
-            <button
-              onClick={() => closeWith(onCancel)}
-              className="text-red-500 hover:text-red-600 transition-all shrink-0"
-            >
-              <X size={20} />
-            </button>
-          </div>
+  <div
+  className={`fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 px-4 transition-opacity duration-200 ease-out ${
+    visible ? "opacity-100" : "opacity-0"
+  }`}
+  onClick={() => closeWith(onCancel)}
+>
+  <div
+    onClick={(e) => e.stopPropagation()}
+    className={`bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-200 ease-out ${
+      visible ? "opacity-100 scale-100" : "opacity-0 scale-95"
+    }`}
+  >
+    {/* Header */}
+    <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
+      <div className="flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full bg-red-50 flex items-center justify-center">
+          <Trash2 size={16} className="text-red-600" strokeWidth={2} />
         </div>
-
-        <div className="px-6 py-6 text-center">
-          <p className="font-bold text-gray-900 text-base mb-2 tracking-wide">
-            {name?.toUpperCase() || "THIS CUSTOMER"}
-          </p>
-          <p className="text-sm text-gray-400">
-            Are you sure you want to delete this customer?
-          </p>
-        </div>
-
-        <div className="flex gap-3 px-6 pb-6">
-          <button
-            onClick={() => closeWith(onCancel)}
-            className="flex-1 px-4 py-3 text-sm font-medium text-gray-600 border border-gray-200 rounded-full hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
-          >
-            <X size={16} /> Cancel
-          </button>
-          <button
-            onClick={() => closeWith(onConfirm)}
-            className="flex-1 px-4 py-3 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-full transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2"
-          >
-            <Trash2 size={16} /> Delete
-          </button>
-        </div>
+        <h2 className="text-base font-bold text-gray-900 uppercase tracking-wide">
+          Delete Customer
+        </h2>
       </div>
+      <button
+        onClick={() => closeWith(onCancel)}
+        className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-colors"
+      >
+        <X size={20} />
+      </button>
     </div>
+
+    {/* Body */}
+    <div className="px-6 pt-8 pb-6 text-center">
+      {/* Icon */}
+      <div className="w-24 h-24 mx-auto rounded-full bg-red-50 flex items-center justify-center mb-5">
+        <Trash2 size={40} className="text-red-600" strokeWidth={1.8} />
+      </div>
+
+      {/* Name */}
+      <p className="font-extrabold text-gray-900 text-xl uppercase tracking-wide mb-2">
+        {name?.toUpperCase() || "THIS CUSTOMER"}
+      </p>
+
+      {/* Divider */}
+      <div className="w-10 h-[3px] bg-red-500 rounded-full mx-auto mb-4"></div>
+
+      {/* Message */}
+      <p className="text-sm text-gray-500 leading-relaxed">
+        This action cannot be undone.
+        <br />
+        Are you sure you want to delete this customer?
+      </p>
+    </div>
+
+    {/* Footer Buttons */}
+    <div className="flex gap-3 px-6 pb-6">
+      <button
+        onClick={() => closeWith(onCancel)}
+        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
+      >
+        <X size={16} strokeWidth={2.2} /> Cancel
+      </button>
+      <button
+        onClick={() => closeWith(onConfirm)}
+        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm hover:shadow-md transition-all"
+      >
+        <Trash2 size={16} strokeWidth={2.2} /> Delete Customer
+      </button>
+    </div>
+  </div>
+</div>
   );
 }
 
@@ -1121,7 +1134,7 @@ export default function CustomerList() {
     <>
       <Header />
       <div className="bg-gray-100">
-        {/* Header bar */}
+        {/*breadcrumb */}
         <div className="bg-white w-full rounded-sm shadow-lg p-3 mt-1 mb-5">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
             <p className="hidden sm:flex items-center flex-wrap">
@@ -1167,53 +1180,64 @@ export default function CustomerList() {
             md:mx-4 md:mb-2 md:flex md:flex-wrap md:gap-2 md:bg-transparent md:p-0 md:shadow-none md:border-none
           `}
         >
-          <input
-            type="text"
-            name="customer_name"
-            value={filters.customer_name}
-            onChange={handleChange}
-            placeholder="Enter Name"
-            className="border bg-white border-indigo-400 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 text-sm outline-none"
-          />
+          <div className="flex items-center gap-2 px-3 border bg-white border-indigo-400 rounded-sm w-full md:w-56 md:mx-2 text-sm">
+                      <User size={16} className="text-violet-500" />
+            <input
+              type="text"
+              name="customer_name"
+              value={filters.customer_name}
+              onChange={handleChange}
+              placeholder="Enter Name"
+              className="py-2 w-full text-sm outline-none bg-transparent"
+            />
+          </div>
 
-          <input
-            type="text"
-            name="mobile"
-            placeholder="Contact No."
-            className="border bg-white border-indigo-400 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 text-sm outline-none"
-            value={filters.mobile || ""}
-            onChange={(e) => {
-              const val = e.target.value;
-              if (!/^\d*$/.test(val)) return;
-              if (val.length === 1 && !["6", "7", "8", "9"].includes(val)) return;
-              if (val.length > 10) return;
-              setFilters((p) => ({ ...p, mobile: val }));
-            }}
-            maxLength={10}
-          />
+          <div className="flex items-center gap-2 px-3 border bg-white border-indigo-400 rounded-sm w-full md:w-56 md:mx-2 text-sm">
+                      <Phone size={16} className="text-green-500" />
+            <input
+              type="text"
+              name="mobile"
+              placeholder="Contact No."
+              className="py-2 w-full text-sm outline-none bg-transparent"
+              value={filters.mobile || ""}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (!/^\d*$/.test(val)) return;
+                if (val.length === 1 && !["6", "7", "8", "9"].includes(val)) return;
+                if (val.length > 10) return;
+                setFilters((p) => ({ ...p, mobile: val }));
+              }}
+              maxLength={10}
+            />
+          </div>
 
-          <input
-            type="text"
-            name="email"
-            value={filters.email}
-            onChange={handleChange}
-            placeholder="Enter Email"
-            className="border bg-white border-indigo-400 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 text-sm outline-none"
-          />
+          <div className="flex items-center gap-2 px-3 border bg-white border-indigo-400 rounded-sm w-full md:w-56 md:mx-2 text-sm">
+<Mail size={16} className="text-red-500" />            <input
+              type="text"
+              name="email"
+              value={filters.email}
+              onChange={handleChange}
+              placeholder="Enter Email"
+              className="py-2 w-full text-sm outline-none bg-transparent"
+            />
+          </div>
 
-          <select
-            name="industry"
-            value={filters.industry}
-            onChange={handleChange}
-            className="border bg-white border-indigo-400 rounded-sm px-3 py-2 w-full md:w-56 md:mx-2 text-gray-500 text-sm outline-none"
-          >
-            <option value="">Industry</option>
-            {industries.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-          </select>
+          <div className="flex items-center gap-2 px-3 border bg-white border-indigo-400 rounded-sm w-full md:w-56 md:mx-2 text-sm">
+<Building2 size={16} className="text-blue-500" />
+            <select
+              name="industry"
+              value={filters.industry}
+              onChange={handleChange}
+              className="py-2 w-full text-gray-500 text-sm outline-none bg-transparent"
+            >
+              <option value="">Industry</option>
+              {industries.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <div className="flex gap-2 sm:col-span-2 md:col-span-auto">
             <button
@@ -1227,9 +1251,9 @@ export default function CustomerList() {
                 });
                 setShowMobileFilters(false);
               }}
-              className="border border-gray-300 w-full md:w-auto cursor-pointer rounded-sm p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm text-center font-semibold"
+              className="flex items-center justify-center gap-2 w-full md:w-auto cursor-pointer rounded-sm px-5 py-2 bg-indigo-100 text-indigo-600  text-sm text-center font-semibold transition-colors"
             >
-              Clear
+              <i className="bi bi-arrow-counterclockwise"></i> Clear Filter
             </button>
             <button
               type="button"
@@ -1242,60 +1266,68 @@ export default function CustomerList() {
         </div>
 
         {/* Table */}
-        <form className="p-2 w-8xl mx-3">
+      <form className="p-2 w-8xl mx-3">
           <div className="bg-white shadow rounded-sm p-6">
             <div className="overflow-x-auto overflow-y-scroll max-h-[380px] custom-scroll" style={{ overflowX: "scroll" }}>
               <table className="w-full text-sm border border-gray-200 text-left whitespace-nowrap">
-                <thead className="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <thead className="bg-indigo-50 border-b border-gray-200 text-xs font-bold text-slate-700 tracking-wider">
                   <tr>
-                    <th className="px-3 py-2 text-center">#</th>
-                    <th className="px-4 py-2">Company Name</th>
-                    <th className="px-4 py-2">Customer Name</th>
-                    <th className="px-4 py-2">Email</th>
-                    <th className="px-4 py-2">Mobile No.</th>
-                    <th className="px-4 py-2">Customer Type</th>
-                    <th className="px-4 py-2">Website</th>
-                    <th className="px-4 py-2">Industry</th>
-                    <th className="px-4 py-2">Action</th>
+                    <th className="px-3 py-3 text-center">#</th>
+                    <th className="px-4 py-3">
+                      Company Name <i className="bi bi-arrow-down-up text-slate-400 text-[10px]"></i>
+                    </th>
+                    <th className="px-4 py-3">
+                      Customer Name <i className="bi bi-arrow-down-up text-slate-400 text-[10px]"></i>
+                    </th>
+                    <th className="px-4 py-3">Email</th>
+                    <th className="px-4 py-3">
+                      Mobile No. <i className="bi bi-arrow-down-up text-slate-400 text-[10px]"></i>
+                    </th>
+                    <th className="px-4 py-3">Customer Type</th>
+                    <th className="px-4 py-3">Website</th>
+                    <th className="px-4 py-3">Industry</th>
+                    <th className="px-4 py-3">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {currentData.length > 0 ? (
                     currentData.map((row, index) => (
-                      <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="px-3 py-2">{indexOfFirstItem + index + 1}</td>
-                        <td className="px-4 py-2">{row.company_name}</td>
-                        <td className="px-4 py-2 text-orange-500">{row.customer_name}</td>
-                        <td className="px-4 py-2">{row.email}</td>
-                        <td className="px-4 py-2">{row.mobile}</td>
-                        <td className="px-4 py-2">{row.customer_type}</td>
-                        <td className="px-4 py-2">{row.website}</td>
-                        <td className="px-4 py-2">{row.industry_name}</td>
-                        <td className="py-2 px-4 text-lg">
-                          <button
-                            type="button"
-                            onClick={() => setViewModal({ open: true, data: row })}
-                            className="text-gray-400 hover:text-green-600 cursor-pointer"
-                          >
-                            <i className="bi bi-eye text-xl"></i>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              localStorage.setItem("customer_edit_id", JSON.stringify(row.id));
-                              router.push("/edit-customer");
-                            }}
-                            className="text-gray-400 hover:text-blue-700 mx-2 cursor-pointer"
-                          >
-                            <i className="bi bi-pencil-square"></i>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setDeleteModal({ open: true, id: row.id, name: row.customer_name })}
-                            className="text-gray-400 hover:text-red-600 cursor-pointer"
-                          >
-                            <i className="bi bi-trash3"></i>
-                          </button>
+                      <tr key={index} className="border-b border-gray-50 hover:bg-indigo-50/30 transition-colors">
+                        <td className="px-2 py-3">{indexOfFirstItem + index + 1}</td>
+                        <td className="px-2 py-3 font-semibold text-slate-800">{row.company_name}</td>
+                        <td className="px-2 py-3 text-blue-500 font-medium">{row.customer_name}</td>
+                        <td className="px-2 py-3 text-gray-500">{row.email}</td>
+                        <td className="px-2 py-3 font-semibold text-slate-800">{row.mobile}</td>
+                        <td className="px-2 py-3 text-gray-500">{row.customer_type}</td>
+                        <td className="px-2 py-3 text-gray-500">{row.website}</td>
+                        <td className="px-2 py-3 text-gray-500">{row.industry_name}</td>
+                        <td className="py-2 px-3">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setViewModal({ open: true, data: row })}
+                              className="w-8 h-8 flex items-center justify-center rounded-md text-blue-500 hover:bg-blue-50 cursor-pointer transition-all"
+                            >
+                              <i className="bi bi-eye text-lg"></i>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                localStorage.setItem("customer_edit_id", JSON.stringify(row.id));
+                                router.push("/edit-customer");
+                              }}
+                              className="w-8 h-8 flex items-center justify-center rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 cursor-pointer transition-all"
+                            >
+                              <i className="bi bi-pencil-square text-sm"></i>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDeleteModal({ open: true, id: row.id, name: row.customer_name })}
+                              className="w-8 h-8 flex items-center justify-center rounded-md text-red-500 hover:bg-red-50 cursor-pointer transition-all"
+                            >
+                              <i className="bi bi-trash3 text-sm"></i>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -1313,29 +1345,13 @@ export default function CustomerList() {
             {/* Pagination */}
             {/* ✅ STANDARDIZED MICARA IMS PAGINATION */}
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white rounded-b-lg mt-4">
-              {/* Left side: Rows per page selector */}
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-slate-500 font-medium">
-                  Rows per page:
-                </span>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all cursor-pointer font-medium"
-                >
-                  {[10, 20, 100, 200].map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
+              {/* Left side: Showing X to Y of Z entries */}
+              <div className="text-sm text-slate-600 font-semibold">
+                Showing {currentData.length === 0 ? 0 : indexOfFirstItem + 1} to{" "}
+                {indexOfFirstItem + currentData.length} entries
               </div>
 
-
-              {/* Right side: Navigation buttons (only if totalPages > 1) */}
+              {/* Center: Navigation buttons (only if totalPages > 1) */}
               {totalPages > 1 && (
                 <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
                   {/* Previous Button */}
@@ -1356,7 +1372,7 @@ export default function CustomerList() {
                         key={page}
                         onClick={() => setCurrentPage(page)}
                         className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${currentPage === page
-                            ? "bg-[#212121] text-white shadow-md shadow-black/10"
+                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-200"
                             : "border border-slate-200 text-slate-600 hover:bg-slate-50"
                           }`}
                       >
@@ -1376,6 +1392,27 @@ export default function CustomerList() {
                   </button>
                 </div>
               )}
+
+              {/* Right side: Rows per page selector */}
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-slate-500 font-medium">
+                  Rows per page:
+                </span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="border border-indigo-200 rounded-lg px-3 py-1.5 text-sm text-indigo-600 font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+                >
+                  {[10, 20, 100, 200].map((size) => (
+                    <option key={size} value={size}>
+                      {size}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
           </div>

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "redaxios";
 import Link from "next/link";
 import { toast } from "react-toastify";
-
+import { User, ToggleLeft, Building2, RotateCcw, Filter, ChevronDown } from "lucide-react";
 
 export default function CommonMasterPage({
   title,
@@ -219,7 +219,7 @@ export default function CommonMasterPage({
     <>
     
       <div className="bg-gray-100">
-        {/* Header */}
+        {/* bredcrumb */}
         <div className="bg-white w-full shadow-lg p-3 mt-1 mb-5 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
           <div className="hidden sm:flex items-center text-gray-700 w-full sm:w-auto">
             <p className="flex items-center flex-wrap">
@@ -264,73 +264,114 @@ export default function CommonMasterPage({
 
         {/* Filters */}
         <div className="mx-6 md:hidden mt-3 relative z-40">
-          <button type="button" onClick={() => setShowMobileFilters(!showMobileFilters)} className="w-full flex items-center justify-between text-orange-500 font-semibold bg-orange-50 px-4 py-2 rounded-sm border border-orange-200 shadow-sm transition-all">
-             <span className="flex items-center gap-2"><i className="bi bi-funnel"></i> Filters</span>
-             <i className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}></i>
-          </button>
-        </div>
+  <button
+    type="button"
+    onClick={() => setShowMobileFilters(!showMobileFilters)}
+    className="w-full flex items-center justify-between text-indigo-600 font-semibold bg-indigo-50 px-4 py-2 rounded-lg border border-indigo-200 shadow-sm transition-all"
+  >
+    <span className="flex items-center gap-2">
+      <Filter className="w-4 h-4" strokeWidth={2} /> Filters
+    </span>
+    <ChevronDown
+      className={`w-4 h-4 transition-transform ${
+        showMobileFilters ? "rotate-180" : ""
+      }`}
+      strokeWidth={2}
+    />
+  </button>
+</div>
 
-        <div className={`
-          ${showMobileFilters ? "absolute left-6 right-6 top-50 bg-white p-5 shadow-2xl border border-gray-100 z-50 rounded-lg grid grid-cols-2 gap-3 mt-1" : "hidden"} 
-          md:mx-6 md:flex md:flex-wrap md:items-center md:gap-y-2 md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
-        `}>
-          {extraColumn && (
-            <select
-              value={parentDesignation}
-              onChange={(e) => setParentDesignation(e.target.value)}
-              className="w-full md:w-60 md:mx-2 bg-white p-2 border border-orange-300 rounded-sm outline-none text-gray-400 text-sm"
-              required
-            >
-              <option value="">Parent</option>
-              {parentOptions.map((opt) => (
-                <option key={opt.id} value={opt.name}>
-                  {opt.name}
-                </option>
-              ))}
-            </select>
-          )}
+<div
+  className={`
+    ${
+      showMobileFilters
+        ? "absolute left-6 right-6 top-50 bg-white p-5 shadow-2xl border border-gray-100 z-50 rounded-lg grid grid-cols-2 gap-3 mt-1"
+        : "hidden"
+    } 
+    md:mx-6 md:flex md:flex-wrap md:items-center md:gap-3 md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
+  `}
+>
+  {extraColumn && (
+    <div className="relative w-full md:w-60">
+      <Building2
+        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500 pointer-events-none"
+        strokeWidth={2}
+      />
+      <select
+        value={parentDesignation}
+        onChange={(e) => setParentDesignation(e.target.value)}
+        className="w-full bg-white pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg outline-none text-gray-600 text-sm focus:border-indigo-400 transition-colors appearance-none"
+        required
+      >
+        <option value="">Parent</option>
+        {parentOptions.map((opt) => (
+          <option key={opt.id} value={opt.name}>
+            {opt.name}
+          </option>
+        ))}
+      </select>
+    </div>
+  )}
 
-          <input
-            type="text"
-            placeholder={`Enter ${title}`}
-            className="p-2 w-full md:w-50 mb-0 md:mb-3 border text-gray-400 bg-white border-indigo-400 rounded-sm outline-none text-sm"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
+  <div className="relative w-full md:w-56">
+    <User
+      className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-500 pointer-events-none"
+      strokeWidth={2}
+    />
+    <input
+      type="text"
+      placeholder={`Enter ${title}`}
+      className="w-full pl-9 pr-3 py-2.5 border border-indigo-400 bg-white rounded-sm outline-none text-gray-700 text-sm transition-colors"
+      value={name}
+      onChange={(e) => setName(e.target.value)}
+    />
+  </div>
 
-          <select
-            className="w-full md:w-48 md:mx-3 md:mb-3 p-2 border text-gray-400 bg-white rounded-sm border-indigo-400 outline-none text-sm"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="">Status</option>
-            <option value="1">Active</option>
-            <option value="0">Inactive</option>
-          </select>
+  <div className="relative w-full md:w-48">
+    <ToggleLeft
+      className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500 pointer-events-none"
+      strokeWidth={2}
+    />
+    <select
+      className={`w-full pl-9 pr-3 py-2.5 border border-indigo-400 bg-white rounded-sm outline-none text-sm transition-colors appearance-none  ${
+        statusFilter === "" ? "text-gray-400" : "text-gray-700"
+      }`}
+      
+      
+       value={statusFilter}
+      onChange={(e) => setStatusFilter(e.target.value)}>
+     
+    
+      <option value="">Status</option>
+      <option value="1">Active</option>
+      <option value="0">Inactive</option>
+    </select>
+  </div>
 
-          <div className="flex gap-2 col-span-2 md:mb-3">
-            <button
-              type="button"
-              onClick={() => {
-                setParentDesignation("");
-                setName("");
-                setStatusFilter("");
-                setShowMobileFilters(false);
-                fetchData();
-              }}
-              className="border border-gray-300 w-full md:w-auto cursor-pointer rounded-sm p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm text-center font-semibold"
-            >
-              Clear
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowMobileFilters(false)}
-              className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-2 bg-orange-100 text-orange-700 hover:bg-orange-200 text-sm text-center font-semibold"
-            >
-              Apply
-            </button>
-          </div>
-        </div>
+  <div className="flex gap-2 col-span-2 md:col-auto">
+    <button
+      type="button"
+      onClick={() => {
+        setParentDesignation("");
+        setName("");
+        setStatusFilter("");
+        setShowMobileFilters(false);
+        fetchData();
+      }}
+      className="flex items-center justify-center gap-2   w-full md:w-auto cursor-pointer rounded-sm px-4 py-2.5 bg-indigo-100 text-indigo-600  text-sm text-center font-semibold transition-colors"
+    >
+      <RotateCcw className="w-4 h-4" strokeWidth={2} />
+      Clear Filter
+    </button>
+    <button
+      type="button"
+      onClick={() => setShowMobileFilters(false)}
+      className="md:hidden border border-indigo-300 w-full cursor-pointer rounded-lg p-2.5 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 text-sm text-center font-semibold transition-colors"
+    >
+      Apply
+    </button>
+  </div>
+</div>
 
         {/* Table */}
         <form className="p-1 mx-5">

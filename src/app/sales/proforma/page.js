@@ -5,7 +5,27 @@ import Link from "next/link";
 import Header from "@/app/components/header";
 import { toast } from "react-toastify";
 import useAuth from "@/app/components/useAuth";
-
+import {
+  CalendarDays,
+  ListChecks,
+  User,
+  UserRound,
+  FileText,
+  CloudUpload,
+  Info,
+  X,
+  CheckCircle2,
+  Building2,
+  Phone,
+  Radio,
+  Bookmark,
+  ShieldCheck,
+  Star,
+  FolderOpen,
+  Save,
+  Plus,
+  Pencil,
+} from "lucide-react";
 export default function ProformaPage() {
   const [piData, setPiData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,7 +41,9 @@ export default function ProformaPage() {
 
   const handleQuotationView = async (quotationId) => {
     try {
-      const res = await axios.get(`${API}/api/pi/quotation-file/${quotationId}`);
+      const res = await axios.get(
+        `${API}/api/pi/quotation-file/${quotationId}`,
+      );
       if (res.data.success) {
         window.open(res.data.file, "_blank");
       } else {
@@ -70,7 +92,7 @@ export default function ProformaPage() {
   });
 
   const hasActiveFilters = Object.values(filters).some(
-    (v) => v !== "" && v !== null && v !== undefined
+    (v) => v !== "" && v !== null && v !== undefined,
   );
   const [assigneeList, setAssigneeList] = useState([]);
 
@@ -123,7 +145,7 @@ export default function ProformaPage() {
   const searchPI = async () => {
     try {
       const params = Object.fromEntries(
-        Object.entries(filters).filter(([_, v]) => v !== "")
+        Object.entries(filters).filter(([_, v]) => v !== ""),
       );
       const res = await axios.get(`${API}/api/pi/filter`, {
         params,
@@ -203,10 +225,10 @@ export default function ProformaPage() {
     try {
       await axios.put(`${API}/api/pi/update-stage/${pi_id}`, { stage });
       setPiData((prev) =>
-        prev.map((item) => (item.pi_id === pi_id ? { ...item, stage } : item))
+        prev.map((item) => (item.pi_id === pi_id ? { ...item, stage } : item)),
       );
       toast.success(
-        stage === "completed" ? "Moved to Completed!" : "Moved to Pending!"
+        stage === "completed" ? "Moved to Completed!" : "Moved to Pending!",
       );
       fetchPI();
     } catch (err) {
@@ -233,8 +255,8 @@ export default function ProformaPage() {
       newTotalPercentage >= 100
         ? "paid"
         : newTotalPercentage > 0
-        ? "partial"
-        : "draft";
+          ? "partial"
+          : "draft";
     try {
       await axios.put(`${API}/api/pi/update-status/${pi_id}`, {
         status: newStatus,
@@ -287,7 +309,10 @@ export default function ProformaPage() {
 
   const handlePct9Change = (val) => {
     setPct9(val);
-    if (val === "" || val === null) { setAmt9(""); return; }
+    if (val === "" || val === null) {
+      setAmt9("");
+      return;
+    }
     const num = Number(val);
     if (!isNaN(num) && selectedPI) {
       const { base9 } = getBaseAmounts(selectedPI);
@@ -297,7 +322,10 @@ export default function ProformaPage() {
 
   const handleAmt9Change = (val) => {
     setAmt9(val);
-    if (val === "" || val === null) { setPct9(""); return; }
+    if (val === "" || val === null) {
+      setPct9("");
+      return;
+    }
     const num = Number(val);
     if (!isNaN(num) && selectedPI) {
       const { base9 } = getBaseAmounts(selectedPI);
@@ -307,7 +335,10 @@ export default function ProformaPage() {
 
   const handlePct18Change = (val) => {
     setPct18(val);
-    if (val === "" || val === null) { setAmt18(""); return; }
+    if (val === "" || val === null) {
+      setAmt18("");
+      return;
+    }
     const num = Number(val);
     if (!isNaN(num) && selectedPI) {
       const { base18 } = getBaseAmounts(selectedPI);
@@ -317,7 +348,10 @@ export default function ProformaPage() {
 
   const handleAmt18Change = (val) => {
     setAmt18(val);
-    if (val === "" || val === null) { setPct18(""); return; }
+    if (val === "" || val === null) {
+      setPct18("");
+      return;
+    }
     const num = Number(val);
     if (!isNaN(num) && selectedPI) {
       const { base18 } = getBaseAmounts(selectedPI);
@@ -368,7 +402,7 @@ export default function ProformaPage() {
       setSubmitLoading(true);
       const res = await axios.post(
         `${API}/api/pi/add-followup/${selectedPI.pi_id}`,
-        { percentage_9: new9, percentage_18: new18 }
+        { percentage_9: new9, percentage_18: new18 },
       );
       const confirmedTotal =
         res.data?.total_percentage ?? (used9 + new9 + used18 + new18) / 2;
@@ -376,7 +410,7 @@ export default function ProformaPage() {
       toast.success(
         confirmedTotal >= 100
           ? "Follow-up added & marked as Won!"
-          : "Follow-up added successfully"
+          : "Follow-up added successfully",
       );
       resetModal();
       fetchPI();
@@ -419,7 +453,7 @@ export default function ProformaPage() {
       setUpdateLoading(true);
       await axios.put(
         `${API}/api/pi/update-followup/${selectedPI.pi_id}/${editing.id}`,
-        { percentage_9: new9, percentage_18: new18 }
+        { percentage_9: new9, percentage_18: new18 },
       );
       const grandTotal = getGrandTotal(selectedPI);
       const { base9, base18 } = getBaseAmounts(selectedPI);
@@ -430,7 +464,9 @@ export default function ProformaPage() {
       const newTotalOverall = used9 + used18 + newOverall;
       await updateStatus(selectedPI.pi_id, newTotalOverall);
       toast.success(
-        newTotalOverall >= 100 ? "Updated & marked as Won!" : "Updated successfully"
+        newTotalOverall >= 100
+          ? "Updated & marked as Won!"
+          : "Updated successfully",
       );
       resetModal();
       fetchPI();
@@ -455,7 +491,9 @@ export default function ProformaPage() {
       const exportData = piData.map((item, index) => ({
         "No.": index + 1,
         "PI No": formatPINumber(index),
-        "PI Date": item.pi_date ? new Date(item.pi_date).toLocaleDateString() : "",
+        "PI Date": item.pi_date
+          ? new Date(item.pi_date).toLocaleDateString()
+          : "",
         "Customer Name": item.customer_name || "",
         "Quotation No": item.quotation_no || "",
         Assignee: item.assignee || "",
@@ -463,7 +501,9 @@ export default function ProformaPage() {
         "Proforma %": item.proforma_percentage || "",
         Status: item.status || "",
         Stage: item.stage || "pending",
-        "Created At": item.created_at ? new Date(item.created_at).toLocaleDateString() : "",
+        "Created At": item.created_at
+          ? new Date(item.created_at).toLocaleDateString()
+          : "",
       }));
       const worksheet = XLSX.utils.json_to_sheet(exportData);
       const workbook = XLSX.utils.book_new();
@@ -475,7 +515,7 @@ export default function ProformaPage() {
       const now = new Date();
       XLSX.writeFile(
         workbook,
-        `Proforma_(${now.toISOString().split("T")[0]})_${now.toTimeString().slice(0, 5)}.xlsx`
+        `Proforma_(${now.toISOString().split("T")[0]})_${now.toTimeString().slice(0, 5)}.xlsx`,
       );
       toast.success("Excel exported successfully");
       setShowExportMenu(false);
@@ -496,7 +536,7 @@ export default function ProformaPage() {
       doc.text(
         `Exported on: ${new Date().toLocaleDateString("en-GB")}   |   Total Records: ${piData.length}`,
         14,
-        22
+        22,
       );
       const tableData = piData.map((item, index) => [
         index + 1,
@@ -513,17 +553,36 @@ export default function ProformaPage() {
       ]);
       autoTable(doc, {
         startY: 27,
-        head: [["#", "PI No", "PI Date", "Customer", "Quotation", "Assignee", "Total", "PI %", "Status", "Stage", "Created"]],
+        head: [
+          [
+            "#",
+            "PI No",
+            "PI Date",
+            "Customer",
+            "Quotation",
+            "Assignee",
+            "Total",
+            "PI %",
+            "Status",
+            "Stage",
+            "Created",
+          ],
+        ],
         body: tableData,
         theme: "grid",
         styles: { fontSize: 8, cellPadding: 3, textColor: [40, 40, 40] },
-        headStyles: { fillColor: [234, 88, 12], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8 },
+        headStyles: {
+          fillColor: [234, 88, 12],
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+          fontSize: 8,
+        },
         alternateRowStyles: { fillColor: [255, 247, 237] },
         columnStyles: { 0: { cellWidth: 8 } },
       });
       const now = new Date();
       doc.save(
-        `Proforma_(${now.toISOString().split("T")[0]})_${now.toTimeString().slice(0, 5).replace(":", "-")}.pdf`
+        `Proforma_(${now.toISOString().split("T")[0]})_${now.toTimeString().slice(0, 5).replace(":", "-")}.pdf`,
       );
       toast.success("PDF exported successfully");
       setShowExportMenu(false);
@@ -539,14 +598,14 @@ export default function ProformaPage() {
 
       const followUps = item.follow_ups || [];
       const sortedFollowUps = [...followUps].sort(
-        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+        (a, b) => new Date(b.created_at) - new Date(a.created_at),
       );
 
       const historyA = sortedFollowUps.filter(
-        (f) => Number(f.proforma_percentage_9 || 0) > 0
+        (f) => Number(f.proforma_percentage_9 || 0) > 0,
       );
       const historyB = sortedFollowUps.filter(
-        (f) => Number(f.proforma_percentage_18 || 0) > 0
+        (f) => Number(f.proforma_percentage_18 || 0) > 0,
       );
 
       const { base9, base18 } = getBaseAmounts(item);
@@ -566,12 +625,12 @@ export default function ProformaPage() {
         item.status === "paid"
           ? "WON / PAID"
           : item.status === "partial"
-          ? "PENDING"
-          : item.status === "sent"
-          ? "SENT"
-          : item.status === "cancelled"
-          ? "CANCELLED"
-          : "DRAFT";
+            ? "PENDING"
+            : item.status === "sent"
+              ? "SENT"
+              : item.status === "cancelled"
+                ? "CANCELLED"
+                : "DRAFT";
 
       const doc = new jsPDF({ orientation: "portrait" });
       const pageWidth = doc.internal.pageSize.getWidth();
@@ -592,7 +651,12 @@ export default function ProformaPage() {
       doc.setFontSize(9);
       doc.setTextColor(120, 120, 120);
       doc.setFont(undefined, "normal");
-      doc.text(`Date: ${piDate.toLocaleDateString("en-GB")}`, pageWidth - 14, 24, { align: "right" });
+      doc.text(
+        `Date: ${piDate.toLocaleDateString("en-GB")}`,
+        pageWidth - 14,
+        24,
+        { align: "right" },
+      );
 
       doc.setDrawColor(40, 40, 40);
       doc.setLineWidth(0.6);
@@ -604,15 +668,37 @@ export default function ProformaPage() {
       doc.text(`PI No: ${piNumber}`, 14, 37);
 
       doc.setFillColor(
-        statusLabel === "WON / PAID" ? 22 : statusLabel === "PENDING" ? 234 : 100,
-        statusLabel === "WON / PAID" ? 163 : statusLabel === "PENDING" ? 88 : 100,
-        statusLabel === "WON / PAID" ? 74 : statusLabel === "PENDING" ? 12 : 100
+        statusLabel === "WON / PAID"
+          ? 22
+          : statusLabel === "PENDING"
+            ? 234
+            : 100,
+        statusLabel === "WON / PAID"
+          ? 163
+          : statusLabel === "PENDING"
+            ? 88
+            : 100,
+        statusLabel === "WON / PAID"
+          ? 74
+          : statusLabel === "PENDING"
+            ? 12
+            : 100,
       );
       const badgeWidth = doc.getTextWidth(statusLabel) + 10;
-      doc.roundedRect(pageWidth - 14 - badgeWidth, 32, badgeWidth, 7, 1.5, 1.5, "F");
+      doc.roundedRect(
+        pageWidth - 14 - badgeWidth,
+        32,
+        badgeWidth,
+        7,
+        1.5,
+        1.5,
+        "F",
+      );
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(8.5);
-      doc.text(statusLabel, pageWidth - 14 - badgeWidth / 2, 36.5, { align: "center" });
+      doc.text(statusLabel, pageWidth - 14 - badgeWidth / 2, 36.5, {
+        align: "center",
+      });
 
       const boxTop = 42;
       const boxHeight = 32;
@@ -622,7 +708,15 @@ export default function ProformaPage() {
       doc.setDrawColor(230, 230, 230);
       doc.setFillColor(252, 252, 252);
       doc.roundedRect(14, boxTop, colWidth, boxHeight, 2, 2, "FD");
-      doc.roundedRect(14 + colWidth + colGap, boxTop, colWidth, boxHeight, 2, 2, "FD");
+      doc.roundedRect(
+        14 + colWidth + colGap,
+        boxTop,
+        colWidth,
+        boxHeight,
+        2,
+        2,
+        "FD",
+      );
 
       doc.setFontSize(8);
       doc.setTextColor(234, 88, 12);
@@ -638,7 +732,12 @@ export default function ProformaPage() {
         ["Customer:", item.customer_name || "-"],
         ["Assignee:", item.assignee || "-"],
         ["Quotation:", item.quotation_no || "-"],
-        ["Created:", item.created_at ? new Date(item.created_at).toLocaleDateString("en-GB") : "-"],
+        [
+          "Created:",
+          item.created_at
+            ? new Date(item.created_at).toLocaleDateString("en-GB")
+            : "-",
+        ],
       ];
       const rightRows = [
         ["PI Number:", piNumber],
@@ -688,12 +787,24 @@ export default function ProformaPage() {
       autoTable(doc, {
         startY: cursorY + 2,
         head: [["#", "Date", "Description", "Paid %", "Amount", "Status"]],
-        body: historyRowsA.length > 0 ? historyRowsA : [["-", "-", "No follow-up recorded", "-", "-", "-"]],
+        body:
+          historyRowsA.length > 0
+            ? historyRowsA
+            : [["-", "-", "No follow-up recorded", "-", "-", "-"]],
         theme: "grid",
         styles: { fontSize: 8.5, cellPadding: 2.5, textColor: [40, 40, 40] },
-        headStyles: { fillColor: [234, 88, 12], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8.5 },
+        headStyles: {
+          fillColor: [234, 88, 12],
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+          fontSize: 8.5,
+        },
         alternateRowStyles: { fillColor: [255, 247, 237] },
-        columnStyles: { 0: { cellWidth: 10 }, 3: { cellWidth: 22 }, 5: { cellWidth: 24 } },
+        columnStyles: {
+          0: { cellWidth: 10 },
+          3: { cellWidth: 22 },
+          5: { cellWidth: 24 },
+        },
         margin: { left: 14, right: 14 },
       });
 
@@ -717,17 +828,32 @@ export default function ProformaPage() {
       autoTable(doc, {
         startY: cursorY + 2,
         head: [["#", "Date", "Description", "Paid %", "Amount", "Status"]],
-        body: historyRowsB.length > 0 ? historyRowsB : [["-", "-", "No follow-up recorded", "-", "-", "-"]],
+        body:
+          historyRowsB.length > 0
+            ? historyRowsB
+            : [["-", "-", "No follow-up recorded", "-", "-", "-"]],
         theme: "grid",
         styles: { fontSize: 8.5, cellPadding: 2.5, textColor: [40, 40, 40] },
-        headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255], fontStyle: "bold", fontSize: 8.5 },
+        headStyles: {
+          fillColor: [37, 99, 235],
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+          fontSize: 8.5,
+        },
         alternateRowStyles: { fillColor: [239, 246, 255] },
-        columnStyles: { 0: { cellWidth: 10 }, 3: { cellWidth: 22 }, 5: { cellWidth: 24 } },
+        columnStyles: {
+          0: { cellWidth: 10 },
+          3: { cellWidth: 22 },
+          5: { cellWidth: 24 },
+        },
         margin: { left: 14, right: 14 },
       });
 
       cursorY = doc.lastAutoTable.finalY + 12;
-      if (cursorY > 250) { doc.addPage(); cursorY = 20; }
+      if (cursorY > 250) {
+        doc.addPage();
+        cursorY = 20;
+      }
 
       doc.setFontSize(10);
       doc.setTextColor(40, 40, 40);
@@ -757,7 +883,8 @@ export default function ProformaPage() {
       });
 
       const finalBoxY = cursorY - 4 + summaryRows.length * 7 + 3;
-      const finalBoxColor = statusLabel === "WON / PAID" ? [22, 163, 74] : [234, 88, 12];
+      const finalBoxColor =
+        statusLabel === "WON / PAID" ? [22, 163, 74] : [234, 88, 12];
       doc.setFillColor(...finalBoxColor);
       doc.roundedRect(summaryX, finalBoxY, 78, 8, 1.5, 1.5, "F");
       doc.setTextColor(255, 255, 255);
@@ -766,7 +893,10 @@ export default function ProformaPage() {
       doc.text("Final Status", summaryX + 3, finalBoxY + 5.5);
       doc.text(statusLabel, summaryX + 75, finalBoxY + 5.5, { align: "right" });
 
-      const safeName = (item.customer_name || "Customer").replace(/[^a-zA-Z0-9]/g, "_");
+      const safeName = (item.customer_name || "Customer").replace(
+        /[^a-zA-Z0-9]/g,
+        "_",
+      );
       doc.save(`${piNumber.replace(/\//g, "_")}_${safeName}.pdf`);
       toast.success("Invoice downloaded successfully");
     } catch (err) {
@@ -784,22 +914,33 @@ export default function ProformaPage() {
   }, [filters, itemsPerPage, activeTab]);
 
   const tabFilteredData = piData.filter((item) => {
-    const stage = String(item.stage || "pending").trim().toLowerCase();
+    const stage = String(item.stage || "pending")
+      .trim()
+      .toLowerCase();
     if (activeTab === "pending") return stage !== "completed";
     if (activeTab === "completed") return stage === "completed";
     return true;
   });
 
   const pendingCount = piData.filter(
-    (d) => String(d.stage || "pending").trim().toLowerCase() !== "completed"
+    (d) =>
+      String(d.stage || "pending")
+        .trim()
+        .toLowerCase() !== "completed",
   ).length;
   const completedCount = piData.filter(
-    (d) => String(d.stage || "").trim().toLowerCase() === "completed"
+    (d) =>
+      String(d.stage || "")
+        .trim()
+        .toLowerCase() === "completed",
   ).length;
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const paginatedData = tabFilteredData.slice(indexOfFirstItem, indexOfLastItem);
+  const paginatedData = tabFilteredData.slice(
+    indexOfFirstItem,
+    indexOfLastItem,
+  );
   const totalPages = Math.ceil(tabFilteredData.length / itemsPerPage);
 
   const getSlidingPages = () => {
@@ -808,8 +949,14 @@ export default function ProformaPage() {
       return Array.from({ length: totalPages }, (_, i) => i + 1);
     let start = currentPage - Math.floor(visibleCount / 2);
     let end = currentPage + Math.floor(visibleCount / 2);
-    if (start < 1) { start = 1; end = visibleCount; }
-    if (end > totalPages) { end = totalPages; start = totalPages - visibleCount + 1; }
+    if (start < 1) {
+      start = 1;
+      end = visibleCount;
+    }
+    if (end > totalPages) {
+      end = totalPages;
+      start = totalPages - visibleCount + 1;
+    }
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   };
 
@@ -822,15 +969,24 @@ export default function ProformaPage() {
         <div className="bg-white w-full border-gray-100 p-3 mt-1 mb-5 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
           <div className="hidden sm:flex items-center text-gray-700 w-full sm:w-auto">
             <p className="flex items-center flex-wrap">
-              <Link href="/dashboard" className="mx-2 text-xl text-gray-400 hover:text-indigo-600">
+              <Link
+                href="/dashboard"
+                className="mx-2 text-xl text-gray-400 hover:text-indigo-600"
+              >
                 <i className="bi bi-house"></i>
               </Link>
               <i className="bi bi-chevron-right text-[10px]"></i>
-              <Link href="#" className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold">
+              <Link
+                href="#"
+                className="mx-2 text-md text-gray-700 hover:text-indigo-600 "
+              >
                 Sales
               </Link>
               <i className="bi bi-chevron-right text-[10px]"></i>
-              <Link href="/sales/proforma" className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold">
+              <Link
+                href="/sales/proforma"
+                className="mx-2 text-md text-gray-700 hover:text-indigo-600 "
+              >
                 Proforma
               </Link>
             </p>
@@ -842,7 +998,9 @@ export default function ProformaPage() {
                 className="w-full flex items-center justify-center gap-2 bg-orange-50 text-orange-500 px-4 py-2 rounded-sm text-sm font-bold tracking-wide transition-all shadow-sm border border-orange-100"
               >
                 <i className="bi bi-download text-base"></i> Export
-                <i className={`bi bi-chevron-down text-xs transition-transform ${showExportMenu ? "rotate-180" : ""}`}></i>
+                <i
+                  className={`bi bi-chevron-down text-xs transition-transform ${showExportMenu ? "rotate-180" : ""}`}
+                ></i>
               </button>
               {showExportMenu && (
                 <div className="absolute right-0 top-full mt-1.5 w-44 bg-white rounded-sm shadow-lg border border-gray-100 overflow-hidden z-50">
@@ -850,14 +1008,16 @@ export default function ProformaPage() {
                     onClick={exportToExcel}
                     className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-all text-left"
                   >
-                    <i className="bi bi-file-earmark-excel text-green-600 text-base"></i> Export Excel
+                    <i className="bi bi-file-earmark-excel text-green-600 text-base"></i>{" "}
+                    Export Excel
                   </button>
                   <div className="h-px bg-gray-100 mx-3"></div>
                   <button
                     onClick={exportToPDF}
                     className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-all text-left"
                   >
-                    <i className="bi bi-file-earmark-pdf text-red-600 text-base"></i> Export PDF
+                    <i className="bi bi-file-earmark-pdf text-red-600 text-base"></i>{" "}
+                    Export PDF
                   </button>
                 </div>
               )}
@@ -866,7 +1026,7 @@ export default function ProformaPage() {
         </div>
 
         {/* FILTER SECTION */}
-        <div className="mx-6 md:hidden mt-3 relative z-40">
+      <div className="mx-6 md:hidden mt-3 relative z-40">
           <button
             onClick={() => setShowMobileFilters(!showMobileFilters)}
             className="w-full flex items-center justify-between text-orange-500 font-semibold bg-orange-50 px-4 py-2 rounded-sm border border-orange-200 shadow-sm"
@@ -874,67 +1034,190 @@ export default function ProformaPage() {
             <span className="flex items-center gap-2">
               <i className="bi bi-funnel"></i> Filters
             </span>
-            <i className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}></i>
+            <i
+              className={`bi bi-chevron-down transition-transform ${showMobileFilters ? "rotate-180" : ""}`}
+            ></i>
           </button>
         </div>
 
         <div
           className={`${showMobileFilters ? "absolute left-6 right-6 top-[170px] bg-white p-5 shadow-2xl rounded-lg grid grid-cols-2 gap-3 mt-1 z-[999] ring-2 ring-orange-300" : "hidden"} md:mx-6 md:flex md:flex-wrap md:items-center md:gap-x-3 md:gap-y-2 md:mt-3 md:mb-5 md:relative md:bg-transparent md:p-0 md:shadow-none md:ring-0`}
         >
-          <input name="customer_name" value={filters.customer_name} onChange={handleFilterChange} placeholder="Customer" className="p-2 w-full md:w-45 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-600 text-sm" />
-          <input name="quotation_no" value={filters.quotation_no} onChange={handleFilterChange} placeholder="Quotation No" className="p-2 w-full md:w-45 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-600 text-sm" />
-          <select name="assignee" value={filters.assignee} onChange={handleFilterChange} className="p-2 w-full md:w-45 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-400 text-sm">
+          <div className="flex items-center gap-2 px-2 w-full md:w-45 bg-white border border-indigo-400 md:border rounded-sm text-sm">
+                      <User size={16} className="text-violet-600" />
+            <input
+              name="customer_name"
+              value={filters.customer_name}
+              onChange={handleFilterChange}
+              placeholder="Customer"
+              className="p-2 w-full focus:outline-none text-gray-600 text-sm bg-transparent"
+            />
+          </div>
+
+          <div className="flex items-center gap-2 px-2 w-full md:w-45 bg-white border border-indigo-400 md:border rounded-sm text-sm">
+                    <FileText size={16} className="text-blue-500" />
+            <input
+              name="quotation_no"
+              value={filters.quotation_no}
+              onChange={handleFilterChange}
+              placeholder="Quotation No"
+              className="p-2 w-full focus:outline-none text-gray-600 text-sm bg-transparent"
+            />
+          </div>
+
+          <select
+            name="assignee"
+            value={filters.assignee}
+            onChange={handleFilterChange}
+            className="p-2 w-full md:w-45 bg-white border border-indigo-400 md:border rounded-sm focus:outline-none text-gray-400 text-sm"
+          >
             <option value="">Assignee</option>
             {assigneeList.map((item) => (
-              <option key={item.id} value={item.name}>{item.name}</option>
+              <option key={item.id} value={item.name}>
+                {item.name}
+              </option>
             ))}
           </select>
-          <select name="status" value={filters.status} onChange={handleFilterChange} className="p-2 w-full md:w-45 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-400 text-sm">
+
+          <select
+            name="status"
+            value={filters.status}
+            onChange={handleFilterChange}
+            className="p-2 w-full md:w-45 bg-white border border-indigo-400 md:border rounded-sm focus:outline-none text-gray-400 text-sm"
+          >
             <option value="">Status</option>
             <option value="draft">Draft</option>
             <option value="partial">Pending</option>
             <option value="paid">Won</option>
           </select>
-          <div className="flex items-center px-2 w-full md:w-58 bg-white border border-orange-300 md:border rounded-sm text-gray-400 text-sm col-span-2 md:col-span-1">
+
+          <div className="flex items-center px-2 w-full md:w-58 bg-white border border-indigo-400 md:border rounded-sm text-gray-400 text-sm col-span-2 md:col-span-1">
             <span className="mx-1 text-gray-400 whitespace-nowrap">From</span>
-            <input type="date" name="from_date" value={filters.from_date} onChange={handleFilterChange} className="p-2 w-full md:w-35 outline-none" />
+            <input
+              type="date"
+              name="from_date"
+              value={filters.from_date}
+              onChange={handleFilterChange}
+              className="p-2 w-full md:w-35 outline-none"
+            />
           </div>
-          <div className="flex items-center px-2 w-full md:w-53 bg-white border border-orange-300 md:border rounded-sm text-gray-400 text-sm col-span-2 md:col-span-1">
+
+          <div className="flex items-center px-2 w-full md:w-53 bg-white border border-indigo-400 md:border rounded-sm text-gray-400 text-sm col-span-2 md:col-span-1">
             <span className="mx-1 text-gray-400 whitespace-nowrap">To</span>
-            <input type="date" name="to_date" value={filters.to_date} onChange={handleFilterChange} className="p-2 w-full md:w-35 outline-none" />
+            <input
+              type="date"
+              name="to_date"
+              value={filters.to_date}
+              onChange={handleFilterChange}
+              className="p-2 w-full md:w-35 outline-none"
+            />
           </div>
-          <input type="number" name="min_percentage" value={filters.min_percentage} onChange={handleFilterChange} placeholder="Min %" min="0" max="100" className="p-2 w-full md:w-24 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-600 text-sm" />
-          <input type="number" name="max_percentage" value={filters.max_percentage} onChange={handleFilterChange} placeholder="Max %" min="0" max="100" className="p-2 w-full md:w-24 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-600 text-sm" />
-          <input type="number" name="min_total" value={filters.min_total} onChange={handleFilterChange} placeholder="Min Rs." className="p-2 w-full md:w-32 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-600 text-sm" />
-          <input type="number" name="max_total" value={filters.max_total} onChange={handleFilterChange} placeholder="Max Rs." className="p-2 w-full md:w-32 bg-white border border-orange-300 md:border rounded-sm focus:outline-none text-gray-600 text-sm" />
+
+          <div className="flex items-center gap-1 px-2 w-full md:w-24 bg-white border border-indigo-400 md:border rounded-sm text-sm">
+            {/* <i className="bi bi-percent text-gray-400 text-xs"></i> */}
+            <input
+              type="number"
+              name="min_percentage"
+              value={filters.min_percentage}
+              onChange={handleFilterChange}
+              placeholder="Min %"
+              min="0"
+              max="100"
+              className="p-2 w-full focus:outline-none text-gray-600 text-sm bg-transparent"
+            />
+          </div>
+
+          <div className="flex items-center gap-1 px-2 w-full md:w-24 bg-white border border-indigo-400 md:border rounded-sm text-sm">
+            {/* <i className="bi bi-percent text-gray-400 text-xs"></i> */}
+            <input
+              type="number"
+              name="max_percentage"
+              value={filters.max_percentage}
+              onChange={handleFilterChange}
+              placeholder="Max %"
+              min="0"
+              max="100"
+              className="p-2 w-full focus:outline-none text-gray-600 text-sm bg-transparent"
+            />
+          </div>
+
+          <div className="flex items-center gap-1 px-2 w-full md:w-32 bg-white border border-indigo-400 md:border rounded-sm text-sm">
+            <i className="bi bi-currency-rupee text-gray-400 text-xs"></i>
+            <input
+              type="number"
+              name="min_total"
+              value={filters.min_total}
+              onChange={handleFilterChange}
+              placeholder="Min Rs."
+              className="p-2 w-full focus:outline-none text-gray-600 text-sm bg-transparent"
+            />
+          </div>
+
+          <div className="flex items-center gap-1 px-2 w-full md:w-32 bg-white border border-indigo-400 md:border rounded-sm text-sm">
+            <i className="bi bi-currency-rupee text-gray-400 text-xs"></i>
+            <input
+              type="number"
+              name="max_total"
+              value={filters.max_total}
+              onChange={handleFilterChange}
+              placeholder="Max Rs."
+              className="p-2 w-full focus:outline-none text-gray-600 text-sm bg-transparent"
+            />
+          </div>
+
           <div className="flex gap-2 col-span-2 md:col-span-1">
-            <button onClick={() => { resetFilters(); setShowMobileFilters(false); }} className="border border-gray-300 w-full md:w-auto cursor-pointer rounded-sm p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm font-semibold text-center px-6">
-              Clear
+            <button
+              onClick={() => {
+                resetFilters();
+                setShowMobileFilters(false);
+              }}
+              className="flex items-center justify-center gap-2 w-full md:w-auto cursor-pointer rounded-sm px-5 py-2 bg-indigo-100 text-indigo-600  text-sm font-semibold text-center transition-colors"
+            >
+              <i className="bi bi-arrow-counterclockwise"></i> Clear Filter
             </button>
-            <button onClick={() => setShowMobileFilters(false)} className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-2 bg-orange-100 text-orange-700 hover:bg-orange-200 text-sm font-semibold text-center px-6">
+            <button
+              onClick={() => setShowMobileFilters(false)}
+              className="md:hidden border border-orange-300 w-full cursor-pointer rounded-sm p-2 bg-orange-100 text-orange-700 hover:bg-orange-200 text-sm font-semibold text-center px-6"
+            >
               Apply
             </button>
           </div>
         </div>
 
         {/* TABS */}
-        <div className="mx-7 mt-2 mb-0 flex items-center gap-0 border-b border-gray-200 bg-white px-2 pt-2 rounded-t-sm">
+      <div className="mx-7 mt-2 mb-0 flex items-center gap-0 border-b border-gray-200 bg-white px-2 pt-2 rounded-t-sm">
           <button
-            onClick={() => { setActiveTab("pending"); setCurrentPage(1); }}
+            onClick={() => {
+              setActiveTab("pending");
+              setCurrentPage(1);
+            }}
             className={`px-5 py-2.5 text-sm font-semibold transition-all relative rounded-t-md ${activeTab === "pending" ? "text-blue-600 border-b-2 border-blue-500 bg-white" : "text-gray-400 hover:text-gray-600 border-b-2 border-transparent"}`}
           >
-            Pending
-            <span className={`ml-2 text-xs px-2 py-0.5 rounded-full font-bold ${activeTab === "pending" ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-400"}`}>
-              {pendingCount}
+            <span className="inline-flex items-center gap-1.5">
+              <i className="bi bi-clipboard-check"></i>
+              Pending
+              <span
+                className={`ml-1 text-xs px-2 py-0.5 rounded-full font-bold ${activeTab === "pending" ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-400"}`}
+              >
+                {pendingCount}
+              </span>
             </span>
           </button>
           <button
-            onClick={() => { setActiveTab("completed"); setCurrentPage(1); }}
+            onClick={() => {
+              setActiveTab("completed");
+              setCurrentPage(1);
+            }}
             className={`px-5 py-2.5 text-sm font-semibold transition-all relative rounded-t-md ${activeTab === "completed" ? "text-green-600 border-b-2 border-green-500 bg-white" : "text-gray-400 hover:text-gray-600 border-b-2 border-transparent"}`}
           >
-            Completed
-            <span className={`ml-2 text-xs px-2 py-0.5 rounded-full font-bold ${activeTab === "completed" ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"}`}>
-              {completedCount}
+            <span className="inline-flex items-center gap-1.5">
+              <i className="bi bi-check2-circle"></i>
+              Completed
+              <span
+                className={`ml-1 text-xs px-2 py-0.5 rounded-full font-bold ${activeTab === "completed" ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-400"}`}
+              >
+                {completedCount}
+              </span>
             </span>
           </button>
         </div>
@@ -945,13 +1228,50 @@ export default function ProformaPage() {
             {loading ? (
               <div className="text-center py-10 text-gray-400">Loading...</div>
             ) : (
-              <div className="overflow-x-auto overflow-y-scroll max-h-[500px] custom-scroll" style={{ overflowX: "scroll" }}>
+              <div
+                className="overflow-x-auto overflow-y-scroll max-h-[500px] custom-scroll"
+                style={{ overflowX: "scroll" }}
+              >
                 <table className="w-full text-sm whitespace-nowrap">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-100">
-                      {["#", "PI No", "PI Date", "Customer Name", "Quotation No", "Source", "Reference", "Assignee", "Total", "PI %", "Status", "Stage", "Follow-Up", "Quotation", "Download"].map((h) => (
-                        <th key={h} className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    <tr className="bg-indigo-50 border-b border-gray-100">
+                      {[
+                        "#",
+                        "PI No",
+                        "PI Date",
+                        "Customer Name",
+                        "Quotation No",
+                        "Source",
+                        "Reference",
+                        "Assignee",
+                        "Total",
+                        "PI %",
+                        "Status",
+                        "Stage",
+                        "Follow-Up",
+                        "Quotation",
+                        "Download",
+                      ].map((h) => (
+                        <th
+                          key={h}
+                          className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider"
+                        >
                           {h}
+                          {[
+                            "PI No",
+                            "PI Date",
+                            "Customer Name",
+                            "Quotation No",
+                            "Source",
+                            "Total",
+                            "PI %",
+                            "Status",
+                          ].includes(h) && (
+                            <>
+                              {" "}
+                              <i className="bi bi-arrow-down-up text-slate-400 text-[10px]"></i>
+                            </>
+                          )}
                         </th>
                       ))}
                     </tr>
@@ -962,28 +1282,73 @@ export default function ProformaPage() {
                         const globalIndex = indexOfFirstItem + index;
                         const currentStage = item.stage || "pending";
                         return (
-                          <tr key={item.pi_id} className="border-b border-gray-50 hover:bg-indigo-50/30 transition-colors">
+                          <tr
+                            key={item.pi_id}
+                            className="border-b border-gray-50 hover:bg-indigo-50/30 transition-colors"
+                          >
                             <td className="py-3 px-3">{globalIndex + 1}</td>
-                            <td className="py-3 px-3 font-medium text-gray-800">{formatPINumber(globalIndex)}</td>
-                            <td className="py-3 px-3 text-gray-500">
-                              {item.pi_date ? new Date(item.pi_date).toLocaleDateString("en-IN") : "-"}
+                            <td className="py-3 px-3 font-semibold text-slate-800">
+                              {formatPINumber(globalIndex)}
                             </td>
-                            <td className="py-3 px-3 text-orange-500">{item.customer_name || "-"}</td>
-                            <td className="py-3 px-3 text-gray-600">{item.quotation_no || "-"}</td>
-                            <td className="py-3 px-3 text-gray-500">{item.source || "-"}</td>
-                            <td className="py-3 px-3 text-gray-500">{item.reference || "-"}</td>
+                            <td className="py-3 px-3 text-gray-500">
+                              {item.pi_date
+                                ? new Date(item.pi_date).toLocaleDateString(
+                                    "en-IN",
+                                  )
+                                : "-"}
+                            </td>
+                            <td className="py-3 px-3 text-blue-500 font-medium">
+                              {item.customer_name || "-"}
+                            </td>
+                            <td className="py-3 px-3 font-semibold text-slate-700">
+                              {item.quotation_no || "-"}
+                            </td>
+                            <td className="py-3 px-3">
+                              {item.source ? (
+                                <span
+                                  className={`inline-block px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap ${
+                                    item.source === "Walk In"
+                                      ? "bg-yellow-50 text-yellow-600"
+                                      : item.source === "Website"
+                                        ? "bg-fuchsia-50 text-fuchsia-600"
+                                        : item.source === "Reference"
+                                          ? "bg-purple-50 text-purple-600"
+                                          : item.source === "Instagram"
+                                            ? "bg-cyan-50 text-cyan-600"
+                                            : item.source === "Facebook"
+                                              ? "bg-blue-50 text-blue-600"
+                                              : "bg-pink-50 text-pink-600"
+                                  }`}
+                                >
+                                  {item.source}
+                                </span>
+                              ) : (
+                                "-"
+                              )}
+                            </td>
+                            <td className="py-3 px-3 font-semibold text-slate-700">
+                              {item.reference || "-"}
+                            </td>
                             <td className="py-3 px-3">
                               {item.assignee ? (
                                 <div className="flex gap-1 items-center">
-                                  {String(item.assignee).split(",").map((name, i) => (
-                                    <div key={i} title={name.trim()} className="px-3 py-1.5 bg-blue-800 text-white rounded-full font-semibold text-sm flex justify-center items-center min-w-[28px] text-center select-none">
-                                      {name.trim().charAt(0).toUpperCase()}
-                                    </div>
-                                  ))}
+                                  {String(item.assignee)
+                                    .split(",")
+                                    .map((name, i) => (
+                                      <div
+                                        key={i}
+                                        title={name.trim()}
+                                        className="px-3 py-1.5 bg-blue-800 text-white rounded-full font-semibold text-sm flex justify-center items-center min-w-[28px] text-center select-none"
+                                      >
+                                        {name.trim().charAt(0).toUpperCase()}
+                                      </div>
+                                    ))}
                                 </div>
-                              ) : "-"}
+                              ) : (
+                                "-"
+                              )}
                             </td>
-                            <td className="py-3 px-3 font-medium text-gray-800">
+                            <td className="py-3 px-3 font-semibold text-slate-800">
                               Rs.{Number(item.total).toLocaleString()}
                             </td>
                             <td className="py-3 px-3">
@@ -991,22 +1356,38 @@ export default function ProformaPage() {
                                 <div className="w-16 bg-gray-100 rounded-full h-1.5">
                                   <div
                                     className={`h-1.5 rounded-full transition-all ${Number(item.proforma_percentage) >= 100 ? "bg-green-500" : Number(item.proforma_percentage) >= 50 ? "bg-orange-400" : "bg-blue-400"}`}
-                                    style={{ width: `${Math.min(Number(item.proforma_percentage), 100)}%` }}
+                                    style={{
+                                      width: `${Math.min(Number(item.proforma_percentage), 100)}%`,
+                                    }}
                                   ></div>
                                 </div>
-                                <span className="font-semibold text-gray-800 text-xs">{item.proforma_percentage}%</span>
+                                <span className="font-semibold text-slate-800 text-xs">
+                                  {item.proforma_percentage}%
+                                </span>
                               </div>
                             </td>
                             <td className="py-3 px-3">
-                              <span className={`border rounded-sm px-3 py-1 text-xs font-semibold ${item.status === "paid" ? "border-green-200 bg-green-50 text-green-700" : ""} ${item.status === "partial" ? "border-orange-200 bg-orange-50 text-orange-700" : ""} ${item.status === "draft" ? "border-gray-200 bg-gray-50 text-gray-700" : ""} ${item.status === "sent" ? "border-blue-200 bg-blue-50 text-blue-700" : ""} ${item.status === "cancelled" ? "border-red-200 bg-red-50 text-red-700" : ""}`}>
-                                {item.status === "paid" ? "Won" : item.status === "partial" ? "Pending" : item.status === "sent" ? "Sent" : item.status === "cancelled" ? "Cancelled" : "Draft"}
+                              <span
+                                className={`border rounded-md px-3 py-1 text-xs font-semibold ${item.status === "paid" ? "border-green-200 bg-green-50 text-green-600" : ""} ${item.status === "partial" ? "border-orange-200 bg-orange-50 text-orange-600" : ""} ${item.status === "draft" ? "border-gray-200 bg-gray-50 text-gray-600" : ""} ${item.status === "sent" ? "border-blue-200 bg-blue-50 text-blue-600" : ""} ${item.status === "cancelled" ? "border-red-200 bg-red-50 text-red-600" : ""}`}
+                              >
+                                {item.status === "paid"
+                                  ? "Won"
+                                  : item.status === "partial"
+                                    ? "Pending"
+                                    : item.status === "sent"
+                                      ? "Sent"
+                                      : item.status === "cancelled"
+                                        ? "Cancelled"
+                                        : "Draft"}
                               </span>
                             </td>
                             <td className="py-3 px-3">
                               <select
                                 value={currentStage}
-                                onChange={(e) => updateStage(item.pi_id, e.target.value)}
-                                className={`text-xs font-semibold px-2 py-1.5 rounded-sm border cursor-pointer outline-none transition-all ${currentStage === "completed" ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100" : "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"}`}
+                                onChange={(e) =>
+                                  updateStage(item.pi_id, e.target.value)
+                                }
+                                className={`text-xs font-semibold px-2 py-1.5 rounded-md border cursor-pointer outline-none transition-all ${currentStage === "completed" ? "bg-green-50 border-green-200 text-green-600 hover:bg-green-100" : "bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100"}`}
                               >
                                 <option value="pending">Pending</option>
                                 <option value="completed">Completed</option>
@@ -1025,14 +1406,16 @@ export default function ProformaPage() {
                                   setActivePartTab(getDefaultTab(item));
                                   setShowModal(true);
                                 }}
-                                className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center mx-auto hover:bg-gray-100 cursor-pointer"
+                                className="w-9 h-9 rounded-full border border-blue-300 text-blue-500 flex items-center justify-center mx-auto hover:bg-blue-50 cursor-pointer transition-all"
                               >
                                 <i className="bi bi-plus text-lg"></i>
                               </button>
                             </td>
                             <td className="py-3 px-3 text-center">
                               <button
-                                onClick={() => handleQuotationView(item.quotation_id)}
+                                onClick={() =>
+                                  handleQuotationView(item.quotation_id)
+                                }
                                 title="View Quotation File"
                                 className="group relative w-9 h-9 rounded-full border border-blue-200 bg-blue-50 flex items-center justify-center mx-auto hover:bg-blue-500 hover:border-blue-500 transition-all cursor-pointer"
                               >
@@ -1042,7 +1425,9 @@ export default function ProformaPage() {
                             <td className="py-3 px-3 text-center">
                               <button
                                 title="Download PI PDF"
-                                onClick={() => downloadInvoicePDF(item, globalIndex)}
+                                onClick={() =>
+                                  downloadInvoicePDF(item, globalIndex)
+                                }
                                 className="group relative w-9 h-9 rounded-full border border-green-200 bg-green-50 flex items-center justify-center mx-auto hover:bg-green-500 hover:border-green-500 transition-all cursor-pointer"
                               >
                                 <i className="bi bi-file-earmark-pdf text-green-600 group-hover:text-white text-base transition-all"></i>
@@ -1053,7 +1438,10 @@ export default function ProformaPage() {
                       })
                     ) : (
                       <tr>
-                        <td colSpan="15" className="text-center py-10 text-gray-400">
+                        <td
+                          colSpan="15"
+                          className="text-center py-10 text-gray-400"
+                        >
                           No Data Found
                         </td>
                       </tr>
@@ -1063,22 +1451,19 @@ export default function ProformaPage() {
 
                 {/* PAGINATION */}
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-slate-500 font-medium">Rows per page:</span>
-                    <select
-                      value={itemsPerPage}
-                      onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                      className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 bg-white focus:outline-none cursor-pointer font-medium"
-                    >
-                      {[10, 20, 100, 200].map((size) => (
-                        <option key={size} value={size}>{size}</option>
-                      ))}
-                    </select>
+                  {/* Left side: Showing X to Y of Z entries */}
+                  <div className="text-sm text-slate-600 font-semibold">
+                    Showing {paginatedData.length === 0 ? 0 : indexOfFirstItem + 1}{" "}
+                    to {indexOfFirstItem + paginatedData.length} entries
                   </div>
+
+                  {/* Center: Navigation buttons */}
                   {totalPages > 1 && (
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                        onClick={() =>
+                          setCurrentPage((prev) => Math.max(prev - 1, 1))
+                        }
                         disabled={currentPage === 1}
                         className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed"
                       >
@@ -1088,13 +1473,17 @@ export default function ProformaPage() {
                         <button
                           key={page}
                           onClick={() => setCurrentPage(page)}
-                          className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${currentPage === page ? "bg-[#212121] text-white shadow-md" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                          className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${currentPage === page ? "bg-indigo-600 text-white shadow-md shadow-indigo-200" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}
                         >
                           {page}
                         </button>
                       ))}
                       <button
-                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                        onClick={() =>
+                          setCurrentPage((prev) =>
+                            Math.min(prev + 1, totalPages),
+                          )
+                        }
                         disabled={currentPage === totalPages}
                         className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed"
                       >
@@ -1102,6 +1491,27 @@ export default function ProformaPage() {
                       </button>
                     </div>
                   )}
+
+                  {/* Right side: Rows per page selector */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-slate-500 font-medium">
+                      Rows per page:
+                    </span>
+                    <select
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="border border-indigo-200 rounded-lg px-3 py-1.5 text-sm text-indigo-600 font-semibold bg-white focus:outline-none cursor-pointer"
+                    >
+                      {[10, 20, 100, 200].map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
             )}
@@ -1110,397 +1520,487 @@ export default function ProformaPage() {
       </div>
 
       {/* ── FOLLOW-UP MODAL ── */}
-      {showModal && selectedPI && (() => {
-        const { base9, base18 } = getBaseAmounts(selectedPI);
-        const { used9, used18 } = getUsedSplitPct(selectedPI, editing?.id);
+      {showModal &&
+        selectedPI &&
+        (() => {
+          const { base9, base18 } = getBaseAmounts(selectedPI);
+          const { used9, used18 } = getUsedSplitPct(selectedPI, editing?.id);
 
-        const entered9 = Number(pct9 || 0);
-        const entered18 = Number(pct18 || 0);
+          const entered9 = Number(pct9 || 0);
+          const entered18 = Number(pct18 || 0);
 
-        const remaining9 = 100 - used9;
-        const remaining18 = 100 - used18;
+          const remaining9 = 100 - used9;
+          const remaining18 = 100 - used18;
 
-        const after9 = remaining9 - entered9;
-        const after18 = remaining18 - entered18;
+          const after9 = remaining9 - entered9;
+          const after18 = remaining18 - entered18;
 
-        const afterAmt9 = (base9 * after9) / 100;
-        const afterAmt18 = (base18 * after18) / 100;
+          const afterAmt9 = (base9 * after9) / 100;
+          const afterAmt18 = (base18 * after18) / 100;
 
-        const over9 = base9 > 0 && after9 < 0 && entered9 > 0;
-        const over18 = base18 > 0 && after18 < 0 && entered18 > 0;
-        const isDisabled = over9 || over18 || submitLoading || updateLoading;
+          const over9 = base9 > 0 && after9 < 0 && entered9 > 0;
+          const over18 = base18 > 0 && after18 < 0 && entered18 > 0;
+          const isDisabled = over9 || over18 || submitLoading || updateLoading;
 
-        const activeParts = (base9 > 0 ? 1 : 0) + (base18 > 0 ? 1 : 0);
-        const totalUsed = (base9 > 0 ? used9 : 0) + (base18 > 0 ? used18 : 0);
-        const totalEntered = (base9 > 0 ? entered9 : 0) + (base18 > 0 ? entered18 : 0);
-        const avgUsed = activeParts > 0 ? totalUsed / activeParts : 0;
-        const avgEntered = activeParts > 0 ? totalEntered / activeParts : 0;
-        const barFill = Math.min(avgUsed + avgEntered, 100);
-        const barOver = over9 || over18;
+          const activeParts = (base9 > 0 ? 1 : 0) + (base18 > 0 ? 1 : 0);
+          const totalUsed = (base9 > 0 ? used9 : 0) + (base18 > 0 ? used18 : 0);
+          const totalEntered =
+            (base9 > 0 ? entered9 : 0) + (base18 > 0 ? entered18 : 0);
+          const avgUsed = activeParts > 0 ? totalUsed / activeParts : 0;
+          const avgEntered = activeParts > 0 ? totalEntered / activeParts : 0;
+          const barFill = Math.min(avgUsed + avgEntered, 100);
+          const barOver = over9 || over18;
 
-        const allFollowUps = selectedPI.follow_ups || [];
-        const historyA = allFollowUps.filter((f) => Number(f.proforma_percentage_9 || 0) > 0);
-        const historyB = allFollowUps.filter((f) => Number(f.proforma_percentage_18 || 0) > 0);
-        const shownHistory = activePartTab === "a" ? historyA : historyB;
+          const allFollowUps = selectedPI.follow_ups || [];
+          const historyA = allFollowUps.filter(
+            (f) => Number(f.proforma_percentage_9 || 0) > 0,
+          );
+          const historyB = allFollowUps.filter(
+            (f) => Number(f.proforma_percentage_18 || 0) > 0,
+          );
+          const shownHistory = activePartTab === "a" ? historyA : historyB;
 
-        return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-white w-full max-w-[980px] rounded-2xl shadow-2xl border border-gray-100 overflow-hidden max-h-[95vh] overflow-y-auto">
-
-              {/* Header */}
-              <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-orange-50 to-white">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-orange-500 inline-block"></span>
-                  <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    Update Proforma Activities
-                  </h2>
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+              <div className="bg-white w-full max-w-[980px] rounded-2xl shadow-2xl border border-gray-100 overflow-hidden max-h-[95vh] overflow-y-auto">
+                {/* Header */}
+                <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-orange-50 to-white">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-orange-500 inline-block"></span>
+                    <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                      Update Proforma Activities
+                    </h2>
+                  </div>
+                  <button
+                    onClick={resetModal}
+                    className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-100 hover:bg-orange-100 text-gray-400 hover:text-orange-500 transition-all"
+                  >
+                    ✕
+                  </button>
                 </div>
-                <button
-                  onClick={resetModal}
-                  className="w-7 h-7 flex items-center justify-center rounded-full bg-gray-100 hover:bg-orange-100 text-gray-400 hover:text-orange-500 transition-all"
-                >
-                  ✕
-                </button>
-              </div>
 
-              {/* Body */}
-              <div className="flex flex-col md:flex-row">
-
-                {/* ── LEFT PANEL ── */}
-                <div className="w-full md:w-1/2 px-6 py-5 border-b md:border-b-0 md:border-r border-gray-100">
-
-                  {/* Part Tabs */}
-                  <div className="flex border-b border-gray-200 mb-4">
-                    <button
-                      onClick={() => base9 > 0 && setActivePartTab("a")}
-                      disabled={base9 === 0}
-                      className={`px-5 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-all ${
-                        base9 === 0
-                          ? "border-transparent text-gray-300 cursor-not-allowed opacity-40"
-                          : activePartTab === "a"
-                          ? "border-orange-500 text-orange-600"
-                          : "border-transparent text-gray-400 hover:text-gray-600"
-                      }`}
-                    >
-                      Other Charges
-                      {base9 === 0 && <span className="ml-1 text-[10px]">🔒</span>}
-                    </button>
-                    <button
-                      onClick={() => base18 > 0 && setActivePartTab("b")}
-                      disabled={base18 === 0}
-                      className={`px-5 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-all ${
-                        base18 === 0
-                          ? "border-transparent text-gray-300 cursor-not-allowed opacity-40"
-                          : activePartTab === "b"
-                          ? "border-blue-500 text-blue-600"
-                          : "border-transparent text-gray-400 hover:text-gray-600"
-                      }`}
-                    >
-                      Project Value
-                      {base18 === 0 && <span className="ml-1 text-[10px]">🔒</span>}
-                    </button>
-                  </div>
-
-                  {/* Summary */}
-                  <div className="space-y-1 text-sm mb-4">
-                    <div className="flex justify-between py-1.5 border-b border-gray-50">
-                      <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">Customer</span>
-                      <span className="font-medium text-gray-700">{selectedPI.customer_name}</span>
+                {/* Body */}
+                <div className="flex flex-col md:flex-row">
+                  {/* ── LEFT PANEL ── */}
+                  <div className="w-full md:w-1/2 px-6 py-5 border-b md:border-b-0 md:border-r border-gray-100">
+                    {/* Part Tabs */}
+                    <div className="flex border-b border-gray-200 mb-4">
+                      <button
+                        onClick={() => base9 > 0 && setActivePartTab("a")}
+                        disabled={base9 === 0}
+                        className={`px-5 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-all ${
+                          base9 === 0
+                            ? "border-transparent text-gray-300 cursor-not-allowed opacity-40"
+                            : activePartTab === "a"
+                              ? "border-orange-500 text-orange-600"
+                              : "border-transparent text-gray-400 hover:text-gray-600"
+                        }`}
+                      >
+                        Other Charges
+                        {base9 === 0 && (
+                          <span className="ml-1 text-[10px]">🔒</span>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => base18 > 0 && setActivePartTab("b")}
+                        disabled={base18 === 0}
+                        className={`px-5 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-all ${
+                          base18 === 0
+                            ? "border-transparent text-gray-300 cursor-not-allowed opacity-40"
+                            : activePartTab === "b"
+                              ? "border-blue-500 text-blue-600"
+                              : "border-transparent text-gray-400 hover:text-gray-600"
+                        }`}
+                      >
+                        Project Value
+                        {base18 === 0 && (
+                          <span className="ml-1 text-[10px]">🔒</span>
+                        )}
+                      </button>
                     </div>
-                    <div className="flex justify-between py-1.5 border-b border-gray-50">
-                      <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">Quotation</span>
-                      <span className="font-medium text-gray-700">{selectedPI.quotation_no || selectedPI.quotation_id || "-"}</span>
-                    </div>
-                    {activePartTab === "a" ? (
-                      <div className="flex justify-between py-1.5">
+
+                    {/* Summary */}
+                    <div className="space-y-1 text-sm mb-4">
+                      <div className="flex justify-between py-1.5 border-b border-gray-50">
                         <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">
-                          Part A Base (Other Charges, incl. tax)
+                          Customer
                         </span>
-                        <span className="font-semibold text-orange-500">
-                          Rs.{Number(base9).toLocaleString("en-IN")}
+                        <span className="font-medium text-gray-700">
+                          {selectedPI.customer_name}
                         </span>
                       </div>
-                    ) : (
-                      <div className="flex justify-between py-1.5">
+                      <div className="flex justify-between py-1.5 border-b border-gray-50">
                         <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">
-                          Part B Base (Project Value, incl. tax)
+                          Quotation
                         </span>
-                        <span className="font-semibold text-blue-600">
-                          Rs.{Number(base18).toLocaleString("en-IN")}
+                        <span className="font-medium text-gray-700">
+                          {selectedPI.quotation_no ||
+                            selectedPI.quotation_id ||
+                            "-"}
                         </span>
                       </div>
-                    )}
-                  </div>
+                      {activePartTab === "a" ? (
+                        <div className="flex justify-between py-1.5">
+                          <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">
+                            Part A Base (Other Charges, incl. tax)
+                          </span>
+                          <span className="font-semibold text-orange-500">
+                            Rs.{Number(base9).toLocaleString("en-IN")}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex justify-between py-1.5">
+                          <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">
+                            Part B Base (Project Value, incl. tax)
+                          </span>
+                          <span className="font-semibold text-blue-600">
+                            Rs.{Number(base18).toLocaleString("en-IN")}
+                          </span>
+                        </div>
+                      )}
+                    </div>
 
-                  {/* Overall progress bar */}
-                  <div className="mb-5 bg-gray-50 rounded-xl border border-gray-100 p-3">
-                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Overall Progress</p>
-                    <div className="w-full bg-white rounded-full h-2 border border-gray-200 overflow-hidden">
+                    {/* Overall progress bar */}
+                    <div className="mb-5 bg-gray-50 rounded-xl border border-gray-100 p-3">
+                      <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
+                        Overall Progress
+                      </p>
+                      <div className="w-full bg-white rounded-full h-2 border border-gray-200 overflow-hidden">
+                        <div
+                          className={`h-2 rounded-full transition-all duration-300 ${barOver ? "bg-red-500" : barFill >= 100 ? "bg-green-500" : "bg-orange-400"}`}
+                          style={{ width: `${barFill}%` }}
+                        ></div>
+                      </div>
+                      <div className="flex justify-between mt-1">
+                        <span className="text-xs text-gray-400">
+                          Used: {avgUsed.toFixed(1)}%
+                          {avgEntered > 0 && ` + ${avgEntered.toFixed(1)}% new`}
+                        </span>
+                        <span className="text-xs text-gray-400">100%</span>
+                      </div>
+                      <div className="flex gap-2 mt-2">
+                        {base9 > 0 && (
+                          <span className="text-[10px] bg-orange-50 border border-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-semibold">
+                            A: {used9.toFixed(1)}% used
+                          </span>
+                        )}
+                        {base18 > 0 && (
+                          <span className="text-[10px] bg-blue-50 border border-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-semibold">
+                            B: {used18.toFixed(1)}% used
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Part A Form */}
+                    {activePartTab === "a" && (
                       <div
-                        className={`h-2 rounded-full transition-all duration-300 ${barOver ? "bg-red-500" : barFill >= 100 ? "bg-green-500" : "bg-orange-400"}`}
-                        style={{ width: `${barFill}%` }}
-                      ></div>
-                    </div>
-                    <div className="flex justify-between mt-1">
-                      <span className="text-xs text-gray-400">
-                        Used: {avgUsed.toFixed(1)}%{avgEntered > 0 && ` + ${avgEntered.toFixed(1)}% new`}
-                      </span>
-                      <span className="text-xs text-gray-400">100%</span>
-                    </div>
-                    <div className="flex gap-2 mt-2">
-                      {base9 > 0 && (
-                        <span className="text-[10px] bg-orange-50 border border-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-semibold">
-                          A: {used9.toFixed(1)}% used
-                        </span>
-                      )}
-                      {base18 > 0 && (
-                        <span className="text-[10px] bg-blue-50 border border-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-semibold">
-                          B: {used18.toFixed(1)}% used
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Part A Form */}
-                  {activePartTab === "a" && (
-                    <div className={`rounded-xl border p-4 ${over9 ? "border-red-200 bg-red-50" : "border-orange-100 bg-orange-50/30"}`}>
-                      <div className="flex items-center justify-between mb-3">
-                        <p className="text-xs font-bold text-orange-600 uppercase tracking-widest">Part A — Other Charges</p>
-                        <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-semibold">
-                          Used: {used9.toFixed(1)}% | Rem: {remaining9.toFixed(1)}%
-                        </span>
-                      </div>
-                      <div className="flex gap-3 mb-2">
-                        <div className="flex-1">
-                          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Percentage</label>
-                          <div className="relative mt-1.5">
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              value={pct9}
-                              onChange={(e) => {
-                                const v = e.target.value;
-                                if (v === "") { handlePct9Change(""); return; }
-                                const n = Number(v);
-                                if (n >= 0 && n <= 100) handlePct9Change(n);
-                              }}
-                              className="w-full border border-gray-200 rounded-xl pl-3 pr-8 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-white"
-                              placeholder="0"
-                            />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">%</span>
-                          </div>
+                        className={`rounded-xl border p-4 ${over9 ? "border-red-200 bg-red-50" : "border-orange-100 bg-orange-50/30"}`}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-xs font-bold text-orange-600 uppercase tracking-widest">
+                            Part A — Other Charges
+                          </p>
+                          <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-semibold">
+                            Used: {used9.toFixed(1)}% | Rem:{" "}
+                            {remaining9.toFixed(1)}%
+                          </span>
                         </div>
-                        <div className="flex-1">
-                          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Amount</label>
-                          <div className="relative mt-1.5">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">Rs.</span>
-                            <input
-                              type="number"
-                              min="0"
-                              value={amt9}
-                              onChange={(e) => {
-                                const v = e.target.value;
-                                if (v === "") { handleAmt9Change(""); return; }
-                                handleAmt9Change(Number(v));
-                              }}
-                              className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-white"
-                              placeholder="0.00"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <div className={`flex justify-between text-xs font-semibold px-2 py-1.5 rounded-lg ${over9 ? "bg-red-100 text-red-600" : after9 === 0 && entered9 > 0 ? "bg-green-100 text-green-600" : "bg-white text-gray-500 border border-gray-100"}`}>
-                        <span>Remaining after entry:</span>
-                        <span>
-                          {over9
-                            ? `Over by ${Math.abs(after9).toFixed(2)}%`
-                            : entered9 > 0
-                            ? `${after9.toFixed(2)}% | Rs.${Number(afterAmt9).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
-                            : `${remaining9.toFixed(2)}% | Rs.${Number((base9 * remaining9) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Part B Form */}
-                  {activePartTab === "b" && (
-                    <div className={`rounded-xl border p-4 ${over18 ? "border-red-200 bg-red-50" : "border-blue-100 bg-blue-50/20"}`}>
-                      <div className="flex items-center justify-between mb-3">
-                        <p className="text-xs font-bold text-blue-600 uppercase tracking-widest">Part B — Project Value</p>
-                        <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-semibold">
-                          Used: {used18.toFixed(1)}% | Rem: {remaining18.toFixed(1)}%
-                        </span>
-                      </div>
-                      <div className="flex gap-3 mb-2">
-                        <div className="flex-1">
-                          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Percentage</label>
-                          <div className="relative mt-1.5">
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              value={pct18}
-                              onChange={(e) => {
-                                const v = e.target.value;
-                                if (v === "") { handlePct18Change(""); return; }
-                                const n = Number(v);
-                                if (n >= 0 && n <= 100) handlePct18Change(n);
-                              }}
-                              className="w-full border border-gray-200 rounded-xl pl-3 pr-8 py-2 text-sm focus:ring-1 focus:ring-blue-300 outline-none bg-white"
-                              placeholder="0"
-                            />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">%</span>
-                          </div>
-                        </div>
-                        <div className="flex-1">
-                          <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Amount</label>
-                          <div className="relative mt-1.5">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">Rs.</span>
-                            <input
-                              type="number"
-                              min="0"
-                              value={amt18}
-                              onChange={(e) => {
-                                const v = e.target.value;
-                                if (v === "") { handleAmt18Change(""); return; }
-                                handleAmt18Change(Number(v));
-                              }}
-                              className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-sm focus:ring-1 focus:ring-blue-300 outline-none bg-white"
-                              placeholder="0.00"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <div className={`flex justify-between text-xs font-semibold px-2 py-1.5 rounded-lg ${over18 ? "bg-red-100 text-red-600" : after18 === 0 && entered18 > 0 ? "bg-green-100 text-green-600" : "bg-white text-gray-500 border border-gray-100"}`}>
-                        <span>Remaining after entry:</span>
-                        <span>
-                          {over18
-                            ? `Over by ${Math.abs(after18).toFixed(2)}%`
-                            : entered18 > 0
-                            ? `${after18.toFixed(2)}% | Rs.${Number(afterAmt18).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
-                            : `${remaining18.toFixed(2)}% | Rs.${Number((base18 * remaining18) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* ── RIGHT PANEL — History ── */}
-                <div className="w-full md:w-1/2 px-6 py-5">
-                  <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
-                    {activePartTab === "a" ? "Part A — Other Charges History" : "Part B — Project Value History"}
-                  </p>
-                  <div className="space-y-2 overflow-y-auto max-h-[500px]">
-                    {shownHistory.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-8 text-gray-300">
-                        <i className="bi bi-clock-history text-3xl mb-2"></i>
-                        <p className="text-sm">No history found</p>
-                      </div>
-                    ) : (
-                      shownHistory.map((h, index) => {
-                        const isLatest = index === 0;
-                        const pct9v = Number(h.proforma_percentage_9 || 0);
-                        const pct18v = Number(h.proforma_percentage_18 || 0);
-                        const t9v = Number(h.total_9 || 0);
-                        const t18v = Number(h.total_18 || 0);
-                        const displayPct = activePartTab === "a" ? pct9v : pct18v;
-                        const displayAmt = activePartTab === "a" ? t9v : t18v;
-
-                        return (
-                          <div key={h.id}>
-                            <div
-                              onClick={() => setActiveIndex(index === activeIndex ? null : index)}
-                              className={`border rounded-xl p-3 cursor-pointer transition-all select-none ${
-                                isLatest
-                                  ? activePartTab === "a"
-                                    ? "border-orange-400 bg-orange-50 shadow-sm"
-                                    : "border-blue-400 bg-blue-50 shadow-sm"
-                                  : "hover:bg-gray-50 border-gray-200"
-                              }`}
-                            >
-                              <div className="flex justify-between items-center">
-                                <div className="flex items-center gap-2">
-                                  {isLatest && (
-                                    <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${activePartTab === "a" ? "bg-orange-100 text-orange-500" : "bg-blue-100 text-blue-500"}`}>
-                                      Latest
-                                    </span>
-                                  )}
-                                  <p className="font-semibold text-sm text-gray-700">
-                                    {displayPct.toFixed(1)}% → Rs.{Number(displayAmt).toLocaleString()}
-                                  </p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs text-gray-400">
-                                    {new Date(h.created_at).toLocaleDateString("en-IN")}
-                                  </span>
-                                  {isLatest && (
-                                    <button
-                                      onClick={(e) => { e.stopPropagation(); handleEdit(h); }}
-                                      className="text-gray-400 hover:text-orange-500 transition-all"
-                                    >
-                                      <i className="bi bi-pencil-square text-xs"></i>
-                                    </button>
-                                  )}
-                                  <i className={`bi ${activeIndex === index ? "bi-chevron-up" : "bi-chevron-down"} text-gray-400 text-xs`}></i>
-                                </div>
-                              </div>
-
-                              {/* Mini chip */}
-                              <div className="flex gap-3 mt-2">
-                                {activePartTab === "a" ? (
-                                  <div className="flex items-center gap-1.5 text-xs text-orange-600 bg-orange-50 border border-orange-100 rounded-lg px-2 py-1">
-                                    <span className="font-bold">A:</span>
-                                    <span>{pct9v.toFixed(1)}%</span>
-                                    <span className="text-gray-400">|</span>
-                                    <span>Rs.{Number(t9v).toLocaleString("en-IN")}</span>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-2 py-1">
-                                    <span className="font-bold">B:</span>
-                                    <span>{pct18v.toFixed(1)}%</span>
-                                    <span className="text-gray-400">|</span>
-                                    <span>Rs.{Number(t18v).toLocaleString("en-IN")}</span>
-                                  </div>
-                                )}
-                              </div>
+                        <div className="flex gap-3 mb-2">
+                          <div className="flex-1">
+                            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                              Percentage
+                            </label>
+                            <div className="relative mt-1.5">
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={pct9}
+                                onChange={(e) => {
+                                  const v = e.target.value;
+                                  if (v === "") {
+                                    handlePct9Change("");
+                                    return;
+                                  }
+                                  const n = Number(v);
+                                  if (n >= 0 && n <= 100) handlePct9Change(n);
+                                }}
+                                className="w-full border border-gray-200 rounded-xl pl-3 pr-8 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-white"
+                                placeholder="0"
+                              />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
+                                %
+                              </span>
                             </div>
                           </div>
-                        );
-                      })
+                          <div className="flex-1">
+                            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                              Amount
+                            </label>
+                            <div className="relative mt-1.5">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
+                                Rs.
+                              </span>
+                              <input
+                                type="number"
+                                min="0"
+                                value={amt9}
+                                onChange={(e) => {
+                                  const v = e.target.value;
+                                  if (v === "") {
+                                    handleAmt9Change("");
+                                    return;
+                                  }
+                                  handleAmt9Change(Number(v));
+                                }}
+                                className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-sm focus:ring-1 focus:ring-orange-300 outline-none bg-white"
+                                placeholder="0.00"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          className={`flex justify-between text-xs font-semibold px-2 py-1.5 rounded-lg ${over9 ? "bg-red-100 text-red-600" : after9 === 0 && entered9 > 0 ? "bg-green-100 text-green-600" : "bg-white text-gray-500 border border-gray-100"}`}
+                        >
+                          <span>Remaining after entry:</span>
+                          <span>
+                            {over9
+                              ? `Over by ${Math.abs(after9).toFixed(2)}%`
+                              : entered9 > 0
+                                ? `${after9.toFixed(2)}% | Rs.${Number(afterAmt9).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
+                                : `${remaining9.toFixed(2)}% | Rs.${Number((base9 * remaining9) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Part B Form */}
+                    {activePartTab === "b" && (
+                      <div
+                        className={`rounded-xl border p-4 ${over18 ? "border-red-200 bg-red-50" : "border-blue-100 bg-blue-50/20"}`}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-xs font-bold text-blue-600 uppercase tracking-widest">
+                            Part B — Project Value
+                          </p>
+                          <span className="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-semibold">
+                            Used: {used18.toFixed(1)}% | Rem:{" "}
+                            {remaining18.toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="flex gap-3 mb-2">
+                          <div className="flex-1">
+                            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                              Percentage
+                            </label>
+                            <div className="relative mt-1.5">
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                value={pct18}
+                                onChange={(e) => {
+                                  const v = e.target.value;
+                                  if (v === "") {
+                                    handlePct18Change("");
+                                    return;
+                                  }
+                                  const n = Number(v);
+                                  if (n >= 0 && n <= 100) handlePct18Change(n);
+                                }}
+                                className="w-full border border-gray-200 rounded-xl pl-3 pr-8 py-2 text-sm focus:ring-1 focus:ring-blue-300 outline-none bg-white"
+                                placeholder="0"
+                              />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
+                                %
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex-1">
+                            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                              Amount
+                            </label>
+                            <div className="relative mt-1.5">
+                              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
+                                Rs.
+                              </span>
+                              <input
+                                type="number"
+                                min="0"
+                                value={amt18}
+                                onChange={(e) => {
+                                  const v = e.target.value;
+                                  if (v === "") {
+                                    handleAmt18Change("");
+                                    return;
+                                  }
+                                  handleAmt18Change(Number(v));
+                                }}
+                                className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-sm focus:ring-1 focus:ring-blue-300 outline-none bg-white"
+                                placeholder="0.00"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                        <div
+                          className={`flex justify-between text-xs font-semibold px-2 py-1.5 rounded-lg ${over18 ? "bg-red-100 text-red-600" : after18 === 0 && entered18 > 0 ? "bg-green-100 text-green-600" : "bg-white text-gray-500 border border-gray-100"}`}
+                        >
+                          <span>Remaining after entry:</span>
+                          <span>
+                            {over18
+                              ? `Over by ${Math.abs(after18).toFixed(2)}%`
+                              : entered18 > 0
+                                ? `${after18.toFixed(2)}% | Rs.${Number(afterAmt18).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
+                                : `${remaining18.toFixed(2)}% | Rs.${Number((base18 * remaining18) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
+                          </span>
+                        </div>
+                      </div>
                     )}
                   </div>
+
+                  {/* ── RIGHT PANEL — History ── */}
+                  <div className="w-full md:w-1/2 px-6 py-5">
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
+                      {activePartTab === "a"
+                        ? "Part A — Other Charges History"
+                        : "Part B — Project Value History"}
+                    </p>
+                    <div className="space-y-2 overflow-y-auto max-h-[500px]">
+                      {shownHistory.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-8 text-gray-300">
+                          <i className="bi bi-clock-history text-3xl mb-2"></i>
+                          <p className="text-sm">No history found</p>
+                        </div>
+                      ) : (
+                        shownHistory.map((h, index) => {
+                          const isLatest = index === 0;
+                          const pct9v = Number(h.proforma_percentage_9 || 0);
+                          const pct18v = Number(h.proforma_percentage_18 || 0);
+                          const t9v = Number(h.total_9 || 0);
+                          const t18v = Number(h.total_18 || 0);
+                          const displayPct =
+                            activePartTab === "a" ? pct9v : pct18v;
+                          const displayAmt = activePartTab === "a" ? t9v : t18v;
+
+                          return (
+                            <div key={h.id}>
+                              <div
+                                onClick={() =>
+                                  setActiveIndex(
+                                    index === activeIndex ? null : index,
+                                  )
+                                }
+                                className={`border rounded-xl p-3 cursor-pointer transition-all select-none ${
+                                  isLatest
+                                    ? activePartTab === "a"
+                                      ? "border-orange-400 bg-orange-50 shadow-sm"
+                                      : "border-blue-400 bg-blue-50 shadow-sm"
+                                    : "hover:bg-gray-50 border-gray-200"
+                                }`}
+                              >
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center gap-2">
+                                    {isLatest && (
+                                      <span
+                                        className={`text-xs px-2 py-0.5 rounded-full font-semibold ${activePartTab === "a" ? "bg-orange-100 text-orange-500" : "bg-blue-100 text-blue-500"}`}
+                                      >
+                                        Latest
+                                      </span>
+                                    )}
+                                    <p className="font-semibold text-sm text-gray-700">
+                                      {displayPct.toFixed(1)}% → Rs.
+                                      {Number(displayAmt).toLocaleString()}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-gray-400">
+                                      {new Date(
+                                        h.created_at,
+                                      ).toLocaleDateString("en-IN")}
+                                    </span>
+                                    {isLatest && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleEdit(h);
+                                        }}
+                                        className="text-gray-400 hover:text-orange-500 transition-all"
+                                      >
+                                        <i className="bi bi-pencil-square text-xs"></i>
+                                      </button>
+                                    )}
+                                    <i
+                                      className={`bi ${activeIndex === index ? "bi-chevron-up" : "bi-chevron-down"} text-gray-400 text-xs`}
+                                    ></i>
+                                  </div>
+                                </div>
+
+                                {/* Mini chip */}
+                                <div className="flex gap-3 mt-2">
+                                  {activePartTab === "a" ? (
+                                    <div className="flex items-center gap-1.5 text-xs text-orange-600 bg-orange-50 border border-orange-100 rounded-lg px-2 py-1">
+                                      <span className="font-bold">A:</span>
+                                      <span>{pct9v.toFixed(1)}%</span>
+                                      <span className="text-gray-400">|</span>
+                                      <span>
+                                        Rs.{Number(t9v).toLocaleString("en-IN")}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-1.5 text-xs text-blue-600 bg-blue-50 border border-blue-100 rounded-lg px-2 py-1">
+                                      <span className="font-bold">B:</span>
+                                      <span>{pct18v.toFixed(1)}%</span>
+                                      <span className="text-gray-400">|</span>
+                                      <span>
+                                        Rs.
+                                        {Number(t18v).toLocaleString("en-IN")}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
+                  <button
+                    onClick={resetModal}
+                    className="px-5 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={editing ? handleUpdate : handleSubmitFollowUp}
+                    disabled={isDisabled}
+                    className={`px-6 py-2 rounded-xl text-sm font-semibold text-white transition-all shadow-md flex items-center justify-center gap-2 ${
+                      isDisabled
+                        ? "bg-gray-300 cursor-not-allowed shadow-none"
+                        : "bg-orange-500 hover:bg-orange-600 shadow-orange-200"
+                    }`}
+                  >
+                    {submitLoading || updateLoading ? (
+                      <>
+                        <i className="bi bi-arrow-repeat animate-spin"></i>{" "}
+                        Processing...
+                      </>
+                    ) : editing ? (
+                      "Update Follow-Up"
+                    ) : (
+                      "Add Follow-Up"
+                    )}
+                  </button>
                 </div>
               </div>
-
-              {/* Footer */}
-              <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
-                <button
-                  onClick={resetModal}
-                  className="px-5 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={editing ? handleUpdate : handleSubmitFollowUp}
-                  disabled={isDisabled}
-                  className={`px-6 py-2 rounded-xl text-sm font-semibold text-white transition-all shadow-md flex items-center justify-center gap-2 ${
-                    isDisabled ? "bg-gray-300 cursor-not-allowed shadow-none" : "bg-orange-500 hover:bg-orange-600 shadow-orange-200"
-                  }`}
-                >
-                  {submitLoading || updateLoading ? (
-                    <><i className="bi bi-arrow-repeat animate-spin"></i> Processing...</>
-                  ) : editing ? (
-                    "Update Follow-Up"
-                  ) : (
-                    "Add Follow-Up"
-                  )}
-                </button>
-              </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
 
       {/* PARTICIPATION TAX CALCULATION MODAL */}
       {showSplitModal && (
@@ -1512,8 +2012,12 @@ export default function ProformaPage() {
                   <i className="bi bi-calculator-fill text-orange-500 text-base"></i>
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Quotation Tax Calculation Details</h2>
-                  <p className="text-[10px] text-gray-500 font-medium">Calculations for the linked quotation</p>
+                  <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
+                    Quotation Tax Calculation Details
+                  </h2>
+                  <p className="text-[10px] text-gray-500 font-medium">
+                    Calculations for the linked quotation
+                  </p>
                 </div>
               </div>
               <button
@@ -1528,75 +2032,117 @@ export default function ProformaPage() {
               const amtTotal = parseFloat(splitForm.amount) || 0;
               const amt9 = parseFloat(splitForm.amount_9) || 0;
               const amt18 = parseFloat(splitForm.amount_18) || 0;
-              const percent9 = amtTotal > 0 ? ((amt9 / amtTotal) * 100).toFixed(2) : "0.00";
-              const percent18 = amtTotal > 0 ? ((amt18 / amtTotal) * 100).toFixed(2) : "0.00";
+              const percent9 =
+                amtTotal > 0 ? ((amt9 / amtTotal) * 100).toFixed(2) : "0.00";
+              const percent18 =
+                amtTotal > 0 ? ((amt18 / amtTotal) * 100).toFixed(2) : "0.00";
               return (
                 <div className="p-6 space-y-4">
                   <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex justify-between items-center">
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total Base Amount</span>
-                    <span className="text-lg font-bold text-gray-800">₹ {Number(splitForm.amount || 0).toLocaleString()}</span>
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                      Total Base Amount
+                    </span>
+                    <span className="text-lg font-bold text-gray-800">
+                      ₹ {Number(splitForm.amount || 0).toLocaleString()}
+                    </span>
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-left">
                     <div className="bg-blue-50/20 p-4 rounded-xl border border-blue-100 space-y-3">
                       <div>
-                        <label className="text-[11px] font-bold text-blue-700 uppercase tracking-wide block mb-1">Project Value (₹)</label>
+                        <label className="text-[11px] font-bold text-blue-700 uppercase tracking-wide block mb-1">
+                          Project Value (₹)
+                        </label>
                         <div className="border border-blue-200 rounded-md px-3 py-1.5 text-sm bg-white font-semibold text-gray-800 shadow-sm">
                           ₹ {Number(splitForm.amount_18 || 0).toLocaleString()}
                         </div>
                       </div>
                       <div>
-                        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">Split (%)</label>
-                        <div className="border border-gray-300 rounded-md px-3 py-1.5 text-sm bg-white font-semibold text-gray-800 shadow-sm">{percent18}%</div>
+                        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">
+                          Split (%)
+                        </label>
+                        <div className="border border-gray-300 rounded-md px-3 py-1.5 text-sm bg-white font-semibold text-gray-800 shadow-sm">
+                          {percent18}%
+                        </div>
                       </div>
                       <div>
-                        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">Tax Rate (%)</label>
-                        <div className="border border-gray-300 rounded-md px-3 py-1.5 text-sm bg-white font-semibold text-gray-800 shadow-sm">{splitForm.tax_percent_18}%</div>
+                        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">
+                          Tax Rate (%)
+                        </label>
+                        <div className="border border-gray-300 rounded-md px-3 py-1.5 text-sm bg-white font-semibold text-gray-800 shadow-sm">
+                          {splitForm.tax_percent_18}%
+                        </div>
                       </div>
                       <div className="mt-2.5 space-y-1 text-xs text-gray-500 pt-2 border-t border-dashed border-gray-200">
                         <div className="flex justify-between">
                           <span>Tax ({splitForm.tax_percent_18}%):</span>
-                          <span className="font-medium text-gray-700">₹ {splitForm.tax_18}</span>
+                          <span className="font-medium text-gray-700">
+                            ₹ {splitForm.tax_18}
+                          </span>
                         </div>
                         <div className="flex justify-between border-t border-dashed border-gray-150 pt-1">
                           <span>Total B:</span>
                           <span className="font-bold text-gray-700">
-                            ₹ {(parseFloat(splitForm.amount_18 || 0) + parseFloat(splitForm.tax_18 || 0)).toFixed(2)}
+                            ₹{" "}
+                            {(
+                              parseFloat(splitForm.amount_18 || 0) +
+                              parseFloat(splitForm.tax_18 || 0)
+                            ).toFixed(2)}
                           </span>
                         </div>
                       </div>
                     </div>
                     <div className="bg-orange-50/20 p-4 rounded-xl border border-orange-100 space-y-3">
                       <div>
-                        <label className="text-[11px] font-bold text-orange-700 uppercase tracking-wide block mb-1">Other Charges (₹)</label>
+                        <label className="text-[11px] font-bold text-orange-700 uppercase tracking-wide block mb-1">
+                          Other Charges (₹)
+                        </label>
                         <div className="border border-orange-200 rounded-md px-3 py-1.5 text-sm bg-white font-semibold text-gray-800 shadow-sm">
                           ₹ {Number(splitForm.amount_9 || 0).toLocaleString()}
                         </div>
                       </div>
                       <div>
-                        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">Split (%)</label>
-                        <div className="border border-gray-300 rounded-md px-3 py-1.5 text-sm bg-white font-semibold text-gray-800 shadow-sm">{percent9}%</div>
+                        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">
+                          Split (%)
+                        </label>
+                        <div className="border border-gray-300 rounded-md px-3 py-1.5 text-sm bg-white font-semibold text-gray-800 shadow-sm">
+                          {percent9}%
+                        </div>
                       </div>
                       <div>
-                        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">Tax Rate (%)</label>
-                        <div className="border border-gray-300 rounded-md px-3 py-1.5 text-sm bg-white font-semibold text-gray-800 shadow-sm">{splitForm.tax_percent_9}%</div>
+                        <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">
+                          Tax Rate (%)
+                        </label>
+                        <div className="border border-gray-300 rounded-md px-3 py-1.5 text-sm bg-white font-semibold text-gray-800 shadow-sm">
+                          {splitForm.tax_percent_9}%
+                        </div>
                       </div>
                       <div className="mt-2.5 space-y-1 text-xs text-gray-500 pt-2 border-t border-dashed border-gray-200">
                         <div className="flex justify-between">
                           <span>Tax ({splitForm.tax_percent_9}%):</span>
-                          <span className="font-medium text-gray-700">₹ {splitForm.tax_9}</span>
+                          <span className="font-medium text-gray-700">
+                            ₹ {splitForm.tax_9}
+                          </span>
                         </div>
                         <div className="flex justify-between border-t border-dashed border-gray-150 pt-1">
                           <span>Total A:</span>
                           <span className="font-bold text-gray-700">
-                            ₹ {(parseFloat(splitForm.amount_9 || 0) + parseFloat(splitForm.tax_9 || 0)).toFixed(2)}
+                            ₹{" "}
+                            {(
+                              parseFloat(splitForm.amount_9 || 0) +
+                              parseFloat(splitForm.tax_9 || 0)
+                            ).toFixed(2)}
                           </span>
                         </div>
                       </div>
                     </div>
                   </div>
                   <div className="bg-green-50 p-4 rounded-xl border border-green-100 flex justify-between items-center">
-                    <span className="text-xs font-semibold text-green-700 uppercase tracking-wide">Project Value</span>
-                    <span className="text-xl font-black text-green-700">₹ {Number(splitForm.grand_total || 0).toLocaleString()}</span>
+                    <span className="text-xs font-semibold text-green-700 uppercase tracking-wide">
+                      Project Value
+                    </span>
+                    <span className="text-xl font-black text-green-700">
+                      ₹ {Number(splitForm.grand_total || 0).toLocaleString()}
+                    </span>
                   </div>
                 </div>
               );

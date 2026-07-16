@@ -8,11 +8,27 @@ import { toast } from "react-toastify";
 import { checkRole } from "@/utils/checkRole";
 import useAuth from "@/app/components/useAuth";
 import { Sparkles } from "lucide-react";
+import { Trash2} from "lucide-react";
 import {
-  CalendarDays, ListChecks, User, UserRound,
-  FileText, CloudUpload, Info, X, CheckCircle2,
-  Building2, Phone, Radio, Bookmark, ShieldCheck,
-  Star, FolderOpen, Save, Plus, Pencil,
+  CalendarDays,
+  ListChecks,
+  User,
+  UserRound,
+  FileText,
+  CloudUpload,
+  Info,
+  X,
+  CheckCircle2,
+  Building2,
+  Phone,
+  Radio,
+  Bookmark,
+  ShieldCheck,
+  Star,
+  FolderOpen,
+  Save,
+  Plus,
+  Pencil,
 } from "lucide-react";
 export default function Page() {
   const [btnLoading, setBtnLoading] = useState(false);
@@ -393,7 +409,8 @@ export default function Page() {
       worksheet["!cols"] = colWidths;
 
       const now = new Date();
-      const date = now.toISOString().split("T")[0];2
+      const date = now.toISOString().split("T")[0];
+      2;
       const time = now.toTimeString().slice(0, 5);
       const fileName = `Leads_${activeTab}_(${date})_${time}.xlsx`;
 
@@ -409,7 +426,8 @@ export default function Page() {
   // ===================================================
   // EXPORT TO PDF
   // ===================================================
-  const exportToPDF = async () => {``
+  const exportToPDF = async () => {
+    ``;
     try {
       const { default: jsPDF } = await import("jspdf");
       const { default: autoTable } = await import("jspdf-autotable");
@@ -953,15 +971,17 @@ export default function Page() {
 
     const isPending = lead.status === "Pending";
 
-    const tooltips = isPending ? {
-      green: "✅ Follow-up on track (< 24h)",
-      yellow: "⚠️ No follow-up in 24h — Attention needed",
-      red: "🔴 No follow-up in 48h+ — Critical",
-    } : {
-      green: "✅ Completed on track (< 24h)",
-      yellow: "⚠️ Completed late (24h - 48h)",
-      red: "🔴 Completed late (48h+)",
-    };
+    const tooltips = isPending
+      ? {
+          green: "✅ Follow-up on track (< 24h)",
+          yellow: "⚠️ No follow-up in 24h — Attention needed",
+          red: "🔴 No follow-up in 48h+ — Critical",
+        }
+      : {
+          green: "✅ Completed on track (< 24h)",
+          yellow: "⚠️ Completed late (24h - 48h)",
+          red: "🔴 Completed late (48h+)",
+        };
 
     const isPulse = isPending && (color === "yellow" || color === "red");
 
@@ -989,10 +1009,10 @@ export default function Page() {
   const filteredLeads = hasActiveFilters
     ? leads
     : leads.filter((l) => {
-      if (activeTab === "Pending")
-        return l.status !== "Won" && l.status !== "Lost";
-      return l.status === activeTab;
-    });
+        if (activeTab === "Pending")
+          return l.status !== "Won" && l.status !== "Lost";
+        return l.status === activeTab;
+      });
 
   const pendingCount = leads.filter((l) => l.status === "Pending").length;
   const wonCount = leads.filter((l) => l.status === "Won").length;
@@ -1073,7 +1093,7 @@ export default function Page() {
           },
         );
         setLeadSource(res.data);
-      } catch { }
+      } catch {}
     };
     fetchSource();
   }, []);
@@ -1088,7 +1108,7 @@ export default function Page() {
           },
         );
         setLeadCategory(res.data);
-      } catch { }
+      } catch {}
     };
     fetchCategory();
   }, []);
@@ -1100,7 +1120,7 @@ export default function Page() {
           params: { status: 1 },
         });
         setCategory(res.data);
-      } catch { }
+      } catch {}
     };
     fetchProductCategory();
   }, []);
@@ -1125,14 +1145,14 @@ export default function Page() {
               <i className="bi bi-chevron-right text-[10px]"></i>
               <Link
                 href="#"
-                className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
+                className="mx-2 text-md text-gray-700 hover:text-indigo-600 "
               >
                 Sales
               </Link>
               <i className="bi bi-chevron-right text-[10px]"></i>
               <Link
                 href="/sales/lead"
-                className="mx-2 text-md text-gray-700 hover:text-orange-500 font-semibold"
+                className="mx-2 text-md text-gray-700 hover:text-indigo-600 "
               >
                 Lead
               </Link>
@@ -1183,7 +1203,7 @@ export default function Page() {
                 resetAddLeadForm();
                 setShowAddLeadModal(true);
               }}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-sm text-sm font-semibold shadow-md transition-all cursor-pointer"
+              className="bg-gradient-to-br from-indigo-500 to-violet-600 text-white px-5 py-2 rounded-sm text-sm font-semibold shadow-md transition-all cursor-pointer"
             >
               + ADD LEAD
             </button>
@@ -1211,36 +1231,45 @@ export default function Page() {
           md:mx-6 md:mb-3 md:items-center md:gap-2 md:flex-wrap md:flex md:relative md:bg-transparent md:p-0 md:shadow-none md:border-none md:z-auto
         `}
         >
-          <input
-            name="company_name"
-            value={filters.company_name}
-            onChange={handleFilterChange}
-            ref={companyRef}
-            placeholder="Company Name"
-            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  text-gray-600 text-sm outline-none"
-          />
+          <div className="flex items-center gap-2 border bg-white border-indigo-400 rounded-sm px-2 py-2 w-full md:w-45">
+                      <Building2 size={16} className="text-blue-500" />
+            <input
+              name="company_name"
+              value={filters.company_name}
+              onChange={handleFilterChange}
+              ref={companyRef}
+              placeholder="Company Name"
+              className="w-full text-gray-600 text-sm outline-none bg-transparent"
+            />
+          </div>
 
-          <input
-            name="customer_name"
-            value={filters.customer_name}
-            onChange={handleFilterChange}
-            placeholder="Customer Name"
-            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  text-gray-600 text-sm outline-none"
-          />
+          <div className="flex items-center gap-2 border bg-white border-indigo-400 rounded-sm px-2 py-2 w-full md:w-45">
+                      <User size={16} className="text-violet-600" />
+            <input
+              name="customer_name"
+              value={filters.customer_name}
+              onChange={handleFilterChange}
+              placeholder="Customer Name"
+              className="w-full text-gray-600 text-sm outline-none bg-transparent"
+            />
+          </div>
 
-          <input
-            name="reference"
-            value={filters.reference}
-            onChange={handleFilterChange}
-            placeholder="Enter Reference"
-            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-600 text-sm"
-          />
+          <div className="flex items-center gap-2 border bg-white border-indigo-400 rounded-sm px-2 py-2 w-full md:w-45">
+                      <Bookmark size={16} className="text-amber-500" />
+            <input
+              name="reference"
+              value={filters.reference}
+              onChange={handleFilterChange}
+              placeholder="Enter Reference"
+              className="w-full text-gray-600 text-sm outline-none bg-transparent"
+            />
+          </div>
 
           {/* <select
             name="product_category"
             value={filters.product_category}
             onChange={handleFilterChange}
-            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-48  outline-none  text-gray-400 text-sm"
+            className="border bg-white border-indigo-400 rounded-sm px-2 py-2 w-full md:w-48  outline-none  text-gray-400 text-sm"
           >
             <option value="">Select Product Category</option>
             {category.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
@@ -1250,7 +1279,7 @@ export default function Page() {
             name="source"
             value={filters.source}
             onChange={handleFilterChange}
-            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-400 text-sm"
+            className="border bg-white border-indigo-400 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-400 text-sm"
           >
             <option value="">Select Source</option>
             {leadSource.map((item) => (
@@ -1260,15 +1289,18 @@ export default function Page() {
             ))}
           </select>
 
-          <input
-            name="mobile_no"
-            value={filters.mobile_no}
-            onChange={handleFilterChange}
-            placeholder="Mobile No"
-            className="border bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-600 text-sm"
-          />
+          <div className="flex items-center gap-2 border bg-white border-indigo-400 rounded-sm px-2 py-2 w-full md:w-45">
+                      <Phone size={16} className="text-green-500" />
+            <input
+              name="mobile_no"
+              value={filters.mobile_no}
+              onChange={handleFilterChange}
+              placeholder="Mobile No"
+              className="w-full text-gray-600 text-sm outline-none bg-transparent"
+            />
+          </div>
 
-          <div className="flex p-1 items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-58  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
+          <div className="flex p-1 items-center px-2 border bg-white border-indigo-400 rounded-sm w-full md:w-58  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
             <span className="mx-1 p-1 text-gray-400 whitespace-nowrap">
               From Next
             </span>
@@ -1281,7 +1313,7 @@ export default function Page() {
             />
           </div>
 
-          <div className="flex p-1 items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-53  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
+          <div className="flex p-1 items-center px-2 border bg-white border-indigo-400 rounded-sm w-full md:w-53  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
             <span className="mx-1 p-1 text-gray-400 whitespace-nowrap">
               To Next
             </span>
@@ -1298,14 +1330,14 @@ export default function Page() {
             name="status"
             value={filters.status}
             onChange={handleFilterChange}
-            className="border p-1 bg-white border-orange-300 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-400 text-sm"
+            className="border p-1 bg-white border-indigo-400 rounded-sm px-2 py-2 w-full md:w-45  outline-none  text-gray-400 text-sm"
           >
             <option value="">Pending</option>
             <option value="Won">Won</option>
             <option value="Lost">Lost</option>
           </select>
 
-          <div className="flex p-1 items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-60  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
+          <div className="flex p-1 items-center px-2 border bg-white border-indigo-400 rounded-sm w-full md:w-60  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
             <span className="mx-1 p-1 text-gray-400 whitespace-nowrap">
               From Create
             </span>
@@ -1318,7 +1350,7 @@ export default function Page() {
             />
           </div>
 
-          <div className="flex p-1 items-center px-2 border bg-white border-orange-300 rounded-sm w-full md:w-58  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
+          <div className="flex p-1 items-center px-2 border bg-white border-indigo-400 rounded-sm w-full md:w-58  outline-none  text-gray-400 text-sm col-span-2 md:col-span-1">
             <span className="mx-1 p-1 text-gray-400 whitespace-nowrap">
               To Create
             </span>
@@ -1337,9 +1369,9 @@ export default function Page() {
                 resetFilters();
                 setShowMobileFilters(false);
               }}
-              className="border border-gray-300 w-full md:w-auto cursor-pointer rounded-sm p-2 bg-gray-200 text-gray-700 hover:bg-gray-300 text-sm text-center font-semibold"
+              className="flex items-center justify-center gap-2 w-full md:w-auto cursor-pointer rounded-sm px-4 py-2 bg-indigo-100 text-indigo-600  text-sm text-center font-semibold transition-colors"
             >
-              Clear
+              <i className="bi bi-arrow-counterclockwise"></i> Clear Filter
             </button>
             <button
               onClick={() => setShowMobileFilters(false)}
@@ -1355,40 +1387,43 @@ export default function Page() {
           <div className="flex items-center gap-8 px-6 pt-4 border-b border-gray-100">
             <button
               onClick={() => setActiveTab("Pending")}
-              className={`pb-3 px-3 text-sm font-medium relative cursor-pointer transition-all ${activeTab === "Pending" ? "text-blue-600" : "text-gray-400 hover:text-gray-600"}`}
+              className={`pb-3 px-3 text-sm font-semibold relative cursor-pointer transition-all flex items-center gap-2 ${activeTab === "Pending" ? "text-blue-600" : "text-gray-400 hover:text-gray-600"}`}
             >
+              <i className="bi bi-clipboard-check"></i>
               Pending
-              <span className="ml-2 bg-blue-100 text-blue-600 text-xs px-2 py-0.5 rounded-full">
+              <span className="bg-blue-100 text-blue-600 text-xs px-2 py-0.5 rounded-full font-bold">
                 {pendingCount}
               </span>
               {activeTab === "Pending" && (
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600"></div>
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 rounded-full"></div>
               )}
             </button>
 
             <button
               onClick={() => setActiveTab("Won")}
-              className={`pb-3 text-sm font-medium cursor-pointer relative ${activeTab === "Won" ? "text-green-600" : "text-gray-500"}`}
+              className={`pb-3 text-sm font-semibold cursor-pointer relative flex items-center gap-2 ${activeTab === "Won" ? "text-green-600" : "text-gray-400 hover:text-gray-600"}`}
             >
+              <i className="bi bi-trophy"></i>
               Won
-              <span className="ml-2 bg-green-100 text-green-600 text-xs px-2 py-0.5 rounded-full">
+              <span className="bg-green-100 text-green-600 text-xs px-2 py-0.5 rounded-full font-bold">
                 {wonCount}
               </span>
               {activeTab === "Won" && (
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600"></div>
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 rounded-full"></div>
               )}
             </button>
 
             <button
               onClick={() => setActiveTab("Lost")}
-              className={`pb-3 text-sm font-medium relative ${activeTab === "Lost" ? "text-red-600" : "text-gray-500"}`}
+              className={`pb-3 text-sm font-semibold relative cursor-pointer flex items-center gap-2 ${activeTab === "Lost" ? "text-red-600" : "text-gray-400 hover:text-gray-600"}`}
             >
+              <i className="bi bi-person-x"></i>
               Lost
-              <span className="ml-2 bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full">
+              <span className="bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full font-bold">
                 {lostCount}
               </span>
               {activeTab === "Lost" && (
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-red-600"></div>
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-red-600 rounded-full"></div>
               )}
             </button>
 
@@ -1443,39 +1478,47 @@ export default function Page() {
               >
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-100">
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    <tr className="bg-indigo-50 border-b border-gray-100">
+                      <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
                         #
                       </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Company Name
+                      <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
+                        Company Name{" "}
+                        <i className="bi bi-arrow-down-up text-slate-400 text-[10px]"></i>
                       </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Customer Name
+                      <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
+                        Customer Name{" "}
+                        <i className="bi bi-arrow-down-up text-slate-400 text-[10px]"></i>
                       </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Reference
+                      <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
+                        Reference{" "}
+                        <i className="bi bi-arrow-down-up text-slate-400 text-[10px]"></i>
                       </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Source
+                      <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
+                        Source{" "}
+                        <i className="bi bi-arrow-down-up text-slate-400 text-[10px]"></i>
                       </th>
 
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                      <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
                         Architecture
                       </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Mobile No
+                      <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
+                        Mobile No{" "}
+                        <i className="bi bi-arrow-down-up text-slate-400 text-[10px]"></i>
                       </th>
-                      <th className="py-3 px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Next Follow Up
+                      <th className="py-3 px-3 text-xs font-bold text-slate-700 tracking-wider">
+                        Next Follow Up{" "}
+                        <i className="bi bi-arrow-down-up text-slate-400 text-[10px]"></i>
                       </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Created
+                      <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
+                        Created{" "}
+                        <i className="bi bi-arrow-down-up text-slate-400 text-[10px]"></i>
                       </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Status
+                      <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
+                        Status{" "}
+                        <i className="bi bi-arrow-down-up text-slate-400 text-[10px]"></i>
                       </th>
-                      <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                      <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
                         Action
                       </th>
                     </tr>
@@ -1492,24 +1535,42 @@ export default function Page() {
                             {(currentPage - 1) * itemsPerPage + index + 1}
                           </td>
 
-                          <td className="font-medium px-2">
+                          <td className="font-semibold text-slate-800 px-2">
                             <div className="flex items-center gap-2">
                               {getTrafficDot(lead)}
                               {lead.company_name}
                             </div>
                           </td>
 
-                          <td className="text-orange-500 cursor-pointer px-3">
+                          <td className="text-blue-500 font-medium cursor-pointer px-3">
                             {lead.customer_name}
                           </td>
 
-                          <td className="py-3 px-2 w-46 max-w-46 truncate">
+                          <td className="py-3 px-2 w-46 max-w-46 truncate font-semibold text-slate-700">
                             {lead.reference}
                           </td>
 
-                          <td className="px-3">{lead.source}</td>
+                          <td className="px-3">
+                            <span
+                              className={`inline-block px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap ${
+                                lead.source === "Walk In"
+                                  ? "bg-yellow-50 text-yellow-600"
+                                  : lead.source === "Website"
+                                    ? "bg-fuchsia-50 text-fuchsia-600"
+                                    : lead.source === "Reference"
+                                      ? "bg-purple-50 text-purple-600"
+                                      : lead.source === "Instagram"
+                                        ? "bg-cyan-50 text-cyan-600"
+                                        : lead.source === "Facebook"
+                                          ? "bg-blue-50 text-blue-600"
+                                          : "bg-pink-50 text-pink-600"
+                              }`}
+                            >
+                              {lead.source}
+                            </span>
+                          </td>
                           <td>{lead.architecture}</td>
-                          <td className="py-2 px-4 text-start">
+                          <td className="py-2 px-4 text-start font-semibold text-slate-800">
                             {lead.mobile_no}
                           </td>
 
@@ -1520,7 +1581,7 @@ export default function Page() {
                                   if (lead.status === "Pending")
                                     openUpdateModal(lead);
                                 }}
-                                className={`${lead.status === "Pending" ? "cursor-pointer text-blue-800" : "text-gray-400 cursor-not-allowed"}`}
+                                className={`font-semibold ${lead.status === "Pending" ? "cursor-pointer text-blue-600" : "text-gray-400 cursor-not-allowed"}`}
                               >
                                 {new Date(
                                   lead.next_follow_up_date,
@@ -1545,7 +1606,7 @@ export default function Page() {
                                   setShowModal(true);
                                 }}
                                 className={`w-9 h-9 rounded-full border flex items-center justify-center mx-auto
-                                  ${lead.status === "Pending" ? "hover:bg-gray-100 cursor-pointer" : "bg-gray-100 cursor-not-allowed opacity-60"}`}
+                                  ${lead.status === "Pending" ? "border-blue-300 text-blue-500 hover:bg-blue-50 cursor-pointer" : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed opacity-60"}`}
                               >
                                 <i className="bi bi-plus text-lg"></i>
                               </button>
@@ -1572,10 +1633,10 @@ export default function Page() {
                               onChange={(e) =>
                                 handleStatusChange(lead.lead_id, e.target.value)
                               }
-                              className={`border rounded-sm px-3 py-1 text-xs font-semibold outline-none cursor-pointer
-                                ${lead.status === "Pending" ? "border-gray-200 bg-gray-50 text-gray-700" : ""}
-                                ${lead.status === "Won" ? "border-green-200 bg-green-50 text-green-700" : ""}
-                                ${lead.status === "Lost" ? "border-red-200 bg-red-50 text-red-700" : ""}
+                              className={`border rounded-md px-3 py-1.5 text-xs font-semibold outline-none cursor-pointer
+                                ${lead.status === "Pending" ? "border-indigo-200 bg-indigo-50 text-indigo-600" : ""}
+                                ${lead.status === "Won" ? "border-green-200 bg-green-50 text-green-600" : ""}
+                                ${lead.status === "Lost" ? "border-red-200 bg-red-50 text-red-600" : ""}
                               `}
                             >
                               <option value="Pending">Pending</option>
@@ -1590,23 +1651,26 @@ export default function Page() {
                                 <>
                                   <button
                                     onClick={() => handleView(lead)}
-                                    className="text-gray-400 hover:text-green-600 cursor-pointer"
+                                    className="w-8 h-8 flex items-center justify-center rounded-md text-blue-500 hover:bg-blue-50 cursor-pointer transition-colors"
+                                    title="View"
                                   >
-                                    <i className="bi bi-eye text-xl"></i>
+                                    <i className="bi bi-eye text-lg"></i>
                                   </button>
 
                                   <button
                                     onClick={() => handleEdit(lead)}
-                                    className="text-gray-400 hover:text-blue-800 cursor-pointer"
+                                    className="w-8 h-8 flex items-center justify-center rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 cursor-pointer transition-colors"
+                                    title="Edit"
                                   >
-                                    <i className="bi bi-pencil-square"></i>
+                                    <i className="bi bi-pencil-square text-sm"></i>
                                   </button>
 
                                   <button
                                     onClick={() => openDeleteModal(lead)}
-                                    className="text-gray-400 hover:text-red-600 cursor-pointer"
+                                    className="w-8 h-8 flex items-center justify-center rounded-md text-red-500 hover:bg-red-50 cursor-pointer transition-colors"
+                                    title="Delete"
                                   >
-                                    <i className="bi bi-trash3"></i>
+                                    <i className="bi bi-trash3 text-sm"></i>
                                   </button>
                                 </>
                               ) : lead.status === "Lost" ? (
@@ -1615,23 +1679,22 @@ export default function Page() {
                                 <>
                                   <button
                                     onClick={() => handleView(lead)}
-                                    className="text-gray-400 hover:text-green-600 cursor-pointer"
+                                    className="w-8 h-8 flex items-center justify-center rounded-md text-blue-500 hover:bg-blue-50 cursor-pointer transition-colors"
+                                    title="View"
                                   >
-                                    {" "}
-                                    <i className="bi bi-eye text-xl"></i>{" "}
+                                    <i className="bi bi-eye text-lg"></i>
                                   </button>
 
                                   <button
                                     onClick={() => handleViewReason(lead)}
-                                    className="text-gray-400 hover:text-red-600 cursor-pointer flex items-center gap-1"
+                                    className="w-8 h-8 flex items-center justify-center rounded-md text-red-500 hover:bg-red-50 cursor-pointer transition-colors"
                                     title="View Lost Reason"
                                   >
                                     <i className="bi bi-info-circle text-lg"></i>
-                                    <span className="text-xs font-medium hidden lg:inline"></span>
                                   </button>
                                 </>
                               ) : (
-                                <span className="text-gray-300 cursor-not-allowed">
+                                <span className="w-8 h-8 flex items-center justify-center text-gray-300 cursor-not-allowed">
                                   <i className="bi bi-lock text-lg"></i>
                                 </span>
                               )}
@@ -1653,28 +1716,18 @@ export default function Page() {
                 </table>
 
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white">
-                  {/* Left side: Rows per page selector */}
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-slate-500 font-medium">
-                      Rows per page:
-                    </span>
-                    <select
-                      value={itemsPerPage}
-                      onChange={(e) => {
-                        setItemsPerPage(Number(e.target.value));
-                        setCurrentPage(1);
-                      }}
-                      className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all cursor-pointer font-medium"
-                    >
-                      {[10, 20, 100, 200].map((size) => (
-                        <option key={size} value={size}>
-                          {size}
-                        </option>
-                      ))}
-                    </select>
+                  {/* Left side: Showing X to Y of Z entries */}
+                  <div className="text-sm text-slate-600 font-semibold">
+                    Showing{" "}
+                    {filteredLeads.length === 0
+                      ? 0
+                      : (currentPage - 1) * itemsPerPage + 1}{" "}
+                    to{" "}
+                    {Math.min(currentPage * itemsPerPage, filteredLeads.length)}{" "}
+                    of {filteredLeads.length} entries
                   </div>
 
-                  {/* Right side: Navigation buttons (only if totalPages > 1) */}
+                  {/* Center: Navigation buttons (only if totalPages > 1) */}
                   {totalPages > 1 && (
                     <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
                       {/* Previous Button */}
@@ -1696,7 +1749,7 @@ export default function Page() {
                             onClick={() => setCurrentPage(page)}
                             className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${
                               currentPage === page
-                                ? "bg-[#212121] text-white shadow-md shadow-black/10"
+                                ? "bg-indigo-600 text-white shadow-md shadow-indigo-200"
                                 : "border border-slate-200 text-slate-600 hover:bg-slate-50"
                             }`}
                           >
@@ -1719,6 +1772,27 @@ export default function Page() {
                       </button>
                     </div>
                   )}
+
+                  {/* Right side: Rows per page selector */}
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-slate-500 font-medium">
+                      Rows per page:
+                    </span>
+                    <select
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="border border-indigo-200 rounded-lg px-3 py-1.5 text-sm text-indigo-600 font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+                    >
+                      {[10, 20, 100, 200].map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
             )}
@@ -1780,7 +1854,8 @@ export default function Page() {
                   <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
                     <span className="flex items-center justify-center w-10 shrink-0 bg-blue-50 border-r border-gray-100">
                       <Building2 size={16} className="text-blue-500" />
-                    </span>
+
+</span>
                     <input
                       name="company_name"
                       value={addLeadForm.company_name}
@@ -2478,114 +2553,105 @@ export default function Page() {
       )}
 
       {/* DELETE MODAL */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="bg-white w-full max-w-md rounded-[20px] shadow-xl overflow-hidden">
-            <div
-              className="flex justify-between items-center px-6 py-4"
-              style={{ background: "#f5e6d8" }}
-            >
-              <div className="flex items-center gap-2">
-                <span
-                  className="w-2.5 h-2.5 rounded-full"
-                  style={{ background: "#f07400" }}
-                ></span>
-                <h2 className="text-[13px] font-bold text-gray-600 tracking-widest uppercase">
-                  Delete Lead
-                </h2>
-              </div>
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="text-[#f07400] hover:text-orange-600"
-              >
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <line
-                    x1="2"
-                    y1="2"
-                    x2="16"
-                    y2="16"
-                    stroke="#f07400"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                  <line
-                    x1="16"
-                    y1="2"
-                    x2="2"
-                    y2="16"
-                    stroke="#f07400"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </button>
-            </div>
-            <div className="px-7 pt-9 pb-5 text-center">
-              <div
-                className="w-[78px] h-[78px] mx-auto rounded-full flex items-center justify-center mb-5"
-                style={{ background: "#f5e0c6" }}
-              >
-                <svg width="32" height="34" viewBox="0 0 32 34" fill="none">
-                  <path
-                    d="M3 8H29"
-                    stroke="#f07400"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M12 8V5C12 4.448 12.448 4 13 4H19C19.552 4 20 4.448 20 5V8"
-                    stroke="#f07400"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M5 8L6.5 29C6.5 29.552 6.948 30 7.5 30H24.5C25.052 30 25.5 29.552 25.5 29L27 8"
-                    stroke="#f07400"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M12 14V24"
-                    stroke="#f07400"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                  <path
-                    d="M20 14V24"
-                    stroke="#f07400"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
-              <h3 className="text-[17px] font-bold text-gray-800 tracking-widest uppercase mb-2">
-                {leadToDelete?.customer_name || "DELETE LEAD"}
-              </h3>
-              <p className="text-[13px] text-gray-400">
-                This action cannot be undone. Are you sure?
-              </p>
-            </div>
-
-            <div className="flex gap-3.5 px-7 pb-8 pt-2">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="flex-1 border border-gray-200 py-3 rounded-sm text-gray-500 bg-gray-50 hover:bg-gray-100 transition text-[15px] font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleteLoading}
-                className="flex-1 py-3 rounded-xl text-white text-[15px] font-semibold hover:opacity-90 transition"
-                style={{ background: "#f07400" }}
-              >
-                {deleteLoading ? "Deleting..." : "Delete"}
-              </button>
-            </div>
+     {showDeleteModal && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
+    <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-[scaleIn_0.25s_ease-out]">
+      {/* Header */}
+      <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-red-50 flex items-center justify-center">
+            <Trash2 className="w-4 h-4 text-red-600" strokeWidth={2} />
           </div>
+          <h2 className="text-base font-bold text-gray-900 uppercase tracking-wide">
+            Delete Lead
+          </h2>
         </div>
-      )}
+
+        <button
+          onClick={() => setShowDeleteModal(false)}
+          className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-colors"
+        >
+          <X className="w-5 h-5" strokeWidth={2} />
+        </button>
+      </div>
+
+      {/* Body */}
+      <div className="px-7 pt-9 pb-6 text-center">
+        {/* Icon */}
+        <div className="w-24 h-24 mx-auto rounded-full bg-red-50 flex items-center justify-center mb-5">
+          <Trash2 className="w-10 h-10 text-red-600" strokeWidth={1.8} />
+        </div>
+
+        {/* Name */}
+        <h3 className="text-xl font-extrabold text-gray-900 tracking-wide uppercase mb-2">
+          {leadToDelete?.customer_name || "This Lead"}
+        </h3>
+
+        {/* Divider */}
+        <div className="w-10 h-[3px] bg-red-500 rounded-full mx-auto mb-4"></div>
+
+        {/* Message */}
+        <p className="text-sm text-gray-500 leading-relaxed">
+          This action cannot be undone.
+          <br />
+          Are you sure you want to delete this lead?
+        </p>
+      </div>
+
+      {/* Footer Buttons */}
+      <div className="flex gap-3.5 px-7 pb-7">
+        <button
+          onClick={() => setShowDeleteModal(false)}
+          disabled={deleteLoading}
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold border border-blue-300 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <X className="w-4 h-4" strokeWidth={2.2} />
+          Cancel
+        </button>
+
+        <button
+          onClick={handleDelete}
+          disabled={deleteLoading}
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 shadow-sm hover:shadow-md transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+        >
+          {deleteLoading ? (
+            <>
+              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="white"
+                  strokeWidth="3"
+                  fill="none"
+                  opacity="0.3"
+                />
+                <path d="M4 12a8 8 0 018-8" stroke="white" strokeWidth="3" />
+              </svg>
+              Deleting...
+            </>
+          ) : (
+            <>
+              <Trash2 className="w-4 h-4" strokeWidth={2.2} />
+              Delete Lead
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+
+    <style jsx>{`
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes scaleIn {
+        from { opacity: 0; transform: scale(0.95) translateY(8px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+      }
+    `}</style>
+  </div>
+)}
 
       {/* ADD FOLLOW-UP MODAL */}
       {showModal && (

@@ -3204,6 +3204,14 @@ export default function Dashboard() {
                         dy={12}
                         interval={0}
                       />
+{/* 
+                      <XAxis
+  dataKey="month"
+  angle={-45}
+  textAnchor="end"
+  interval={0}
+  height={60}
+/> */}
                       <YAxis
                         axisLine={false}
                         tickLine={false}
