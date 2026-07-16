@@ -9,6 +9,47 @@ import Select from "react-select";
 import { X, FileImage, FileText } from "lucide-react";
 import useAuth from "../components/useAuth";
 
+/* ================================================================
+   SlideOverModal — reusable right-side slide-in panel
+   ================================================================ */
+function SlideOverModal({ isOpen, onClose, children, widthClass = "w-[800px]" }) {
+  const [shouldRender, setShouldRender] = useState(isOpen);
+  const [animateIn, setAnimateIn] = useState(false);
+  const ANIMATION_DURATION = 300;
+
+  useEffect(() => {
+    let timer;
+    if (isOpen) {
+      setShouldRender(true);
+      timer = setTimeout(() => setAnimateIn(true), 10);
+    } else {
+      setAnimateIn(false);
+      timer = setTimeout(() => setShouldRender(false), ANIMATION_DURATION);
+    }
+    return () => clearTimeout(timer);
+  }, [isOpen]);
+
+  if (!shouldRender) return null;
+
+  return (
+    <div
+      className={`fixed inset-0 z-50 flex justify-end bg-gray-900/30 transition-opacity duration-300 ease-in-out ${
+        animateIn ? "opacity-100" : "opacity-0"
+      }`}
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`bg-white shadow-lg h-full ${widthClass} relative overflow-y-auto transform transition-transform duration-300 ease-in-out ${
+          animateIn ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export default function Page() {
   const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -44,6 +85,7 @@ export default function Page() {
   const [taskDeleteId, setTaskDeleteId] = useState(null);
 
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [activeTab, setActiveTab] = useState("All");
 
   const [scrollOffsets, setScrollOffsets] = useState({});
   const [loadingColumns, setLoadingColumns] = useState({});
@@ -54,7 +96,6 @@ export default function Page() {
   // Standardized Micara IMS Pagination Logic
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-
 
   const fetchData = async () => {
     try {
@@ -84,7 +125,6 @@ export default function Page() {
   useEffect(() => {
     setCurrentPage(1);
   }, [filters, itemsPerPage]);
-
 
   // ✅ Close export menu when clicking outside
   useEffect(() => {
@@ -427,10 +467,11 @@ export default function Page() {
   };
 
   // Standardized Pagination Calculations
+  const filteredByTab = activeTab === "All" ? tasks : tasks.filter((t) => t.status_name === activeTab);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentData = tasks.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(tasks.length / itemsPerPage);
+  const currentData = filteredByTab.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredByTab.length / itemsPerPage);
 
   const getSlidingPages = () => {
     const visibleCount = 5;
@@ -449,7 +490,6 @@ export default function Page() {
     }
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   };
-
 
   // Asignee dropdown api calling
   useEffect(() => {
@@ -510,16 +550,24 @@ export default function Page() {
 
     const apiUrl = RELATED_API_MAP[relatedTo];
 
+    // If no endpoint configured for this option yet, show empty
+    if (!apiUrl) {
+      setSecondOptions([]);
+      return;
+    }
+
     const fetchOptions = async () => {
       try {
         const res = await axios.get(apiUrl, { params: { status: 1 } });
 
-        let finalData =
-          res.data.data || // for API returning {data: []}
-          res.data || // for API returning []
-          [];
+        // Safely extract an array from whatever shape the API returns
+        const raw =
+          res.data?.data ||   // { data: [...] }
+          res.data?.result || // { result: [...] }
+          res.data;           // bare array
 
-        setSecondOptions(finalData);
+        // Always store an array — never an object or string
+        setSecondOptions(Array.isArray(raw) ? raw : []);
       } catch (error) {
         console.error("Failed to load dropdown data:", error);
         setSecondOptions([]);
@@ -748,7 +796,7 @@ export default function Page() {
             <button
               type="button"
               onClick={() => setShowForm(true)}
-              className="flex-1 sm:flex-none  text-white px-5 py-2 rounded-sm text-sm font-bold shadow-md transition-all text-center    bg-gradient-to-br from-indigo-500 to-violet-600"
+              className="flex-1 sm:flex-none bg-orange-500 hover:bg-orange-600 text-white px-5 py-2 rounded-sm text-sm font-semibold shadow-md transition-all text-center cursor-pointer"
             >
               + ADD TASK
             </button>
@@ -862,7 +910,6 @@ export default function Page() {
           />
         </div>
 
-
         {/* Created By - dynamic API */}
         <select
           name="created_by_name"
@@ -925,28 +972,85 @@ export default function Page() {
         </div>
       </div>
 
-      {/* Table */}
-      <form className="p-1 mx-4">
-        {/* <div className="bg-white shadow-md rounded-sm p-1 border border-gray-200">
-          <table className=" w-full text-sm text-left text-gray-700 border-collapse mt-2 mb-2"> */}
+      {/* Tabs + Table */}
+      <form className="px-7 pb-4">
+        <div className="bg-white rounded-sm border border-gray-100 py-2">
 
-        <div
-          className="overflow-x-auto overflow-y-scroll max-h-[500px] custom-scroll p-1 bg-white"
-          style={{ overflowX: "scroll" }}
-        >
-          <table className="w-full text-sm  text-left text-gray-700 border-collapse mt-2 mb-2 whitespace-nowrap">
-            <thead className="uppercase font-semibold text-xs tracking-wider bg-gray-50 border-b border-gray-100 text-gray-400">
-              <tr>
-                <th className="py-3 px-5 w-10">#</th>
-                <th className="py-3 px-5 w-sm">Task Name</th>
+          {/* Tab Bar */}
+          <div className="flex items-center gap-8 px-6 pt-4 border-b border-gray-100 flex-wrap">
+            {[
+              { label: "All Tasks", key: "All", color: "blue", count: tasks.length },
+              ...Array.from(new Set(tasks.map((t) => t.status_name).filter(Boolean))).map((s) => ({
+                label: s,
+                key: s,
+                color: s === "Won" || s === "Completed" || s === "Done" ? "green"
+                  : s === "Lost" || s === "Cancelled" ? "red"
+                  : s === "Pending" ? "blue"
+                  : "blue",
+                count: tasks.filter((t) => t.status_name === s).length,
+              })),
+            ].map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => { setActiveTab(tab.key); setCurrentPage(1); }}
+                className={`pb-3 px-3 text-sm font-medium relative cursor-pointer transition-all
+                  ${activeTab === tab.key
+                    ? tab.color === "green" ? "text-green-600"
+                    : tab.color === "red" ? "text-red-600"
+                    : "text-blue-600"
+                    : "text-gray-400 hover:text-gray-600"}`}
+              >
+                {tab.label}
+                <span className={`ml-2 text-xs px-2 py-0.5 rounded-full
+                  ${activeTab === tab.key
+                    ? tab.color === "green" ? "bg-green-100 text-green-600"
+                    : tab.color === "red" ? "bg-red-100 text-red-600"
+                    : "bg-blue-100 text-blue-600"
+                    : "bg-gray-100 text-gray-400"}`}>
+                  {tab.count}
+                </span>
+                {activeTab === tab.key && (
+                  <div className={`absolute bottom-0 left-0 w-full h-0.5
+                    ${tab.color === "green" ? "bg-green-600"
+                    : tab.color === "red" ? "bg-red-600"
+                    : "bg-blue-600"}`}></div>
+                )}
+              </button>
+            ))}
+          </div>
 
-                <th className="py-3 px-4">Start Date</th>
-                <th className="py-3 px-4 ">Due Date</th>
-                <th className="py-3 px-4 ">Priority - </th>
-                <th className="py-3 px-4 ">Assignee</th>
-                <th className="py-3 px-4 ">Status</th>
-                <th className="py-3 px-4 ">Created</th>
-                <th className="py-3 px-4 ">Action</th>
+          <div className="p-4">
+            <div
+              className="overflow-x-auto overflow-y-scroll max-h-[500px] custom-scroll"
+              style={{ overflowX: "scroll" }}
+            >
+          <table className="w-full text-sm text-left text-gray-700 border-collapse whitespace-nowrap">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-100">
+                <th className="py-3 px-3 text-left text-xs font-semibold text-gray-500">#</th>
+                <th className="py-3 px-3 text-left text-xs font-semibold text-gray-500">
+                  Task Name <span className="text-gray-300 ml-0.5">↑↓</span>
+                </th>
+                <th className="py-3 px-3 text-left text-xs font-semibold text-gray-500">
+                  Start Date <span className="text-gray-300 ml-0.5">↑↓</span>
+                </th>
+                <th className="py-3 px-3 text-left text-xs font-semibold text-gray-500">
+                  Due Date <span className="text-gray-300 ml-0.5">↑↓</span>
+                </th>
+                <th className="py-3 px-3 text-left text-xs font-semibold text-gray-500">
+                  Priority <span className="text-gray-300 ml-0.5">↑↓</span>
+                </th>
+                <th className="py-3 px-3 text-left text-xs font-semibold text-gray-500">
+                  Assignee <span className="text-gray-300 ml-0.5">↑↓</span>
+                </th>
+                <th className="py-3 px-3 text-left text-xs font-semibold text-gray-500">
+                  Status <span className="text-gray-300 ml-0.5">↑↓</span>
+                </th>
+                <th className="py-3 px-3 text-left text-xs font-semibold text-gray-500">
+                  Created <span className="text-gray-300 ml-0.5">↑↓</span>
+                </th>
+                <th className="py-3 px-3 text-left text-xs font-semibold text-gray-500">Action</th>
               </tr>
             </thead>
 
@@ -955,13 +1059,15 @@ export default function Page() {
                 currentData.map((item, index) => (
                   <tr
                     key={item.id}
-                    className={`hover:bg-gray-50 transition font-medium`}
+                    className="border-b border-gray-50 hover:bg-indigo-50/30 transition-all"
                   >
-                    <td className="py-1 px-4 text-gray-600">{index + 1}</td>
-                    <td className="py-2 px-5 text-gray-800">
-                      {item.task_name}
+                    <td className="py-3 px-2">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                    <td className="font-medium px-2">
+                      <div className="flex items-center gap-2">
+                        {item.task_name}
+                      </div>
                     </td>
-                    <td className="py-1 px-4">
+                    <td className="py-3 px-3 text-gray-500">
                       {item.start_date
                         ? new Date(item.start_date)
                             .toLocaleDateString("en-GB")
@@ -969,7 +1075,7 @@ export default function Page() {
                         : "-"}
                     </td>
 
-                    <td className="py-2 px-4 ">
+                    <td className="py-3 px-3 text-gray-500">
                       {item.due_date
                         ? new Date(item.due_date)
                             .toLocaleDateString("en-GB")
@@ -977,7 +1083,7 @@ export default function Page() {
                         : "-"}
                     </td>
 
-                    <td className="py-2 px-2 text-lg">
+                    <td className="py-3 px-4 text-lg">
                       {[
                         ...Array(
                           item.priority === "High"
@@ -1010,22 +1116,15 @@ export default function Page() {
                       ))}
                     </td>
 
-                    <td
-                      style={{
-                        display: "flex",
-                        gap: "1px",
-                        alignItems: "center",
-                      }}
-                      className="py-2 px-4"
-                    >
+                    <td className="py-3 px-3">
+                      <div className="flex items-center gap-1 flex-wrap">
                       {String(item.assignee)
                         .split(",")
-                        .map((name, index) => {
+                        .map((name, i) => {
                           const letter = name.trim().charAt(0).toUpperCase();
-
                           return (
                             <div
-                              key={index}
+                              key={i}
                               title={name.trim()}
                               className="px-3 py-1.5 bg-blue-800 text-white rounded-full font-semibold text-sm flex justify-center items-center min-w-[28px] text-center select-none"
                             >
@@ -1033,28 +1132,51 @@ export default function Page() {
                             </div>
                           );
                         })}
+                      </div>
                     </td>
 
-                    <td className="py-2 px-4 ">{item.status_name}</td>
-                    <td className="py-2 px-4 w-50">
+                    <td className="py-3 px-3">
+                      <span className={`border rounded-sm px-3 py-1 text-xs font-semibold outline-none
+                        ${item.status_name === "Pending" ? "border-gray-200 bg-gray-50 text-gray-700" : ""}
+                        ${item.status_name === "Won" || item.status_name === "Completed" || item.status_name === "Done" ? "border-green-200 bg-green-50 text-green-700" : ""}
+                        ${item.status_name === "Lost" || item.status_name === "Cancelled" ? "border-red-200 bg-red-50 text-red-700" : ""}
+                        ${!["Pending","Won","Completed","Done","Lost","Cancelled"].includes(item.status_name) ? "border-blue-200 bg-blue-50 text-blue-700" : ""}
+                      `}>
+                        {item.status_name}
+                      </span>
+                    </td>
+
+                    <td className="py-3 px-4 text-gray-500 w-50">
                       {item.created_by_name} | {formatDateTime(item.created_at)}
                     </td>
 
-                    <td className="py-2 px-4  text-lg">
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(item)}
-                        className="text-gray-400 hover:text-blue-800 mx-2"
-                      >
-                        <i className="bi bi-pencil-square"></i>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(item.id)}
-                        className="text-gray-400 hover:text-red-600"
-                      >
-                        <i className="bi bi-trash3"></i>
-                      </button>
+                    <td className="text-lg">
+                      <div className="flex items-center gap-2 flex-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => handleEdit(item)}
+                          className="text-gray-400 hover:text-green-600 cursor-pointer"
+                          title="View"
+                        >
+                          <i className="bi bi-eye text-xl"></i>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleEdit(item)}
+                          className="text-gray-400 hover:text-blue-800 cursor-pointer"
+                          title="Edit"
+                        >
+                          <i className="bi bi-pencil-square"></i>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(item.id)}
+                          className="text-red-500 hover:text-red-700 cursor-pointer"
+                          title="Delete"
+                        >
+                          <i className="bi bi-trash3"></i>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -1068,645 +1190,739 @@ export default function Page() {
             </tbody>
           </table>
 
-          {/* ✅ STANDARDIZED MICARA IMS PAGINATION */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white rounded-b-lg">
-            {/* Left side: Rows per page selector */}
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-slate-500 font-medium">
-                Rows per page:
-              </span>
+          {/* PAGINATION — matches leads page layout */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-gray-100 bg-white">
+
+            {/* Left: Showing entries info */}
+            <p className="text-sm text-blue-600 font-medium whitespace-nowrap">
+              Showing {Math.min((currentPage - 1) * itemsPerPage + 1, filteredByTab.length)} to{" "}
+              {Math.min(currentPage * itemsPerPage, filteredByTab.length)} of{" "}
+              {filteredByTab.length} entries
+            </p>
+
+            {/* Center: Page navigation */}
+            <div className="flex items-center gap-1.5">
+              {/* Previous Button */}
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="w-8 h-8 flex items-center justify-center rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <i className="bi bi-chevron-left text-xs"></i>
+              </button>
+
+              {/* Page Buttons */}
+              {getSlidingPages().map((page) => (
+                <button
+                  type="button"
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-8 h-8 flex items-center justify-center rounded-md text-sm font-semibold transition-all ${
+                    currentPage === page
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "border border-gray-200 text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              {/* Next Button */}
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="w-8 h-8 flex items-center justify-center rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <i className="bi bi-chevron-right text-xs"></i>
+              </button>
+            </div>
+
+            {/* Right: Rows per page */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500 font-medium whitespace-nowrap">Rows per page:</span>
               <select
                 value={itemsPerPage}
                 onChange={(e) => {
                   setItemsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all cursor-pointer font-medium"
+                className="border border-gray-200 rounded-md px-2 py-1.5 text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all cursor-pointer font-medium"
               >
                 {[10, 20, 100, 200].map((size) => (
-                  <option key={size} value={size}>
-                    {size}
-                  </option>
+                  <option key={size} value={size}>{size}</option>
                 ))}
               </select>
             </div>
 
-
-            {/* Right side: Navigation buttons (only if totalPages > 1) */}
-            {totalPages > 1 && (
-              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
-                {/* Previous Button */}
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  <i className="bi bi-chevron-left text-sm"></i>
-                </button>
-
-                {/* Page Buttons */}
-                <div className="flex items-center gap-1.5">
-                  {getSlidingPages().map((page) => (
-                    <button
-                      type="button"
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${
-                        currentPage === page
-                          ? "bg-[#212121] text-white shadow-md shadow-black/10"
-                          : "border border-slate-200 text-slate-600 hover:bg-slate-50"
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Next Button */}
-                <button
-                  type="button"
-                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  <i className="bi bi-chevron-right text-sm"></i>
-                </button>
-              </div>
-            )}
           </div>
-
+            </div>
+          </div>
         </div>
       </form>
 
-      {/* Modal remains same */}
-      {showForm && (
-        <div className="fixed inset-0 bg-gray-900/30 z-50 flex justify-center items-center">
-          <div className="bg-white rounded-sm shadow-lg w-[800px] relative max-h-[75vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white z-50 px-6 pt-6 pb-3  from-orange-100 to-white bg-gradient-to-r ">
+      {/* Add / Edit Task — SlideOver Panel */}
+      <SlideOverModal
+        isOpen={showForm}
+        onClose={() => {
+          resetForm();
+          setExistingFiles([]);
+        }}
+        widthClass="w-[800px]"
+      >
+        {/* ── HEADER ── */}
+        <div className="sticky top-0 z-50 bg-white border-b border-gray-100">
+          <div className="px-6 pt-5 pb-4">
+            <div className="flex items-start gap-3">
+              {/* Icon badge */}
+              <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-indigo-200">
+                <i className="bi bi-plus-lg text-white text-xl font-bold"></i>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-[15px] font-bold text-gray-900 leading-tight">
+                  {editId ? "Edit" : "Add"} Task
+                </h3>
+                <p className="text-[11px] text-gray-8 00 mt-0.5">
+                  {editId ? "Update the task details below" : "Fill in the details to create a new task"}
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => {
                   resetForm();
                   setExistingFiles([]);
                 }}
-                className="absolute top-6 right-6 text-xl text-orange-500 hover:text-orange-600"
+                className="w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-all flex-shrink-0"
               >
-                ✕
+                <i className="bi bi-x text-base leading-none"></i>
               </button>
+            </div>
+            {/* Blue underline accent */}
+            
+          </div>
+        </div>
 
-              <h3 className="text-lg mb-3 text-orange-500 font-semibold">
-                {editId ? "Edit" : "Add"} Task
-              </h3>
+        {/* ── FORM CONTENT ── */}
+        <div className="p-6 pt-4">
+          <form onSubmit={handleSubmit}>
+
+            {/* Task Name */}
+            <div className="mb-4">
+              <label className="block mb-1 text-sm font-medium text-gray-600">
+                Task Name <span className="text-red-500">*</span>
+              </label>
+              <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                <span className="flex items-center justify-center w-10 shrink-0 bg-indigo-50 border-r border-gray-100">
+                  <i className="bi bi-pencil-square text-indigo-500 text-sm"></i>
+                </span>
+                <input
+                  type="text"
+                  name="task_name"
+                  value={formData.task_name}
+                  onChange={handleChange}
+                  placeholder="Enter task name"
+                  className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
+                  required
+                />
+              </div>
             </div>
 
-            {/* FORM CONTENT */}
-            <div className="p-6 pt-3">
-              <form onSubmit={handleSubmit}>
-                <div className="text-gray-600 mb-2">
-                  <label className="block mb-2">Task Name * </label>
-
-                  <div className="relative">
-                    <input
-                      type="text"
-                      name="task_name"
-                      value={formData.task_name}
-                      onChange={handleChange}
-                      className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none "
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3 text-gray-600">
-                  <div>
-                    <label className="block mb-2">Start Date *</label>
-
-                    <div className="flex">
-                      <div className="relative w-full">
-                        <input
-                          type="date"
-                          value={startDate}
-                          onChange={(e) => {
-                            setStartDate(e.target.value);
-                            setDueDate("");
-                          }}
-                          className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none "
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block mb-2"> Due Date *</label>
-                    <input
-                      type="date"
-                      value={dueDate}
-                      min={startDate}
-                      onChange={(e) => setDueDate(e.target.value)}
-                      className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none "
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block mb-2">Status *</label>
-
-                    <div className="flex">
-                      <div className="relative w-full">
-                        <select
-                          name="status"
-                          value={formData.status}
-                          onChange={handleChange}
-                          className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none"
-                          required
-                        >
-                          {status.map((item) => (
-                            <option key={item.id} value={item.id}>
-                              {item.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block mb-2">Priority *</label>
-
-                    <div className="flex">
-                      <div className="relative w-full">
-                        <select
-                          name="priority"
-                          value={formData.priority}
-                          onChange={handleChange}
-                          className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none"
-                          required
-                        >
-                          <option value=""> --Select-- </option>
-                          <option>High</option>
-                          <option>Medium</option>
-                          <option>Low</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block mb-2">Recurring Type *</label>
-                    <div className="relative">
-                      <select
-                        name="recurring_type"
-                        value={formData.recurring_type}
-                        onChange={handleChange}
-                        className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none"
-                        required
-                      >
-                        <option value="">-- Select --</option>
-                        <option>Day</option>
-                        <option>Week</option>
-                        <option>Month</option>
-                        <option>Year</option>
-                        <option>Custom</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block mb-2">Repeat Every *</label>
-                    <div className="relative">
-                      <select
-                        name="repeat_every"
-                        value={formData.repeat_every}
-                        onChange={handleChange}
-                        className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none"
-                        required
-                      >
-                        <option value="">-- Select --</option>
-                        {[6, 5, 4, 3, 2, 1].map((n) => (
-                          <option key={n}>{n}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block mb-2">Related To *</label>
-                    <div className="relative">
-                      <select
-                        value={relatedTo}
-                        onChange={(e) => {
-                          setRelatedTo(e.target.value);
-                          setSecondValue("");
-                        }}
-                        className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none"
-                        required
-                      >
-                        <option value="">-- Select --</option>
-                        <option>Contract</option>
-                        <option>Quotation</option>
-                        <option>Lead</option>
-                        <option>Inquiry</option>
-                        <option>Customer</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block mb-2">{relatedTo} *</label>
-                    <div className="relative">
-                      {relatedTo ? (
-                        <select
-                          className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none"
-                          value={secondValue}
-                          onChange={(e) => setSecondValue(e.target.value)}
-                          required
-                        >
-                          <option value="">-- Select --</option>
-                          {secondOptions.length > 0 ? (
-                            secondOptions.map((item) => (
-                              <option
-                                key={item.id}
-                                value={item.name || item.customer_name}
-                              >
-                                {item.name || item.customer_name}
-                              </option>
-                            ))
-                          ) : (
-                            <option disabled>No data found</option>
-                          )}
-                        </select>
-                      ) : (
-                        <div className="w-full border border-orange-300 bg-orange-100 rounded-md px-4 py-2 text-orange-500">
-                          Select Related To first
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block mb-2 ">Assignee *</label>
-                    <div className="relative ">
-                      <Select
-                        isMulti
-                        options={asignee.map((item) => ({
-                          value: item.name,
-                          label: item.name,
-                        }))}
-                        value={
-                          formData.assignee
-                            ? formData.assignee.split(",").map((n) => ({
-                                label: n.trim(),
-                                value: n.trim(),
-                              }))
-                            : []
-                        }
-                        onChange={(selected) => {
-                          const names = selected.map((s) => s.value).join(",");
-                          setFormData({ ...formData, assignee: names });
-                        }}
-                        placeholder="Select Assignee"
-                        className="w-full "
-                        styles={{
-                          control: (provided, state) => ({
-                            ...provided,
-                            borderColor: state.isFocused
-                              ? "#F5C99A"
-                              : "#e5e7eb",
-                            boxShadow: state.isFocused
-                              ? "0 0 0 1px #F5C99A"
-                              : "none",
-                            "&:hover": {
-                              borderColor: "#F5C99A",
-                            },
-                            minHeight: "40px",
-                            borderRadius: "6px",
-                          }),
-
-                          // ✅ DROPDOWN BACKGROUND
-                          menu: (provided) => ({
-                            ...provided,
-                            backgroundColor: "bg-white",
-                            borderRadius: "0px",
-                            overflow: "hidden",
-                            padding: "4px", // remove default padding
-                          }),
-
-                          // ✅ EACH OPTION STYLE
-                          option: (provided, state) => ({
-                            ...provided,
-                            fontSize: "14px",
-                            backgroundColor: state.isSelected
-                              ? "#767676"
-                              : state.isFocused
-                                ? "#767676"
-                                : "#ffffff",
-                            color:
-                              state.isSelected || state.isFocused
-                                ? "#ffffff"
-                                : "#000000",
-                            cursor: "pointer",
-                            padding: "5px 6px",
-                            ":active": {
-                              ...provided[":active"],
-                              backgroundColor: "#767676", // ✅ this fixes the blue flash on click
-                            },
-                          }),
-                          placeholder: (provided) => ({
-                            ...provided,
-                            color: "#767676",
-                          }),
-
-                          multiValue: (provided) => ({
-                            ...provided,
-                            backgroundColor: "#767676",
-                          }),
-
-                          multiValueLabel: (provided) => ({
-                            ...provided,
-                            color: "#fff",
-                          }),
-
-                          multiValueRemove: (provided) => ({
-                            ...provided,
-                            color: "#fff",
-                            "&:hover": {
-                              backgroundColor: "#767676",
-                              color: "#fff",
-                            },
-                          }),
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block mb-2">Template</label>
-                    <div className="relative">
-                      <select
-                        name="template"
-                        value={formData.template}
-                        onChange={handleChange}
-                        className="w-full border  rounded-sm px-4 py-2  border-orange-300 outline-none"
-                        required
-                      >
-                        <option value="">-- Select --</option>
-                        <option>N/A</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-gray-600 mt-2">
-                  <label className="block mb-2">Description *</label>
-                  <textarea
-                    rows={2}
-                    name="description"
-                    value={formData.description}
-                    onChange={handleChange}
-                    className="w-full border border-orange-300 rounded-md px-4 py-2 outline-none "
+            {/* Start Date & Due Date */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-600">
+                  Start Date <span className="text-red-500">*</span>
+                </label>
+                <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                  <span className="flex items-center justify-center w-10 shrink-0 bg-blue-50 border-r border-gray-100">
+                    <i className="bi bi-calendar3 text-blue-500 text-sm"></i>
+                  </span>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => {
+                      setStartDate(e.target.value);
+                      setDueDate("");
+                    }}
+                    className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
                     required
-                  ></textarea>
+                  />
                 </div>
-
-                <div className="text-gray-600 mt-2">
-                  <label className="block mb-2 ">Select Files *</label>
-                  <div className="border border-dashed border-orange-300 text-center ">
-                    <div className="m-3">
-                      <h3 className="mb-3">Upload Documents</h3>
-                      <button
-                        type="button"
-                        className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 mx-auto transition-all shadow-md shadow-orange-200"
-                        onClick={() => setShowModal(true)}
-                      >
-                        <i className="bi bi-cloud-arrow-up px-2"></i> Browse
-                        Files
-                      </button>
-                      <p className="mb-4 text-gray-400">
-                        Max size: 2MB - JPG, PNG, PDF, TXT, DOC, XLSX, CSV, PPTX
-                        file support
-                      </p>
-                    </div>
-                  </div>
+              </div>
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-600">
+                  Due Date <span className="text-red-500">*</span>
+                </label>
+                <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                  <span className="flex items-center justify-center w-10 shrink-0 bg-violet-50 border-r border-gray-100">
+                    <i className="bi bi-calendar-check text-violet-500 text-sm"></i>
+                  </span>
+                  <input
+                    type="date"
+                    value={dueDate}
+                    min={startDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                    className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
+                    required
+                  />
                 </div>
+              </div>
+            </div>
 
-                <div className="text-gray-600 mt-2">
-                  <label className="block mb-2">Existing Files</label>
-                  <div className="mb-3">
-                    {existingFiles.map((f) => (
-                      <div key={f.id} className="flex justify-between mb-1">
-                        <a href={f.file_path} target="_blank">
-                          {f.file_name}
-                        </a>
-                        <button
-                          type="button"
-                          className="text-gray-400 text-sm hover:text-red-600"
-                          onClick={() => confirmDelete(f.id)}
-                        >
-                          <i className="bi bi-trash3"></i>
-                        </button>
-                      </div>
+            {/* Status & Priority */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-600">
+                  Status <span className="text-red-500">*</span>
+                </label>
+                <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                  <span className="flex items-center justify-center w-10 shrink-0 bg-green-50 border-r border-gray-100">
+                    <i className="bi bi-shield-check text-green-500 text-sm"></i>
+                  </span>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
+                    required
+                  >
+                    {status.map((item) => (
+                      <option key={item.id} value={item.id}>{item.name}</option>
                     ))}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-600">
+                  Priority <span className="text-red-500">*</span>
+                </label>
+                <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                  <span className="flex items-center justify-center w-10 shrink-0 bg-red-50 border-r border-gray-100">
+                    <i className="bi bi-flag-fill text-red-400 text-sm"></i>
+                  </span>
+                  <select
+                    name="priority"
+                    value={formData.priority}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
+                    required
+                  >
+                    <option value=""> --Select-- </option>
+                    <option>High</option>
+                    <option>Medium</option>
+                    <option>Low</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Recurring Type & Repeat Every */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-600">
+                  Recurring Type <span className="text-red-500">*</span>
+                </label>
+                <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                  <span className="flex items-center justify-center w-10 shrink-0 bg-cyan-50 border-r border-gray-100">
+                    <i className="bi bi-arrow-repeat text-cyan-500 text-sm"></i>
+                  </span>
+                  <select
+                    name="recurring_type"
+                    value={formData.recurring_type}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
+                    required
+                  >
+                    <option value="">-- Select --</option>
+                    <option>Day</option>
+                    <option>Week</option>
+                    <option>Month</option>
+                    <option>Year</option>
+                    <option>Custom</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-600">
+                  Repeat Every <span className="text-red-500">*</span>
+                </label>
+                <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                  <span className="flex items-center justify-center w-10 shrink-0 bg-orange-50 border-r border-gray-100">
+                    <i className="bi bi-hash text-orange-400 text-sm"></i>
+                  </span>
+                  <select
+                    name="repeat_every"
+                    value={formData.repeat_every}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
+                    required
+                  >
+                    <option value="">-- Select --</option>
+                    {[6, 5, 4, 3, 2, 1].map((n) => (
+                      <option key={n}>{n}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Related To & Second Dropdown */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-600">
+                  Related To <span className="text-red-500">*</span>
+                </label>
+                <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                  <span className="flex items-center justify-center w-10 shrink-0 bg-yellow-50 border-r border-gray-100">
+                    <i className="bi bi-link-45deg text-yellow-500 text-sm"></i>
+                  </span>
+                  <select
+                    value={relatedTo}
+                    onChange={(e) => {
+                      setRelatedTo(e.target.value);
+                      setSecondValue("");
+                    }}
+                    className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
+                    required
+                  >
+                    <option value="">-- Select --</option>
+                    <option>Contract</option>
+                    <option>Quotation</option>
+                    <option>Lead</option>
+                    <option>Inquiry</option>
+                    <option>Customer</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-600">
+                  {relatedTo || "Select"} <span className="text-red-500">*</span>
+                </label>
+                {relatedTo ? (
+                  <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                    <span className="flex items-center justify-center w-10 shrink-0 bg-teal-50 border-r border-gray-100">
+                      <i className="bi bi-database text-teal-500 text-sm"></i>
+                    </span>
+                    <select
+                      className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
+                      value={secondValue}
+                      onChange={(e) => setSecondValue(e.target.value)}
+                      required
+                    >
+                      <option value="">-- Select --</option>
+                      {secondOptions.length > 0 ? (
+                        secondOptions.map((item) => (
+                          <option
+                            key={item.id}
+                            value={item.name || item.customer_name}
+                          >
+                            {item.name || item.customer_name}
+                          </option>
+                        ))
+                      ) : (
+                        <option disabled>No data found</option>
+                      )}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="flex items-stretch border border-dashed border-indigo-200 rounded-lg overflow-hidden bg-indigo-50">
+                    <span className="flex items-center justify-center w-10 shrink-0 bg-indigo-100 border-r border-indigo-100">
+                      <i className="bi bi-database text-indigo-300 text-sm"></i>
+                    </span>
+                    <span className="px-3 py-2 text-sm text-indigo-300">Select Related To first</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Assignee & Template */}
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-600">
+                  Assignee <span className="text-red-500">*</span>
+                </label>
+                <Select
+                  isMulti
+                  options={asignee.map((item) => ({
+                    value: item.name,
+                    label: item.name,
+                  }))}
+                  value={
+                    formData.assignee
+                      ? formData.assignee.split(",").map((n) => ({
+                          label: n.trim(),
+                          value: n.trim(),
+                        }))
+                      : []
+                  }
+                  onChange={(selected) => {
+                    const names = selected.map((s) => s.value).join(",");
+                    setFormData({ ...formData, assignee: names });
+                  }}
+                  placeholder="Select Assignee"
+                  className="w-full"
+                  styles={{
+                    control: (provided, state) => ({
+                      ...provided,
+                      borderColor: state.isFocused ? "#6366f1" : "#e5e7eb",
+                      boxShadow: state.isFocused ? "0 0 0 2px rgba(99,102,241,0.1)" : "none",
+                      "&:hover": { borderColor: "#6366f1" },
+                      minHeight: "42px",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                    }),
+                    menu: (provided) => ({
+                      ...provided,
+                      backgroundColor: "white",
+                      borderRadius: "8px",
+                      overflow: "hidden",
+                      padding: "4px",
+                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+                      border: "1px solid #e5e7eb",
+                    }),
+                    option: (provided, state) => ({
+                      ...provided,
+                      fontSize: "14px",
+                      backgroundColor: state.isSelected
+                        ? "#6366f1"
+                        : state.isFocused
+                          ? "#eef2ff"
+                          : "#ffffff",
+                      color: state.isSelected ? "#ffffff" : "#374151",
+                      cursor: "pointer",
+                      padding: "6px 10px",
+                      borderRadius: "6px",
+                      ":active": {
+                        ...provided[":active"],
+                        backgroundColor: "#6366f1",
+                      },
+                    }),
+                    placeholder: (provided) => ({
+                      ...provided,
+                      color: "#9ca3af",
+                      fontSize: "14px",
+                    }),
+                    multiValue: (provided) => ({
+                      ...provided,
+                      backgroundColor: "#eef2ff",
+                      borderRadius: "4px",
+                    }),
+                    multiValueLabel: (provided) => ({
+                      ...provided,
+                      color: "#6366f1",
+                      fontWeight: "600",
+                      fontSize: "12px",
+                    }),
+                    multiValueRemove: (provided) => ({
+                      ...provided,
+                      color: "#6366f1",
+                      "&:hover": {
+                        backgroundColor: "#6366f1",
+                        color: "#fff",
+                      },
+                    }),
+                  }}
+                />
+              </div>
+              <div>
+                <label className="block mb-1 text-sm font-medium text-gray-600">
+                  Template
+                </label>
+                <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                  <span className="flex items-center justify-center w-10 shrink-0 bg-violet-50 border-r border-gray-100">
+                    <i className="bi bi-file-earmark-text text-violet-500 text-sm"></i>
+                  </span>
+                  <select
+                    name="template"
+                    value={formData.template}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
+                    required
+                  >
+                    <option value="">-- Select --</option>
+                    <option>N/A</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="mb-4">
+              <label className="block mb-1 text-sm font-medium text-gray-600">
+                Description <span className="text-red-500">*</span>
+              </label>
+              <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                <span className="flex items-start justify-center w-10 shrink-0 bg-blue-50 border-r border-gray-100 pt-2.5">
+                  <i className="bi bi-card-text text-blue-500 text-sm"></i>
+                </span>
+                <textarea
+                  rows={3}
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  placeholder="Enter description of the task..."
+                  className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent resize-none"
+                  required
+                ></textarea>
+              </div>
+            </div>
+
+            {/* Select Files */}
+            <div className="mb-4">
+              <label className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                <i className="bi bi-paperclip text-indigo-500 text-xs"></i>
+                Select Files <span className="text-red-400">*</span>
+              </label>
+              <div
+                className="border-2 border-dashed border-indigo-200 rounded-xl bg-indigo-50/40 text-center py-6 px-4 cursor-pointer hover:bg-indigo-50 transition-all"
+                onClick={() => setShowModal(true)}
+              >
+                <span className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mx-auto mb-2 shadow-md shadow-indigo-200">
+                  <i className="bi bi-cloud-arrow-up text-white text-lg"></i>
+                </span>
+                <p className="text-sm font-medium text-gray-600 mb-1">
+                  Drag &amp; drop files here or click to browse
+                </p>
+                <p className="text-xs text-gray-800 mb-2">
+                  Upload supporting documents or images (Max 2MB)
+                </p>
+                <div className="flex justify-center gap-1.5 flex-wrap">
+                  <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[10px] font-bold">JPG</span>
+                  <span className="px-2 py-0.5 rounded-md bg-green-50 text-green-600 text-[10px] font-bold">PNG</span>
+                  <span className="px-2 py-0.5 rounded-md bg-red-50 text-red-600 text-[10px] font-bold">PDF</span>
+                  <span className="px-2 py-0.5 rounded-md bg-orange-50 text-orange-500 text-[10px] font-bold">TXT</span>
+                  <span className="px-2 py-0.5 rounded-md bg-sky-50 text-sky-600 text-[10px] font-bold">DOC</span>
+                  <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600 text-[10px] font-bold">XLSX</span>
+                  <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-600 text-[10px] font-bold">CSV</span>
+                  <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-600 text-[10px] font-bold">PPTX</span>
+                </div>
+                <button
+                  type="button"
+                  className="mt-3 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 mx-auto transition-all shadow-md shadow-indigo-200"
+                  onClick={(e) => { e.stopPropagation(); setShowModal(true); }}
+                >
+                  <i className="bi bi-folder2-open"></i> Browse Files
+                </button>
+              </div>
+            </div>
+
+            {/* Existing Files */}
+            <div className="mb-4">
+              <label className="flex items-center gap-1.5 text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                <i className="bi bi-folder text-indigo-500 text-xs"></i>
+                Existing Files
+              </label>
+              <div className="space-y-1">
+                {existingFiles.map((f) => (
+                  <div key={f.id} className="flex justify-between items-center px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-100">
+                    <a href={f.file_path} target="_blank" className="text-sm text-indigo-600 hover:underline truncate">
+                      <i className="bi bi-file-earmark mr-1.5"></i>
+                      {f.file_name}
+                    </a>
+                    <button
+                      type="button"
+                      className="text-gray-400 text-sm hover:text-red-500 ml-2 flex-shrink-0"
+                      onClick={() => confirmDelete(f.id)}
+                    >
+                      <i className="bi bi-trash3"></i>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* File Delete Confirm Modal */}
+            {showDeleteModal && (
+              <div className="fixed inset-0 flex items-center justify-center bg-gray-900/30 z-50">
+                <div className="bg-white p-6 rounded-xl shadow-lg w-80 text-center">
+                  <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
+                    <i className="bi bi-trash3 text-red-500 text-lg"></i>
+                  </div>
+                  <h2 className="text-base font-bold mb-1 text-gray-800">Confirm Delete</h2>
+                  <p className="text-sm text-gray-500 mb-5">Are you sure you want to delete this file?</p>
+                  <div className="flex justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile(fileToDelete)}
+                      className="px-5 py-2 bg-red-500 text-white text-sm font-semibold rounded-lg hover:bg-red-600 transition-all"
+                    >
+                      Yes, Delete
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteModal(false)}
+                      className="px-5 py-2 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 transition-all"
+                    >
+                      Cancel
+                    </button>
                   </div>
                 </div>
+              </div>
+            )}
 
-                {showDeleteModal && (
-                  <div className="fixed inset-0 flex items-center justify-center bg-gray-900/30 z-50">
-                    <div className="bg-white p-6 rounded-sm shadow-lg w-90 text-center">
-                      <h2 className="text-lg font-semibold mb-4 text-orange-500">
-                        Confirm Delete
-                      </h2>
-                      <p className="mb-6">
-                        Are you sure you want to delete this File?
+            {/* UPLOAD MODAL */}
+            {showModal && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-60">
+                <div className="w-[650px] bg-white rounded-xl shadow-xl overflow-hidden">
+                  <div className="p-4 flex justify-between items-center border-b border-gray-100">
+                    <h2 className="text-indigo-600 text-base font-bold flex items-center gap-2">
+                      <i className="bi bi-cloud-arrow-up text-lg"></i> Upload Files
+                    </h2>
+                    <X
+                      className="text-gray-400 hover:text-gray-700 cursor-pointer transition-all"
+                      size={20}
+                      onClick={() => setShowModal(false)}
+                    />
+                  </div>
+
+                  <div className="flex justify-between">
+                    <div
+                      onDrop={handleDrop}
+                      onDragOver={(e) => e.preventDefault()}
+                      className="border-2 border-dashed border-indigo-200 m-6 p-8 text-center rounded-xl bg-indigo-50/40 hover:bg-indigo-50 transition-all cursor-pointer"
+                    >
+                      <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i className="bi bi-cloud-arrow-up text-indigo-500 text-lg"></i>
+                      </div>
+                      <p className="font-semibold text-gray-700 mt-1">DRAG FILES HERE</p>
+                      <p className="text-gray-500 mt-1 text-sm">
+                        OR{" "}
+                        <label className="text-indigo-600 underline cursor-pointer font-medium">
+                          SELECT FILE
+                          <input
+                            type="file"
+                            multiple
+                            className="hidden"
+                            onChange={handleSelect}
+                          />
+                        </label>
                       </p>
-                      <div className="flex justify-center gap-4">
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveFile(fileToDelete)}
-                          className="bg-orange-500 text-white px-8 py-2 rounded-sm hover:bg-orange-600"
-                        >
-                          Yes
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setShowDeleteModal(false)}
-                          className="bg-gray-300  px-8 py-2    rounded-sm text-sm font-medium  border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
-                        >
-                          No
-                        </button>
-                      </div>
                     </div>
-                  </div>
-                )}
 
-                {/* UPLOAD MODAL */}
-                {showModal && (
-                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-60">
-                    <div className="w-[650px] bg-white rounded-sm shadow-xl">
-                      <div className=" p-4 flex justify-between from-orange-100  to-white bg-gradient-to-r">
-                        <h2 className="text-orange-500 text-lg">
-                          Upload Files
-                        </h2>
-                        <X
-                          className="text-white cursor-pointer"
-                          onClick={() => setShowModal(false)}
-                        />
-                      </div>
-
-                      <div className="flex justify-between">
+                    <div className="max-h-52 overflow-y-auto px-6 pb-4 mt-4 space-y-8 custom-scroll">
+                      {/* Newly Added Files */}
+                      {newFiles.map((f) => (
                         <div
-                          onDrop={handleDrop}
-                          onDragOver={(e) => e.preventDefault()}
-                          className="border-2 border-dashed border-orange-300 m-6 p-8 text-center rounded-xl"
+                          key={f.id}
+                          className="flex items-center justify-between gap-3 border border-gray-200 p-3 mb-3 rounded-lg"
                         >
-                          <p className="font-semibold mt-3">DRAG FILES HERE</p>
-                          <p className="text-gray-500 mt-1">
-                            OR{" "}
-                            <label className="text-gray-700 underline cursor-pointer">
-                              SELECT FILE
-                              <input
-                                type="file"
-                                multiple
-                                className="hidden"
-                                onChange={handleSelect}
-                              />
-                            </label>
-                          </p>
+                          <div className="flex items-center gap-3">
+                            {f.file.type.includes("image") ? (
+                              <FileImage size={35} className="text-indigo-500" />
+                            ) : (
+                              <FileText size={35} className="text-indigo-500 text-sm" />
+                            )}
+                            <p className="truncate max-w-[240px] text-sm text-gray-700">
+                              {f.file.name}
+                            </p>
+                          </div>
+                          <X
+                            size={22}
+                            className="text-gray-400 hover:text-red-400 cursor-pointer"
+                            onClick={() =>
+                              setNewFiles(
+                                newFiles.filter((file) => file.id !== f.id),
+                              )
+                            }
+                          />
                         </div>
-
-                        <div className="max-h-52 overflow-y-auto px-6 pb-4 mt-4 space-y-8 custom-scroll">
-                          {/* Newly Added Files */}
-                          {newFiles.map((f) => (
-                            <div
-                              key={f.id}
-                              className="flex items-center justify-between gap-3 border border-gray-300 p-3 mb-3 rounded-sm"
-                            >
-                              <div className="flex items-center gap-3">
-                                {f.file.type.includes("image") ? (
-                                  <FileImage
-                                    size={35}
-                                    className="text-orange-500"
-                                  />
-                                ) : (
-                                  <FileText
-                                    size={35}
-                                    className="text-orange-500 text-sm"
-                                  />
-                                )}
-                                <p className="truncate max-w-[240px]">
-                                  {f.file.name}
-                                </p>
-                              </div>
-                              <X
-                                size={22}
-                                className="text-gray-500 hover:text-red-400 cursor-pointer"
-                                onClick={() =>
-                                  setNewFiles(
-                                    newFiles.filter((file) => file.id !== f.id),
-                                  )
-                                }
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="p-6 flex justify-end">
-                        <button
-                          className="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-sm"
-                          onClick={() => setShowModal(false)}
-                        >
-                          Done
-                        </button>
-                      </div>
+                      ))}
                     </div>
                   </div>
-                )}
 
-                {/* BUTTONS */}
-                {/* BUTTONS */}
-                <div className="flex justify-end mt-5 gap-2">
+                  <div className="p-5 flex justify-end border-t border-gray-100">
+                    <button
+                      className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg flex items-center gap-2 transition-all shadow-md shadow-indigo-200"
+                      onClick={() => setShowModal(false)}
+                    >
+                      <i className="bi bi-check2"></i> Done
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Footer note */}
+            <p className="text-[11px] text-gray-400 flex items-center gap-1 mt-1 mb-4">
+              <i className="bi bi-info-circle text-indigo-400"></i>
+              All fields marked with <span className="text-red-400 font-bold">*</span> are required
+            </p>
+
+            {/* BUTTONS */}
+            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
                   <button
                     type="button"
                     onClick={() => {
                       resetForm();
                       setExistingFiles([]);
                     }}
-                    className="px-5 py-2 rounded-sm text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
+                    className="px-5 py-2.5 rounded-lg text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all flex items-center gap-1.5"
                   >
-                    CANCEL
+                    <i className="bi bi-x-lg text-xs"></i> Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className={`w-28 px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-sm flex items-center justify-center
-      ${isSubmitting ? "opacity-70 cursor-not-allowed" : ""}
-    `}
+                    className={`px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-indigo-200 ${isSubmitting ? "opacity-70 cursor-not-allowed" : ""}`}
                   >
                     {isSubmitting ? (
-                      <svg
-                        className="animate-spin h-4 w-4"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                      >
-                        <circle
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="white"
-                          strokeWidth="4"
-                          opacity="0.25"
-                        />
-                        <path
-                          fill="white"
-                          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                        />
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" opacity="0.25" />
+                        <path fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                       </svg>
-                    ) : editId ? (
-                      "UPDATE"
                     ) : (
-                      "SAVE"
+                      <i className="bi bi-check2-circle text-sm"></i>
                     )}
+                    {editId ? "Update Task" : "Add Task"}
                   </button>
                 </div>
-              </form>
-            </div>
-          </div>
+          </form>
         </div>
-      )}
+      </SlideOverModal>
 
       {/* Task Delete Confirmation Modal */}
       {showTaskDeleteModal && (
         <div className="fixed inset-0 bg-gray-900/40 z-50 flex justify-center items-center">
-          <div className="bg-white rounded-xl shadow-xl w-[380px] relative overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-2xl w-[420px] relative overflow-hidden">
             {/* Header */}
-            <div className="bg-orange-50 px-5 py-3 flex items-center justify-between border-b border-orange-100">
+            <div className="px-5 py-4 flex items-center justify-between border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-orange-500 inline-block"></span>
-                <span className="text-xs font-bold tracking-widest text-gray-700 uppercase">
+                <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
+                  <i className="bi bi-trash3 text-red-500 text-sm"></i>
+                </div>
+                <span className="text-sm font-bold tracking-widest text-gray-800 uppercase">
                   Delete Task
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setShowTaskDeleteModal(false)}
-                className="text-orange-400 hover:text-orange-600 text-lg font-bold"
+                className="text-gray-400 hover:text-gray-600 text-lg font-bold w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 transition-all"
               >
                 ✕
               </button>
             </div>
 
             {/* Body */}
-            <div className="px-6 py-6 flex flex-col items-center">
-              <div className="bg-orange-100 rounded-full p-4 mb-4">
-                <i className="bi bi-trash3 text-orange-500 text-2xl"></i>
+            <div className="px-6 py-8 flex flex-col items-center">
+              {/* Large trash icon */}
+              <div className="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center mb-5">
+                <i className="bi bi-trash3 text-red-500 text-3xl"></i>
               </div>
-              <h3 className="text-center text-base font-bold text-gray-800 mb-1 uppercase tracking-wide">
-                {tasks.find((t) => t.id === taskDeleteId)?.task_name ||
-                  "This Task"}
+
+              {/* Task name */}
+              <h3 className="text-center text-lg font-extrabold text-gray-900 uppercase tracking-wide mb-2">
+                {tasks.find((t) => t.id === taskDeleteId)?.task_name || "This Task"}
               </h3>
-              <p className="text-center text-sm text-gray-400 mb-6">
-                This action cannot be undone. Are you sure?
+
+              {/* Red underline divider */}
+              <div className="w-10 h-0.5 bg-red-500 rounded-full mb-3"></div>
+
+              {/* Warning text */}
+              <p className="text-center text-sm text-gray-900 leading-relaxed mb-7">
+                This action cannot be undone.<br />
+                Are you sure you want to delete this task?
               </p>
 
               {/* Buttons */}
@@ -1714,16 +1930,16 @@ export default function Page() {
                 <button
                   type="button"
                   onClick={() => setShowTaskDeleteModal(false)}
-                  className="flex-1 py-2.5 rounded-md border border-gray-300 text-gray-600 hover:bg-gray-50 transition-all text-sm font-medium"
+                  className="flex-1 py-3 rounded-xl border-2 border-blue-500 text-blue-600 hover:bg-blue-50 transition-all text-sm font-semibold flex items-center justify-center gap-2"
                 >
-                  Cancel
+                  <i className="bi bi-x-lg text-xs"></i> Cancel
                 </button>
                 <button
                   type="button"
                   onClick={confirmTaskDelete}
-                  className="flex-1 py-2.5 rounded-md bg-orange-500 text-white hover:bg-orange-600 transition-all text-sm font-bold"
+                  className="flex-1 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white transition-all text-sm font-bold flex items-center justify-center gap-2 shadow-md shadow-red-200"
                 >
-                  Delete
+                  <i className="bi bi-trash3"></i> Delete Task
                 </button>
               </div>
             </div>

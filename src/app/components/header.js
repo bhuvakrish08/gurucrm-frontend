@@ -170,6 +170,13 @@ export default function Header() {
         overdue: res.data.overdue || [],
       });
     } catch (err) {
+      // Silently ignore auth errors (token expired / not logged in)
+      // and network errors — they are expected during page load or logout
+      const status = err?.status || err?.response?.status;
+      if (!status || status === 401 || status === 403 || status === 0) {
+        setReminders({ today: [], overdue: [] });
+        return;
+      }
       console.error("Reminder fetch failed:", err);
     }
   };

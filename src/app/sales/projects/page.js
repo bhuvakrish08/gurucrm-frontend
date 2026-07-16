@@ -26,6 +26,7 @@ import {
   Activity,
   FolderOpen,
   Wallet,
+  IndianRupee,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -993,106 +994,296 @@ function Page() {
                   {/* 1. Summary Cards */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                     {/* Total Projects */}
-                    <div className="bg-indigo-50/40 rounded-2xl p-5 flex flex-col justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:-translate-y-1 hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1)] transition-all duration-300 border border-transparent hover:border-indigo-200">
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="p-2.5 bg-indigo-50 rounded-xl text-indigo-500">
-                          <FolderOpen size={20} strokeWidth={2} />
+                    <div className="bg-white rounded-2xl flex flex-col justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:-translate-y-1 hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1)] transition-all duration-300 border border-slate-100 hover:border-indigo-200 overflow-hidden relative group">
+                      <div className="flex items-start gap-3 p-5 pb-2 relative z-10">
+                        <div className="p-2.5 bg-indigo-50/70 rounded-xl text-indigo-500 flex-shrink-0 transition-all duration-500 group-hover:scale-110 group-hover:-rotate-6 group-hover:shadow-lg">
+                          <FolderOpen size={20} strokeWidth={2.5} />
                         </div>
-                        <span className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider mt-1">Total Projects</span>
+                        <div className="min-w-0 pt-0.5">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block leading-tight mb-1 truncate transition-colors duration-300 group-hover:text-slate-600">Total Projects</span>
+                          <h2 className="text-2xl font-black text-slate-800 tracking-tight mt-0.5 truncate transition-transform duration-500 group-hover:scale-[1.06] origin-left">
+                            {analyticsData.stats.total_projects}
+                          </h2>
+                        </div>
                       </div>
-                      <div className="mb-4">
-                        <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">
-                          {analyticsData.stats.total_projects}
-                        </h2>
-                      </div>
-                      <div className="flex items-end justify-between mt-auto">
-                        <span className="text-xs font-semibold text-slate-500">Active Projects</span>
-                        <svg className="w-20 h-6" viewBox="0 0 100 30" preserveAspectRatio="none">
-                          <path d="M0,25 C20,25 30,5 50,15 C70,25 80,5 100,10" fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <div className="w-full h-[52px] mt-auto text-indigo-500">
+                        <svg
+                          viewBox="0 0 200 52"
+                          className="w-full h-full block overflow-visible"
+                          preserveAspectRatio="none"
+                        >
+                          <defs>
+                            <linearGradient id="sparkFill-total-projects" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="currentColor" stopOpacity="0.30" />
+                              <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+                            </linearGradient>
+                            <linearGradient id="sparkMask-total-projects" x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="45%" stopColor="white" stopOpacity="0" />
+                              <stop offset="100%" stopColor="white" stopOpacity="1" />
+                            </linearGradient>
+                            <mask id="sparkHalf-total-projects">
+                              <rect x="0" y="0" width="200" height="52" fill="url(#sparkMask-total-projects)" />
+                            </mask>
+                          </defs>
+                          <path
+                            className="dcard-area"
+                            d="M 90 42 L 98 38 L 106 40 L 114 32 L 122 36 L 130 26 L 138 30 L 146 20 L 154 24 L 160 14 L 168 18 L 176 10 L 182 12 L 188 4 L 188 52 L 90 52 Z"
+                            fill="url(#sparkFill-total-projects)"
+                            mask="url(#sparkHalf-total-projects)"
+                            stroke="none"
+                          />
+                          <path
+                            className="dcard-line"
+                            d="M 90 42 L 98 38 L 106 40 L 114 32 L 122 36 L 130 26 L 138 30 L 146 20 L 154 24 L 160 14 L 168 18 L 176 10 L 182 12 L 188 4"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            fill="none"
+                          />
+                          <ellipse cx="188" cy="4" rx="6" ry="3" fill="currentColor" opacity="0.25" />
+                          <ellipse cx="188" cy="4" rx="2.5" ry="1.2" fill="currentColor" />
+                          <ellipse cx="188" cy="4" rx="2.5" ry="1.2" fill="none" stroke="currentColor" strokeWidth="1">
+                            <animate attributeName="rx" values="2.5;7.5" dur="2s" repeatCount="indefinite" />
+                            <animate attributeName="ry" values="1.2;3.6" dur="2s" repeatCount="indefinite" />
+                            <animate attributeName="opacity" values="0.8;0" dur="2s" repeatCount="indefinite" />
+                          </ellipse>
                         </svg>
                       </div>
                     </div>
 
                     {/* Project Value */}
-                    <div className="bg-emerald-50/40 rounded-2xl p-5 flex flex-col justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:-translate-y-1 hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1)] transition-all duration-300 border border-transparent hover:border-emerald-200">
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="p-2.5 bg-emerald-50 rounded-xl text-emerald-500">
-                          <Wallet size={20} strokeWidth={2} />
+                    <div className="bg-white rounded-2xl flex flex-col justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:-translate-y-1 hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1)] transition-all duration-300 border border-slate-100 hover:border-emerald-200 overflow-hidden relative group">
+                      <div className="flex items-start gap-3 p-5 pb-2 relative z-10">
+                        <div className="p-2.5 bg-emerald-50/70 rounded-xl text-emerald-500 flex-shrink-0 transition-all duration-500 group-hover:scale-110 group-hover:-rotate-6 group-hover:shadow-lg">
+                          <Wallet size={20} strokeWidth={2.5} />
                         </div>
-                        <span className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider mt-1">Project Value</span>
+                        <div className="min-w-0 pt-0.5">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block leading-tight mb-1 truncate transition-colors duration-300 group-hover:text-slate-600">Project Value</span>
+                          <h2 className="text-xl font-black text-slate-800 tracking-tight mt-0.5 truncate transition-transform duration-500 group-hover:scale-[1.06] origin-left">
+                            {formatCurrency(analyticsData.stats.total_revenue)}
+                          </h2>
+                        </div>
                       </div>
-                      <div className="mb-4">
-                        <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight truncate">
-                          {formatCurrency(analyticsData.stats.total_revenue)}
-                        </h2>
-                      </div>
-                      <div className="flex items-end justify-between mt-auto">
-                        <span className="text-xs font-semibold text-slate-500">Total Value</span>
-                        <svg className="w-20 h-6" viewBox="0 0 100 30" preserveAspectRatio="none">
-                          <path d="M0,25 C20,15 30,25 50,10 C70,20 80,5 100,15" fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <div className="w-full h-[52px] mt-auto text-emerald-500">
+                        <svg
+                          viewBox="0 0 200 52"
+                          className="w-full h-full block overflow-visible"
+                          preserveAspectRatio="none"
+                        >
+                          <defs>
+                            <linearGradient id="sparkFill-project-value" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="currentColor" stopOpacity="0.30" />
+                              <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+                            </linearGradient>
+                            <linearGradient id="sparkMask-project-value" x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="45%" stopColor="white" stopOpacity="0" />
+                              <stop offset="100%" stopColor="white" stopOpacity="1" />
+                            </linearGradient>
+                            <mask id="sparkHalf-project-value">
+                              <rect x="0" y="0" width="200" height="52" fill="url(#sparkMask-project-value)" />
+                            </mask>
+                          </defs>
+                          <path
+                            className="dcard-area"
+                            d="M 90 42 L 98 38 L 106 40 L 114 32 L 122 36 L 130 26 L 138 30 L 146 20 L 154 24 L 160 14 L 168 18 L 176 10 L 182 12 L 188 4 L 188 52 L 90 52 Z"
+                            fill="url(#sparkFill-project-value)"
+                            mask="url(#sparkHalf-project-value)"
+                            stroke="none"
+                          />
+                          <path
+                            className="dcard-line"
+                            d="M 90 42 L 98 38 L 106 40 L 114 32 L 122 36 L 130 26 L 138 30 L 146 20 L 154 24 L 160 14 L 168 18 L 176 10 L 182 12 L 188 4"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            fill="none"
+                          />
+                          <ellipse cx="188" cy="4" rx="6" ry="3" fill="currentColor" opacity="0.25" />
+                          <ellipse cx="188" cy="4" rx="2.5" ry="1.2" fill="currentColor" />
+                          <ellipse cx="188" cy="4" rx="2.5" ry="1.2" fill="none" stroke="currentColor" strokeWidth="1">
+                            <animate attributeName="rx" values="2.5;7.5" dur="2s" repeatCount="indefinite" />
+                            <animate attributeName="ry" values="1.2;3.6" dur="2s" repeatCount="indefinite" />
+                            <animate attributeName="opacity" values="0.8;0" dur="2s" repeatCount="indefinite" />
+                          </ellipse>
                         </svg>
                       </div>
                     </div>
 
                     {/* Architect Cost */}
-                    <div className="bg-orange-50/40 rounded-2xl p-5 flex flex-col justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:-translate-y-1 hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1)] transition-all duration-300 border border-transparent hover:border-orange-200">
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="p-2.5 bg-orange-50 rounded-xl text-orange-500">
-                          <Building size={20} strokeWidth={2} />
+                    <div className="bg-white rounded-2xl flex flex-col justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:-translate-y-1 hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1)] transition-all duration-300 border border-slate-100 hover:border-orange-200 overflow-hidden relative group">
+                      <div className="flex items-start gap-3 p-5 pb-2 relative z-10">
+                        <div className="p-2.5 bg-orange-50/70 rounded-xl text-orange-500 flex-shrink-0 transition-all duration-500 group-hover:scale-110 group-hover:-rotate-6 group-hover:shadow-lg">
+                          <Building size={20} strokeWidth={2.5} />
                         </div>
-                        <span className="text-[11px] font-bold text-orange-400 uppercase tracking-wider mt-1">Architect Cost</span>
+                        <div className="min-w-0 pt-0.5">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block leading-tight mb-1 truncate transition-colors duration-300 group-hover:text-slate-600">Architect Cost</span>
+                          <h2 className="text-xl font-black text-slate-800 tracking-tight mt-0.5 truncate transition-transform duration-500 group-hover:scale-[1.06] origin-left">
+                            {formatCurrency(analyticsData.stats.total_architecture_net)}
+                          </h2>
+                        </div>
                       </div>
-                      <div className="mb-4">
-                        <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight truncate">
-                          {formatCurrency(analyticsData.stats.total_architecture_net)}
-                        </h2>
-                      </div>
-                      <div className="flex items-end justify-between mt-auto">
-                        <span className="text-xs font-semibold text-slate-500">Total Cost</span>
-                        <svg className="w-20 h-6" viewBox="0 0 100 30" preserveAspectRatio="none">
-                          <path d="M0,15 C20,25 30,5 50,20 C70,10 80,25 100,15" fill="none" stroke="#f97316" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <div className="w-full h-[52px] mt-auto text-orange-500">
+                        <svg
+                          viewBox="0 0 200 52"
+                          className="w-full h-full block overflow-visible"
+                          preserveAspectRatio="none"
+                        >
+                          <defs>
+                            <linearGradient id="sparkFill-architect-cost" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="currentColor" stopOpacity="0.30" />
+                              <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+                            </linearGradient>
+                            <linearGradient id="sparkMask-architect-cost" x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="45%" stopColor="white" stopOpacity="0" />
+                              <stop offset="100%" stopColor="white" stopOpacity="1" />
+                            </linearGradient>
+                            <mask id="sparkHalf-architect-cost">
+                              <rect x="0" y="0" width="200" height="52" fill="url(#sparkMask-architect-cost)" />
+                            </mask>
+                          </defs>
+                          <path
+                            className="dcard-area"
+                            d="M 90 42 L 98 38 L 106 40 L 114 32 L 122 36 L 130 26 L 138 30 L 146 20 L 154 24 L 160 14 L 168 18 L 176 10 L 182 12 L 188 4 L 188 52 L 90 52 Z"
+                            fill="url(#sparkFill-architect-cost)"
+                            mask="url(#sparkHalf-architect-cost)"
+                            stroke="none"
+                          />
+                          <path
+                            className="dcard-line"
+                            d="M 90 42 L 98 38 L 106 40 L 114 32 L 122 36 L 130 26 L 138 30 L 146 20 L 154 24 L 160 14 L 168 18 L 176 10 L 182 12 L 188 4"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            fill="none"
+                          />
+                          <ellipse cx="188" cy="4" rx="6" ry="3" fill="currentColor" opacity="0.25" />
+                          <ellipse cx="188" cy="4" rx="2.5" ry="1.2" fill="currentColor" />
+                          <ellipse cx="188" cy="4" rx="2.5" ry="1.2" fill="none" stroke="currentColor" strokeWidth="1">
+                            <animate attributeName="rx" values="2.5;7.5" dur="2s" repeatCount="indefinite" />
+                            <animate attributeName="ry" values="1.2;3.6" dur="2s" repeatCount="indefinite" />
+                            <animate attributeName="opacity" values="0.8;0" dur="2s" repeatCount="indefinite" />
+                          </ellipse>
                         </svg>
                       </div>
                     </div>
 
                     {/* Total Operation Cost */}
-                    <div className="bg-rose-50/40 rounded-2xl p-5 flex flex-col justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:-translate-y-1 hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1)] transition-all duration-300 border border-transparent hover:border-rose-200">
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="p-2.5 bg-rose-50 rounded-xl text-rose-500">
-                          <Calculator size={20} strokeWidth={2} />
+                    <div className="bg-white rounded-2xl flex flex-col justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:-translate-y-1 hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1)] transition-all duration-300 border border-slate-100 hover:border-rose-200 overflow-hidden relative group">
+                      <div className="flex items-start gap-3 p-5 pb-2 relative z-10">
+                        <div className="p-2.5 bg-rose-50/70 rounded-xl text-rose-500 flex-shrink-0 transition-all duration-500 group-hover:scale-110 group-hover:-rotate-6 group-hover:shadow-lg">
+                          <Calculator size={20} strokeWidth={2.5} />
                         </div>
-                        <span className="text-[11px] font-bold text-rose-400 uppercase tracking-wider mt-1">Total Operation Cost</span>
+                        <div className="min-w-0 pt-0.5">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block leading-tight mb-1 truncate transition-colors duration-300 group-hover:text-slate-600">Total Operation Cost</span>
+                          <h2 className="text-xl font-black text-slate-800 tracking-tight mt-0.5 truncate transition-transform duration-500 group-hover:scale-[1.06] origin-left">
+                            {formatCurrency(analyticsData.stats.total_expense_net)}
+                          </h2>
+                        </div>
                       </div>
-                      <div className="mb-4">
-                        <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight truncate">
-                          {formatCurrency(analyticsData.stats.total_expense_net)}
-                        </h2>
-                      </div>
-                      <div className="flex items-end justify-between mt-auto">
-                        <span className="text-xs font-semibold text-slate-500">Total Operations</span>
-                        <svg className="w-20 h-6" viewBox="0 0 100 30" preserveAspectRatio="none">
-                          <path d="M0,20 C20,10 30,25 50,5 C70,25 80,15 100,10" fill="none" stroke="#f43f5e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <div className="w-full h-[52px] mt-auto text-rose-500">
+                        <svg
+                          viewBox="0 0 200 52"
+                          className="w-full h-full block overflow-visible"
+                          preserveAspectRatio="none"
+                        >
+                          <defs>
+                            <linearGradient id="sparkFill-operation-cost" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="currentColor" stopOpacity="0.30" />
+                              <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+                            </linearGradient>
+                            <linearGradient id="sparkMask-operation-cost" x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="45%" stopColor="white" stopOpacity="0" />
+                              <stop offset="100%" stopColor="white" stopOpacity="1" />
+                            </linearGradient>
+                            <mask id="sparkHalf-operation-cost">
+                              <rect x="0" y="0" width="200" height="52" fill="url(#sparkMask-operation-cost)" />
+                            </mask>
+                          </defs>
+                          <path
+                            className="dcard-area"
+                            d="M 90 42 L 98 38 L 106 40 L 114 32 L 122 36 L 130 26 L 138 30 L 146 20 L 154 24 L 160 14 L 168 18 L 176 10 L 182 12 L 188 4 L 188 52 L 90 52 Z"
+                            fill="url(#sparkFill-operation-cost)"
+                            mask="url(#sparkHalf-operation-cost)"
+                            stroke="none"
+                          />
+                          <path
+                            className="dcard-line"
+                            d="M 90 42 L 98 38 L 106 40 L 114 32 L 122 36 L 130 26 L 138 30 L 146 20 L 154 24 L 160 14 L 168 18 L 176 10 L 182 12 L 188 4"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            fill="none"
+                          />
+                          <ellipse cx="188" cy="4" rx="6" ry="3" fill="currentColor" opacity="0.25" />
+                          <ellipse cx="188" cy="4" rx="2.5" ry="1.2" fill="currentColor" />
+                          <ellipse cx="188" cy="4" rx="2.5" ry="1.2" fill="none" stroke="currentColor" strokeWidth="1">
+                            <animate attributeName="rx" values="2.5;7.5" dur="2s" repeatCount="indefinite" />
+                            <animate attributeName="ry" values="1.2;3.6" dur="2s" repeatCount="indefinite" />
+                            <animate attributeName="opacity" values="0.8;0" dur="2s" repeatCount="indefinite" />
+                          </ellipse>
                         </svg>
                       </div>
                     </div>
 
                     {/* Balance Amount */}
-                    <div className="bg-blue-50/40 rounded-2xl p-5 flex flex-col justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:-translate-y-1 hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1)] transition-all duration-300 border border-transparent hover:border-blue-200">
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="p-2.5 bg-blue-50 rounded-xl text-blue-500">
-                          <Activity size={20} strokeWidth={2} />
+                    <div className="bg-white rounded-2xl flex flex-col justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:-translate-y-1 hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1)] transition-all duration-300 border border-slate-100 hover:border-blue-200 overflow-hidden relative group">
+                      <div className="flex items-start gap-3 p-5 pb-2 relative z-10">
+                        <div className="p-2.5 bg-blue-50/70 rounded-xl text-blue-500 flex-shrink-0 transition-all duration-500 group-hover:scale-110 group-hover:-rotate-6 group-hover:shadow-lg">
+                          <Activity size={20} strokeWidth={2.5} />
                         </div>
-                        <span className="text-[11px] font-bold text-blue-400 uppercase tracking-wider mt-1">Balance Amount</span>
+                        <div className="min-w-0 pt-0.5">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block leading-tight mb-1 truncate transition-colors duration-300 group-hover:text-slate-600">Balance Amount</span>
+                          <h2 className="text-xl font-black text-slate-800 tracking-tight mt-0.5 truncate transition-transform duration-500 group-hover:scale-[1.06] origin-left">
+                            {formatCurrency(analyticsData.stats.total_net_revenue)}
+                          </h2>
+                        </div>
                       </div>
-                      <div className="mb-4">
-                        <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight truncate">
-                          {formatCurrency(analyticsData.stats.total_net_revenue)}
-                        </h2>
-                      </div>
-                      <div className="flex items-end justify-between mt-auto">
-                        <span className="text-xs font-semibold text-slate-500">Net Balance</span>
-                        <svg className="w-20 h-6" viewBox="0 0 100 30" preserveAspectRatio="none">
-                          <path d="M0,25 C20,20 30,5 50,15 C70,25 80,10 100,5" fill="none" stroke="#3b82f6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <div className="w-full h-[52px] mt-auto text-blue-500">
+                        <svg
+                          viewBox="0 0 200 52"
+                          className="w-full h-full block overflow-visible"
+                          preserveAspectRatio="none"
+                        >
+                          <defs>
+                            <linearGradient id="sparkFill-balance-amount" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="currentColor" stopOpacity="0.30" />
+                              <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+                            </linearGradient>
+                            <linearGradient id="sparkMask-balance-amount" x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="45%" stopColor="white" stopOpacity="0" />
+                              <stop offset="100%" stopColor="white" stopOpacity="1" />
+                            </linearGradient>
+                            <mask id="sparkHalf-balance-amount">
+                              <rect x="0" y="0" width="200" height="52" fill="url(#sparkMask-balance-amount)" />
+                            </mask>
+                          </defs>
+                          <path
+                            className="dcard-area"
+                            d="M 90 42 L 98 38 L 106 40 L 114 32 L 122 36 L 130 26 L 138 30 L 146 20 L 154 24 L 160 14 L 168 18 L 176 10 L 182 12 L 188 4 L 188 52 L 90 52 Z"
+                            fill="url(#sparkFill-balance-amount)"
+                            mask="url(#sparkHalf-balance-amount)"
+                            stroke="none"
+                          />
+                          <path
+                            className="dcard-line"
+                            d="M 90 42 L 98 38 L 106 40 L 114 32 L 122 36 L 130 26 L 138 30 L 146 20 L 154 24 L 160 14 L 168 18 L 176 10 L 182 12 L 188 4"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            fill="none"
+                          />
+                          <ellipse cx="188" cy="4" rx="6" ry="3" fill="currentColor" opacity="0.25" />
+                          <ellipse cx="188" cy="4" rx="2.5" ry="1.2" fill="currentColor" />
+                          <ellipse cx="188" cy="4" rx="2.5" ry="1.2" fill="none" stroke="currentColor" strokeWidth="1">
+                            <animate attributeName="rx" values="2.5;7.5" dur="2s" repeatCount="indefinite" />
+                            <animate attributeName="ry" values="1.2;3.6" dur="2s" repeatCount="indefinite" />
+                            <animate attributeName="opacity" values="0.8;0" dur="2s" repeatCount="indefinite" />
+                          </ellipse>
                         </svg>
                       </div>
                     </div>
@@ -1100,14 +1291,41 @@ function Page() {
 
                   {/* Parse numeric values for Recharts to render correctly */}
                   {(() => {
+                    const legendOrder = ["Project Value", "Architect Cost", "Operation Cost", "Balance Amount"];
                     const activeFinancials = analyticsData.financialsOverTime?.[financialTimeframe] || [];
-                    const financialsParsed = activeFinancials.map((m) => ({
+                    let financialsParsed = activeFinancials.map((m) => ({
                       ...m,
                       revenue: Number(m.revenue) || 0,
                       architecture: Number(m.architecture) || 0,
                       expenses: Number(m.expenses) || 0,
                       net_revenue: Number(m.net_revenue) || 0,
                     }));
+
+                    if (financialTimeframe === "monthly") {
+                      const requiredMonths = [
+                        { time_key: "2026-02", time_label: "Feb 2026" },
+                        { time_key: "2026-03", time_label: "Mar 2026" },
+                        { time_key: "2026-04", time_label: "Apr 2026" },
+                        { time_key: "2026-05", time_label: "May 2026" },
+                        { time_key: "2026-06", time_label: "Jun 2026" },
+                        { time_key: "2026-07", time_label: "Jul 2026" },
+                      ];
+                      const merged = [...financialsParsed];
+                      requiredMonths.forEach((rm) => {
+                        if (!merged.some((m) => m.time_key === rm.time_key)) {
+                          merged.push({
+                            time_key: rm.time_key,
+                            time_label: rm.time_label,
+                            revenue: 0,
+                            architecture: 0,
+                            expenses: 0,
+                            net_revenue: 0,
+                          });
+                        }
+                      });
+                      merged.sort((a, b) => a.time_key.localeCompare(b.time_key));
+                      financialsParsed = merged;
+                    }
 
                     const expenseByCategoryParsed = (analyticsData.expenseByCategory || []).map((e) => ({
                       ...e,
@@ -1116,17 +1334,40 @@ function Page() {
 
                     const totalExpensesSum = expenseByCategoryParsed.reduce((sum, item) => sum + item.total_amount, 0);
 
-                    const expensesOverTimeParsed = (analyticsData.expensesOverTime[expenseTimeframe] || []).map((item) => ({
+                    let expensesOverTimeParsed = (analyticsData.expensesOverTime[expenseTimeframe] || []).map((item) => ({
                       ...item,
                       amount: Number(item.amount) || 0,
                     }));
+
+                    if (expenseTimeframe === "monthly") {
+                      const requiredMonths = [
+                        { month_key: "2026-02", month_name: "Feb 2026" },
+                        { month_key: "2026-03", month_name: "Mar 2026" },
+                        { month_key: "2026-04", month_name: "Apr 2026" },
+                        { month_key: "2026-05", month_name: "May 2026" },
+                        { month_key: "2026-06", month_name: "Jun 2026" },
+                        { month_key: "2026-07", month_name: "Jul 2026" },
+                      ];
+                      const merged = [...expensesOverTimeParsed];
+                      requiredMonths.forEach((rm) => {
+                        if (!merged.some((m) => m.month_key === rm.month_key)) {
+                          merged.push({
+                            month_key: rm.month_key,
+                            month_name: rm.month_name,
+                            amount: 0,
+                          });
+                        }
+                      });
+                      merged.sort((a, b) => a.month_key.localeCompare(b.month_key));
+                      expensesOverTimeParsed = merged;
+                    }
 
                     return (
                       <>
                         {/* 2. Charts Row 1: Monthly Financial Trend & Expense Category breakdown */}
                         <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 mt-4">
                           {/* Financial Trend Chart */}
-                          <div className="xl:col-span-6 bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col justify-between group hover:border-slate-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-0.5">
+                          <div className="xl:col-span-5 bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col justify-between group hover:border-slate-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-0.5">
                             <div className="flex items-center justify-between border-b border-slate-50 pb-3 mb-4">
                               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                                 <BarChart2 size={16} className="text-indigo-500" />
@@ -1151,70 +1392,102 @@ function Page() {
                             <div className="h-[260px] w-full">
                               <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={financialsParsed} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                  <defs>
+                                    <linearGradient id="colorProjectValue" x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="0%" stopColor="#10b981" stopOpacity={1}/>
+                                      <stop offset="100%" stopColor="#059669" stopOpacity={1}/>
+                                    </linearGradient>
+                                    <linearGradient id="colorArchitectCost" x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="0%" stopColor="#f59e0b" stopOpacity={1}/>
+                                      <stop offset="100%" stopColor="#d97706" stopOpacity={1}/>
+                                    </linearGradient>
+                                    <linearGradient id="colorOperationCost" x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="0%" stopColor="#f43f5e" stopOpacity={1}/>
+                                      <stop offset="100%" stopColor="#e11d48" stopOpacity={1}/>
+                                    </linearGradient>
+                                    <linearGradient id="colorBalanceAmount" x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="0%" stopColor="#3b82f6" stopOpacity={1}/>
+                                      <stop offset="100%" stopColor="#2563eb" stopOpacity={1}/>
+                                    </linearGradient>
+                                  </defs>
                                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                                   <XAxis dataKey="time_label" stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
                                   <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => {
-                                      if (val >= 10000000) return (val / 10000000).toFixed(1) + 'Cr';
-                                      if (val >= 100000) return (val / 100000).toFixed(1) + 'L';
+                                      if (val >= 10000000) {
+                                        const num = val / 10000000;
+                                        return (num % 1 === 0 ? num : num.toFixed(1)) + 'Cr';
+                                      }
+                                      if (val >= 100000) {
+                                        const num = val / 100000;
+                                        return (num % 1 === 0 ? num : num.toFixed(1)) + 'L';
+                                      }
                                       return val;
                                     }} 
                                   />
                                   <Tooltip contentStyle={{ background: "#fff", borderRadius: "12px", border: "1px solid #f1f5f9", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.05)" }} formatter={(value) => formatCurrency(value)} />
-                                  <Legend wrapperStyle={{ fontSize: 10, paddingTop: 10 }} iconType="circle" />
-                                  <Bar dataKey="revenue" name="Project Value" fill="#10b981" radius={[2, 2, 0, 0]} maxBarSize={12} />
-                                  <Bar dataKey="architecture" name="Architect Cost" fill="#f59e0b" radius={[2, 2, 0, 0]} maxBarSize={12} />
-                                  <Bar dataKey="expenses" name="Operation Cost" fill="#f43f5e" radius={[2, 2, 0, 0]} maxBarSize={12} />
-                                  <Bar dataKey="net_revenue" name="Balance Amount" fill="#3b82f6" radius={[2, 2, 0, 0]} maxBarSize={12} />
+                                  <Legend wrapperStyle={{ fontSize: 10, paddingTop: 10 }} iconType="rect" itemSorter={(item) => legendOrder.indexOf(item.value)} />
+                                  <Bar dataKey="revenue" name="Project Value" fill="url(#colorProjectValue)" radius={[4, 4, 0, 0]} maxBarSize={20} />
+                                  <Bar dataKey="architecture" name="Architect Cost" fill="url(#colorArchitectCost)" radius={[4, 4, 0, 0]} maxBarSize={20} />
+                                  <Bar dataKey="expenses" name="Operation Cost" fill="url(#colorOperationCost)" radius={[4, 4, 0, 0]} maxBarSize={20} />
+                                  <Bar dataKey="net_revenue" name="Balance Amount" fill="url(#colorBalanceAmount)" radius={[4, 4, 0, 0]} maxBarSize={20} />
                                 </BarChart>
                               </ResponsiveContainer>
                             </div>
                           </div>
 
                           {/* Expense Category distribution */}
-                          <div className="xl:col-span-3 bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col justify-between group hover:border-slate-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-0.5">
+                          <div className="xl:col-span-4 bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col justify-between group hover:border-slate-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-0.5">
                             <div className="flex items-center justify-between border-b border-slate-50 pb-3 mb-2">
                               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                                 <PieChartIcon size={16} className="text-rose-500" />
                                 Expense Category Distribution
                               </h3>
                             </div>
-                            <div className="h-[180px] w-full relative flex items-center justify-center">
-                              {expenseByCategoryParsed.length === 0 ? (
-                                <p className="text-xs text-slate-400 font-medium">No expenses data available.</p>
-                              ) : (
-                                <>
-                                  <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                      <Pie data={expenseByCategoryParsed} dataKey="total_amount" nameKey="expense_category" cx="50%" cy="50%" innerRadius={50} outerRadius={70} paddingAngle={2}>
-                                        {expenseByCategoryParsed.map((entry, index) => {
-                                          const COLORS = ["#f43f5e", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#64748b"];
-                                          return <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />;
+                            <div className="flex flex-row items-center justify-between gap-4 mt-2 flex-1">
+                              <div className="h-[240px] w-[55%] relative flex items-center justify-center">
+                                {expenseByCategoryParsed.length === 0 ? (
+                                  <p className="text-[10px] text-slate-400 font-medium text-center">No expenses data available.</p>
+                                ) : (
+                                  <>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                      <PieChart>
+                                        <Pie data={expenseByCategoryParsed} dataKey="total_amount" nameKey="expense_category" cx="50%" cy="50%" innerRadius={60} outerRadius={85} paddingAngle={2}>
+                                          {expenseByCategoryParsed.map((entry, index) => {
+                                            const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#f43f5e", "#8b5cf6", "#06b6d4", "#64748b"];
+                                            return <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />;
+                                          })}
+                                        </Pie>
+                                        <Tooltip formatter={(value) => formatCurrency(value)} />
+                                      </PieChart>
+                                    </ResponsiveContainer>
+                                    <div className="absolute flex flex-col items-center justify-center pointer-events-none">
+                                      <span className="text-base font-black text-slate-800">
+                                        {totalExpensesSum.toLocaleString("en-IN", {
+                                          style: "currency",
+                                          currency: "INR",
+                                          maximumFractionDigits: 0,
                                         })}
-                                      </Pie>
-                                      <Tooltip formatter={(value) => formatCurrency(value)} />
-                                    </PieChart>
-                                  </ResponsiveContainer>
-                                  <div className="absolute flex flex-col items-center justify-center">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total</span>
-                                    <span className="text-xs font-extrabold text-slate-800">{formatCurrency(totalExpensesSum)}</span>
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                            <div className="max-h-24 overflow-y-auto space-y-1.5 custom-scroll mt-2 pr-1">
-                              {expenseByCategoryParsed.map((cat, idx) => {
-                                const COLORS = ["#f43f5e", "#3b82f6", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#64748b"];
-                                const pct = totalExpensesSum > 0 ? Math.round((cat.total_amount / totalExpensesSum) * 100) : 0;
-                                return (
-                                  <div key={idx} className="flex items-center justify-between text-[10px] font-medium text-slate-600">
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></span>
-                                      <span className="truncate max-w-[100px]">{cat.expense_category}</span>
+                                      </span>
+                                      <span className="text-xs font-bold text-slate-400 capitalize tracking-wide">Total</span>
                                     </div>
-                                    <span className="text-slate-500 font-semibold">{pct}%</span>
-                                  </div>
-                                );
-                              })}
+                                  </>
+                                )}
+                              </div>
+                              <div className="w-[45%] max-h-[220px] overflow-y-auto space-y-2 custom-scroll pr-1 flex flex-col justify-center">
+                                {expenseByCategoryParsed.map((cat, idx) => {
+                                  const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#f43f5e", "#8b5cf6", "#06b6d4", "#64748b"];
+                                  const pct = totalExpensesSum > 0 ? Math.round((cat.total_amount / totalExpensesSum) * 100) : 0;
+                                  return (
+                                    <div key={idx} className="flex items-center justify-between text-[10px] font-medium text-slate-600">
+                                      <div className="flex items-center gap-1.5 min-w-0">
+                                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></span>
+                                        <span className="truncate pr-1">{cat.expense_category}</span>
+                                      </div>
+                                      <span className="text-slate-500 font-semibold shrink-0">{pct}%</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
                             </div>
                           </div>
 
@@ -1259,12 +1532,12 @@ function Page() {
                                 <span className="text-[10px] font-bold text-indigo-600">{formatCurrency(analyticsData.quickSummary?.average_project_value)}</span>
                               </div>
 
-                              <div className="flex justify-between items-center bg-blue-50/40 p-2.5 rounded-lg border border-blue-100/50 hover:bg-blue-50 hover:scale-[1.02] transition-all cursor-default">
+                              <div className="flex justify-between items-center bg-emerald-50/40 p-2.5 rounded-lg border border-emerald-100/50 hover:bg-emerald-50 hover:scale-[1.02] transition-all cursor-default">
                                 <div className="flex items-center gap-2">
-                                  <HelpCircle size={14} className="text-blue-600" />
+                                  <IndianRupee size={14} className="text-emerald-600" />
                                   <span className="text-[10px] font-semibold text-slate-700">Balance Amount</span>
                                 </div>
-                                <span className="text-[10px] font-bold text-blue-600">{formatCurrency(analyticsData.quickSummary?.balance_amount)}</span>
+                                <span className="text-[10px] font-bold text-emerald-600">{formatCurrency(analyticsData.quickSummary?.balance_amount)}</span>
                               </div>
                             </div>
                           </div>
@@ -1276,7 +1549,7 @@ function Page() {
                           <div className="xl:col-span-4 bg-white rounded-2xl border border-slate-100 shadow-sm p-4 flex flex-col justify-between group hover:border-slate-200 hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] transition-all duration-300 hover:-translate-y-0.5">
                             <div className="flex items-center justify-between border-b border-slate-50 pb-3 mb-3">
                               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                                <Calendar size={16} className="text-orange-500" />
+                                <Calendar size={16} className="text-rose-500" />
                                 Expenses Over Time
                               </h3>
                               <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200/50">
@@ -1306,8 +1579,14 @@ function Page() {
                                     <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                                     <XAxis dataKey={expenseTimeframe === "weekly" ? "week_start" : expenseTimeframe === "monthly" ? "month_name" : "year_key"} stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} />
                                     <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} axisLine={false} tickFormatter={(val) => {
-                                      if (val >= 10000000) return (val / 10000000).toFixed(1) + 'Cr';
-                                      if (val >= 100000) return (val / 100000).toFixed(1) + 'L';
+                                      if (val >= 10000000) {
+                                        const num = val / 10000000;
+                                        return (num % 1 === 0 ? num : num.toFixed(1)) + 'Cr';
+                                      }
+                                      if (val >= 10000) {
+                                        const num = val / 100000;
+                                        return (num % 1 === 0 ? num : num.toFixed(1)) + 'L';
+                                      }
                                       return val;
                                     }}/>
                                     <Tooltip contentStyle={{ background: "#fff", borderRadius: "12px", border: "1px solid #f1f5f9", boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.05)" }} formatter={(value) => formatCurrency(value)} />
@@ -1341,7 +1620,7 @@ function Page() {
                                   <tbody className="divide-y divide-slate-100 text-slate-700 bg-white">
                                     {analyticsData.topProjects.map((p, idx) => (
                                       <tr key={idx} className="hover:bg-indigo-50/50 hover:scale-[1.01] transition-all cursor-default duration-200 group">
-                                        <td className="py-2 px-3 font-semibold text-slate-800 truncate max-w-[120px]">{p.company_name || "-"}</td>
+                                        <td className="py-2 px-3 font-bold text-slate-800 truncate max-w-[120px]">{p.company_name || "-"}</td>
                                         <td className="py-2 px-3 text-slate-500 truncate max-w-[100px]">{p.customer_name || "-"}</td>
                                         <td className="py-2 px-3 text-right font-bold text-emerald-600 whitespace-nowrap">{formatCurrency(p.net_revenue_amount)}</td>
                                       </tr>
@@ -1375,9 +1654,9 @@ function Page() {
                                   <tbody className="divide-y divide-slate-100 text-slate-700 bg-white">
                                     {analyticsData.recentProjects.map((p, idx) => (
                                       <tr key={idx} className="hover:bg-rose-50/50 hover:scale-[1.01] transition-all cursor-default duration-200">
-                                        <td className="py-2 px-3 font-semibold text-slate-800 group-hover:text-rose-600 transition-colors">{p.quotation_no || "-"}</td>
+                                        <td className="py-2 px-3 font-bold text-slate-800 group-hover:text-rose-600 transition-colors">{p.quotation_no || "-"}</td>
                                         <td className="py-2 px-3 text-slate-500 truncate max-w-[100px]">{p.customer_name || "-"}</td>
-                                        <td className="py-2 px-3 text-right font-semibold text-slate-800 whitespace-nowrap">{formatCurrency(p.amount)}</td>
+                                        <td className="py-2 px-3 text-right font-medium text-slate-700/90 whitespace-nowrap">{formatCurrency(p.amount)}</td>
                                       </tr>
                                     ))}
                                   </tbody>
