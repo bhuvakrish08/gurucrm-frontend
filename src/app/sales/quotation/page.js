@@ -64,6 +64,58 @@ export default function QuotationPage() {
   const [viewQuotation, setViewQuotation] = useState(null);
   const [viewLoading, setViewLoading] = useState(false);
 
+// slide-in slide-out
+const closeQuotationDrawer = () => {
+  const panel = document.getElementById("quotationDrawerPanel");
+  const overlay = document.getElementById("quotationDrawerOverlay");
+  if (panel)
+    panel.style.animation = "qmSlideOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards";
+  if (overlay) overlay.style.animation = "qmFadeOut 0.3s ease-in forwards";
+  setTimeout(() => setShowQuotationModal(false), 280);
+};
+const closeSplitDrawer = () => {
+  const panel = document.getElementById("splitDrawerPanel");
+  const overlay = document.getElementById("splitDrawerOverlay");
+  if (panel)
+    panel.style.animation = "spmSlideOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards";
+  if (overlay) overlay.style.animation = "spmFadeOut 0.3s ease-in forwards";
+  setTimeout(() => handleCancelSplitClick(), 280);
+};
+ 
+const closeAssigneeDrawer = () => {
+  const panel = document.getElementById("assigneeDrawerPanel");
+  const overlay = document.getElementById("assigneeDrawerOverlay");
+  if (panel)
+    panel.style.animation = "asgSlideOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards";
+  if (overlay) overlay.style.animation = "asgFadeOut 0.3s ease-in forwards";
+  setTimeout(() => closeAssigneePopover(), 280);
+};
+
+
+const closeViewDrawer = () => {
+  const panel = document.getElementById("viewDrawerPanel");
+  const overlay = document.getElementById("viewDrawerOverlay");
+  if (panel)
+    panel.style.animation = "vqmSlideOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards";
+  if (overlay) overlay.style.animation = "vqmFadeOut 0.3s ease-in forwards";
+  setTimeout(() => setShowViewModal(false), 280);
+};
+
+
+const closeUpdateDrawer = () => {
+  const panel = document.getElementById("updateDrawerPanel");
+  const overlay = document.getElementById("updateDrawerOverlay");
+  if (panel)
+    panel.style.animation = "updSlideOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards";
+  if (overlay) overlay.style.animation = "updFadeOut 0.3s ease-in forwards";
+  setTimeout(() => {
+    setShowUpdateModal(false);
+    setSelectedFiles([]);
+    setPreviewFollowUp(null);
+    // BUG FIX #1: Reset to "quotation" tab on close too
+    setFollowUpTab("quotation");
+  }, 280);
+};
   // follow-up
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateForm, setUpdateForm] = useState({
@@ -2949,1191 +3001,1289 @@ export default function QuotationPage() {
       </div>
 
       {/* ================== FOLLOW-UP MODAL ================== */}
-      {showUpdateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 p-4">
-          <div className="bg-white w-full max-w-[820px] rounded-sm shadow-xl border border-gray-100 overflow-hidden flex flex-col max-h-[70vh]">
-            {/* Header */}
-            <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-orange-100 to-white flex-shrink-0">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-orange-500 inline-block"></span>
-                <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                  Update Lead Activities
-                </h2>
-              </div>
-              <button
-                onClick={() => {
-                  setShowUpdateModal(false);
-                  setSelectedFiles([]);
-                  setPreviewFollowUp(null);
-                  // BUG FIX #1: Reset to "quotation" tab on close too
-                  setFollowUpTab("quotation");
-                }}
-                className="w-7 h-7 flex items-center justify-center text-orange-500 text-md"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Tabs */}
-            <div className="flex border-b border-gray-200 flex-shrink-0">
-              <button
-                onClick={() => {
-                  setFollowUpTab("lead");
-                  setPreviewFollowUp(null);
-                }}
-                className={`px-6 py-3 text-sm font-semibold transition-all ${
-                  followUpTab === "lead"
-                    ? "text-orange-500 border-b-2 border-orange-500 bg-orange-50"
-                    : "text-gray-500"
-                }`}
-              >
-                Lead
-              </button>
-
-              <button
-                onClick={() => {
-                  setFollowUpTab("quotation");
-                  setPreviewFollowUp(null);
-                }}
-                className={`px-6 py-3 text-sm font-semibold transition-all ${
-                  followUpTab === "quotation"
-                    ? "text-orange-500 border-b-2 border-orange-500 bg-orange-50"
-                    : "text-gray-500"
-                }`}
-              >
-                Quotation
-              </button>
-            </div>
-
-            {/* Body — scrollable */}
-            <div className="flex flex-row flex-1 overflow-hidden">
-              {/* LEFT: Form */}
-              <div className="w-1/2 px-3 sm:px-6 py-3 sm:py-5 border-r border-gray-100 overflow-y-auto">
-                {followUpTab === "lead" && (
-                  <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-2 sm:mb-4">
-                    Lead Follow-Up
-                  </p>
-                )}
-
-                {followUpTab === "quotation" && (
-                  <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-2 sm:mb-4">
-                    Quotation Follow-Up
-                  </p>
-                )}
-
-                {/* LEAD TAB: Read-only notice */}
-                {followUpTab === "lead" && (
-                  <div className="flex flex-col gap-3">
-                    <div className="flex items-start gap-2 sm:gap-3 bg-blue-50 border border-blue-200 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
-                      <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <i className="bi bi-info-circle-fill text-blue-500 text-sm"></i>
-                      </div>
-                      <div>
-                        <p className="text-xs sm:text-sm font-semibold text-blue-700">
-                          Lead Follow-Up History
-                        </p>
-                        <p className="text-xs text-blue-600 mt-0.5">
-                          Lead follow-ups are managed from the Leads section.
-                          You can view the history on the right panel.
-                        </p>
-                      </div>
-                    </div>
-
-                    {selectedLead && (
-                      <div className="bg-gray-50 border border-gray-100 rounded-xl p-2 sm:p-4 space-y-1.5 sm:space-y-2">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-400 font-medium">
-                            Company
-                          </span>
-                          <span className="font-semibold text-gray-700">
-                            {selectedLead.company_name || "—"}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-400 font-medium">
-                            Customer
-                          </span>
-                          <span className="font-semibold text-gray-700">
-                            {selectedLead.customer_name || "—"}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-400 font-medium">
-                            Reference
-                          </span>
-                          <span className="font-semibold text-gray-700">
-                            {selectedLead.reference || "—"}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-400 font-medium">
-                            Assignee
-                          </span>
-                          <span className="font-semibold text-gray-700">
-                            {selectedLead.assignee || "—"}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
-                    <p className="text-xs text-gray-400 italic text-center pt-2">
-                      <i className="bi bi-lock mr-1"></i>
-                      Lead follow-up entries are read-only in this view
-                    </p>
-                  </div>
-                )}
-
-                {/* QUOTATION TAB: Editable Form */}
-                {followUpTab === "quotation" && (
-                  <div className="grid grid-cols-2 gap-x-2 sm:gap-x-4 gap-y-2 sm:gap-y-3">
-                    <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Follow-Up Date
-                      </label>
-                      <input
-                        type="date"
-                        name="follow_up_date"
-                        value={updateForm.follow_up_date}
-                        onChange={handleInputChange}
-                        className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Activity Type *
-                      </label>
-                      <select
-                        name="activity_type"
-                        value={updateForm.activity_type}
-                        onChange={handleInputChange}
-                        className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
-                      >
-                        <option value="">-- Select --</option>
-                        <option>Call</option>
-                        <option>Meeting</option>
-                        <option>Email</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Follow-Up By
-                      </label>
-                      <select
-                        name="follow_up_by"
-                        value={updateForm.follow_up_by}
-                        onChange={handleInputChange}
-                        className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
-                      >
-                        <option value="">Select User</option>
-                        {followUpUsers.map((item) => (
-                          <option key={item.value} value={item.value}>
-                            {item.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Contact Person *
-                      </label>
-                      <input
-                        name="contact_person"
-                        value={updateForm.contact_person}
-                        onChange={handleInputChange}
-                        className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
-                      />
-                    </div>
-
-                    {/* BUG FIX #2: Added Quotation No field in follow-up form */}
-                    <div className="col-span-2">
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Quotation No
-                      </label>
-                      <input
-                        name="quotation_no"
-                        value={updateForm.quotation_no}
-                        onChange={handleInputChange}
-                        placeholder="e.g. QT-2025-001"
-                        disabled={
-                          !!selectedQuotation?.quotation_no ||
-                          !!selectedLead?.quotation_no
-                        }
-                        className={`w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50 ${
-                          selectedQuotation?.quotation_no ||
-                          selectedLead?.quotation_no
-                            ? "opacity-75 cursor-not-allowed"
-                            : ""
-                        }`}
-                      />
-                    </div>
-
-                    <div className="col-span-2">
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Description *
-                      </label>
-                      <textarea
-                        name="description"
-                        value={updateForm.description}
-                        onChange={handleInputChange}
-                        className="w-full mt-1 sm:mt-1.5 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50 h-16 sm:h-20 resize-none"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* RIGHT: History Panel */}
-              <div className="w-1/2 px-2 sm:px-6 py-3 sm:py-5 flex flex-col overflow-hidden">
-                {followUpTab === "lead" && (
-                  <div className="flex flex-wrap justify-between items-center gap-1 mb-2 sm:mb-4 flex-shrink-0">
-                    <p className="text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-widest leading-tight">
-                      Lead Follow-Up History
-                    </p>
-                    <span className="text-[10px] sm:text-xs bg-blue-50 text-blue-500 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full font-semibold border border-blue-100">
-                      {
-                        followUpHistory.filter((h) => h.module_type === "sales")
-                          .length
-                      }{" "}
-                      record(s)
-                    </span>
-                  </div>
-                )}
-
-                {followUpTab === "quotation" && (
-                  <div className="flex flex-wrap justify-between items-center gap-1 mb-2 sm:mb-4 flex-shrink-0">
-                    <p className="text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-widest leading-tight">
-                      Quotation Follow-Up History
-                    </p>
-                    <span className="text-[10px] sm:text-xs bg-orange-50 text-orange-500 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-lg font-semibold border border-orange-100">
-                      {
-                        followUpHistory.filter(
-                          (h) => h.module_type === "quotation",
-                        ).length
-                      }{" "}
-                      record(s)
-                    </span>
-                  </div>
-                )}
-
-                {/* History List — scrollable */}
-                <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-                  {(() => {
-                    const filtered = followUpHistory.filter((h) =>
-                      followUpTab === "lead"
-                        ? h.module_type === "sales"
-                        : h.module_type === "quotation",
-                    );
-
-                    if (filtered.length === 0) {
-                      return (
-                        <div className="flex flex-col items-center justify-center py-8 text-gray-300">
-                          <i className="bi bi-clock-history text-3xl mb-2"></i>
-                          <p className="text-sm">No history found</p>
-                        </div>
-                      );
-                    }
-
-                    return filtered.map((item, idx) => {
-                      const itemId = item.follow_up_id || item.id;
-                      const previewId =
-                        previewFollowUp?.follow_up_id || previewFollowUp?.id;
-                      const isActive = previewId === itemId;
-
-                      return (
-                        <div key={itemId}>
-                          <div
-                            onClick={() =>
-                              setPreviewFollowUp(isActive ? null : item)
-                            }
-                            className={`border rounded-xl p-2 sm:p-3 cursor-pointer transition-all select-none ${
-                              isActive
-                                ? "border-orange-400 bg-orange-50 shadow-sm"
-                                : "hover:bg-gray-50 border-gray-200"
-                            }`}
-                          >
-                            <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-2">
-                                {idx === 0 && (
-                                  <span className="text-xs bg-orange-100 text-orange-500 px-2 py-0.5 rounded-full font-semibold">
-                                    Latest
-                                  </span>
-                                )}
-                                <div>
-                                  <p className="font-semibold text-sm text-gray-700">
-                                    {item.activity_type}
-                                  </p>
-                                  <p
-                                    className={`text-[10px] uppercase font-semibold ${
-                                      followUpTab === "lead"
-                                        ? "text-blue-400"
-                                        : "text-orange-400"
-                                    }`}
-                                  >
-                                    {followUpTab === "lead"
-                                      ? "Lead"
-                                      : "Quotation"}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-xs text-gray-400">
-                                  {item.follow_up_date
-                                    ? new Date(
-                                        item.follow_up_date,
-                                      ).toLocaleDateString()
-                                    : "—"}
-                                </span>
-                                <i
-                                  className={`bi ${isActive ? "bi-chevron-up" : "bi-chevron-down"} text-gray-400 text-xs`}
-                                ></i>
-                              </div>
-                            </div>
-                            <p className="text-xs text-gray-400 mt-1 truncate">
-                              {item.description}
-                            </p>
-                          </div>
-
-                          {isActive && (
-                            <div className="mt-1 mb-2 border border-orange-200 rounded-xl bg-gradient-to-br from-orange-50 to-white p-4 text-sm shadow-sm">
-                              <div className="flex justify-between items-center mb-3">
-                                <p className="font-bold text-orange-500 text-xs uppercase tracking-wide">
-                                  Details
-                                </p>
-                                <button
-                                  onClick={() => setPreviewFollowUp(null)}
-                                  className="text-gray-400 hover:text-gray-600 text-xs"
-                                >
-                                  ✕ Close
-                                </button>
-                              </div>
-                              <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
-                                {[
-                                  {
-                                    label: "Activity Type",
-                                    value: previewFollowUp.activity_type,
-                                  },
-                                  {
-                                    label: "Follow-Up Date",
-                                    value: previewFollowUp.follow_up_date
-                                      ? new Date(
-                                          previewFollowUp.follow_up_date,
-                                        ).toLocaleDateString()
-                                      : "—",
-                                  },
-                                  {
-                                    label: "Contact Person",
-                                    value: previewFollowUp.contact_person,
-                                  },
-                                  {
-                                    label: "Follow-Up By",
-                                    value: previewFollowUp.follow_up_by,
-                                  },
-                                ].map(({ label, value }) => (
-                                  <div key={label}>
-                                    <p className="text-xs text-gray-400 font-medium">
-                                      {label}
-                                    </p>
-                                    <p className="font-semibold text-gray-700 text-sm mt-0.5">
-                                      {value || "—"}
-                                    </p>
-                                  </div>
-                                ))}
-                                <div>
-                                  <p className="text-xs text-gray-400 font-medium">
-                                    Status
-                                  </p>
-                                  <span
-                                    className={`text-xs px-2.5 py-0.5 rounded-full font-semibold mt-0.5 inline-block ${
-                                      previewFollowUp.status === "Completed"
-                                        ? "bg-green-100 text-green-600"
-                                        : previewFollowUp.status === "Cancelled"
-                                          ? "bg-orange-100 text-orange-500"
-                                          : "bg-orange-100 text-orange-600"
-                                    }`}
-                                  >
-                                    {previewFollowUp.status || "—"}
-                                  </span>
-                                </div>
-                                {previewFollowUp.quotation_no && (
-                                  <div>
-                                    <p className="text-xs text-gray-400 font-medium">
-                                      Quotation No
-                                    </p>
-                                    <p className="font-semibold text-gray-700 text-sm mt-0.5">
-                                      {previewFollowUp.quotation_no}
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="mt-2.5">
-                                <p className="text-xs text-gray-400 font-medium">
-                                  Description
-                                </p>
-                                <p className="text-gray-700 mt-1 text-sm whitespace-pre-wrap">
-                                  {previewFollowUp.description || "—"}
-                                </p>
-                              </div>
-
-                              {previewFollowUp.files &&
-                                previewFollowUp.files.length > 0 && (
-                                  <div className="mt-3">
-                                    <p className="text-xs text-gray-400 font-medium mb-1.5">
-                                      Attached Files
-                                    </p>
-                                    <div className="flex flex-wrap gap-2">
-                                      {previewFollowUp.files.map((f, i) => (
-                                        <a
-                                          key={i}
-                                          href={f.file_path}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="flex items-center gap-1.5 border border-indigo-100 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors shadow-sm"
-                                        >
-                                          <i className="bi bi-file-earmark-check text-indigo-500"></i>
-                                          <span className="truncate max-w-[120px]">
-                                            {f.filename ||
-                                              f.file_name ||
-                                              "File"}
-                                          </span>
-                                        </a>
-                                      ))}
-                                    </div>
-                                  </div>
-                                )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
-              </div>
-            </div>
-
-            {/* Footer Buttons */}
-            <div className="flex justify-end gap-2 sm:gap-3 px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-100 bg-gray-50 flex-shrink-0">
-              <button
-                onClick={() => {
-                  setShowUpdateModal(false);
-                  setSelectedFiles([]);
-                  setPreviewFollowUp(null);
-                  setFollowUpTab("quotation");
-                }}
-                className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-sm text-xs sm:text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
-              >
-                Cancel
-              </button>
-
-              <button
-                onClick={followUpTab === "quotation" ? handleUpdate : undefined}
-                disabled={followUpTab === "lead" || updateLoading}
-                title={
-                  followUpTab === "lead"
-                    ? "Lead follow-ups cannot be added here"
-                    : ""
-                }
-                className={`px-3 sm:px-6 py-1.5 sm:py-2 rounded-sm text-xs sm:text-sm font-semibold text-white transition-all shadow-md flex items-center gap-2  ${
-                  followUpTab === "lead"
-                    ? "bg-gray-300 cursor-not-allowed shadow-none"
-                    : updateLoading
-                      ? "bg-orange-400 cursor-not-allowed shadow-orange-200"
-                      : "bg-orange-500 hover:bg-orange-600 shadow-orange-200"
-                }`}
-              >
-                {updateLoading ? (
-                  <>
-                    <svg
-                      className="animate-spin h-4 w-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="white"
-                        strokeWidth="4"
-                        opacity="0.25"
-                      />
-                      <path
-                        fill="white"
-                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                      />
-                    </svg>
-                    Saving...
-                  </>
-                ) : followUpTab === "lead" ? (
-                  <>
-                    <i className="bi bi-lock-fill text-xs"></i>
-                    Add Follow-Up
-                  </>
-                ) : (
-                  "Add Follow-Up"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* QUOTATION UPDATE MODAL */}
-      {showQuotationModal && selectedLead && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white w-[95vw] max-w-[900px] h-[90vh] rounded-sm shadow-xl overflow-hidden border border-gray-100 flex flex-col">
+       
+{showUpdateModal && (
+  <div
+    id="updateDrawerOverlay"
+    className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm"
+    style={{ animation: "updFadeIn 0.3s ease-out" }}
+  >
+    <style>{`
+      @keyframes updSlideIn {
+        from { transform: translateX(100%); opacity: 0.6; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes updSlideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0.6; }
+      }
+      @keyframes updFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes updFadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+    `}</style>
+ 
+    <div
+      id="updateDrawerPanel"
+      className="bg-white w-full max-w-[820px] h-full shadow-2xl border-l border-gray-100 overflow-hidden flex flex-col"
+      style={{ animation: "updSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1)" }}
+    >
+      {/* ── Header (Image-2 style: white bg + gradient update icon + progress strip) ── */}
+      <div className="bg-white flex-shrink-0 z-10">
+        <div className="flex justify-between items-center px-6 py-4">
+          <div className="flex items-center gap-3">
             <div
-              className="flex justify-between items-center px-6 py-4 border-b border-gray-100 shadow-sm z-10"
+              className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md flex-shrink-0"
               style={{
-                background: "linear-gradient(to right, #f5e0c6, #ffffff)",
+                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
               }}
             >
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center">
-                  <i className="bi bi-activity text-lg text-orange-500"></i>
+              <i className="bi bi-arrow-repeat text-white text-lg"></i>
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-gray-800 tracking-wide">
+                Update Lead Activities
+              </h2>
+              <p className="text-[10px] text-gray-500 font-medium">
+                Log follow-ups and keep this lead moving
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={closeUpdateDrawer}
+            className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-violet-600 hover:bg-violet-50 rounded-full transition-colors"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="h-1 w-full bg-gray-100">
+          <div
+            className="h-full w-1/3 rounded-r-full"
+            style={{
+              background: "linear-gradient(to right, #6366f1, #8b5cf6)",
+            }}
+          ></div>
+        </div>
+      </div>
+ 
+      {/* Tabs */}
+      <div className="flex border-b border-gray-200 flex-shrink-0">
+        <button
+          onClick={() => {
+            setFollowUpTab("lead");
+            setPreviewFollowUp(null);
+          }}
+          className={`px-6 py-3 text-sm font-semibold transition-all ${
+            followUpTab === "lead"
+              ? "text-violet-600 border-b-2 border-violet-600 bg-violet-50"
+              : "text-gray-500 hover:text-violet-500"
+          }`}
+        >
+          Lead
+        </button>
+ 
+        <button
+          onClick={() => {
+            setFollowUpTab("quotation");
+            setPreviewFollowUp(null);
+          }}
+          className={`px-6 py-3 text-sm font-semibold transition-all ${
+            followUpTab === "quotation"
+              ? "text-violet-600 border-b-2 border-violet-600 bg-violet-50"
+              : "text-gray-500 hover:text-violet-500"
+          }`}
+        >
+          Quotation
+        </button>
+      </div>
+ 
+      {/* Body — scrollable */}
+      <div className="flex flex-row flex-1 overflow-hidden">
+        {/* LEFT: Form */}
+        <div className="w-1/2 px-3 sm:px-6 py-3 sm:py-5 border-r border-gray-100 overflow-y-auto">
+          {followUpTab === "lead" && (
+            <p className="text-xs font-bold text-violet-600 uppercase tracking-widest mb-2 sm:mb-4">
+              Lead Follow-Up
+            </p>
+          )}
+ 
+          {followUpTab === "quotation" && (
+            <p className="text-xs font-bold text-violet-600 uppercase tracking-widest mb-2 sm:mb-4">
+              Quotation Follow-Up
+            </p>
+          )}
+ 
+          {/* LEAD TAB: Read-only notice */}
+          {followUpTab === "lead" && (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-start gap-2 sm:gap-3 bg-indigo-50 border border-indigo-200 rounded-xl px-2 sm:px-4 py-2 sm:py-3">
+                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-indigo-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <i className="bi bi-info-circle-fill text-indigo-500 text-sm"></i>
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
-                    {selectedLead?.company_name}
-                  </h2>
-                  <p className="text-xs text-gray-500 font-medium">
-                    Quotation Management
+                  <p className="text-xs sm:text-sm font-semibold text-indigo-700">
+                    Lead Follow-Up History
+                  </p>
+                  <p className="text-xs text-indigo-600 mt-0.5">
+                    Lead follow-ups are managed from the Leads section.
+                    You can view the history on the right panel.
                   </p>
                 </div>
               </div>
-              <button
-                onClick={() => setShowQuotationModal(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full text-orange-500 transition-all"
-              >
-                ✕
-              </button>
+ 
+              {selectedLead && (
+                <div className="bg-gray-50 border border-gray-100 rounded-xl p-2 sm:p-4 space-y-1.5 sm:space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-400 font-medium">
+                      Company
+                    </span>
+                    <span className="font-semibold text-gray-700">
+                      {selectedLead.company_name || "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-400 font-medium">
+                      Customer
+                    </span>
+                    <span className="font-semibold text-gray-700">
+                      {selectedLead.customer_name || "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-400 font-medium">
+                      Reference
+                    </span>
+                    <span className="font-semibold text-gray-700">
+                      {selectedLead.reference || "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-400 font-medium">
+                      Assignee
+                    </span>
+                    <span className="font-semibold text-gray-700">
+                      {selectedLead.assignee || "—"}
+                    </span>
+                  </div>
+                </div>
+              )}
+ 
+              <p className="text-xs text-gray-400 italic text-center pt-2">
+                <i className="bi bi-lock mr-1"></i>
+                Lead follow-up entries are read-only in this view
+              </p>
             </div>
-
-            <div className="flex flex-row flex-1 overflow-hidden relative">
-              {/* Left Side: Form */}
-              <div className="w-5/12 min-w-[160px] bg-white border-r border-gray-100 flex flex-col relative z-10 overflow-y-auto">
-                {isModalLocked && (
-                  <div
-                    className={`mx-4 mt-4 flex items-start gap-3 border rounded-xl px-4 py-3 shadow-sm ${
-                      isWonOrLostLocked
-                        ? selectedLead?.displayStatus === "Won"
-                          ? "bg-green-50 border-green-200"
-                          : "bg-red-50 border-red-200"
-                        : "bg-green-50 border-green-200"
-                    }`}
-                  >
+          )}
+ 
+          {/* QUOTATION TAB: Editable Form */}
+          {followUpTab === "quotation" && (
+            <div className="grid grid-cols-2 gap-x-2 sm:gap-x-4 gap-y-2 sm:gap-y-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Follow-Up Date
+                </label>
+                <input
+                  type="date"
+                  name="follow_up_date"
+                  value={updateForm.follow_up_date}
+                  onChange={handleInputChange}
+                  className="w-full mt-1 sm:mt-1.5 border border-indigo-200 focus:border-violet-400 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Activity Type *
+                </label>
+                <select
+                  name="activity_type"
+                  value={updateForm.activity_type}
+                  onChange={handleInputChange}
+                  className="w-full mt-1 sm:mt-1.5 border border-indigo-200 focus:border-violet-400 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50 transition-colors"
+                >
+                  <option value="">-- Select --</option>
+                  <option>Call</option>
+                  <option>Meeting</option>
+                  <option>Email</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Follow-Up By
+                </label>
+                <select
+                  name="follow_up_by"
+                  value={updateForm.follow_up_by}
+                  onChange={handleInputChange}
+                  className="w-full mt-1 sm:mt-1.5 border border-indigo-200 focus:border-violet-400 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50 transition-colors"
+                >
+                  <option value="">Select User</option>
+                  {followUpUsers.map((item) => (
+                    <option key={item.value} value={item.value}>
+                      {item.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Contact Person *
+                </label>
+                <input
+                  name="contact_person"
+                  value={updateForm.contact_person}
+                  onChange={handleInputChange}
+                  className="w-full mt-1 sm:mt-1.5 border border-indigo-200 focus:border-violet-400 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50 transition-colors"
+                />
+              </div>
+ 
+              {/* BUG FIX #2: Added Quotation No field in follow-up form */}
+              <div className="col-span-2">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Quotation No
+                </label>
+                <input
+                  name="quotation_no"
+                  value={updateForm.quotation_no}
+                  onChange={handleInputChange}
+                  placeholder="e.g. QT-2025-001"
+                  disabled={
+                    !!selectedQuotation?.quotation_no ||
+                    !!selectedLead?.quotation_no
+                  }
+                  className={`w-full mt-1.5 border border-indigo-200 focus:border-violet-400 rounded-lg px-3 py-2 text-sm outline-none bg-gray-50 transition-colors ${
+                    selectedQuotation?.quotation_no ||
+                    selectedLead?.quotation_no
+                      ? "opacity-75 cursor-not-allowed"
+                      : ""
+                  }`}
+                />
+              </div>
+ 
+              <div className="col-span-2">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Description *
+                </label>
+                <textarea
+                  name="description"
+                  value={updateForm.description}
+                  onChange={handleInputChange}
+                  className="w-full mt-1 sm:mt-1.5 border border-indigo-200 focus:border-violet-400 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50 h-16 sm:h-20 resize-none transition-colors"
+                />
+              </div>
+            </div>
+          )}
+        </div>
+ 
+        {/* RIGHT: History Panel */}
+        <div className="w-1/2 px-2 sm:px-6 py-3 sm:py-5 flex flex-col overflow-hidden bg-slate-50/50">
+          {followUpTab === "lead" && (
+            <div className="flex flex-wrap justify-between items-center gap-1 mb-2 sm:mb-4 flex-shrink-0">
+              <p className="text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-widest leading-tight">
+                Lead Follow-Up History
+              </p>
+              <span className="text-[10px] sm:text-xs bg-indigo-50 text-indigo-600 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full font-semibold border border-indigo-100">
+                {
+                  followUpHistory.filter((h) => h.module_type === "sales")
+                    .length
+                }{" "}
+                record(s)
+              </span>
+            </div>
+          )}
+ 
+          {followUpTab === "quotation" && (
+            <div className="flex flex-wrap justify-between items-center gap-1 mb-2 sm:mb-4 flex-shrink-0">
+              <p className="text-[10px] sm:text-xs font-bold text-gray-600 uppercase tracking-widest leading-tight">
+                Quotation Follow-Up History
+              </p>
+              <span className="text-[10px] sm:text-xs bg-violet-50 text-violet-600 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full font-semibold border border-violet-100">
+                {
+                  followUpHistory.filter(
+                    (h) => h.module_type === "quotation",
+                  ).length
+                }{" "}
+                record(s)
+              </span>
+            </div>
+          )}
+ 
+          {/* History List — scrollable */}
+          <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+            {(() => {
+              const filtered = followUpHistory.filter((h) =>
+                followUpTab === "lead"
+                  ? h.module_type === "sales"
+                  : h.module_type === "quotation",
+              );
+ 
+              if (filtered.length === 0) {
+                return (
+                  <div className="flex flex-col items-center justify-center py-8 text-gray-300">
+                    <i className="bi bi-clock-history text-3xl mb-2"></i>
+                    <p className="text-sm">No history found</p>
+                  </div>
+                );
+              }
+ 
+              return filtered.map((item, idx) => {
+                const itemId = item.follow_up_id || item.id;
+                const previewId =
+                  previewFollowUp?.follow_up_id || previewFollowUp?.id;
+                const isActive = previewId === itemId;
+ 
+                return (
+                  <div key={itemId}>
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                        isWonOrLostLocked
-                          ? selectedLead?.displayStatus === "Won"
-                            ? "bg-green-100"
-                            : "bg-red-100"
-                          : "bg-green-100"
+                      onClick={() =>
+                        setPreviewFollowUp(isActive ? null : item)
+                      }
+                      className={`border rounded-xl p-2 sm:p-3 cursor-pointer transition-all select-none bg-white ${
+                        isActive
+                          ? "border-violet-400 bg-violet-50 shadow-sm"
+                          : "hover:bg-violet-50/40 hover:border-violet-200 border-gray-200"
                       }`}
                     >
-                      <i
-                        className={`bi bi-lock-fill text-sm ${
-                          isWonOrLostLocked
-                            ? selectedLead?.displayStatus === "Won"
-                              ? "text-green-600"
-                              : "text-red-600"
-                            : "text-green-600"
-                        }`}
-                      ></i>
-                    </div>
-                    <div>
-                      <p
-                        className={`text-sm font-bold ${
-                          isWonOrLostLocked
-                            ? selectedLead?.displayStatus === "Won"
-                              ? "text-green-700"
-                              : "text-red-700"
-                            : "text-green-700"
-                        }`}
-                      >
-                        {isWonOrLostLocked
-                          ? selectedLead?.displayStatus === "Won"
-                            ? "Lead Won"
-                            : "Lead Lost"
-                          : "Quotation Approved"}
-                      </p>
-                      <p
-                        className={`text-xs mt-0.5 ${
-                          isWonOrLostLocked
-                            ? selectedLead?.displayStatus === "Won"
-                              ? "text-green-600"
-                              : "text-red-600"
-                            : "text-green-600"
-                        }`}
-                      >
-                        {isWonOrLostLocked
-                          ? `This lead is marked as ${selectedLead?.displayStatus}. No further quotation updates are permitted.`
-                          : "This quotation is already approved. You cannot add or edit any further quotation activities."}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                <div
-                  className={`p-3 sm:p-6 flex flex-col gap-3 sm:gap-4 ${isModalLocked ? "opacity-50 pointer-events-none select-none" : ""}`}
-                >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-                    <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Quotation Date <span className="text-red-400">*</span>
-                      </label>
-                      <input
-                        type="date"
-                        name="quotation_date"
-                        value={form.quotation_date}
-                        onChange={handleChange}
-                        className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Activity Type <span className="text-red-400">*</span>
-                      </label>
-                      <select
-                        name="activity_type"
-                        value={form.activity_type}
-                        onChange={handleChange}
-                        className="w-full mt-1 border border-orange-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
-                      >
-                        <option value="">-- Select --</option>
-                        <option>New</option>
-                        <option>Revision</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-                    <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Quotation No <span className="text-red-400">*</span>
-                      </label>
-                      <input
-                        name="quotation_no"
-                        value={form.quotation_no}
-                        onChange={handleChange}
-                        disabled={isQuotationNoLocked}
-                        className={`w-full mt-1 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50 ${
-                          isQuotationNoLocked
-                            ? "opacity-75 cursor-not-allowed"
-                            : ""
-                        }`}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
-                    <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Amount (₹)
-                      </label>
-                      <div className="relative flex items-center mt-1">
-                        <input
-                          type="text"
-                          name="amount"
-                          value={form.amount || ""}
-                          onChange={handleChange}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault();
-                              if (
-                                (isAdmin || isSales) &&
-                                form.quotation_status === "Sent"
-                              ) {
-                                openSplitModal(false);
-                              }
-                            }
-                          }}
-                          className="w-full border border-orange-300 rounded-sm pl-2 pr-10 sm:pl-3 sm:pr-10 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50"
-                        />
-                        {(isAdmin || isSales) &&
-                          form.quotation_status === "Sent" && (
-                            <button
-                              type="button"
-                              onClick={() => openSplitModal(false)}
-                              className="absolute right-2 text-orange-500 hover:text-orange-700 font-bold p-1 rounded transition-colors flex items-center justify-center border-0 bg-transparent cursor-pointer"
-                              title="Configure Participation"
-                            >
-                              <i className="bi bi-plus-circle-fill text-lg"></i>
-                            </button>
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          {idx === 0 && (
+                            <span className="text-xs bg-violet-100 text-violet-600 px-2 py-0.5 rounded-full font-semibold">
+                              Latest
+                            </span>
                           )}
+                          <div>
+                            <p className="font-semibold text-sm text-gray-700">
+                              {item.activity_type}
+                            </p>
+                            <p
+                              className={`text-[10px] uppercase font-semibold ${
+                                followUpTab === "lead"
+                                  ? "text-indigo-400"
+                                  : "text-violet-400"
+                              }`}
+                            >
+                              {followUpTab === "lead"
+                                ? "Lead"
+                                : "Quotation"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-gray-400">
+                            {item.follow_up_date
+                              ? new Date(
+                                  item.follow_up_date,
+                                ).toLocaleDateString()
+                              : "—"}
+                          </span>
+                          <i
+                            className={`bi ${isActive ? "bi-chevron-up" : "bi-chevron-down"} text-gray-400 text-xs`}
+                          ></i>
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                        Grand Total (₹)
-                      </label>
-                      <input
-                        type="text"
-                        name="grand_total"
-                        value={form.grand_total || ""}
-                        readOnly
-                        disabled
-                        className="w-full mt-1 border border-gray-300 rounded-sm px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-100 cursor-not-allowed font-semibold text-gray-700"
-                      />
-                    </div>
-                  </div>
-                  <div className="hidden">
-                    <input
-                      type="hidden"
-                      name="discount"
-                      value={form.discount || "0"}
-                    />
-                    <input type="hidden" name="tax" value={form.tax || "0"} />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                      Description
-                    </label>
-                    <textarea
-                      name="description"
-                      value={form.description}
-                      onChange={handleChange}
-                      rows="2"
-                      className="w-full mt-1 border border-orange-300 rounded-sm px-3 py-2 text-sm outline-none bg-gray-50 resize-none"
-                    ></textarea>
-                  </div>
-                  <div className="border border-dashed border-orange-200 rounded-xl p-4 bg-orange-50/30 text-center">
-                    {!editingId ? (
-                      <>
-                        <button
-                          onClick={() => setShowFileModal(true)}
-                          className="text-white px-5 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 mx-auto transition-all"
-                          style={{ background: "#f07400" }}
-                        >
-                          <i className="bi bi-cloud-upload text-sm"></i> Upload
-                          Files
-                        </button>
-                        {selectedFiles.length > 0 && (
-                          <div className="mt-3 space-y-1.5 text-left">
-                            {selectedFiles.map((file, idx) => (
-                              <div
-                                key={idx}
-                                className="flex justify-between items-center bg-white px-3 py-1.5 text-xs rounded-lg border border-gray-100 shadow-sm"
-                              >
-                                <div className="flex items-center gap-2.5 overflow-hidden">
-                                  <i className="bi bi-file-earmark-text text-blue-500 text-sm"></i>
-                                  <span className="text-gray-600 font-medium truncate">
-                                    {file.name}
-                                  </span>
-                                </div>
-                                <button
-                                  onClick={() =>
-                                    setSelectedFiles(
-                                      selectedFiles.filter((_, i) => i !== idx),
-                                    )
-                                  }
-                                  className="text-gray-300 hover:text-red-500 transition-colors ml-2"
-                                >
-                                  <i className="bi bi-x-circle text-sm"></i>
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <p className="text-xs text-gray-500 italic">
-                        File editing is unavailable during updates. Create a new
-                        quotation to attach new files.
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="p-4 border-t border-gray-100 bg-gray-50 mt-auto flex gap-3">
-                  {isModalLocked ? (
-                    <div className="flex-1 flex items-center justify-center gap-2 bg-gray-100 border border-gray-200 rounded-xl py-3 text-sm font-semibold text-gray-400 cursor-not-allowed select-none">
-                      <i className="bi bi-lock-fill text-gray-400"></i>
-                      {isWonOrLostLocked
-                        ? `Locked — Lead ${selectedLead?.displayStatus}`
-                        : "Locked — Quotation Approved"}
-                    </div>
-                  ) : (
-                    <>
-                      <button
-                        onClick={handleQuotationSubmit}
-                        disabled={isSubmitting}
-                        className={`flex-1 text-white rounded-xl py-3 text-sm font-semibold transition-all flex justify-center items-center gap-2 ${isSubmitting ? "opacity-70 cursor-not-allowed" : ""}`}
-                        style={{ background: "#f07400" }}
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <svg
-                              className="animate-spin h-4 w-4"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                            >
-                              <circle
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="white"
-                                strokeWidth="4"
-                                opacity="0.25"
-                              />
-                              <path
-                                fill="white"
-                                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                              />
-                            </svg>
-                            Processing...
-                          </>
-                        ) : (
-                          <>
-                            <i className="bi bi-floppy2-fill"></i>
-                            {editingId
-                              ? "Update Quotation"
-                              : "Save Quotation Activity"}
-                          </>
-                        )}
-                      </button>
-                      {editingId && (
-                        <button
-                          onClick={() => {
-                            setEditingId(null);
-                            setForm({
-                              quotation_no: form.quotation_no,
-                              quotation_date: new Date()
-                                .toISOString()
-                                .split("T")[0],
-                              activity_type: "",
-                              quotation_status:
-                                selectedLead.displayStatus === "Revision"
-                                  ? "Revision"
-                                  : "Pending",
-                              assignee: form.assignee,
-                              amount: "",
-                              discount: "",
-                              tax: "0",
-                              grand_total: "",
-                              description: "",
-                              amount_9: "",
-                              amount_18: "",
-                              tax_9: "",
-                              tax_18: "",
-                            });
-                          }}
-                          className="flex-none bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl px-4 py-3 text-sm font-semibold transition-all"
-                        >
-                          Cancel
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Right Side: History */}
-              <div className="w-7/12 min-w-0 bg-slate-50 flex flex-col relative z-0">
-                <div className="px-3 sm:px-6 py-3 sm:py-4 flex justify-between items-center bg-white border-b border-gray-100 sticky top-0 z-20 shadow-sm">
-                  <h3 className="text-sm font-bold text-gray-700 uppercase flex items-center gap-2">
-                    <i
-                      className="bi bi-clock-history"
-                      style={{ color: "#f07400" }}
-                    ></i>{" "}
-                    Quotation History Data
-                  </h3>
-                </div>
-                <div className="flex-1 overflow-y-auto p-2 sm:p-6 space-y-3 sm:space-y-4">
-                  {followUpHistory.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full text-gray-400">
-                      <i className="bi bi-inbox text-4xl mb-2 text-gray-300"></i>
-                      <p className="text-sm font-medium">
-                        No quotation history found.
+                      <p className="text-xs text-gray-400 mt-1 truncate">
+                        {item.description}
                       </p>
                     </div>
-                  ) : (
-                    [...followUpHistory]
-                      .sort((a, b) =>
-                        a.quotation_status === "Approved"
-                          ? -1
-                          : b.quotation_status === "Approved"
-                            ? 1
-                            : Math.sign(
-                                new Date(b.created_at) - new Date(a.created_at),
-                              ),
-                      )
-                      .map((item, index) => (
-                        <div
-                          key={index}
-                          className={`bg-white border rounded-xl p-2 sm:p-4 shadow-sm transition-colors ${
-                            item.quotation_status === "Approved" ||
-                            item.quotation_status === "Won"
-                              ? "border-green-400 bg-green-50/20"
-                              : "border-gray-200 hover:border-blue-200"
-                          }`}
-                        >
-                          <div className="flex justify-between items-start mb-2">
-                            <div className="flex gap-2 items-center">
-                              <div
-                                className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-sm ${
-                                  item.quotation_status === "Approved" ||
-                                  item.quotation_status === "Won"
-                                    ? "bg-green-100 text-green-700"
-                                    : "bg-blue-100 text-blue-600"
-                                }`}
-                              >
-                                {item.assignee ? item.assignee.charAt(0) : "U"}
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500 font-medium">
-                                  Recorded by{" "}
-                                  <span className="text-gray-800 font-bold">
-                                    {item.assignee || "User"}
-                                  </span>
-                                </p>
-                                <p className="text-[10px] text-gray-400 font-medium tracking-wide">
-                                  Quotation Date:{" "}
-                                  {new Date(
-                                    item.quotation_date || item.created_at,
-                                  ).toLocaleDateString()}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex gap-2 items-center">
-                              {item.quotation_status !== "Won" &&
-                                item.quotation_status !== "Lost" &&
-                                item.quotation_status !== "Approved" &&
-                                item.quotation_status !== "Declined" &&
-                                !isModalLocked &&
-                                (!isSales ||
-                                  item.quotation_status === "Sent") &&
-                                !isKhushaliEstimation && (
-                                  <>
-                                    <button
-                                      onClick={() =>
-                                        handleApproveDecline(
-                                          item.id,
-                                          "Approved",
-                                        )
-                                      }
-                                      className="bg-green-500 hover:bg-green-600 text-white text-[10px] px-2 py-1 rounded-md transition-all shadow-sm"
-                                    >
-                                      Approve
-                                    </button>
-                                    <button
-                                      onClick={() =>
-                                        handleApproveDecline(
-                                          item.id,
-                                          "Declined",
-                                        )
-                                      }
-                                      className="bg-red-500 hover:bg-red-600 text-white text-[10px] px-2 py-1 rounded-md transition-all shadow-sm"
-                                    >
-                                      Decline
-                                    </button>
-                                  </>
-                                )}
-                              <span
-                                className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-md ${
-                                  item.quotation_status === "Approved" ||
-                                  item.quotation_status === "Won"
-                                    ? "bg-green-100 text-green-700"
-                                    : item.quotation_status === "Declined" ||
-                                        item.quotation_status === "Lost"
-                                      ? "bg-red-100 text-red-700"
-                                      : "bg-gray-100 text-gray-700"
-                                }`}
-                              >
-                                {item.quotation_status || "Pending"}
-                              </span>
-                              {item.quotation_status !== "Approved" &&
-                                item.quotation_status !== "Declined" &&
-                                !isModalLocked && (
-                                  <button
-                                    onClick={() => handleEditClick(item)}
-                                    className="ml-1 text-gray-400 hover:text-blue-600 transition-colors p-1"
-                                    title="Edit Quotation Activity"
-                                  >
-                                    <i className="bi bi-pencil-square"></i>
-                                  </button>
-                                )}
-                            </div>
-                          </div>
-
-                          {item.updated_by && (
-                            <div className="mb-2 flex items-center gap-2 flex-wrap">
-                              <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold bg-indigo-50 border border-indigo-100 text-indigo-600 px-2 py-0.5 rounded-md">
-                                <i className="bi bi-pencil-fill text-[9px]"></i>
-                                Last edited by{" "}
-                                <span className="text-indigo-800">
-                                  {item.updated_by}
-                                </span>
-                              </span>
-                              {item.updated_at && (
-                                <span className="text-[10px] text-gray-400 font-medium">
-                                  {formatDateTime(item.updated_at)}
-                                </span>
-                              )}
-                            </div>
-                          )}
-
-                          <div className="mt-2 grid grid-cols-2 gap-4 bg-gray-50 p-2.5 rounded-lg border border-gray-100 text-sm">
-                            <div>
-                              <span className="text-gray-400 text-xs">
-                                Quotation No:
-                              </span>{" "}
-                              <span className="font-semibold">
-                                {item.quotation_no || "-"}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-gray-400 text-xs">
-                                Activity Type:
-                              </span>{" "}
-                              <span className="font-semibold">
-                                {item.activity_type || "-"}
-                              </span>
-                            </div>
-                            <div className="col-span-2 text-gray-700">
-                              <span className="text-gray-400 text-xs block mb-0.5">
-                                Description:
-                              </span>
-                              <p className="whitespace-pre-wrap">
-                                {item.description || "No description provided."}
+ 
+                    {isActive && (
+                      <div className="mt-1 mb-2 border border-violet-200 rounded-xl bg-gradient-to-br from-violet-50 to-white p-4 text-sm shadow-sm">
+                        <div className="flex justify-between items-center mb-3">
+                          <p className="font-bold text-violet-600 text-xs uppercase tracking-wide">
+                            Details
+                          </p>
+                          <button
+                            onClick={() => setPreviewFollowUp(null)}
+                            className="text-gray-400 hover:text-gray-600 text-xs"
+                          >
+                            ✕ Close
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                          {[
+                            {
+                              label: "Activity Type",
+                              value: previewFollowUp.activity_type,
+                            },
+                            {
+                              label: "Follow-Up Date",
+                              value: previewFollowUp.follow_up_date
+                                ? new Date(
+                                    previewFollowUp.follow_up_date,
+                                  ).toLocaleDateString()
+                                : "—",
+                            },
+                            {
+                              label: "Contact Person",
+                              value: previewFollowUp.contact_person,
+                            },
+                            {
+                              label: "Follow-Up By",
+                              value: previewFollowUp.follow_up_by,
+                            },
+                          ].map(({ label, value }) => (
+                            <div key={label}>
+                              <p className="text-xs text-gray-400 font-medium">
+                                {label}
+                              </p>
+                              <p className="font-semibold text-gray-700 text-sm mt-0.5">
+                                {value || "—"}
                               </p>
                             </div>
+                          ))}
+                          <div>
+                            <p className="text-xs text-gray-400 font-medium">
+                              Status
+                            </p>
+                            <span
+                              className={`text-xs px-2.5 py-0.5 rounded-full font-semibold mt-0.5 inline-block ${
+                                previewFollowUp.status === "Completed"
+                                  ? "bg-green-100 text-green-600"
+                                  : previewFollowUp.status === "Cancelled"
+                                    ? "bg-red-100 text-red-500"
+                                    : "bg-violet-100 text-violet-600"
+                              }`}
+                            >
+                              {previewFollowUp.status || "—"}
+                            </span>
                           </div>
-                          <div
-                            className={`mt-2 grid ${isAdmin || isSales ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2"} gap-2 sm:gap-4 bg-white p-2 sm:p-2.5 rounded-lg border border-gray-100 text-sm`}
-                          >
+                          {previewFollowUp.quotation_no && (
                             <div>
-                              <span className="text-gray-400 text-[10px] uppercase block">
-                                Amount
-                              </span>
-                              <span className="font-semibold text-gray-800">
-                                ₹{item.amount || "0"}
-                              </span>
+                              <p className="text-xs text-gray-400 font-medium">
+                                Quotation No
+                              </p>
+                              <p className="font-semibold text-gray-700 text-sm mt-0.5">
+                                {previewFollowUp.quotation_no}
+                              </p>
                             </div>
-                            <div>
-                              <span className="text-gray-400 text-[10px] uppercase block">
-                                Grand Total
-                              </span>
-                              <span className="font-bold text-green-600">
-                                ₹{item.grand_total || "0"}
-                              </span>
-                            </div>
-                            {(isAdmin || isSales) && (
-                              <div>
-                                <span className="text-gray-400 text-[10px] uppercase block">
-                                  Participation Details
-                                </span>
-                                {(item.amount_9 !== null &&
-                                  Number(item.amount_9) > 0) ||
-                                (item.amount_18 !== null &&
-                                  Number(item.amount_18) > 0) ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const totalAmt =
-                                        parseFloat(item.amount_9 || 0) +
-                                        parseFloat(item.amount_18 || 0);
-                                      const pct9 =
-                                        totalAmt > 0
-                                          ? (
-                                              (parseFloat(item.amount_9 || 0) /
-                                                totalAmt) *
-                                              100
-                                            ).toFixed(4)
-                                          : "0.00";
-                                      const pct18 =
-                                        totalAmt > 0
-                                          ? (
-                                              (parseFloat(item.amount_18 || 0) /
-                                                totalAmt) *
-                                              100
-                                            ).toFixed(4)
-                                          : "0.00";
-
-                                      setSplitForm({
-                                        amount: totalAmt.toFixed(2),
-                                        amount_9: item.amount_9 || "",
-                                        amount_18: item.amount_18 || "",
-                                        percent_9:
-                                          parseFloat(pct9) === 0
-                                            ? ""
-                                            : Number(
-                                                parseFloat(pct9).toFixed(4),
-                                              ).toString(),
-                                        percent_18:
-                                          parseFloat(pct18) === 0
-                                            ? ""
-                                            : Number(
-                                                parseFloat(pct18).toFixed(4),
-                                              ).toString(),
-                                        tax_percent_9:
-                                          item.tax_percent_9 !== null &&
-                                          item.tax_percent_9 !== undefined
-                                            ? item.tax_percent_9.toString()
-                                            : "9.00",
-                                        tax_percent_18:
-                                          item.tax_percent_18 !== null &&
-                                          item.tax_percent_18 !== undefined
-                                            ? item.tax_percent_18.toString()
-                                            : "18.00",
-                                        tax_9: (item.tax_9 || 0).toString(),
-                                        tax_18: (item.tax_18 || 0).toString(),
-                                        grand_total: (
-                                          item.split_grand_total ||
-                                          item.grand_total ||
-                                          0
-                                        ).toString(),
-                                      });
-                                      setIsSplitReadOnly(true);
-                                      setShowSplitModal(true);
-                                    }}
-                                    className="text-blue-600 hover:text-blue-800 bg-transparent border-0 cursor-pointer flex items-center justify-start mt-0.5 p-0.5 rounded hover:bg-blue-50"
-                                    title="View Participation Details"
-                                  >
-                                    <i className="bi bi-eye text-lg"></i>
-                                  </button>
-                                ) : (
-                                  <span className="text-xs text-gray-400 italic">
-                                    No participation
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                          </div>
-
-                          {item.files?.length > 0 && (
+                          )}
+                        </div>
+                        <div className="mt-2.5">
+                          <p className="text-xs text-gray-400 font-medium">
+                            Description
+                          </p>
+                          <p className="text-gray-700 mt-1 text-sm whitespace-pre-wrap">
+                            {previewFollowUp.description || "—"}
+                          </p>
+                        </div>
+ 
+                        {previewFollowUp.files &&
+                          previewFollowUp.files.length > 0 && (
                             <div className="mt-3">
-                              <p className="text-xs font-semibold text-gray-400 uppercase mb-1.5">
+                              <p className="text-xs text-gray-400 font-medium mb-1.5">
                                 Attached Files
                               </p>
                               <div className="flex flex-wrap gap-2">
-                                {item.files.map((f, i) => (
+                                {previewFollowUp.files.map((f, i) => (
                                   <a
                                     key={i}
                                     href={f.file_path}
-                                    onClick={(e) =>
-                                      handleFileDownload(
-                                        e,
-                                        f.file_path,
-                                        f.file_name || "File",
-                                      )
-                                    }
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="flex items-center gap-1.5 border border-indigo-100 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors shadow-sm"
                                   >
                                     <i className="bi bi-file-earmark-check text-indigo-500"></i>
                                     <span className="truncate max-w-[120px]">
-                                      {f.file_name}
+                                      {f.filename ||
+                                        f.file_name ||
+                                        "File"}
                                     </span>
                                   </a>
                                 ))}
                               </div>
                             </div>
                           )}
-                        </div>
-                      ))
-                  )}
-                </div>
-              </div>
-            </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              });
+            })()}
           </div>
         </div>
-      )}
+      </div>
+ 
+      {/* Footer Buttons */}
+      <div className="flex justify-between items-center gap-2 sm:gap-3 px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-100 bg-gray-50 flex-shrink-0">
+        <p className="text-[10px] sm:text-xs text-gray-400 font-medium hidden sm:flex items-center gap-1">
+          <i className="bi bi-info-circle"></i>
+          Fields marked * are required
+        </p>
+        <div className="flex gap-2 sm:gap-3 ml-auto">
+          <button
+            onClick={closeUpdateDrawer}
+            className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all flex items-center gap-1.5"
+          >
+            <i className="bi bi-x-lg text-xs"></i>
+            Cancel
+          </button>
+ 
+          <button
+            onClick={followUpTab === "quotation" ? handleUpdate : undefined}
+            disabled={followUpTab === "lead" || updateLoading}
+            title={
+              followUpTab === "lead"
+                ? "Lead follow-ups cannot be added here"
+                : ""
+            }
+            className={`px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold text-white transition-all shadow-md flex items-center gap-2 ${
+              followUpTab === "lead"
+                ? "bg-gray-300 cursor-not-allowed shadow-none"
+                : updateLoading
+                  ? "cursor-not-allowed opacity-70 shadow-violet-100"
+                  : "hover:shadow-lg hover:shadow-violet-200"
+            }`}
+            style={
+              followUpTab === "lead"
+                ? {}
+                : {
+                    background:
+                      "linear-gradient(to right, #6366f1, #8b5cf6)",
+                  }
+            }
+          >
+            {updateLoading ? (
+              <>
+                <svg
+                  className="animate-spin h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="white"
+                    strokeWidth="4"
+                    opacity="0.25"
+                  />
+                  <path
+                    fill="white"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  />
+                </svg>
+                Saving...
+              </>
+            ) : followUpTab === "lead" ? (
+              <>
+                <i className="bi bi-lock-fill text-xs"></i>
+                Add Follow-Up
+              </>
+            ) : (
+              <>
+                <i className="bi bi-check-circle text-sm"></i>
+                Add Follow-Up
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+ 
+
+      {/* QUOTATION UPDATE MODAL */}
+     {showQuotationModal && selectedLead && (
+  <div
+    id="quotationDrawerOverlay"
+    className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm"
+    style={{ animation: "qmFadeIn 0.3s ease-out" }}
+  >
+    <style>{`
+      @keyframes qmSlideIn {
+        from { transform: translateX(100%); opacity: 0.6; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes qmSlideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0.6; }
+      }
+      @keyframes qmFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes qmFadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+    `}</style>
+ 
+    <div
+      id="quotationDrawerPanel"
+      className="bg-white w-[95vw] max-w-[900px] h-full shadow-2xl overflow-hidden border-l border-gray-100 flex flex-col"
+      style={{ animation: "qmSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1)" }}
+    >
+      {/* ── Header (Image-2 style: white bg + gradient icon box + progress strip) ── */}
+      <div className="bg-white z-10 shadow-sm">
+        <div className="flex justify-between items-center px-6 py-4">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md flex-shrink-0"
+              style={{
+                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              }}
+            >
+              <i className="bi bi-receipt text-lg text-white"></i>
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
+                {selectedLead?.company_name}
+              </h2>
+              <p className="text-xs text-gray-500 font-medium">
+                Quotation Management
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={closeQuotationDrawer}
+            className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-violet-600 hover:bg-violet-50 transition-all"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="h-1 w-full bg-gray-100">
+          <div
+            className="h-full w-1/3 rounded-r-full"
+            style={{
+              background: "linear-gradient(to right, #6366f1, #8b5cf6)",
+            }}
+          ></div>
+        </div>
+      </div>
+ 
+      <div className="flex flex-row flex-1 overflow-hidden relative">
+        {/* Left Side: Form */}
+        <div className="w-5/12 min-w-[160px] bg-white border-r border-gray-100 flex flex-col relative z-10 overflow-y-auto">
+          {isModalLocked && (
+            <div
+              className={`mx-4 mt-4 flex items-start gap-3 border rounded-xl px-4 py-3 shadow-sm ${
+                isWonOrLostLocked
+                  ? selectedLead?.displayStatus === "Won"
+                    ? "bg-green-50 border-green-200"
+                    : "bg-red-50 border-red-200"
+                  : "bg-green-50 border-green-200"
+              }`}
+            >
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                  isWonOrLostLocked
+                    ? selectedLead?.displayStatus === "Won"
+                      ? "bg-green-100"
+                      : "bg-red-100"
+                    : "bg-green-100"
+                }`}
+              >
+                <i
+                  className={`bi bi-lock-fill text-sm ${
+                    isWonOrLostLocked
+                      ? selectedLead?.displayStatus === "Won"
+                        ? "text-green-600"
+                        : "text-red-600"
+                      : "text-green-600"
+                  }`}
+                ></i>
+              </div>
+              <div>
+                <p
+                  className={`text-sm font-bold ${
+                    isWonOrLostLocked
+                      ? selectedLead?.displayStatus === "Won"
+                        ? "text-green-700"
+                        : "text-red-700"
+                      : "text-green-700"
+                  }`}
+                >
+                  {isWonOrLostLocked
+                    ? selectedLead?.displayStatus === "Won"
+                      ? "Lead Won"
+                      : "Lead Lost"
+                    : "Quotation Approved"}
+                </p>
+                <p
+                  className={`text-xs mt-0.5 ${
+                    isWonOrLostLocked
+                      ? selectedLead?.displayStatus === "Won"
+                        ? "text-green-600"
+                        : "text-red-600"
+                      : "text-green-600"
+                  }`}
+                >
+                  {isWonOrLostLocked
+                    ? `This lead is marked as ${selectedLead?.displayStatus}. No further quotation updates are permitted.`
+                    : "This quotation is already approved. You cannot add or edit any further quotation activities."}
+                </p>
+              </div>
+            </div>
+          )}
+ 
+          <div
+            className={`p-3 sm:p-6 flex flex-col gap-3 sm:gap-4 ${isModalLocked ? "opacity-50 pointer-events-none select-none" : ""}`}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Quotation Date <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="date"
+                  name="quotation_date"
+                  value={form.quotation_date}
+                  onChange={handleChange}
+                  className="w-full mt-1 border border-indigo-200 focus:border-violet-400 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Activity Type <span className="text-red-400">*</span>
+                </label>
+                <select
+                  name="activity_type"
+                  value={form.activity_type}
+                  onChange={handleChange}
+                  className="w-full mt-1 border border-indigo-200 focus:border-violet-400 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50 transition-colors"
+                >
+                  <option value="">-- Select --</option>
+                  <option>New</option>
+                  <option>Revision</option>
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Quotation No <span className="text-red-400">*</span>
+                </label>
+                <input
+                  name="quotation_no"
+                  value={form.quotation_no}
+                  onChange={handleChange}
+                  disabled={isQuotationNoLocked}
+                  className={`w-full mt-1 border border-indigo-200 focus:border-violet-400 rounded-lg px-3 py-2 text-sm outline-none bg-gray-50 transition-colors ${
+                    isQuotationNoLocked ? "opacity-75 cursor-not-allowed" : ""
+                  }`}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Amount (₹)
+                </label>
+                <div className="relative flex items-center mt-1">
+                  <input
+                    type="text"
+                    name="amount"
+                    value={form.amount || ""}
+                    onChange={handleChange}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (
+                          (isAdmin || isSales) &&
+                          form.quotation_status === "Sent"
+                        ) {
+                          openSplitModal(false);
+                        }
+                      }
+                    }}
+                    className="w-full border border-indigo-200 focus:border-violet-400 rounded-lg pl-2 pr-10 sm:pl-3 sm:pr-10 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50 transition-colors"
+                  />
+                  {(isAdmin || isSales) &&
+                    form.quotation_status === "Sent" && (
+                      <button
+                        type="button"
+                        onClick={() => openSplitModal(false)}
+                        className="absolute right-2 text-violet-500 hover:text-violet-700 font-bold p-1 rounded transition-colors flex items-center justify-center border-0 bg-transparent cursor-pointer"
+                        title="Configure Participation"
+                      >
+                        <i className="bi bi-plus-circle-fill text-lg"></i>
+                      </button>
+                    )}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Grand Total (₹)
+                </label>
+                <input
+                  type="text"
+                  name="grand_total"
+                  value={form.grand_total || ""}
+                  readOnly
+                  disabled
+                  className="w-full mt-1 border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-100 cursor-not-allowed font-semibold text-gray-700"
+                />
+              </div>
+            </div>
+            <div className="hidden">
+              <input
+                type="hidden"
+                name="discount"
+                value={form.discount || "0"}
+              />
+              <input type="hidden" name="tax" value={form.tax || "0"} />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Description
+              </label>
+              <textarea
+                name="description"
+                value={form.description}
+                onChange={handleChange}
+                rows="2"
+                className="w-full mt-1 border border-indigo-200 focus:border-violet-400 rounded-lg px-3 py-2 text-sm outline-none bg-gray-50 resize-none transition-colors"
+              ></textarea>
+            </div>
+            <div className="border border-dashed border-violet-300 rounded-xl p-4 bg-violet-50/40 text-center">
+              {!editingId ? (
+                <>
+                  <button
+                    onClick={() => setShowFileModal(true)}
+                    className="text-white px-5 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 mx-auto transition-all hover:shadow-lg hover:shadow-violet-200"
+                    style={{
+                      background: "linear-gradient(to right, #6366f1, #8b5cf6)",
+                    }}
+                  >
+                    <i className="bi bi-cloud-upload text-sm"></i> Upload
+                    Files
+                  </button>
+                  {selectedFiles.length > 0 && (
+                    <div className="mt-3 space-y-1.5 text-left">
+                      {selectedFiles.map((file, idx) => (
+                        <div
+                          key={idx}
+                          className="flex justify-between items-center bg-white px-3 py-1.5 text-xs rounded-lg border border-gray-100 shadow-sm"
+                        >
+                          <div className="flex items-center gap-2.5 overflow-hidden">
+                            <i className="bi bi-file-earmark-text text-violet-500 text-sm"></i>
+                            <span className="text-gray-600 font-medium truncate">
+                              {file.name}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() =>
+                              setSelectedFiles(
+                                selectedFiles.filter((_, i) => i !== idx),
+                              )
+                            }
+                            className="text-gray-300 hover:text-red-500 transition-colors ml-2"
+                          >
+                            <i className="bi bi-x-circle text-sm"></i>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-xs text-gray-500 italic">
+                  File editing is unavailable during updates. Create a new
+                  quotation to attach new files.
+                </p>
+              )}
+            </div>
+          </div>
+ 
+          <div className="p-4 border-t border-gray-100 bg-gray-50 mt-auto flex gap-3">
+            {isModalLocked ? (
+              <div className="flex-1 flex items-center justify-center gap-2 bg-gray-100 border border-gray-200 rounded-xl py-3 text-sm font-semibold text-gray-400 cursor-not-allowed select-none">
+                <i className="bi bi-lock-fill text-gray-400"></i>
+                {isWonOrLostLocked
+                  ? `Locked — Lead ${selectedLead?.displayStatus}`
+                  : "Locked — Quotation Approved"}
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={handleQuotationSubmit}
+                  disabled={isSubmitting}
+                  className={`flex-1 text-white rounded-xl py-3 text-sm font-semibold transition-all flex justify-center items-center gap-2 hover:shadow-lg hover:shadow-violet-200 ${isSubmitting ? "opacity-70 cursor-not-allowed" : ""}`}
+                  style={{
+                    background: "linear-gradient(to right, #6366f1, #8b5cf6)",
+                  }}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <svg
+                        className="animate-spin h-4 w-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                      >
+                        <circle
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="white"
+                          strokeWidth="4"
+                          opacity="0.25"
+                        />
+                        <path
+                          fill="white"
+                          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                        />
+                      </svg>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-floppy2-fill"></i>
+                      {editingId
+                        ? "Update Quotation"
+                        : "Save Quotation Activity"}
+                    </>
+                  )}
+                </button>
+                {editingId && (
+                  <button
+                    onClick={() => {
+                      setEditingId(null);
+                      setForm({
+                        quotation_no: form.quotation_no,
+                        quotation_date: new Date()
+                          .toISOString()
+                          .split("T")[0],
+                        activity_type: "",
+                        quotation_status:
+                          selectedLead.displayStatus === "Revision"
+                            ? "Revision"
+                            : "Pending",
+                        assignee: form.assignee,
+                        amount: "",
+                        discount: "",
+                        tax: "0",
+                        grand_total: "",
+                        description: "",
+                        amount_9: "",
+                        amount_18: "",
+                        tax_9: "",
+                        tax_18: "",
+                      });
+                    }}
+                    className="flex-none bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl px-4 py-3 text-sm font-semibold transition-all"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+ 
+        {/* Right Side: History */}
+        <div className="w-7/12 min-w-0 bg-slate-50 flex flex-col relative z-0">
+          <div className="px-3 sm:px-6 py-3 sm:py-4 flex justify-between items-center bg-white border-b border-gray-100 sticky top-0 z-20 shadow-sm">
+            <h3 className="text-sm font-bold text-gray-700 uppercase flex items-center gap-2">
+              <i
+                className="bi bi-clock-history"
+                style={{ color: "#7c3aed" }}
+              ></i>{" "}
+              Quotation History Data
+            </h3>
+          </div>
+          <div className="flex-1 overflow-y-auto p-2 sm:p-6 space-y-3 sm:space-y-4">
+            {followUpHistory.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                <i className="bi bi-inbox text-4xl mb-2 text-gray-300"></i>
+                <p className="text-sm font-medium">
+                  No quotation history found.
+                </p>
+              </div>
+            ) : (
+              [...followUpHistory]
+                .sort((a, b) =>
+                  a.quotation_status === "Approved"
+                    ? -1
+                    : b.quotation_status === "Approved"
+                      ? 1
+                      : Math.sign(
+                          new Date(b.created_at) - new Date(a.created_at),
+                        ),
+                )
+                .map((item, index) => (
+                  <div
+                    key={index}
+                    className={`bg-white border rounded-xl p-2 sm:p-4 shadow-sm transition-colors ${
+                      item.quotation_status === "Approved" ||
+                      item.quotation_status === "Won"
+                        ? "border-green-400 bg-green-50/20"
+                        : "border-gray-200 hover:border-violet-300"
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex gap-2 items-center">
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-sm ${
+                            item.quotation_status === "Approved" ||
+                            item.quotation_status === "Won"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-violet-100 text-violet-600"
+                          }`}
+                        >
+                          {item.assignee ? item.assignee.charAt(0) : "U"}
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 font-medium">
+                            Recorded by{" "}
+                            <span className="text-gray-800 font-bold">
+                              {item.assignee || "User"}
+                            </span>
+                          </p>
+                          <p className="text-[10px] text-gray-400 font-medium tracking-wide">
+                            Quotation Date:{" "}
+                            {new Date(
+                              item.quotation_date || item.created_at,
+                            ).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        {item.quotation_status !== "Won" &&
+                          item.quotation_status !== "Lost" &&
+                          item.quotation_status !== "Approved" &&
+                          item.quotation_status !== "Declined" &&
+                          !isModalLocked &&
+                          (!isSales ||
+                            item.quotation_status === "Sent") &&
+                          !isKhushaliEstimation && (
+                            <>
+                              <button
+                                onClick={() =>
+                                  handleApproveDecline(
+                                    item.id,
+                                    "Approved",
+                                  )
+                                }
+                                className="bg-green-500 hover:bg-green-600 text-white text-[10px] px-2 py-1 rounded-md transition-all shadow-sm"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleApproveDecline(
+                                    item.id,
+                                    "Declined",
+                                  )
+                                }
+                                className="bg-red-500 hover:bg-red-600 text-white text-[10px] px-2 py-1 rounded-md transition-all shadow-sm"
+                              >
+                                Decline
+                              </button>
+                            </>
+                          )}
+                        <span
+                          className={`text-[10px] uppercase tracking-wider font-bold px-2.5 py-1 rounded-md ${
+                            item.quotation_status === "Approved" ||
+                            item.quotation_status === "Won"
+                              ? "bg-green-100 text-green-700"
+                              : item.quotation_status === "Declined" ||
+                                  item.quotation_status === "Lost"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-gray-100 text-gray-700"
+                          }`}
+                        >
+                          {item.quotation_status || "Pending"}
+                        </span>
+                        {item.quotation_status !== "Approved" &&
+                          item.quotation_status !== "Declined" &&
+                          !isModalLocked && (
+                            <button
+                              onClick={() => handleEditClick(item)}
+                              className="ml-1 text-gray-400 hover:text-violet-600 transition-colors p-1"
+                              title="Edit Quotation Activity"
+                            >
+                              <i className="bi bi-pencil-square"></i>
+                            </button>
+                          )}
+                      </div>
+                    </div>
+ 
+                    {item.updated_by && (
+                      <div className="mb-2 flex items-center gap-2 flex-wrap">
+                        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold bg-indigo-50 border border-indigo-100 text-indigo-600 px-2 py-0.5 rounded-md">
+                          <i className="bi bi-pencil-fill text-[9px]"></i>
+                          Last edited by{" "}
+                          <span className="text-indigo-800">
+                            {item.updated_by}
+                          </span>
+                        </span>
+                        {item.updated_at && (
+                          <span className="text-[10px] text-gray-400 font-medium">
+                            {formatDateTime(item.updated_at)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+ 
+                    <div className="mt-2 grid grid-cols-2 gap-4 bg-gray-50 p-2.5 rounded-lg border border-gray-100 text-sm">
+                      <div>
+                        <span className="text-gray-400 text-xs">
+                          Quotation No:
+                        </span>{" "}
+                        <span className="font-semibold">
+                          {item.quotation_no || "-"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400 text-xs">
+                          Activity Type:
+                        </span>{" "}
+                        <span className="font-semibold">
+                          {item.activity_type || "-"}
+                        </span>
+                      </div>
+                      <div className="col-span-2 text-gray-700">
+                        <span className="text-gray-400 text-xs block mb-0.5">
+                          Description:
+                        </span>
+                        <p className="whitespace-pre-wrap">
+                          {item.description || "No description provided."}
+                        </p>
+                      </div>
+                    </div>
+                    <div
+                      className={`mt-2 grid ${isAdmin || isSales ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2"} gap-2 sm:gap-4 bg-white p-2 sm:p-2.5 rounded-lg border border-gray-100 text-sm`}
+                    >
+                      <div>
+                        <span className="text-gray-400 text-[10px] uppercase block">
+                          Amount
+                        </span>
+                        <span className="font-semibold text-gray-800">
+                          ₹{item.amount || "0"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-400 text-[10px] uppercase block">
+                          Grand Total
+                        </span>
+                        <span className="font-bold text-green-600">
+                          ₹{item.grand_total || "0"}
+                        </span>
+                      </div>
+                      {(isAdmin || isSales) && (
+                        <div>
+                          <span className="text-gray-400 text-[10px] uppercase block">
+                            Participation Details
+                          </span>
+                          {(item.amount_9 !== null &&
+                            Number(item.amount_9) > 0) ||
+                          (item.amount_18 !== null &&
+                            Number(item.amount_18) > 0) ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const totalAmt =
+                                  parseFloat(item.amount_9 || 0) +
+                                  parseFloat(item.amount_18 || 0);
+                                const pct9 =
+                                  totalAmt > 0
+                                    ? (
+                                        (parseFloat(item.amount_9 || 0) /
+                                          totalAmt) *
+                                        100
+                                      ).toFixed(4)
+                                    : "0.00";
+                                const pct18 =
+                                  totalAmt > 0
+                                    ? (
+                                        (parseFloat(item.amount_18 || 0) /
+                                          totalAmt) *
+                                        100
+                                      ).toFixed(4)
+                                    : "0.00";
+ 
+                                setSplitForm({
+                                  amount: totalAmt.toFixed(2),
+                                  amount_9: item.amount_9 || "",
+                                  amount_18: item.amount_18 || "",
+                                  percent_9:
+                                    parseFloat(pct9) === 0
+                                      ? ""
+                                      : Number(
+                                          parseFloat(pct9).toFixed(4),
+                                        ).toString(),
+                                  percent_18:
+                                    parseFloat(pct18) === 0
+                                      ? ""
+                                      : Number(
+                                          parseFloat(pct18).toFixed(4),
+                                        ).toString(),
+                                  tax_percent_9:
+                                    item.tax_percent_9 !== null &&
+                                    item.tax_percent_9 !== undefined
+                                      ? item.tax_percent_9.toString()
+                                      : "9.00",
+                                  tax_percent_18:
+                                    item.tax_percent_18 !== null &&
+                                    item.tax_percent_18 !== undefined
+                                      ? item.tax_percent_18.toString()
+                                      : "18.00",
+                                  tax_9: (item.tax_9 || 0).toString(),
+                                  tax_18: (item.tax_18 || 0).toString(),
+                                  grand_total: (
+                                    item.split_grand_total ||
+                                    item.grand_total ||
+                                    0
+                                  ).toString(),
+                                });
+                                setIsSplitReadOnly(true);
+                                setShowSplitModal(true);
+                              }}
+                              className="text-violet-600 hover:text-violet-800 bg-transparent border-0 cursor-pointer flex items-center justify-start mt-0.5 p-0.5 rounded hover:bg-violet-50"
+                              title="View Participation Details"
+                            >
+                              <i className="bi bi-eye text-lg"></i>
+                            </button>
+                          ) : (
+                            <span className="text-xs text-gray-400 italic">
+                              No participation
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+ 
+                    {item.files?.length > 0 && (
+                      <div className="mt-3">
+                        <p className="text-xs font-semibold text-gray-400 uppercase mb-1.5">
+                          Attached Files
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {item.files.map((f, i) => (
+                            <a
+                              key={i}
+                              href={f.file_path}
+                              onClick={(e) =>
+                                handleFileDownload(
+                                  e,
+                                  f.file_path,
+                                  f.file_name || "File",
+                                )
+                              }
+                              className="flex items-center gap-1.5 border border-indigo-100 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors shadow-sm"
+                            >
+                              <i className="bi bi-file-earmark-check text-indigo-500"></i>
+                              <span className="truncate max-w-[120px]">
+                                {f.file_name}
+                              </span>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* FILE MANAGER MODAL */}
       {showFileModal && (
@@ -4224,245 +4374,290 @@ export default function QuotationPage() {
       )}
 
       {/* PARTICIPATION TAX CALCULATION MODAL */}
-      {showSplitModal && (
-        <div className="fixed inset-0 z-[65] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white w-[500px] rounded-lg shadow-2xl overflow-hidden border border-gray-100 flex flex-col animate-fade-in text-gray-800">
-            {/* Header */}
-            <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-orange-100 to-white border-b border-gray-100">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                  <i className="bi bi-calculator-fill text-orange-500 text-base"></i>
-                </div>
-                <div>
-                  <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
-                    Quotation Tax Calculation
-                  </h2>
-                  <p className="text-[10px] text-gray-500 font-medium">
-                    Configure 9% & 18% tax components
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={handleCancelSplitClick}
-                className="w-8 h-8 rounded-full hover:bg-gray-100 transition-colors flex items-center justify-center text-orange-500 border-0 bg-transparent cursor-pointer"
-              >
-                ✕
-              </button>
+     
+{showSplitModal && (
+  <div
+    id="splitDrawerOverlay"
+    className="fixed inset-0 z-[65] flex justify-end bg-black/50 backdrop-blur-sm"
+    style={{ animation: "spmFadeIn 0.3s ease-out" }}
+  >
+    <style>{`
+      @keyframes spmSlideIn {
+        from { transform: translateX(100%); opacity: 0.6; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes spmSlideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0.6; }
+      }
+      @keyframes spmFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes spmFadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+    `}</style>
+ 
+    <div
+      id="splitDrawerPanel"
+      className="bg-white w-[500px] max-w-[95vw] h-full shadow-2xl overflow-hidden border-l border-gray-100 flex flex-col text-gray-800"
+      style={{ animation: "spmSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1)" }}
+    >
+      {/* ── Header (Image-2 style: white bg + gradient icon box + progress strip) ── */}
+      <div className="bg-white z-10 shadow-sm">
+        <div className="flex justify-between items-center px-6 py-4">
+          <div className="flex items-center gap-2.5">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md flex-shrink-0"
+              style={{
+                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              }}
+            >
+              <i className="bi bi-calculator-fill text-white text-base"></i>
             </div>
-
-            {/* Body */}
-            <div className="p-6 space-y-4 text-left">
-              <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex justify-between items-center gap-4">
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
-                  Total Base Amount
-                </span>
-                {isSplitReadOnly ? (
-                  <span className="text-lg font-bold text-gray-800">
-                    ₹ {Number(splitForm.amount || 0).toLocaleString()}
-                  </span>
-                ) : (
-                  <div className="relative flex items-center max-w-[180px]">
-                    <span className="absolute left-2.5 text-gray-500 font-bold text-sm">
-                      ₹
-                    </span>
-                    <input
-                      type="text"
-                      name="amount"
-                      value={splitForm.amount || ""}
-                      onChange={handleSplitBaseAmountChange}
-                      className="w-full border border-orange-300 rounded-md pl-6 pr-3 py-1.5 text-sm outline-none bg-white font-bold text-gray-800 focus:border-orange-500 text-right"
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-blue-50/20 p-4 rounded-xl border border-blue-100 space-y-3">
-                  <div>
-                    <label className="text-[11px] font-bold text-blue-700 uppercase tracking-wide block mb-1">
-                      Project Value (₹)
-                    </label>
-                    <input
-                      type="text"
-                      name="amount_18"
-                      value={splitForm.amount_18}
-                      onChange={handleSplitFormChange}
-                      readOnly={isSplitReadOnly}
-                      disabled={isSplitReadOnly}
-                      placeholder="Enter amount"
-                      className="w-full border border-blue-300 rounded-md px-3 py-1.5 text-sm outline-none bg-white font-semibold text-gray-800 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">
-                      Split (%)
-                    </label>
-                    <div className="relative flex items-center">
-                      <input
-                        type="text"
-                        name="percent_18"
-                        value={splitForm.percent_18}
-                        onChange={handleSplitFormChange}
-                        readOnly={isSplitReadOnly}
-                        disabled={isSplitReadOnly}
-                        placeholder="100.00"
-                        className="w-full border border-gray-300 rounded-md pl-3 pr-7 py-1.5 text-sm outline-none bg-white font-semibold text-gray-800 focus:border-blue-500"
-                      />
-                      <span className="absolute right-3 text-gray-400 text-xs font-bold">
-                        %
-                      </span>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">
-                      Tax Rate (%)
-                    </label>
-                    <div className="relative flex items-center">
-                      <input
-                        type="text"
-                        name="tax_percent_18"
-                        value={splitForm.tax_percent_18}
-                        onChange={handleSplitFormChange}
-                        readOnly={isSplitReadOnly}
-                        disabled={isSplitReadOnly}
-                        placeholder="18.00"
-                        className="w-full border border-gray-300 rounded-md pl-3 pr-7 py-1.5 text-sm outline-none bg-white font-semibold text-gray-800 focus:border-blue-500"
-                      />
-                      <span className="absolute right-3 text-gray-400 text-xs font-bold">
-                        %
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-2.5 space-y-1 text-xs text-gray-500 pt-2 border-t border-dashed border-gray-200">
-                    <div className="flex justify-between">
-                      <span>Tax ({splitForm.tax_percent_18 || "0"}%):</span>
-                      <span className="font-medium text-gray-700">
-                        ₹ {splitForm.tax_18}
-                      </span>
-                    </div>
-                    <div className="flex justify-between border-t border-dashed border-gray-150 pt-1">
-                      <span>Total B:</span>
-                      <span className="font-bold text-gray-700">
-                        ₹{" "}
-                        {(
-                          parseFloat(splitForm.amount_18 || 0) +
-                          parseFloat(splitForm.tax_18 || 0)
-                        ).toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-orange-50/20 p-4 rounded-xl border border-orange-100 space-y-3">
-                  <div>
-                    <label className="text-[11px] font-bold text-orange-700 uppercase tracking-wide block mb-1">
-                      Other Charges (₹)
-                    </label>
-                    <input
-                      type="text"
-                      name="amount_9"
-                      value={splitForm.amount_9}
-                      onChange={handleSplitFormChange}
-                      readOnly={isSplitReadOnly}
-                      disabled={isSplitReadOnly}
-                      placeholder="Enter amount"
-                      className="w-full border border-orange-300 rounded-md px-3 py-1.5 text-sm outline-none bg-white font-semibold text-gray-800 focus:border-orange-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">
-                      Split (%)
-                    </label>
-                    <div className="relative flex items-center">
-                      <input
-                        type="text"
-                        name="percent_9"
-                        value={splitForm.percent_9}
-                        onChange={handleSplitFormChange}
-                        readOnly={isSplitReadOnly}
-                        disabled={isSplitReadOnly}
-                        placeholder="0.00"
-                        className="w-full border border-gray-300 rounded-md pl-3 pr-7 py-1.5 text-sm outline-none bg-white font-semibold text-gray-800 focus:border-orange-500"
-                      />
-                      <span className="absolute right-3 text-gray-400 text-xs font-bold">
-                        %
-                      </span>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">
-                      Tax Rate (%)
-                    </label>
-                    <div className="relative flex items-center">
-                      <input
-                        type="text"
-                        name="tax_percent_9"
-                        value={splitForm.tax_percent_9}
-                        onChange={handleSplitFormChange}
-                        readOnly={isSplitReadOnly}
-                        disabled={isSplitReadOnly}
-                        placeholder="9.00"
-                        className="w-full border border-gray-300 rounded-md pl-3 pr-7 py-1.5 text-sm outline-none bg-white font-semibold text-gray-800 focus:border-orange-500"
-                      />
-                      <span className="absolute right-3 text-gray-400 text-xs font-bold">
-                        %
-                      </span>
-                    </div>
-                  </div>
-                  <div className="mt-2.5 space-y-1 text-xs text-gray-500 pt-2 border-t border-dashed border-gray-200">
-                    <div className="flex justify-between">
-                      <span>Tax ({splitForm.tax_percent_9 || "0"}%):</span>
-                      <span className="font-medium text-gray-700">
-                        ₹ {splitForm.tax_9}
-                      </span>
-                    </div>
-                    <div className="flex justify-between border-t border-dashed border-gray-150 pt-1">
-                      <span>Total A:</span>
-                      <span className="font-bold text-gray-700">
-                        ₹{" "}
-                        {(
-                          parseFloat(splitForm.amount_9 || 0) +
-                          parseFloat(splitForm.tax_9 || 0)
-                        ).toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-green-50 p-4 rounded-xl border border-green-100 flex justify-between items-center">
-                <span className="text-xs font-semibold text-green-700 uppercase tracking-wide">
-                  Project Value
-                </span>
-                <span className="text-xl font-black text-green-700">
-                  ₹ {Number(splitForm.grand_total || 0).toLocaleString()}
+            <div>
+              <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
+                Quotation Tax Calculation
+              </h2>
+              <p className="text-[10px] text-gray-500 font-medium">
+                Configure 9% & 18% tax components
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={closeSplitDrawer}
+            className="w-8 h-8 rounded-full hover:bg-violet-50 transition-colors flex items-center justify-center text-gray-400 hover:text-violet-600 border-0 bg-transparent cursor-pointer"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="h-1 w-full bg-gray-100">
+          <div
+            className="h-full w-1/3 rounded-r-full"
+            style={{
+              background: "linear-gradient(to right, #6366f1, #8b5cf6)",
+            }}
+          ></div>
+        </div>
+      </div>
+ 
+      {/* Body */}
+      <div className="p-6 space-y-4 text-left flex-1 overflow-y-auto">
+        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex justify-between items-center gap-4">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
+            Total Base Amount
+          </span>
+          {isSplitReadOnly ? (
+            <span className="text-lg font-bold text-gray-800">
+              ₹ {Number(splitForm.amount || 0).toLocaleString()}
+            </span>
+          ) : (
+            <div className="relative flex items-center max-w-[180px]">
+              <span className="absolute left-2.5 text-gray-500 font-bold text-sm">
+                ₹
+              </span>
+              <input
+                type="text"
+                name="amount"
+                value={splitForm.amount || ""}
+                onChange={handleSplitBaseAmountChange}
+                className="w-full border border-indigo-200 rounded-md pl-6 pr-3 py-1.5 text-sm outline-none bg-white font-bold text-gray-800 focus:border-violet-500 text-right transition-colors"
+              />
+            </div>
+          )}
+        </div>
+ 
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-indigo-50/30 p-4 rounded-xl border border-indigo-100 space-y-3">
+            <div>
+              <label className="text-[11px] font-bold text-indigo-700 uppercase tracking-wide block mb-1">
+                Project Value (₹)
+              </label>
+              <input
+                type="text"
+                name="amount_18"
+                value={splitForm.amount_18}
+                onChange={handleSplitFormChange}
+                readOnly={isSplitReadOnly}
+                disabled={isSplitReadOnly}
+                placeholder="Enter amount"
+                className="w-full border border-indigo-300 rounded-md px-3 py-1.5 text-sm outline-none bg-white font-semibold text-gray-800 focus:border-indigo-500 transition-colors"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">
+                Split (%)
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  name="percent_18"
+                  value={splitForm.percent_18}
+                  onChange={handleSplitFormChange}
+                  readOnly={isSplitReadOnly}
+                  disabled={isSplitReadOnly}
+                  placeholder="100.00"
+                  className="w-full border border-gray-300 rounded-md pl-3 pr-7 py-1.5 text-sm outline-none bg-white font-semibold text-gray-800 focus:border-indigo-500 transition-colors"
+                />
+                <span className="absolute right-3 text-gray-400 text-xs font-bold">
+                  %
                 </span>
               </div>
             </div>
-
-            {/* Footer */}
-            <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100 rounded-b-lg">
-              <button
-                type="button"
-                onClick={handleCancelSplitClick}
-                className="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all cursor-pointer border-0"
-              >
-                {isSplitReadOnly ? "Close" : "Cancel"}
-              </button>
-              {!isSplitReadOnly && (
-                <button
-                  type="button"
-                  onClick={handleApplySplit}
-                  className="px-5 py-2 rounded-lg text-sm font-semibold text-white hover:opacity-90 transition-all cursor-pointer border-0"
-                  style={{ background: "#f07400" }}
-                >
-                  Apply Participation
-                </button>
-              )}
+            <div>
+              <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">
+                Tax Rate (%)
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  name="tax_percent_18"
+                  value={splitForm.tax_percent_18}
+                  onChange={handleSplitFormChange}
+                  readOnly={isSplitReadOnly}
+                  disabled={isSplitReadOnly}
+                  placeholder="18.00"
+                  className="w-full border border-gray-300 rounded-md pl-3 pr-7 py-1.5 text-sm outline-none bg-white font-semibold text-gray-800 focus:border-indigo-500 transition-colors"
+                />
+                <span className="absolute right-3 text-gray-400 text-xs font-bold">
+                  %
+                </span>
+              </div>
+            </div>
+            <div className="mt-2.5 space-y-1 text-xs text-gray-500 pt-2 border-t border-dashed border-gray-200">
+              <div className="flex justify-between">
+                <span>Tax ({splitForm.tax_percent_18 || "0"}%):</span>
+                <span className="font-medium text-gray-700">
+                  ₹ {splitForm.tax_18}
+                </span>
+              </div>
+              <div className="flex justify-between border-t border-dashed border-gray-150 pt-1">
+                <span>Total B:</span>
+                <span className="font-bold text-gray-700">
+                  ₹{" "}
+                  {(
+                    parseFloat(splitForm.amount_18 || 0) +
+                    parseFloat(splitForm.tax_18 || 0)
+                  ).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </div>
+ 
+          <div className="bg-violet-50/30 p-4 rounded-xl border border-violet-100 space-y-3">
+            <div>
+              <label className="text-[11px] font-bold text-violet-700 uppercase tracking-wide block mb-1">
+                Other Charges (₹)
+              </label>
+              <input
+                type="text"
+                name="amount_9"
+                value={splitForm.amount_9}
+                onChange={handleSplitFormChange}
+                readOnly={isSplitReadOnly}
+                disabled={isSplitReadOnly}
+                placeholder="Enter amount"
+                className="w-full border border-violet-300 rounded-md px-3 py-1.5 text-sm outline-none bg-white font-semibold text-gray-800 focus:border-violet-500 transition-colors"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">
+                Split (%)
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  name="percent_9"
+                  value={splitForm.percent_9}
+                  onChange={handleSplitFormChange}
+                  readOnly={isSplitReadOnly}
+                  disabled={isSplitReadOnly}
+                  placeholder="0.00"
+                  className="w-full border border-gray-300 rounded-md pl-3 pr-7 py-1.5 text-sm outline-none bg-white font-semibold text-gray-800 focus:border-violet-500 transition-colors"
+                />
+                <span className="absolute right-3 text-gray-400 text-xs font-bold">
+                  %
+                </span>
+              </div>
+            </div>
+            <div>
+              <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wide block mb-1">
+                Tax Rate (%)
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  name="tax_percent_9"
+                  value={splitForm.tax_percent_9}
+                  onChange={handleSplitFormChange}
+                  readOnly={isSplitReadOnly}
+                  disabled={isSplitReadOnly}
+                  placeholder="9.00"
+                  className="w-full border border-gray-300 rounded-md pl-3 pr-7 py-1.5 text-sm outline-none bg-white font-semibold text-gray-800 focus:border-violet-500 transition-colors"
+                />
+                <span className="absolute right-3 text-gray-400 text-xs font-bold">
+                  %
+                </span>
+              </div>
+            </div>
+            <div className="mt-2.5 space-y-1 text-xs text-gray-500 pt-2 border-t border-dashed border-gray-200">
+              <div className="flex justify-between">
+                <span>Tax ({splitForm.tax_percent_9 || "0"}%):</span>
+                <span className="font-medium text-gray-700">
+                  ₹ {splitForm.tax_9}
+                </span>
+              </div>
+              <div className="flex justify-between border-t border-dashed border-gray-150 pt-1">
+                <span>Total A:</span>
+                <span className="font-bold text-gray-700">
+                  ₹{" "}
+                  {(
+                    parseFloat(splitForm.amount_9 || 0) +
+                    parseFloat(splitForm.tax_9 || 0)
+                  ).toFixed(2)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
-      )}
+ 
+        <div className="bg-green-50 p-4 rounded-xl border border-green-100 flex justify-between items-center">
+          <span className="text-xs font-semibold text-green-700 uppercase tracking-wide">
+            Project Value
+          </span>
+          <span className="text-xl font-black text-green-700">
+            ₹ {Number(splitForm.grand_total || 0).toLocaleString()}
+          </span>
+        </div>
+      </div>
+ 
+      {/* Footer */}
+      <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t border-gray-100 mt-auto">
+        <button
+          type="button"
+          onClick={closeSplitDrawer}
+          className="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all cursor-pointer border-0"
+        >
+          {isSplitReadOnly ? "Close" : "Cancel"}
+        </button>
+        {!isSplitReadOnly && (
+          <button
+            type="button"
+            onClick={handleApplySplit}
+            className="px-5 py-2 rounded-lg text-sm font-semibold text-white transition-all cursor-pointer border-0 hover:shadow-lg hover:shadow-violet-200"
+            style={{
+              background: "linear-gradient(to right, #6366f1, #8b5cf6)",
+            }}
+          >
+            Apply Participation
+          </button>
+        )}
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Delete Confirmation Modal */}
    {showDeleteModal && (
@@ -4972,322 +5167,380 @@ export default function QuotationPage() {
       )}
 
       {/* ASSIGNEE MODAL */}
-      {showAssigneeModal && selectedAssigneeRow && (
-        <div
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 backdrop-blur-sm"
-          onClick={closeAssigneePopover}
-        >
-          <div
-            className="bg-white rounded-xl border border-gray-100 w-[460px] max-w-[95vw] shadow-2xl flex flex-col overflow-hidden max-h-[90vh] transition-all duration-300"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-4 bg-orange-500 flex-shrink-0">
-              <p className="text-sm font-bold text-white flex items-center gap-2 tracking-wide">
-                <i className="bi bi-person-fill-gear text-base"></i>
+  {showAssigneeModal && selectedAssigneeRow && (
+  <div
+    id="assigneeDrawerOverlay"
+    className="fixed inset-0 z-[80] flex justify-end bg-black/60 backdrop-blur-sm"
+    style={{ animation: "asgFadeIn 0.3s ease-out" }}
+    onClick={closeAssigneeDrawer}
+  >
+    <style>{`
+      @keyframes asgSlideIn {
+        from { transform: translateX(100%); opacity: 0.6; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes asgSlideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0.6; }
+      }
+      @keyframes asgFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes asgFadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+    `}</style>
+ 
+    <div
+      id="assigneeDrawerPanel"
+      className="bg-white border-l border-gray-100 w-[460px] max-w-[95vw] h-full shadow-2xl flex flex-col overflow-hidden"
+      style={{ animation: "asgSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1)" }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* ── Header (Image-2 style: white bg + gradient icon box + progress strip) ── */}
+      <div className="bg-white flex-shrink-0 shadow-sm z-10">
+        <div className="flex items-center justify-between px-5 py-4">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md flex-shrink-0"
+              style={{
+                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              }}
+            >
+              <i className="bi bi-person-fill-gear text-white text-base"></i>
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-gray-800 tracking-wide">
                 Change Assignee
+              </h2>
+              <p className="text-[10px] text-gray-500 font-medium">
+                Reassign and keep this lead moving
               </p>
-              <button
-                onClick={closeAssigneePopover}
-                className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors cursor-pointer"
-              >
-                <i className="bi bi-x-lg text-sm"></i>
-              </button>
-            </div>
-
-            {/* Body */}
-            <div className="p-4 space-y-3 overflow-y-auto flex-1 min-h-0">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1.5">
-                    Last Assignee
-                  </p>
-                  <div className="flex gap-1 flex-wrap min-h-[36px] items-center">
-                    {selectedAssigneeRow.assignee ? (
-                      String(selectedAssigneeRow.assignee)
-                        .split(",")
-                        .map((name, i) => (
-                          <span
-                            key={i}
-                            className="bg-blue-800 text-white text-xs font-medium px-2.5 py-1 rounded-full flex items-center gap-1"
-                          >
-                            <span className="w-3.5 h-3.5 rounded-full bg-white/20 flex items-center justify-center text-[8px] font-bold flex-shrink-0">
-                              {name.trim().charAt(0).toUpperCase()}
-                            </span>
-                            {name.trim()}
-                          </span>
-                        ))
-                    ) : (
-                      <span className="text-gray-400 text-xs italic">None</span>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-[10px] text-gray-400 uppercase font-bold tracking-wider block mb-1.5">
-                    New Assignee <span className="text-red-400">*</span>
-                  </label>
-                  <Select
-                    menuPosition="fixed"
-                    instanceId="inline-assignee-select"
-                    options={asignee}
-                    value={newAssigneeValue}
-                    onChange={(selected) =>
-                      setNewAssigneeValue(selected || null)
-                    }
-                    placeholder="Select..."
-                    unstyled
-                    classNames={{
-                      control: ({ isFocused }) =>
-                        `w-full border rounded-md px-2 py-1 text-xs bg-gray-50 outline-none cursor-pointer min-h-[36px] ${isFocused ? "border-orange-400 ring-1 ring-orange-200" : "border-gray-300"}`,
-                      valueContainer: () => "gap-1 flex-wrap",
-                      placeholder: () => "text-gray-400 text-xs",
-                      input: () => "text-xs text-gray-700",
-                      menu: () =>
-                        "mt-1 border border-gray-200 rounded-md bg-white shadow-lg z-[200]",
-                      option: ({ isFocused, isSelected }) =>
-                        `px-3 py-2 text-xs cursor-pointer ${isSelected ? "bg-blue-800 text-white" : isFocused ? "bg-orange-50 text-orange-700" : "text-gray-700"}`,
-                      multiValue: () =>
-                        "bg-blue-800 text-white rounded-full px-1.5 py-0.5 flex items-center gap-1 text-[10px]",
-                      multiValueLabel: () => "text-white font-medium",
-                      multiValueRemove: () =>
-                        "text-white hover:bg-blue-900 rounded ml-0.5 cursor-pointer",
-                      dropdownIndicator: () =>
-                        "text-gray-400 px-1 cursor-pointer hover:text-orange-500",
-                      clearIndicator: () =>
-                        "text-gray-400 px-1 cursor-pointer hover:text-red-500",
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="h-px bg-gray-100"></div>
-
-              <div>
-                <label className="text-[10px] text-gray-400 uppercase font-bold tracking-wider block mb-1.5 flex items-center gap-1">
-                  <i className="bi bi-pencil-square text-gray-300"></i>
-                  Task Description
-                  <span className="text-gray-300 font-normal normal-case ml-1">
-                    (optional)
-                  </span>
-                </label>
-                <textarea
-                  value={assigneeDescription}
-                  onChange={(e) => setAssigneeDescription(e.target.value)}
-                  placeholder="Write task details, instructions or notes..."
-                  rows={3}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-xs text-gray-700 bg-gray-50 outline-none resize-none focus:border-orange-400 focus:ring-1 focus:ring-orange-200 transition-all placeholder:text-gray-400"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] text-gray-400 uppercase font-bold tracking-wider block mb-1.5 flex items-center gap-1">
-                  <i className="bi bi-paperclip text-gray-300"></i>
-                  Attach Files
-                  <span className="text-gray-300 font-normal normal-case ml-1">
-                    (optional, max 5)
-                  </span>
-                </label>
-                <input
-                  type="file"
-                  multiple
-                  onChange={handleAssigneeFileChange}
-                  accept=".jpg,.jpeg,.png,.pdf,.xlsx,.xls,.csv,.excel,.dwg,.dxf"
-                  className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[10px] file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer outline-none border border-gray-300 rounded-md p-1 bg-gray-50"
-                />
-                {assigneeFiles.length > 0 && (
-                  <div className="mt-2 space-y-1 max-h-[100px] overflow-y-auto pr-1">
-                    {assigneeFiles.map((file, i) => (
-                      <div
-                        key={i}
-                        className="flex justify-between items-center bg-gray-50 border border-gray-200 rounded px-2 py-1 text-[10px] text-gray-600"
-                      >
-                        <span className="truncate max-w-[200px]">
-                          {file.name}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => removeAssigneeFile(i)}
-                          className="text-red-500 hover:text-red-700 font-bold ml-1 text-xs"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {loadingLog ? (
-                <div className="border-t border-gray-100 pt-3 text-center text-xs text-gray-400 py-2">
-                  Loading history...
-                </div>
-              ) : assigneeLog.length > 0 ? (
-                (() => {
-                  const sortedLogs = [...assigneeLog].sort(
-                    (a, b) => new Date(b.changed_at) - new Date(a.changed_at),
-                  );
-                  const displayedLogs =
-                    isAdmin || showAllHistory
-                      ? sortedLogs
-                      : sortedLogs.slice(0, 1);
-
-                  return (
-                    <div className="border-t border-gray-100 pt-3">
-                      <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-2 flex items-center gap-1">
-                        <i className="bi bi-clock-history text-gray-300"></i>
-                        {isAdmin ? "History Log" : "Last Change"}
-                      </p>
-                      <div className="space-y-3.5 max-h-[220px] overflow-y-auto pr-1">
-                        {displayedLogs.map((log, i) => (
-                          <div key={i} className="flex items-start gap-2.5">
-                            <div className="flex flex-col items-center mt-1">
-                              <div className="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0"></div>
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded">
-                                  {log.changed_by || "System"}
-                                </span>
-                                <span className="text-[10px] text-gray-400">
-                                  assigned
-                                </span>
-                                <span className="text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100">
-                                  {log.new_assignee || "-"}
-                                </span>
-                              </div>
-                              {log.changed_at && (
-                                <p className="text-[9px] text-gray-400 mt-0.5">
-                                  {formatDateTime(log.changed_at)}
-                                </p>
-                              )}
-                              {log.description &&
-                                log.description.trim() !== "" && (
-                                  <div className="mt-1.5 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5">
-                                    <p className="text-[10px] font-semibold text-amber-700 flex items-center gap-1 mb-0.5">
-                                      <i className="bi bi-chat-text-fill text-[9px]"></i>
-                                      Task Note
-                                    </p>
-                                    <p className="text-[10px] text-amber-800 leading-relaxed whitespace-pre-wrap">
-                                      {log.description}
-                                    </p>
-                                  </div>
-                                )}
-                              {log.files && log.files.length > 0 && (
-                                <div className="mt-1.5">
-                                  <p className="text-[9px] font-semibold text-gray-400 uppercase mb-1 flex items-center gap-1">
-                                    <i className="bi bi-paperclip"></i> Attached
-                                    Files
-                                  </p>
-                                  <div className="flex flex-wrap gap-1">
-                                    {log.files.map((file, fileIdx) => (
-                                      <a
-                                        key={fileIdx}
-                                        href={file.file_path}
-                                        onClick={(e) =>
-                                          handleFileDownload(
-                                            e,
-                                            file.file_path,
-                                            file.file_name || "File",
-                                          )
-                                        }
-                                        className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 text-indigo-700 rounded text-[9px] font-medium transition-colors cursor-pointer"
-                                      >
-                                        <i className="bi bi-file-earmark-arrow-down"></i>
-                                        <span
-                                          className="truncate max-w-[100px]"
-                                          title={file.file_name}
-                                        >
-                                          {file.file_name}
-                                        </span>
-                                      </a>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      {!isAdmin && sortedLogs.length > 1 && (
-                        <button
-                          onClick={() => setShowAllHistory(!showAllHistory)}
-                          className="mt-3 w-full py-1.5 bg-gray-50 border border-gray-200 hover:bg-gray-100 rounded text-[10px] text-gray-500 font-semibold flex items-center justify-center gap-1 transition-all"
-                        >
-                          <i
-                            className={`bi ${showAllHistory ? "bi-chevron-up" : "bi-chevron-down"}`}
-                          ></i>
-                          {showAllHistory
-                            ? "Hide History"
-                            : `Show History (${sortedLogs.length - 1} more)`}
-                        </button>
-                      )}
-                    </div>
-                  );
-                })()
-              ) : (
-                <div className="border-t border-gray-100 pt-3">
-                  <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1 flex items-center gap-1">
-                    <i className="bi bi-clock-history text-gray-300"></i>
-                    Last Change
-                  </p>
-                  <p className="text-xs text-gray-300 italic text-center py-2">
-                    No history found
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Footer sticky buttons */}
-            <div className="px-5 py-4 bg-gray-50 border-t border-gray-100 flex gap-3 flex-shrink-0">
-              <button
-                onClick={closeAssigneePopover}
-                className="flex-1 py-2.5 rounded-lg text-xs border border-gray-200 text-gray-600 hover:bg-gray-100 font-bold transition-all cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAssigneeUpdate}
-                disabled={isUpdatingAssignee || !newAssigneeValue}
-                className={`flex-[2] py-2.5 rounded-lg text-xs text-white font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
-                  isUpdatingAssignee || !newAssigneeValue
-                    ? "bg-orange-300 cursor-not-allowed"
-                    : "bg-orange-500 hover:bg-orange-600 shadow-md shadow-orange-100"
-                }`}
-              >
-                {isUpdatingAssignee ? (
-                  <>
-                    <svg
-                      className="animate-spin h-3.5 w-3.5"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="white"
-                        strokeWidth="4"
-                        opacity="0.25"
-                      />
-                      <path
-                        fill="white"
-                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                      />
-                    </svg>
-                    Updating...
-                  </>
-                ) : (
-                  <>
-                    <i className="bi bi-person-check-fill text-xs"></i>
-                    Update Assignee
-                  </>
-                )}
-              </button>
             </div>
           </div>
+          <button
+            onClick={closeAssigneeDrawer}
+            className="text-gray-400 hover:text-violet-600 hover:bg-violet-50 p-1.5 rounded-lg transition-colors cursor-pointer"
+          >
+            <i className="bi bi-x-lg text-sm"></i>
+          </button>
         </div>
-      )}
+        <div className="h-1 w-full bg-gray-100">
+          <div
+            className="h-full w-1/3 rounded-r-full"
+            style={{
+              background: "linear-gradient(to right, #6366f1, #8b5cf6)",
+            }}
+          ></div>
+        </div>
+      </div>
+ 
+      {/* Body */}
+      <div className="p-4 space-y-3 overflow-y-auto flex-1 min-h-0">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1.5">
+              Last Assignee
+            </p>
+            <div className="flex gap-1 flex-wrap min-h-[36px] items-center">
+              {selectedAssigneeRow.assignee ? (
+                String(selectedAssigneeRow.assignee)
+                  .split(",")
+                  .map((name, i) => (
+                    <span
+                      key={i}
+                      className="text-white text-xs font-medium px-2.5 py-1 rounded-full flex items-center gap-1"
+                      style={{
+                        background:
+                          "linear-gradient(to right, #6366f1, #8b5cf6)",
+                      }}
+                    >
+                      <span className="w-3.5 h-3.5 rounded-full bg-white/20 flex items-center justify-center text-[8px] font-bold flex-shrink-0">
+                        {name.trim().charAt(0).toUpperCase()}
+                      </span>
+                      {name.trim()}
+                    </span>
+                  ))
+              ) : (
+                <span className="text-gray-400 text-xs italic">None</span>
+              )}
+            </div>
+          </div>
+ 
+          <div>
+            <label className="text-[10px] text-gray-400 uppercase font-bold tracking-wider block mb-1.5">
+              New Assignee <span className="text-red-400">*</span>
+            </label>
+            <Select
+              menuPosition="fixed"
+              instanceId="inline-assignee-select"
+              options={asignee}
+              value={newAssigneeValue}
+              onChange={(selected) =>
+                setNewAssigneeValue(selected || null)
+              }
+              placeholder="Select..."
+              unstyled
+              classNames={{
+                control: ({ isFocused }) =>
+                  `w-full border rounded-md px-2 py-1 text-xs bg-gray-50 outline-none cursor-pointer min-h-[36px] ${isFocused ? "border-violet-400 ring-1 ring-violet-200" : "border-gray-300"}`,
+                valueContainer: () => "gap-1 flex-wrap",
+                placeholder: () => "text-gray-400 text-xs",
+                input: () => "text-xs text-gray-700",
+                menu: () =>
+                  "mt-1 border border-gray-200 rounded-md bg-white shadow-lg z-[200]",
+                option: ({ isFocused, isSelected }) =>
+                  `px-3 py-2 text-xs cursor-pointer ${isSelected ? "bg-indigo-600 text-white" : isFocused ? "bg-violet-50 text-violet-700" : "text-gray-700"}`,
+                multiValue: () =>
+                  "bg-indigo-600 text-white rounded-full px-1.5 py-0.5 flex items-center gap-1 text-[10px]",
+                multiValueLabel: () => "text-white font-medium",
+                multiValueRemove: () =>
+                  "text-white hover:bg-indigo-700 rounded ml-0.5 cursor-pointer",
+                dropdownIndicator: () =>
+                  "text-gray-400 px-1 cursor-pointer hover:text-violet-500",
+                clearIndicator: () =>
+                  "text-gray-400 px-1 cursor-pointer hover:text-red-500",
+              }}
+            />
+          </div>
+        </div>
+ 
+        <div className="h-px bg-gray-100"></div>
+ 
+        <div>
+          <label className="text-[10px] text-gray-400 uppercase font-bold tracking-wider block mb-1.5 flex items-center gap-1">
+            <i className="bi bi-pencil-square text-gray-300"></i>
+            Task Description
+            <span className="text-gray-300 font-normal normal-case ml-1">
+              (optional)
+            </span>
+          </label>
+          <textarea
+            value={assigneeDescription}
+            onChange={(e) => setAssigneeDescription(e.target.value)}
+            placeholder="Write task details, instructions or notes..."
+            rows={3}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 text-xs text-gray-700 bg-gray-50 outline-none resize-none focus:border-violet-400 focus:ring-1 focus:ring-violet-200 transition-all placeholder:text-gray-400"
+          />
+        </div>
+ 
+        <div>
+          <label className="text-[10px] text-gray-400 uppercase font-bold tracking-wider block mb-1.5 flex items-center gap-1">
+            <i className="bi bi-paperclip text-gray-300"></i>
+            Attach Files
+            <span className="text-gray-300 font-normal normal-case ml-1">
+              (optional, max 5)
+            </span>
+          </label>
+          <input
+            type="file"
+            multiple
+            onChange={handleAssigneeFileChange}
+            accept=".jpg,.jpeg,.png,.pdf,.xlsx,.xls,.csv,.excel,.dwg,.dxf"
+            className="w-full text-xs text-gray-500 file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[10px] file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100 cursor-pointer outline-none border border-gray-300 rounded-md p-1 bg-gray-50"
+          />
+          {assigneeFiles.length > 0 && (
+            <div className="mt-2 space-y-1 max-h-[100px] overflow-y-auto pr-1">
+              {assigneeFiles.map((file, i) => (
+                <div
+                  key={i}
+                  className="flex justify-between items-center bg-gray-50 border border-gray-200 rounded px-2 py-1 text-[10px] text-gray-600"
+                >
+                  <span className="truncate max-w-[200px]">
+                    {file.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeAssigneeFile(i)}
+                    className="text-red-500 hover:text-red-700 font-bold ml-1 text-xs"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+ 
+        {loadingLog ? (
+          <div className="border-t border-gray-100 pt-3 text-center text-xs text-gray-400 py-2">
+            Loading history...
+          </div>
+        ) : assigneeLog.length > 0 ? (
+          (() => {
+            const sortedLogs = [...assigneeLog].sort(
+              (a, b) => new Date(b.changed_at) - new Date(a.changed_at),
+            );
+            const displayedLogs =
+              isAdmin || showAllHistory
+                ? sortedLogs
+                : sortedLogs.slice(0, 1);
+ 
+            return (
+              <div className="border-t border-gray-100 pt-3">
+                <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-2 flex items-center gap-1">
+                  <i className="bi bi-clock-history text-gray-300"></i>
+                  {isAdmin ? "History Log" : "Last Change"}
+                </p>
+                <div className="space-y-3.5 max-h-[220px] overflow-y-auto pr-1">
+                  {displayedLogs.map((log, i) => (
+                    <div key={i} className="flex items-start gap-2.5">
+                      <div className="flex flex-col items-center mt-1">
+                        <div className="w-2 h-2 rounded-full bg-violet-400 flex-shrink-0"></div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded">
+                            {log.changed_by || "System"}
+                          </span>
+                          <span className="text-[10px] text-gray-400">
+                            assigned
+                          </span>
+                          <span className="text-[10px] font-semibold text-violet-700 bg-violet-50 px-1.5 py-0.5 rounded border border-violet-100">
+                            {log.new_assignee || "-"}
+                          </span>
+                        </div>
+                        {log.changed_at && (
+                          <p className="text-[9px] text-gray-400 mt-0.5">
+                            {formatDateTime(log.changed_at)}
+                          </p>
+                        )}
+                        {log.description &&
+                          log.description.trim() !== "" && (
+                            <div className="mt-1.5 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5">
+                              <p className="text-[10px] font-semibold text-amber-700 flex items-center gap-1 mb-0.5">
+                                <i className="bi bi-chat-text-fill text-[9px]"></i>
+                                Task Note
+                              </p>
+                              <p className="text-[10px] text-amber-800 leading-relaxed whitespace-pre-wrap">
+                                {log.description}
+                              </p>
+                            </div>
+                          )}
+                        {log.files && log.files.length > 0 && (
+                          <div className="mt-1.5">
+                            <p className="text-[9px] font-semibold text-gray-400 uppercase mb-1 flex items-center gap-1">
+                              <i className="bi bi-paperclip"></i> Attached
+                              Files
+                            </p>
+                            <div className="flex flex-wrap gap-1">
+                              {log.files.map((file, fileIdx) => (
+                                <a
+                                  key={fileIdx}
+                                  href={file.file_path}
+                                  onClick={(e) =>
+                                    handleFileDownload(
+                                      e,
+                                      file.file_path,
+                                      file.file_name || "File",
+                                    )
+                                  }
+                                  className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-50 border border-indigo-100 hover:bg-indigo-100 text-indigo-700 rounded text-[9px] font-medium transition-colors cursor-pointer"
+                                >
+                                  <i className="bi bi-file-earmark-arrow-down"></i>
+                                  <span
+                                    className="truncate max-w-[100px]"
+                                    title={file.file_name}
+                                  >
+                                    {file.file_name}
+                                  </span>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {!isAdmin && sortedLogs.length > 1 && (
+                  <button
+                    onClick={() => setShowAllHistory(!showAllHistory)}
+                    className="mt-3 w-full py-1.5 bg-gray-50 border border-gray-200 hover:bg-violet-50 hover:border-violet-200 rounded text-[10px] text-gray-500 hover:text-violet-600 font-semibold flex items-center justify-center gap-1 transition-all"
+                  >
+                    <i
+                      className={`bi ${showAllHistory ? "bi-chevron-up" : "bi-chevron-down"}`}
+                    ></i>
+                    {showAllHistory
+                      ? "Hide History"
+                      : `Show History (${sortedLogs.length - 1} more)`}
+                  </button>
+                )}
+              </div>
+            );
+          })()
+        ) : (
+          <div className="border-t border-gray-100 pt-3">
+            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1 flex items-center gap-1">
+              <i className="bi bi-clock-history text-gray-300"></i>
+              Last Change
+            </p>
+            <p className="text-xs text-gray-300 italic text-center py-2">
+              No history found
+            </p>
+          </div>
+        )}
+      </div>
+ 
+      {/* Footer sticky buttons */}
+      <div className="px-5 py-4 bg-gray-50 border-t border-gray-100 flex gap-3 flex-shrink-0 mt-auto">
+        <button
+          onClick={closeAssigneeDrawer}
+          className="flex-1 py-2.5 rounded-lg text-xs border border-gray-200 text-gray-600 hover:bg-gray-100 font-bold transition-all cursor-pointer"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleAssigneeUpdate}
+          disabled={isUpdatingAssignee || !newAssigneeValue}
+          className={`flex-[2] py-2.5 rounded-lg text-xs text-white font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+            isUpdatingAssignee || !newAssigneeValue
+              ? "cursor-not-allowed opacity-60"
+              : "hover:shadow-lg hover:shadow-violet-200"
+          }`}
+          style={{
+            background:
+              isUpdatingAssignee || !newAssigneeValue
+                ? "#a5b4fc"
+                : "linear-gradient(to right, #6366f1, #8b5cf6)",
+          }}
+        >
+          {isUpdatingAssignee ? (
+            <>
+              <svg
+                className="animate-spin h-3.5 w-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="white"
+                  strokeWidth="4"
+                  opacity="0.25"
+                />
+                <path
+                  fill="white"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                />
+              </svg>
+              Updating...
+            </>
+          ) : (
+            <>
+              <i className="bi bi-person-check-fill text-xs"></i>
+              Update Assignee
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+ 
 
       {/* Proforma Invoice Assignee Selection Modal */}
       {showPiUserSelectModal && (
@@ -5360,154 +5613,218 @@ export default function QuotationPage() {
         </div>
       )}
 
-      {showViewModal && viewQuotation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 p-5">
-          <div className="bg-white w-full max-w-2xl max-h-[88vh] overflow-y-auto border border-gray-100 rounded-lg shadow-2xl">
-            {/* HEADER */}
-            <div className="from-orange-100 to-white px-5 py-3.5 flex items-center justify-between bg-gradient-to-r sticky top-0 z-10">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 flex items-center justify-center">
-                  <i className="bi bi-person text-base text-orange-500"></i>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    {viewQuotation.customer_name || "—"}
-                  </p>
-                  <p className="text-gray-400 text-xs">Quotation Details</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowViewModal(false)}
-                className="w-7 h-7 flex items-center justify-center text-orange-500"
-              >
-                <i className="bi bi-x-lg text-sm"></i>
-              </button>
+   
+{showViewModal && viewQuotation && (
+  <div
+    id="viewDrawerOverlay"
+    className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm"
+    style={{ animation: "vqmFadeIn 0.3s ease-out" }}
+  >
+    <style>{`
+      @keyframes vqmSlideIn {
+        from { transform: translateX(100%); opacity: 0.6; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes vqmSlideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0.6; }
+      }
+      @keyframes vqmFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes vqmFadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+    `}</style>
+ 
+    <div
+      id="viewDrawerPanel"
+      className="bg-white w-full max-w-2xl h-full border-l border-gray-100 shadow-2xl flex flex-col overflow-hidden"
+      style={{ animation: "vqmSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1)" }}
+    >
+      {/* ── HEADER (Image-2 style: white bg + gradient view icon + progress strip) ── */}
+      <div className="bg-white flex-shrink-0 z-10">
+        <div className="px-5 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md flex-shrink-0"
+              style={{
+                background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              }}
+            >
+              <i className="bi bi-eye text-white text-lg"></i>
             </div>
-
-            {/* BODY */}
-            <div className="p-5 grid grid-cols-2 gap-3">
-              {[
-                {
-                  icon: "bi-building",
-                  label: "Company Name",
-                  value: viewQuotation.company_name,
-                },
-                {
-                  icon: "bi-percent",
-                  label: "Tax",
-                  value: `${viewQuotation.tax || 0} %`,
-                },
-                {
-                  icon: "bi-person-circle",
-                  label: "Customer Name",
-                  value: viewQuotation.customer_name,
-                },
-                {
-                  icon: "bi-tag",
-                  label: "Discount",
-                  value: `${viewQuotation.discount || 0} %`,
-                },
-                {
-                  icon: "bi-file-text",
-                  label: "Reference",
-                  value: viewQuotation.reference,
-                },
-                {
-                  icon: "bi-file-text",
-                  label: "location",
-                  value: viewQuotation.location,
-                },
-                {
-                  icon: "bi-file-text",
-                  label: "architecture",
-                  value: viewQuotation.architecture,
-                },
-                {
-                  icon: "bi-receipt",
-                  label: "Amount",
-                  value: `₹ ${Number(viewQuotation.amount || 0).toLocaleString()}`,
-                },
-                {
-                  icon: "bi-flag",
-                  label: "Source",
-                  value: viewQuotation.source,
-                },
-                {
-                  icon: "bi-currency-rupee",
-                  label: "Grand Total",
-                  value: `₹ ${Number(viewQuotation.grand_total || 0).toLocaleString()}`,
-                },
-                {
-                  icon: "bi-hash",
-                  label: "Quotation No",
-                  value: viewQuotation.quotation_no,
-                },
-                {
-                  icon: "bi-calendar3",
-                  label: "Created At",
-                  value: viewQuotation.created_at
-                    ? new Date(viewQuotation.created_at).toLocaleDateString(
-                        "en-GB",
-                      )
-                    : "—",
-                },
-                {
-                  icon: "bi-clock-history",
-                  label: "Updated At",
-                  value: viewQuotation.updated_at
-                    ? new Date(viewQuotation.updated_at).toLocaleString("en-GB")
-                    : "—",
-                },
-                {
-                  icon: "bi-person-check",
-                  label: "Updated By",
-                  value: viewQuotation.updated_by,
-                },
-              ].map(({ icon, label, value }) => (
-                <div
-                  key={label}
-                  className="bg-gray-50 rounded-sm px-4 py-2.5 flex items-center gap-3"
-                >
-                  <i
-                    className={`bi ${icon} text-orange-400 text-lg flex-shrink-0`}
-                  ></i>
-                  <div>
-                    <p className="text-[11px] text-gray-400 uppercase tracking-wider font-semibold">
-                      {label}
-                    </p>
-                    <p className="text-sm font-semibold text-gray-700">
-                      {value || "—"}
-                    </p>
-                  </div>
-                </div>
-              ))}
-
-              {/* Description — full width */}
-              <div className="col-span-2 bg-gray-50 rounded-sm px-4 py-2.5 flex items-start gap-3">
-                <i className="bi bi-chat-left-text text-orange-400 text-lg flex-shrink-0"></i>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] text-gray-400 uppercase tracking-wider font-semibold">
-                    Description
-                  </p>
-                  <p className="text-sm font-semibold text-gray-700 break-words whitespace-normal">
-                    {viewQuotation.description || "—"}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* FOOTER */}
-            <div className="flex justify-end px-5 py-3.5 border-t border-gray-100">
-              <button
-                onClick={() => setShowViewModal(false)}
-                className="px-6 py-1.5 text-sm font-medium border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-100 transition-all"
-              >
-                Close
-              </button>
+            <div>
+              <p className="text-sm font-bold text-gray-800 uppercase tracking-wide">
+                {viewQuotation.customer_name || "—"}
+              </p>
+              <p className="text-gray-500 text-xs font-medium">
+                Quotation Details
+              </p>
             </div>
           </div>
+          <button
+            onClick={closeViewDrawer}
+            className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-violet-600 hover:bg-violet-50 rounded-full transition-colors"
+          >
+            <i className="bi bi-x-lg text-sm"></i>
+          </button>
         </div>
-      )}
+        <div className="h-1 w-full bg-gray-100">
+          <div
+            className="h-full w-1/3 rounded-r-full"
+            style={{
+              background: "linear-gradient(to right, #6366f1, #8b5cf6)",
+            }}
+          ></div>
+        </div>
+      </div>
+ 
+      {/* BODY — scrollable */}
+      <div className="p-5 grid grid-cols-2 gap-3 flex-1 overflow-y-auto content-start">
+        {[
+          {
+            icon: "bi-building",
+            label: "Company Name",
+            value: viewQuotation.company_name,
+            color: "bg-indigo-50 text-indigo-500",
+          },
+          {
+            icon: "bi-percent",
+            label: "Tax",
+            value: `${viewQuotation.tax || 0} %`,
+            color: "bg-amber-50 text-amber-500",
+          },
+          {
+            icon: "bi-person-circle",
+            label: "Customer Name",
+            value: viewQuotation.customer_name,
+            color: "bg-violet-50 text-violet-500",
+          },
+          {
+            icon: "bi-tag",
+            label: "Discount",
+            value: `${viewQuotation.discount || 0} %`,
+            color: "bg-pink-50 text-pink-500",
+          },
+          {
+            icon: "bi-file-text",
+            label: "Reference",
+            value: viewQuotation.reference,
+            color: "bg-amber-50 text-amber-500",
+          },
+          {
+            icon: "bi-file-text",
+            label: "location",
+            value: viewQuotation.location,
+            color: "bg-green-50 text-green-500",
+          },
+          {
+            icon: "bi-file-text",
+            label: "architecture",
+            value: viewQuotation.architecture,
+            color: "bg-teal-50 text-teal-500",
+          },
+          {
+            icon: "bi-receipt",
+            label: "Amount",
+            value: `₹ ${Number(viewQuotation.amount || 0).toLocaleString()}`,
+            color: "bg-blue-50 text-blue-500",
+          },
+          {
+            icon: "bi-flag",
+            label: "Source",
+            value: viewQuotation.source,
+            color: "bg-cyan-50 text-cyan-500",
+          },
+          {
+            icon: "bi-currency-rupee",
+            label: "Grand Total",
+            value: `₹ ${Number(viewQuotation.grand_total || 0).toLocaleString()}`,
+            color: "bg-emerald-50 text-emerald-500",
+          },
+          {
+            icon: "bi-hash",
+            label: "Quotation No",
+            value: viewQuotation.quotation_no,
+            color: "bg-indigo-50 text-indigo-500",
+          },
+          {
+            icon: "bi-calendar3",
+            label: "Created At",
+            value: viewQuotation.created_at
+              ? new Date(viewQuotation.created_at).toLocaleDateString(
+                  "en-GB",
+                )
+              : "—",
+            color: "bg-violet-50 text-violet-500",
+          },
+          {
+            icon: "bi-clock-history",
+            label: "Updated At",
+            value: viewQuotation.updated_at
+              ? new Date(viewQuotation.updated_at).toLocaleString("en-GB")
+              : "—",
+            color: "bg-sky-50 text-sky-500",
+          },
+          {
+            icon: "bi-person-check",
+            label: "Updated By",
+            value: viewQuotation.updated_by,
+            color: "bg-fuchsia-50 text-fuchsia-500",
+          },
+        ].map(({ icon, label, value, color }) => (
+          <div
+            key={label}
+            className="bg-gray-50 border border-gray-100 rounded-lg px-4 py-2.5 flex items-center gap-3 hover:border-violet-200 transition-colors"
+          >
+            <div
+              className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${color}`}
+            >
+              <i className={`bi ${icon} text-base`}></i>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] text-gray-400 uppercase tracking-wider font-semibold">
+                {label}
+              </p>
+              <p className="text-sm font-semibold text-gray-700 truncate">
+                {value || "—"}
+              </p>
+            </div>
+          </div>
+        ))}
+ 
+        {/* Description — full width */}
+        <div className="col-span-2 bg-gray-50 border border-gray-100 rounded-lg px-4 py-2.5 flex items-start gap-3 hover:border-violet-200 transition-colors">
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 bg-blue-50 text-blue-500">
+            <i className="bi bi-chat-left-text text-base"></i>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] text-gray-400 uppercase tracking-wider font-semibold">
+              Description
+            </p>
+            <p className="text-sm font-semibold text-gray-700 break-words whitespace-normal">
+              {viewQuotation.description || "—"}
+            </p>
+          </div>
+        </div>
+      </div>
+ 
+      {/* FOOTER */}
+      <div className="flex justify-end px-5 py-3.5 border-t border-gray-100 bg-gray-50 flex-shrink-0 mt-auto">
+        <button
+          onClick={closeViewDrawer}
+          className="px-6 py-2 text-sm font-semibold border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-100 hover:border-violet-200 hover:text-violet-600 transition-all flex items-center gap-1.5"
+        >
+          <i className="bi bi-x-lg text-xs"></i>
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </>
   );
 }

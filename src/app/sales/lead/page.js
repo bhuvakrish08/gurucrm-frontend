@@ -3344,32 +3344,91 @@ ${
 )}
 
       {/* STATUS CHANGE POPUP (Won / Pending) */}
-      {showPopup && (
-        <div className="fixed inset-0 bg-gray-900/30 flex items-center justify-center backdrop-blur-sm z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-80">
-            <h2 className="text-lg font-semibold mb-3 text-center">
+    {/* ═══════════════════════════════════════════════════════════════
+    Juno showPopup block replace karo aa sathe.
+    Indigo-violet theme + subtle pop-in animation. Logic same.
+   ═══════════════════════════════════════════════════════════════ */}
+
+{showPopup && (
+  <div
+    className="fixed inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm z-50"
+    style={{ animation: "stcFadeIn 0.2s ease-out" }}
+  >
+    <style>{`
+      @keyframes stcFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes stcPopIn {
+        from { transform: scale(0.92) translateY(10px); opacity: 0; }
+        to { transform: scale(1) translateY(0); opacity: 1; }
+      }
+    `}</style>
+
+    <div
+      className="bg-white rounded-2xl shadow-2xl w-80 border border-gray-100 overflow-hidden"
+      style={{ animation: "stcPopIn 0.25s cubic-bezier(0.22, 1, 0.36, 1)" }}
+    >
+      {/* Header */}
+      <div className="bg-white">
+        <div className="flex items-center gap-3 px-5 py-4">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md flex-shrink-0"
+            style={{
+              background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+            }}
+          >
+            <i className="bi bi-arrow-repeat text-white text-lg"></i>
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-gray-800 tracking-wide">
               Confirm Status Change
             </h2>
-            <p className="text-sm text-gray-600 mb-5">
-              Are you sure you want to change status?
+            <p className="text-[10px] text-gray-500 font-medium">
+              This will update the record status
             </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowPopup(false)}
-                className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmStatusChange}
-                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-md shadow-orange-200"
-              >
-                Yes Change
-              </button>
-            </div>
           </div>
         </div>
-      )}
+        <div className="h-1 w-full bg-gray-100">
+          <div
+            className="h-full w-1/3 rounded-r-full"
+            style={{
+              background: "linear-gradient(to right, #6366f1, #8b5cf6)",
+            }}
+          ></div>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="px-5 py-4">
+        <p className="text-sm text-gray-600">
+          Are you sure you want to change status?
+        </p>
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-end gap-3 px-5 py-4 bg-gray-50 border-t border-gray-100">
+        <button
+          onClick={() => setShowPopup(false)}
+          className="px-4 py-2 rounded-xl text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all flex items-center gap-1.5"
+        >
+          <i className="bi bi-x-lg text-xs"></i>
+          Cancel
+        </button>
+        <button
+          onClick={confirmStatusChange}
+          className="text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-md hover:shadow-lg hover:shadow-violet-200 flex items-center gap-1.5"
+          style={{
+            background: "linear-gradient(to right, #6366f1, #8b5cf6)",
+          }}
+        >
+          <i className="bi bi-check-circle text-sm"></i>
+          Yes, Change
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* ✅ NEW: LOST REASON POPUP */}
       {showLostReasonPopup && (
