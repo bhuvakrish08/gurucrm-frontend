@@ -2557,7 +2557,7 @@ const handleCloseUpdateModal = () => {
                 type="button"
                 onClick={handleEditLeadSubmit}
                 disabled={editLeadSubmitting}
-                className={`px-6 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-600 hover:to-violet-800 text-white text-sm font-semibold transition-all shadow-sm hover:shadow-md flex items-center gap-2 ${editLeadSubmitting ? "opacity-70 cursor-not-allowed" : ""}`}
+                className={`px-6 py-2 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white text-sm font-semibold transition-all shadow-sm hover:shadow-md flex items-center gap-2 ${editLeadSubmitting ? "opacity-70 cursor-not-allowed" : ""}`}
               >
                 {editLeadSubmitting ? (
                   <svg
@@ -2940,7 +2940,7 @@ const handleCloseUpdateModal = () => {
 ${
   btnLoading
     ? "bg-indigo-400 cursor-not-allowed"
-    : "bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-600 hover:to-violet-800"
+    : "bg-gradient-to-br from-indigo-500 to-violet-600"
 }`}
         >
           {btnLoading ? (
@@ -3323,7 +3323,7 @@ ${
             onClick={handleUpdate}
             disabled={updateLoading}
             className={`px-6 py-2 rounded-lg text-sm font-semibold text-white transition-all shadow-md flex items-center gap-2
-            ${updateLoading ? "bg-indigo-300 cursor-not-allowed shadow-none" : "bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 shadow-indigo-200"}`}
+            ${updateLoading ? "bg-indigo-300 cursor-not-allowed shadow-none" : "bg-gradient-to-br from-indigo-500 to-violet-600 shadow-indigo-200"}`}
           >
             {updateLoading ? (
               <>
@@ -3344,10 +3344,6 @@ ${
 )}
 
       {/* STATUS CHANGE POPUP (Won / Pending) */}
-    {/* ═══════════════════════════════════════════════════════════════
-    Juno showPopup block replace karo aa sathe.
-    Indigo-violet theme + subtle pop-in animation. Logic same.
-   ═══════════════════════════════════════════════════════════════ */}
 
 {showPopup && (
   <div
@@ -3417,10 +3413,8 @@ ${
         </button>
         <button
           onClick={confirmStatusChange}
-          className="text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-md hover:shadow-lg hover:shadow-violet-200 flex items-center gap-1.5"
-          style={{
-            background: "linear-gradient(to right, #6366f1, #8b5cf6)",
-          }}
+          className="text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-md hover:shadow-lg hover:shadow-violet-200 flex bg-gradient-to-br from-indigo-500 to-violet-600 items-center gap-1.5"
+          
         >
           <i className="bi bi-check-circle text-sm"></i>
           Yes, Change
@@ -3430,82 +3424,192 @@ ${
   </div>
 )}
 
-      {/* ✅ NEW: LOST REASON POPUP */}
-      {showLostReasonPopup && (
-        <div className="fixed inset-0 bg-gray-900/30 flex items-center justify-center backdrop-blur-sm z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-96">
-            <h2 className="text-lg font-semibold mb-3 text-center text-red-600">
+    {/* ═══════════════════════════════════════════════════════════════
+    Juno banne popup blocks replace karo aa sathe.
+    Image-2 structure + red theme (Lost = destructive action).
+    Logic same — fakt UI changes.
+   ═══════════════════════════════════════════════════════════════ */}
+
+{/* ✅ LOST REASON POPUP */}
+{showLostReasonPopup && (
+  <div
+    className="fixed inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm z-50"
+    style={{ animation: "lstFadeIn 0.2s ease-out" }}
+  >
+    <style>{`
+      @keyframes lstFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes lstPopIn {
+        from { transform: scale(0.92) translateY(10px); opacity: 0; }
+        to { transform: scale(1) translateY(0); opacity: 1; }
+      }
+    `}</style>
+
+    <div
+      className="bg-white rounded-2xl shadow-2xl w-96 border border-gray-100 overflow-hidden"
+      style={{ animation: "lstPopIn 0.25s cubic-bezier(0.22, 1, 0.36, 1)" }}
+    >
+      {/* Header */}
+      <div className="bg-white">
+        <div className="flex items-center gap-3 px-5 py-4">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md flex-shrink-0"
+            style={{
+              background: "linear-gradient(135deg, #ef4444, #dc2626)",
+            }}
+          >
+            <i className="bi bi-x-octagon text-white text-lg"></i>
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-gray-800 tracking-wide">
               Mark Lead as Lost
             </h2>
-            <p className="text-sm text-gray-600 mb-3">
-              Please provide a reason for marking this lead as Lost.
+            <p className="text-[10px] text-gray-500 font-medium">
+              This action requires a reason
             </p>
-            <textarea
-              value={lostReason}
-              onChange={(e) => {
-                setLostReason(e.target.value);
-                if (e.target.value.trim()) setLostReasonError("");
-              }}
-              placeholder="Enter lost reason..."
-              className="w-full border border-gray-300 rounded-sm px-3 py-2 text-sm outline-none h-24 resize-none focus:border-red-400"
-            />
-            {lostReasonError && (
-              <p className="text-xs text-red-500 mt-1">{lostReasonError}</p>
-            )}
-            <div className="flex justify-end gap-3 mt-4">
-              <button
-                onClick={() => {
-                  setShowLostReasonPopup(false);
-                  setLostReason("");
-                  setLostReasonError("");
-                }}
-                className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmLostStatusChange}
-                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-md shadow-red-200"
-              >
-                Confirm Lost
-              </button>
-            </div>
           </div>
         </div>
-      )}
+        <div className="h-1 w-full bg-gray-100">
+          <div
+            className="h-full w-1/3 rounded-r-full"
+            style={{
+              background: "linear-gradient(to right, #ef4444, #dc2626)",
+            }}
+          ></div>
+        </div>
+      </div>
 
-      {/* ✅ NEW: VIEW LOST REASON MODAL */}
-      {showViewReasonModal && viewReasonLead && (
-        <div className="fixed inset-0 bg-gray-900/30 flex items-center justify-center backdrop-blur-sm z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-96">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-semibold text-red-600">
+      {/* Body */}
+      <div className="px-5 py-4">
+        <p className="text-sm text-gray-600 mb-3">
+          Please provide a reason for marking this lead as Lost.
+        </p>
+        <textarea
+          value={lostReason}
+          onChange={(e) => {
+            setLostReason(e.target.value);
+            if (e.target.value.trim()) setLostReasonError("");
+          }}
+          placeholder="Enter lost reason..."
+          className="w-full border border-red-200 rounded-lg px-3 py-2 text-sm outline-none h-24 resize-none bg-gray-50 focus:border-red-400 focus:ring-1 focus:ring-red-200 transition-all placeholder:text-gray-400"
+        />
+        {lostReasonError && (
+          <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+            <i className="bi bi-exclamation-circle text-[10px]"></i>
+            {lostReasonError}
+          </p>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-end gap-3 px-5 py-4 bg-gray-50 border-t border-gray-100">
+        <button
+          onClick={() => {
+            setShowLostReasonPopup(false);
+            setLostReason("");
+            setLostReasonError("");
+          }}
+          className="px-4 py-2 rounded-xl text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all flex items-center gap-1.5"
+        >
+          <i className="bi bi-x-lg text-xs"></i>
+          Cancel
+        </button>
+        <button
+          onClick={confirmLostStatusChange}
+          className="text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-md hover:shadow-lg hover:shadow-red-200 flex items-center gap-1.5"
+          style={{
+            background: "linear-gradient(to right, #ef4444, #dc2626)",
+          }}
+        >
+          <i className="bi bi-x-octagon text-sm"></i>
+          Confirm Lost
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{/* ✅ VIEW LOST REASON MODAL */}
+{showViewReasonModal && viewReasonLead && (
+  <div
+    className="fixed inset-0 bg-black/50 flex items-center justify-center backdrop-blur-sm z-50"
+    style={{ animation: "vlrFadeIn 0.2s ease-out" }}
+  >
+    <style>{`
+      @keyframes vlrFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes vlrPopIn {
+        from { transform: scale(0.92) translateY(10px); opacity: 0; }
+        to { transform: scale(1) translateY(0); opacity: 1; }
+      }
+    `}</style>
+
+    <div
+      className="bg-white rounded-2xl shadow-2xl w-96 border border-gray-100 overflow-hidden"
+      style={{ animation: "vlrPopIn 0.25s cubic-bezier(0.22, 1, 0.36, 1)" }}
+    >
+      {/* Header */}
+      <div className="bg-white">
+        <div className="flex items-center justify-between px-5 py-4">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md flex-shrink-0"
+              style={{
+                background: "linear-gradient(135deg, #ef4444, #dc2626)",
+              }}
+            >
+              <i className="bi bi-chat-left-text text-white text-base"></i>
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-gray-800 tracking-wide">
                 Lost Reason
               </h2>
-              <button
-                onClick={() => setShowViewReasonModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✕
-              </button>
-            </div>
-            <p className="text-xs text-gray-400 uppercase font-semibold mb-1">
-              {viewReasonLead.customer_name}
-            </p>
-            <p className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 rounded-sm p-3 border border-gray-100">
-              {viewReasonLead.lost_reason || "No reason provided"}
-            </p>
-            <div className="flex justify-end mt-4">
-              <button
-                onClick={() => setShowViewReasonModal(false)}
-                className="px-4 py-2 rounded-xl text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
-              >
-                Close
-              </button>
+              <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wide">
+                {viewReasonLead.customer_name}
+              </p>
             </div>
           </div>
+          <button
+            onClick={() => setShowViewReasonModal(false)}
+            className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+          >
+            ✕
+          </button>
         </div>
-      )}
+        <div className="h-1 w-full bg-gray-100">
+          <div
+            className="h-full w-1/3 rounded-r-full"
+            style={{
+              background: "linear-gradient(to right, #ef4444, #dc2626)",
+            }}
+          ></div>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="px-5 py-4">
+        <p className="text-sm text-gray-700 whitespace-pre-wrap bg-red-50/50 rounded-lg p-3 border border-red-100">
+          {viewReasonLead.lost_reason || "No reason provided"}
+        </p>
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-end px-5 py-4 bg-gray-50 border-t border-gray-100">
+        <button
+          onClick={() => setShowViewReasonModal(false)}
+          className="px-5 py-2 rounded-xl text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all flex items-center gap-1.5"
+        >
+          <i className="bi bi-x-lg text-xs"></i>
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* FILE UPLOAD MODAL */}
       {showFileModal && (
@@ -3703,7 +3807,7 @@ ${
               </div> */}
               <button
                 onClick={() => setShowFileModal(false)}
-                className="bg-gradient-to-r ml-auto from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white px-6  py-1.5 rounded-lg text-sm font-semibold transition-all shadow-md shadow-indigo-200 flex items-center gap-2 shrink-0"
+                className=" ml-auto bg-gradient-to-br from-indigo-500 to-violet-600 text-white px-6  py-1.5 rounded-lg text-sm font-semibold transition-all shadow-md shadow-indigo-200 flex items-center gap-2 shrink-0"
               >
                 <CheckCircle2 size={15} /> Done
               </button>

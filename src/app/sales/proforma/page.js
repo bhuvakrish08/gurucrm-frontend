@@ -2041,18 +2041,18 @@ export default function ProformaPage() {
       <button
         onClick={editing ? handleUpdate : handleSubmitFollowUp}
         disabled={isDisabled}
-        className={`px-6 py-2 rounded-xl text-sm font-semibold text-white transition-all shadow-md flex items-center justify-center gap-2 ${
+        className={`px-6 py-2 rounded-xl text-sm font-semibold text-white transition-all shadow-md flex items-center justify-center gap-2 bg-gradient-to-br from-indigo-500 to-violet-600 ${
           isDisabled
             ? "bg-gray-300 cursor-not-allowed shadow-none"
             : "hover:shadow-lg hover:shadow-violet-200"
         }`}
-        style={
-          isDisabled
-            ? {}
-            : {
-                background: "linear-gradient(to right, #6366f1, #8b5cf6)",
-              }
-        }
+        // style={
+        //   isDisabled
+        //     ? {}
+        //     : {
+        //         background: "linear-gradient(to right, #6366f1, #8b5cf6)",
+        //       }
+        // }
       >
         {submitLoading || updateLoading ? (
           <>

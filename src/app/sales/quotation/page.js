@@ -3529,21 +3529,21 @@ const closeUpdateDrawer = () => {
                 ? "Lead follow-ups cannot be added here"
                 : ""
             }
-            className={`px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold text-white transition-all shadow-md flex items-center gap-2 ${
+            className={`px-3 sm:px-6 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold bg-gradient-to-br from-indigo-500 to-violet-600 text-white transition-all shadow-md flex items-center gap-2 ${
               followUpTab === "lead"
                 ? "bg-gray-300 cursor-not-allowed shadow-none"
                 : updateLoading
                   ? "cursor-not-allowed opacity-70 shadow-violet-100"
                   : "hover:shadow-lg hover:shadow-violet-200"
             }`}
-            style={
-              followUpTab === "lead"
-                ? {}
-                : {
-                    background:
-                      "linear-gradient(to right, #6366f1, #8b5cf6)",
-                  }
-            }
+            // style={
+            //   followUpTab === "lead"
+            //     ? {}
+            //     : {
+            //         background:
+            //           "linear-gradient(to right, #6366f1, #8b5cf6)",
+            //       }
+            // }
           >
             {updateLoading ? (
               <>
@@ -3902,10 +3902,10 @@ const closeUpdateDrawer = () => {
                 <button
                   onClick={handleQuotationSubmit}
                   disabled={isSubmitting}
-                  className={`flex-1 text-white rounded-xl py-3 text-sm font-semibold transition-all flex justify-center items-center gap-2 hover:shadow-lg hover:shadow-violet-200 ${isSubmitting ? "opacity-70 cursor-not-allowed" : ""}`}
-                  style={{
-                    background: "linear-gradient(to right, #6366f1, #8b5cf6)",
-                  }}
+                  className={`flex-1 bg-gradient-to-br from-indigo-500 to-violet-600 text-white rounded-xl py-3 text-sm font-semibold transition-all flex justify-center items-center gap-2 hover:shadow-lg hover:shadow-violet-200 ${isSubmitting ? "opacity-70 cursor-not-allowed" : ""}`}
+                  // style={{
+                  //   background: "linear-gradient(to right, #6366f1, #8b5cf6)",s
+                  // }}
                 >
                   {isSubmitting ? (
                     <>
@@ -5495,17 +5495,17 @@ const closeUpdateDrawer = () => {
         <button
           onClick={handleAssigneeUpdate}
           disabled={isUpdatingAssignee || !newAssigneeValue}
-          className={`flex-[2] py-2.5 rounded-lg text-xs text-white font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+          className={`flex-[2] py-2.5 rounded-lg text-xs text-white font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer bg-gradient-to-br from-indigo-500 to-violet-600 ${
             isUpdatingAssignee || !newAssigneeValue
               ? "cursor-not-allowed opacity-60"
               : "hover:shadow-lg hover:shadow-violet-200"
           }`}
-          style={{
-            background:
-              isUpdatingAssignee || !newAssigneeValue
-                ? "#a5b4fc"
-                : "linear-gradient(to right, #6366f1, #8b5cf6)",
-          }}
+          // style={{
+          //   background:
+          //     isUpdatingAssignee || !newAssigneeValue
+          //       ? "#a5b4fc"
+          //       : "linear-gradient(to right, #6366f1, #8b5cf6)",
+          // }}
         >
           {isUpdatingAssignee ? (
             <>

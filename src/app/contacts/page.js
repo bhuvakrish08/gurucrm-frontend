@@ -834,7 +834,7 @@ export default function Page() {
                     </button>
                     <button
                       type="submit"
-                      className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-600 hover:to-violet-800 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-md flex items-center gap-2"
+                      className="px-5 py-2.5 bg-gradient-to-br from-indigo-500 to-violet-600 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-md flex items-center gap-2"
                     >
                       <Save size={15} /> Save
                     </button>

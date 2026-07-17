@@ -610,7 +610,7 @@ function AddCustomerModal({ onClose, onSuccess }) {
                 <button
                   type="button"
                   onClick={() => setActiveTab("contact")}
-                  className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-600 hover:to-violet-800 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-md cursor-pointer"
+                  className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-br from-indigo-500 to-violet-600 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-md cursor-pointer"
                 >
                   Next
                 </button>
@@ -720,7 +720,7 @@ function AddCustomerModal({ onClose, onSuccess }) {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className={`w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-600 hover:to-violet-800 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2 ${
+                  className={`w-full sm:w-auto px-6 py-2.5 bg-gradient-to-br from-indigo-500 to-violet-600 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-md flex items-center justify-center gap-2 ${
                     isSubmitting ? "opacity-70 cursor-not-allowed" : "cursor-pointer"
                   }`}
                 >
