@@ -4466,8 +4466,8 @@ export default function QuotationPage() {
 
       {/* Delete Confirmation Modal */}
    {showDeleteModal && (
-  <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-    <div className="bg-white w-[400px] rounded-2xl shadow-2xl overflow-hidden border border-gray-100 animate-[scaleIn_0.25s_ease-out]">
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
+    <div className="bg-white w-full h-[375px] max-w-md rounded-sm shadow-2xl overflow-hidden border border-gray-100 animate-[scaleIn_0.25s_ease-out]">
       {/* Header */}
       <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
         <div className="flex items-center gap-3">
@@ -4481,26 +4481,26 @@ export default function QuotationPage() {
 
         <button
           onClick={() => setShowDeleteModal(false)}
-          className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-colors"
+          className="w-8 h-8 flex items-center justify-center text-red-600 transition-colors"
         >
           <X className="w-5 h-5" strokeWidth={2} />
         </button>
       </div>
 
       {/* Body */}
-      <div className="flex flex-col items-center py-8 px-6 text-center">
+      <div className="px-6 pt-4 pb-4  text-center">
         {/* Icon */}
-        <div className="w-24 h-24 rounded-full bg-red-50 flex items-center justify-center mb-5">
-          <Trash2 className="w-10 h-10 text-red-600" strokeWidth={1.8} />
-        </div>
+           <div className="w-24 h-24 mx-auto rounded-full bg-red-50 flex items-center justify-center mb-5">
+                  <Trash2 className="w-10 h-10 text-red-600" strokeWidth={1.8} />
+                </div>
 
         {/* Name */}
-        <h2 className="text-xl font-extrabold text-gray-900 uppercase tracking-wide mb-2">
+        <h3 className="text-xl font-extrabold text-gray-900 tracking-wide uppercase mb-2">
           {deleteName}
-        </h2>
+        </h3>
 
         {/* Divider */}
-        <div className="w-10 h-[3px] bg-red-500 rounded-full mb-4"></div>
+        <div className="w-10 h-[3px] bg-red-500 rounded-full mx-auto mb-4"></div>
 
         {/* Message */}
         <p className="text-gray-500 text-sm leading-relaxed">
@@ -4511,11 +4511,11 @@ export default function QuotationPage() {
       </div>
 
       {/* Footer Buttons */}
-      <div className="flex gap-3 px-6 pb-6">
+      <div className="flex gap-3.5 px-7 pb-0">
         <button
           onClick={() => setShowDeleteModal(false)}
           disabled={isDeleting}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold border border-blue-300 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-sm text-sm font-semibold border border-blue-300 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <X className="w-4 h-4" strokeWidth={2.2} />
           Cancel
@@ -4524,7 +4524,7 @@ export default function QuotationPage() {
         <button
           onClick={handleDeleteQuotation}
           disabled={isDeleting}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold bg-red-600 hover:bg-red-700 text-white shadow-sm hover:shadow-md transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-sm text-sm font-semibold text-white bg-red-600  shadow-sm hover:shadow-md transition-all disabled:opacity-70 disabled:cursor-not-allowed"
         >
           {isDeleting ? (
             <>

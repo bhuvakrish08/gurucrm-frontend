@@ -9,6 +9,14 @@ import { checkRole } from "@/utils/checkRole";
 import useAuth from "@/app/components/useAuth";
 import { Sparkles } from "lucide-react";
 import { Trash2} from "lucide-react";
+
+import {
+  RefreshCw,
+  ChevronUp,
+  ChevronDown,
+  Clock,
+  Loader2,
+} from "lucide-react";
 import {
   CalendarDays,
   ListChecks,
@@ -76,6 +84,8 @@ export default function Page() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewLead, setViewLead] = useState(null);
 
+  const [modalClosing, setModalClosing] = useState(false);
+const [updateModalClosing, setUpdateModalClosing] = useState(false);
   // ===================================================
   // ✅ NEW: ADD LEAD POPUP STATE (moved from add-lead page)
   // ===================================================
@@ -98,7 +108,34 @@ export default function Page() {
     category: "",
     description: "",
   });
+// for view model slide-in slide-out animation
+const [isClosing, setIsClosing] = useState(false);
 
+const handleCloseModal = () => {
+  setIsClosing(true);
+  setTimeout(() => {
+    setIsClosing(false);
+    setShowViewModal(false);
+  }, 250);
+};
+
+const handleCloseAddModal = () => {
+  setModalClosing(true);
+  setTimeout(() => {
+    setShowModal(false);
+    setModalClosing(false);
+  }, 260);
+};
+
+const handleCloseUpdateModal = () => {
+  setUpdateModalClosing(true);
+  setTimeout(() => {
+    setShowUpdateModal(false);
+    setSelectedFiles([]);
+    setPreviewFollowUp(null);
+    setUpdateModalClosing(false);
+  }, 260);
+};
   // ===================================================
   // ✅ NEW: EDIT LEAD POPUP STATE (moved from update-lead page)
   // ===================================================
@@ -2555,7 +2592,7 @@ export default function Page() {
       {/* DELETE MODAL */}
      {showDeleteModal && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-    <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-[scaleIn_0.25s_ease-out]">
+    <div className="bg-white w-full h-[375px] max-w-md rounded-sm shadow-2xl overflow-hidden animate-[scaleIn_0.25s_ease-out]">
       {/* Header */}
       <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
         <div className="flex items-center gap-3">
@@ -2569,14 +2606,14 @@ export default function Page() {
 
         <button
           onClick={() => setShowDeleteModal(false)}
-          className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-colors"
+          className="w-8 h-8 flex items-center justify-center text-red-600 transition-colors"
         >
           <X className="w-5 h-5" strokeWidth={2} />
         </button>
       </div>
 
       {/* Body */}
-      <div className="px-7 pt-9 pb-6 text-center">
+      <div className="px-6 pt-4 pb-4  text-center">
         {/* Icon */}
         <div className="w-24 h-24 mx-auto rounded-full bg-red-50 flex items-center justify-center mb-5">
           <Trash2 className="w-10 h-10 text-red-600" strokeWidth={1.8} />
@@ -2599,11 +2636,11 @@ export default function Page() {
       </div>
 
       {/* Footer Buttons */}
-      <div className="flex gap-3.5 px-7 pb-7">
+      <div className="flex gap-3.5 px-7 pb-0">
         <button
           onClick={() => setShowDeleteModal(false)}
           disabled={deleteLoading}
-          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold border border-blue-300 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-sm text-sm font-semibold border border-blue-300 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <X className="w-4 h-4" strokeWidth={2.2} />
           Cancel
@@ -2612,7 +2649,7 @@ export default function Page() {
         <button
           onClick={handleDelete}
           disabled={deleteLoading}
-          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 shadow-sm hover:shadow-md transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-sm text-sm font-semibold text-white bg-red-600  shadow-sm hover:shadow-md transition-all disabled:opacity-70 disabled:cursor-not-allowed"
         >
           {deleteLoading ? (
             <>
@@ -2652,614 +2689,659 @@ export default function Page() {
     `}</style>
   </div>
 )}
+{/* ADD FOLLOW-UP MODAL */}
+{showModal && (
+  <div
+    className={`fixed inset-0 z-50 flex justify-end bg-gray-900/30 ${modalClosing ? "ladp-overlayOut" : "ladp-overlayIn"}`}
+  >
+    <style>{`
+      @keyframes ladpSlideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+      @keyframes ladpSlideOut { from { transform: translateX(0); } to { transform: translateX(100%); } }
+      @keyframes ladpFadeIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes ladpFadeOut { from { opacity: 1; } to { opacity: 0; } }
+      .ladp-overlayIn { animation: ladpFadeIn 0.22s ease-out; }
+      .ladp-overlayOut { animation: ladpFadeOut 0.22s ease-in forwards; }
+      .ladp-panelIn { animation: ladpSlideIn 0.3s cubic-bezier(0.16,1,0.3,1); }
+      .ladp-panelOut { animation: ladpSlideOut 0.22s cubic-bezier(0.4,0,1,1) forwards; }
+      @media (prefers-reduced-motion: reduce) {
+        .ladp-overlayIn, .ladp-overlayOut, .ladp-panelIn, .ladp-panelOut { animation: none !important; }
+      }
+    `}</style>
 
-      {/* ADD FOLLOW-UP MODAL */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30 p-4">
-          <div className="bg-white w-[480px] max-w-full rounded-2xl shadow-2xl overflow-hidden max-h-[91vh] flex flex-col">
-            {/* Header */}
-            <div className="px-6 pt-5 pb-4 border-b border-gray-100">
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-3">
-                  <span className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-md shadow-indigo-200">
-                    <CalendarDays size={20} className="text-white" />
-                  </span>
-                  <div>
-                    <h2 className="text-lg font-bold text-gray-900">
-                      Add Lead Activities
-                    </h2>
-                    {/* <p className="text-xs text-gray-500 mt-0.5">
-                      Capture follow-up activities and stay on top of your
-                      leads
-                    </p> */}
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="w-8 h-8 flex items-center justify-center rounded-full  text-indigo-600 transition-all"
+    <div
+      className={`bg-white w-[480px] max-w-full h-full shadow-2xl overflow-hidden flex flex-col ${modalClosing ? "ladp-panelOut" : "ladp-panelIn"}`}
+    >
+      {/* Header */}
+      <div className="px-6 pt-5 pb-4 border-b border-gray-100">
+        <div className="flex justify-between items-start">
+          <div className="flex items-center gap-3">
+            <span className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-md shadow-indigo-200">
+              <CalendarDays size={20} className="text-white" />
+            </span>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">
+                Add Lead Activities
+              </h2>
+            </div>
+          </div>
+          <button
+            onClick={handleCloseAddModal}
+            className="w-8 h-8 flex items-center justify-center rounded-full text-indigo-600 transition-all"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      </div>
+
+      <div className="px-6 py-5 grid grid-cols-2 gap-x-4 gap-y-4 overflow-y-auto">
+        {/* Follow-Up Date */}
+        <div className="col-span-1">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
+              <CalendarDays size={14} className="text-blue-500" />
+            </span>
+            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              Follow-Up Date <span className="text-red-500">*</span>
+            </label>
+          </div>
+          <input
+            type="date"
+            name="follow_up_date"
+            value={form.follow_up_date}
+            onChange={handleChange}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all"
+          />
+        </div>
+
+        {/* Activity Type */}
+        <div className="col-span-1">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span
+              className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors duration-300 ${
+                form.activity_type === "Call"
+                  ? "bg-green-50"
+                  : form.activity_type === "Meeting"
+                    ? "bg-blue-50"
+                    : form.activity_type === "Email"
+                      ? "bg-violet-50"
+                      : "bg-emerald-50"
+              }`}
+            >
+              <ListChecks
+                size={14}
+                className={`transition-colors duration-300 ${
+                  form.activity_type === "Call"
+                    ? "text-green-500"
+                    : form.activity_type === "Meeting"
+                      ? "text-blue-500"
+                      : form.activity_type === "Email"
+                        ? "text-violet-500"
+                        : "text-emerald-500"
+                }`}
+              />
+            </span>
+            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              Activity Type <span className="text-red-500">*</span>
+            </label>
+          </div>
+          <select
+            name="activity_type"
+            value={form.activity_type}
+            onChange={handleChange}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+          >
+            <option value="">-- Select Activity Type --</option>
+            <option>Call</option>
+            <option>Meeting</option>
+            <option>Email</option>
+          </select>
+        </div>
+
+        {/* Follow-Up By */}
+        <div className="col-span-1">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="w-7 h-7 rounded-lg bg-violet-50 flex items-center justify-center">
+              <User size={14} className="text-violet-500" />
+            </span>
+            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              Follow-Up By <span className="text-red-500">*</span>
+            </label>
+          </div>
+          <select
+            name="follow_up_by"
+            value={form.follow_up_by}
+            onChange={handleChange}
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+          >
+            <option value="">Select User</option>
+            {assignee.map((item) => (
+              <option key={item.id} value={item.name}>
+                {item.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Contact Person */}
+        <div className="col-span-1">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center">
+              <UserRound size={14} className="text-amber-500" />
+            </span>
+            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              Contact Person <span className="text-red-500">*</span>
+            </label>
+          </div>
+          <div className="flex">
+            <input
+              name="contact_person"
+              value={form.contact_person}
+              onChange={handleChange}
+              placeholder="Enter contact person name"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all"
+            />
+          </div>
+        </div>
+
+        {/* Description */}
+        <div className="col-span-2">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="w-7 h-7 rounded-lg bg-rose-50 flex items-center justify-center">
+              <FileText size={14} className="text-rose-500" />
+            </span>
+            <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              Description <span className="text-red-500">*</span>
+            </label>
+          </div>
+          <div className="relative">
+            <textarea
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              placeholder="Enter description of the activity..."
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 pb-6 text-sm text-gray-700 outline-none bg-white h-24 resize-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all"
+            />
+            <span className="absolute bottom-2.5 right-3 text-[10px] text-gray-400 font-medium">
+              {(form.description || "").length}/500
+            </span>
+          </div>
+        </div>
+
+        {/* File Upload */}
+        <div className="col-span-2 border-2 border-dashed border-indigo-300 rounded-xl p-4 bg-indigo-50/30">
+          <div
+            onClick={() => setShowFileModal(true)}
+            className="text-center cursor-pointer group"
+          >
+            <span className="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mx-auto shadow-md shadow-indigo-200 group-hover:scale-110 transition-transform">
+              <CloudUpload size={18} className="text-white" />
+            </span>
+            <p className="text-sm font-medium text-gray-700 mt-2">
+              Drag &amp; drop files here or click to browse
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              Upload supporting documents or images (Max 5MB)
+            </p>
+            <div className="flex items-center justify-center gap-1.5 mt-2 flex-wrap">
+              <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[10px] font-bold">
+                JPG
+              </span>
+              <span className="px-2 py-0.5 rounded-md bg-green-50 text-green-600 text-[10px] font-bold">
+                PNG
+              </span>
+              <span className="px-2 py-0.5 rounded-md bg-red-50 text-red-600 text-[10px] font-bold">
+                PDF
+              </span>
+              <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600 text-[10px] font-bold">
+                XLSX
+              </span>
+              <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-600 text-[10px] font-bold">
+                DWG
+              </span>
+            </div>
+          </div>
+          {selectedFiles.length > 0 && (
+            <div className="mt-3 space-y-1 text-left">
+              {selectedFiles.map((file, index) => (
+                <div
+                  key={index}
+                  className="flex justify-between items-center bg-white px-3 py-1.5 text-xs rounded-lg border border-indigo-100 shadow-sm"
                 >
-                  <X size={16} />
-                </button>
-              </div>
+                  <span className="text-gray-600 truncate">{file.name}</span>
+                  <button
+                    onClick={() =>
+                      setSelectedFiles(
+                        selectedFiles.filter((_, i) => i !== index),
+                      )
+                    }
+                    className="text-red-400 hover:text-red-600 ml-2"
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50/80">
+        <button
+          onClick={handleCloseAddModal}
+          className="px-5 py-2 text-sm font-medium border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-100 transition-all flex items-center gap-2 bg-white"
+        >
+          <X size={15} /> Cancel
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={btnLoading}
+          className={`px-6 py-2 text-sm font-semibold text-white rounded-lg transition-all shadow-md shadow-indigo-200 flex items-center gap-2
+${
+  btnLoading
+    ? "bg-indigo-400 cursor-not-allowed"
+    : "bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-600 hover:to-violet-800"
+}`}
+        >
+          {btnLoading ? (
+            <>
+              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="white" strokeWidth="4" opacity="0.25" />
+                <path fill="white" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+              </svg>
+              Adding...
+            </>
+          ) : (
+            <>
+              <CheckCircle2 size={15} /> Add Activity
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+{/* UPDATE FOLLOW-UP MODAL */}
+{showUpdateModal && (
+  <div
+    className={`fixed inset-0 z-50 flex justify-end bg-gray-900/40 backdrop-blur-sm ${updateModalClosing ? "ladp-overlayOut" : "ladp-overlayIn"}`}
+  >
+    <style>{`
+      @keyframes ladpSlideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+      @keyframes ladpSlideOut { from { transform: translateX(0); } to { transform: translateX(100%); } }
+      @keyframes ladpFadeIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes ladpFadeOut { from { opacity: 1; } to { opacity: 0; } }
+      .ladp-overlayIn { animation: ladpFadeIn 0.22s ease-out; }
+      .ladp-overlayOut { animation: ladpFadeOut 0.22s ease-in forwards; }
+      .ladp-panelIn { animation: ladpSlideIn 0.3s cubic-bezier(0.16,1,0.3,1); }
+      .ladp-panelOut { animation: ladpSlideOut 0.22s cubic-bezier(0.4,0,1,1) forwards; }
+      .ula-field { opacity: 0; animation: ulaFadeUp 0.35s ease-out forwards; }
+      @keyframes ulaFadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+      @media (prefers-reduced-motion: reduce) {
+        .ladp-overlayIn, .ladp-overlayOut, .ladp-panelIn, .ladp-panelOut, .ula-field { animation: none !important; opacity: 1 !important; }
+      }
+    `}</style>
+
+    <div
+      className={`bg-white w-[680px] max-w-full h-full shadow-2xl border-l border-gray-100 overflow-hidden flex flex-col ${updateModalClosing ? "ladp-panelOut" : "ladp-panelIn"}`}
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between px-6 py-5 border-b border-gray-100">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-200 shrink-0">
+            <RefreshCw className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-gray-800">
+              Update Lead Activities
+            </h2>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Log follow-ups and keep this lead moving
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={handleCloseUpdateModal}
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all shrink-0"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+      <div className="h-1 w-full bg-gray-100">
+        <div className="h-full w-1/3 bg-gradient-to-r from-indigo-500 to-violet-500"></div>
+      </div>
+
+      <div className="flex overflow-y-auto">
+        {/* LEFT: Add New Follow-Up */}
+        <div className="w-1/2 px-6 py-5 border-r border-gray-100">
+          <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-4">
+            Add New Follow-Up
+          </p>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+            <div className="ula-field" style={{ animationDelay: "0.03s" }}>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                <span
+                  className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors ${
+                    updateForm.follow_up_date
+                      ? "bg-indigo-100 text-indigo-600"
+                      : "bg-gray-100 text-gray-400"
+                  }`}
+                >
+                  <CalendarDays className="w-3 h-3" />
+                </span>
+                Follow-Up Date
+              </label>
+              <input
+                type="date"
+                value={updateForm.follow_up_date}
+                onChange={(e) =>
+                  setUpdateForm({ ...updateForm, follow_up_date: e.target.value })
+                }
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none bg-gray-50 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+              />
             </div>
 
-            <div className="px-6 py-5 grid grid-cols-2 gap-x-4 gap-y-4 overflow-y-auto">
-              {/* Follow-Up Date */}
-              <div className="col-span-1">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
-                    <CalendarDays size={14} className="text-blue-500" />
-                  </span>
-                  <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                    Follow-Up Date <span className="text-red-500">*</span>
-                  </label>
-                </div>
-                <input
-                  type="date"
-                  name="follow_up_date"
-                  value={form.follow_up_date}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all"
-                />
-              </div>
+            <div className="ula-field" style={{ animationDelay: "0.06s" }}>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                <span
+                  className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors ${
+                    updateForm.activity_type
+                      ? "bg-indigo-100 text-indigo-600"
+                      : "bg-gray-100 text-gray-400"
+                  }`}
+                >
+                  <ListChecks className="w-3 h-3" />
+                </span>
+                Activity Type <span className="text-rose-500">*</span>
+              </label>
+              <select
+                value={updateForm.activity_type}
+                onChange={(e) =>
+                  setUpdateForm({ ...updateForm, activity_type: e.target.value })
+                }
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none bg-gray-50 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+              >
+                <option value="">-- Select --</option>
+                <option>Call</option>
+                <option>Meeting</option>
+                <option>Email</option>
+              </select>
+            </div>
 
-              {/* Activity Type */}
-              <div className="col-span-1">
-                <div className="flex items-center gap-2 mb-1.5">
+            <div className="ula-field" style={{ animationDelay: "0.09s" }}>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                <span
+                  className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors ${
+                    updateForm.follow_up_by
+                      ? "bg-indigo-100 text-indigo-600"
+                      : "bg-gray-100 text-gray-400"
+                  }`}
+                >
+                  <User className="w-3 h-3" />
+                </span>
+                Follow-Up By
+              </label>
+              <select
+                value={updateForm.follow_up_by}
+                onChange={(e) =>
+                  setUpdateForm({ ...updateForm, follow_up_by: e.target.value })
+                }
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none bg-gray-50 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+              >
+                <option value="">Select User</option>
+                {assignee.map((item) => (
+                  <option key={item.id} value={item.name}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="ula-field" style={{ animationDelay: "0.12s" }}>
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                <span
+                  className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors ${
+                    updateForm.contact_person
+                      ? "bg-indigo-100 text-indigo-600"
+                      : "bg-gray-100 text-gray-400"
+                  }`}
+                >
+                  <UserRound className="w-3 h-3" />
+                </span>
+                Contact Person <span className="text-rose-500">*</span>
+              </label>
+              <input
+                value={updateForm.contact_person}
+                onChange={(e) =>
+                  setUpdateForm({ ...updateForm, contact_person: e.target.value })
+                }
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none bg-gray-50 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+              />
+            </div>
+
+            <div className="col-span-2 ula-field" style={{ animationDelay: "0.15s" }}>
+              <label className="flex items-center justify-between text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                <span className="flex items-center gap-1.5">
                   <span
-                    className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors duration-300 ${
-                      form.activity_type === "Call"
-                        ? "bg-green-50"
-                        : form.activity_type === "Meeting"
-                          ? "bg-blue-50"
-                          : form.activity_type === "Email"
-                            ? "bg-violet-50"
-                            : "bg-emerald-50"
+                    className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors ${
+                      updateForm.description
+                        ? "bg-indigo-100 text-indigo-600"
+                        : "bg-gray-100 text-gray-400"
                     }`}
                   >
-                    <ListChecks
-                      size={14}
-                      className={`transition-colors duration-300 ${
-                        form.activity_type === "Call"
-                          ? "text-green-500"
-                          : form.activity_type === "Meeting"
-                            ? "text-blue-500"
-                            : form.activity_type === "Email"
-                              ? "text-violet-500"
-                              : "text-emerald-500"
-                      }`}
-                    />
+                    <FileText className="w-3 h-3" />
                   </span>
-                  <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                    Activity Type <span className="text-red-500">*</span>
-                  </label>
-                </div>
-                <select
-                  name="activity_type"
-                  value={form.activity_type}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
-                >
-                  <option value="">-- Select Activity Type --</option>
-                  <option>Call</option>
-                  <option>Meeting</option>
-                  <option>Email</option>
-                </select>
-              </div>
-
-              {/* Follow-Up By */}
-              <div className="col-span-1">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="w-7 h-7 rounded-lg bg-violet-50 flex items-center justify-center">
-                    <User size={14} className="text-violet-500" />
-                  </span>
-                  <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                    Follow-Up By <span className="text-red-500">*</span>
-                  </label>
-                </div>
-                <select
-                  name="follow_up_by"
-                  value={form.follow_up_by}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
-                >
-                  <option value="">Select User</option>
-                  {assignee.map((item) => (
-                    <option key={item.id} value={item.name}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Contact Person */}
-              <div className="col-span-1">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="w-7 h-7 rounded-lg bg-amber-50 flex items-center justify-center">
-                    <UserRound size={14} className="text-amber-500" />
-                  </span>
-                  <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                    Contact Person <span className="text-red-500">*</span>
-                  </label>
-                </div>
-                <div className="flex">
-                  <input
-                    name="contact_person"
-                    value={form.contact_person}
-                    onChange={handleChange}
-                    placeholder="Enter contact person name"
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="col-span-2">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="w-7 h-7 rounded-lg bg-rose-50 flex items-center justify-center">
-                    <FileText size={14} className="text-rose-500" />
-                  </span>
-                  <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                    Description <span className="text-red-500">*</span>
-                  </label>
-                </div>
-                <div className="relative">
-                  <textarea
-                    name="description"
-                    value={form.description}
-                    onChange={handleChange}
-                    placeholder="Enter description of the activity..."
-                    className="w-full border border-gray-200 rounded-lg px-3 py-2 pb-6 text-sm text-gray-700 outline-none bg-white h-24 resize-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all"
-                  />
-                  <span className="absolute bottom-2.5 right-3 text-[10px] text-gray-400 font-medium">
-                    {(form.description || "").length}/500
-                  </span>
-                </div>
-              </div>
-
-              {/* File Upload */}
-              <div className="col-span-2 border-2 border-dashed border-indigo-300 rounded-xl p-4 bg-indigo-50/30">
-                <div
-                  onClick={() => setShowFileModal(true)}
-                  className="text-center cursor-pointer group"
-                >
-                  <span className="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center mx-auto shadow-md shadow-indigo-200 group-hover:scale-110 transition-transform">
-                    <CloudUpload size={18} className="text-white" />
-                  </span>
-                  <p className="text-sm font-medium text-gray-700 mt-2">
-                    Drag &amp; drop files here or click to browse
-                  </p>
-                  <p className="text-xs text-gray-400 mt-1">
-                    Upload supporting documents or images (Max 5MB)
-                  </p>
-                  <div className="flex items-center justify-center gap-1.5 mt-2 flex-wrap">
-                    <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[10px] font-bold">
-                      JPG
-                    </span>
-                    <span className="px-2 py-0.5 rounded-md bg-green-50 text-green-600 text-[10px] font-bold">
-                      PNG
-                    </span>
-                    <span className="px-2 py-0.5 rounded-md bg-red-50 text-red-600 text-[10px] font-bold">
-                      PDF
-                    </span>
-                    <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600 text-[10px] font-bold">
-                      XLSX
-                    </span>
-                    <span className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-600 text-[10px] font-bold">
-                      DWG
-                    </span>
-                  </div>
-                </div>
-                {selectedFiles.length > 0 && (
-                  <div className="mt-3 space-y-1 text-left">
-                    {selectedFiles.map((file, index) => (
-                      <div
-                        key={index}
-                        className="flex justify-between items-center bg-white px-3 py-1.5 text-xs rounded-lg border border-indigo-100 shadow-sm"
-                      >
-                        <span className="text-gray-600 truncate">
-                          {file.name}
-                        </span>
-                        <button
-                          onClick={() =>
-                            setSelectedFiles(
-                              selectedFiles.filter((_, i) => i !== index),
-                            )
-                          }
-                          className="text-red-400 hover:text-red-600 ml-2"
-                        >
-                          <X size={13} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+                  Description <span className="text-rose-500">*</span>
+                </span>
+                <span className="text-[10px] text-gray-300 normal-case tracking-normal">
+                  {(updateForm.description || "").length}/500
+                </span>
+              </label>
+              <textarea
+                value={updateForm.description}
+                onChange={(e) =>
+                  setUpdateForm({ ...updateForm, description: e.target.value })
+                }
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none bg-gray-50 h-20 resize-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
+              />
             </div>
 
-            {/* Footer */}
-            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50/80">
+            <div
+              className="col-span-2 ula-field border-2 border-dashed border-indigo-200 rounded-xl p-4 text-center bg-indigo-50/30 hover:border-indigo-300 transition-colors"
+              style={{ animationDelay: "0.18s" }}
+            >
               <button
-                onClick={() => setShowModal(false)}
-                className="px-5 py-2 text-sm font-medium border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-100 transition-all flex items-center gap-2 bg-white"
+                onClick={() => setShowFileModal(true)}
+                className="flex flex-col items-center gap-2 mx-auto group"
               >
-                <X size={15} /> Cancel
+                <span className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-md shadow-indigo-200 group-hover:scale-105 transition-transform">
+                  <CloudUpload className="w-4 h-4 text-white" />
+                </span>
+                <span className="text-xs font-semibold text-indigo-600">
+                  Browse Files
+                </span>
               </button>
-              <button
-                onClick={handleSubmit}
-                disabled={btnLoading}
-                className={`px-6 py-2 text-sm font-semibold text-white rounded-lg transition-all shadow-md shadow-indigo-200 flex items-center gap-2
-  ${
-    btnLoading
-      ? "bg-indigo-400 cursor-not-allowed"
-      : "bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-600 hover:to-violet-800"
-  }`}
-              >
-                {btnLoading ? (
-                  <>
-                    <svg
-                      className="animate-spin h-4 w-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
+              {selectedFiles.length > 0 && (
+                <div className="mt-3 space-y-1 text-left">
+                  {selectedFiles.map((file, index) => (
+                    <div
+                      key={index}
+                      className="flex justify-between items-center bg-white px-3 py-1 text-xs rounded-lg border border-gray-100 shadow-sm"
                     >
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="white"
-                        strokeWidth="4"
-                        opacity="0.25"
-                      />
-                      <path
-                        fill="white"
-                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                      />
-                    </svg>
-                    Adding...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 size={15} /> Add Activity
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* UPDATE FOLLOW-UP MODAL */}
-      {showUpdateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30">
-          <div className="bg-white w-full max-w-[600px] rounded-sm shadow-xl border border-gray-100 overflow-hidden">
-            <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-orange-100 to-white">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-orange-500 inline-block"></span>
-                <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                  Update Lead Activities
-                </h2>
-              </div>
-              <button
-                onClick={() => {
-                  setShowUpdateModal(false);
-                  setSelectedFiles([]);
-                  setPreviewFollowUp(null);
-                }}
-                className="w-7 h-7 flex items-center justify-center text-orange-500 text-md"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="flex">
-              <div className="w-1/2 px-6 py-5 border-r border-gray-100">
-                <p className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-4">
-                  Add New Follow-Up
-                </p>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-                  <div>
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                      Follow-Up Date
-                    </label>
-                    <input
-                      type="date"
-                      value={updateForm.follow_up_date}
-                      onChange={(e) =>
-                        setUpdateForm({
-                          ...updateForm,
-                          follow_up_date: e.target.value,
-                        })
-                      }
-                      className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                      Activity Type *
-                    </label>
-                    <select
-                      value={updateForm.activity_type}
-                      onChange={(e) =>
-                        setUpdateForm({
-                          ...updateForm,
-                          activity_type: e.target.value,
-                        })
-                      }
-                      className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50"
-                    >
-                      <option value="">-- Select --</option>
-                      <option>Call</option>
-                      <option>Meeting</option>
-                      <option>Email</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                      Follow-Up By
-                    </label>
-                    <select
-                      value={updateForm.follow_up_by}
-                      onChange={(e) =>
-                        setUpdateForm({
-                          ...updateForm,
-                          follow_up_by: e.target.value,
-                        })
-                      }
-                      className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50"
-                    >
-                      <option value="">Select User</option>
-                      {assignee.map((item) => (
-                        <option key={item.id} value={item.name}>
-                          {item.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                      Contact Person *
-                    </label>
-                    <input
-                      value={updateForm.contact_person}
-                      onChange={(e) =>
-                        setUpdateForm({
-                          ...updateForm,
-                          contact_person: e.target.value,
-                        })
-                      }
-                      className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50"
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                      Description *
-                    </label>
-                    <textarea
-                      value={updateForm.description}
-                      onChange={(e) =>
-                        setUpdateForm({
-                          ...updateForm,
-                          description: e.target.value,
-                        })
-                      }
-                      className="w-full mt-1.5 border border-orange-300 rounded-sm px-3 py-2 text-sm  outline-none bg-gray-50 h-20 resize-none"
-                    />
-                  </div>
-                  <div className="col-span-2 border-2 border-dashed border-orange-300 rounded-xl p-3 text-center bg-orange-50/40">
-                    <button
-                      onClick={() => setShowFileModal(true)}
-                      className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-2 mx-auto transition-all shadow-md shadow-orange-200"
-                    >
-                      <i className="bi bi-cloud-upload"></i> Browse Files
-                    </button>
-                    {selectedFiles.length > 0 && (
-                      <div className="mt-2 space-y-1 text-left">
-                        {selectedFiles.map((file, index) => (
-                          <div
-                            key={index}
-                            className="flex justify-between items-center bg-white px-3 py-1 text-xs rounded-lg border border-gray-100 shadow-sm"
-                          >
-                            <span className="text-gray-600 truncate">
-                              {file.name}
-                            </span>
-                            <button
-                              onClick={() =>
-                                setSelectedFiles(
-                                  selectedFiles.filter((_, i) => i !== index),
-                                )
-                              }
-                              className="text-orange-400 hover:text-orange-600 ml-2"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <p className="text-xs text-gray-400 mt-1.5">
-                      Max 5MB · JPG, PNG, PDF, XLSX, DWG
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="w-1/2 px-6 py-5 flex flex-col">
-                <div className="flex justify-between items-center mb-4">
-                  <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">
-                    Follow-Up History
-                  </p>
-                  <span className="text-xs bg-orange-50 text-orange-500 px-2.5 py-1 rounded-full font-semibold border border-orange-100">
-                    {followUpHistory.length} record(s)
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  {followUpHistory.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-8 text-gray-300">
-                      <i className="bi bi-clock-history text-3xl mb-2"></i>
-                      <p className="text-sm">No history found</p>
-                    </div>
-                  ) : (
-                    followUpHistory.map((item, idx) => (
-                      <div
-                        key={item.follow_up_id}
+                      <span className="text-gray-600 truncate">{file.name}</span>
+                      <button
                         onClick={() =>
-                          setPreviewFollowUp(
-                            previewFollowUp?.follow_up_id === item.follow_up_id
-                              ? null
-                              : item,
+                          setSelectedFiles(
+                            selectedFiles.filter((_, i) => i !== index),
                           )
                         }
-                        className={`border rounded-xl p-3 cursor-pointer transition-all select-none
-                          ${previewFollowUp?.follow_up_id === item.follow_up_id ? "border-orange-400 bg-orange-50 shadow-sm" : "hover:bg-gray-50 border-gray-200"}`}
+                        className="text-indigo-400 hover:text-indigo-600 ml-2"
                       >
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-2">
-                            {idx === 0 && (
-                              <span className="text-xs bg-orange-100 text-orange-500 px-2 py-0.5 rounded-full font-semibold">
-                                Latest
-                              </span>
-                            )}
-                            <p className="font-semibold text-sm text-gray-700">
-                              {item.activity_type}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs text-gray-400">
-                              {item.follow_up_date
-                                ? new Date(
-                                    item.follow_up_date,
-                                  ).toLocaleDateString()
-                                : "—"}
-                            </span>
-                            <i
-                              className={`bi ${previewFollowUp?.follow_up_id === item.follow_up_id ? "bi-chevron-up" : "bi-chevron-down"} text-gray-400 text-xs`}
-                            ></i>
-                          </div>
-                        </div>
-                        <p className="text-xs text-gray-400 mt-1 truncate">
-                          {item.description}
-                        </p>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                {previewFollowUp && (
-                  <div className="mt-4 border border-orange-200 rounded-xl bg-gradient-to-br from-orange-50 to-white p-4 text-sm shadow-sm">
-                    <div className="flex justify-between items-center mb-3">
-                      <p className="font-bold text-orange-500 text-xs uppercase tracking-wide">
-                        Details
-                      </p>
-                      <button
-                        onClick={() => setPreviewFollowUp(null)}
-                        className="text-gray-400 hover:text-gray-600 text-xs"
-                      >
-                        ✕ Close
+                        <X className="w-3 h-3" />
                       </button>
                     </div>
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
-                      {[
-                        {
-                          label: "Activity Type",
-                          value: previewFollowUp.activity_type,
-                        },
-                        {
-                          label: "Follow-Up Date",
-                          value: previewFollowUp.follow_up_date
-                            ? new Date(
-                                previewFollowUp.follow_up_date,
-                              ).toLocaleDateString()
-                            : "—",
-                        },
-                        {
-                          label: "Contact Person",
-                          value: previewFollowUp.contact_person,
-                        },
-                        {
-                          label: "Follow-Up By",
-                          value: previewFollowUp.follow_up_by,
-                        },
-                      ].map(({ label, value }) => (
-                        <div key={label}>
-                          <p className="text-xs text-gray-400 font-medium">
-                            {label}
-                          </p>
-                          <p className="font-semibold text-gray-700 text-sm mt-0.5">
-                            {value || "—"}
-                          </p>
-                        </div>
-                      ))}
-                      <div>
-                        <p className="text-xs text-gray-400 font-medium">
-                          Status
-                        </p>
-                        <span
-                          className={`text-xs px-2.5 py-0.5 rounded-full font-semibold mt-0.5 inline-block
-                          ${previewFollowUp.status === "Completed" ? "bg-green-100 text-green-600" : previewFollowUp.status === "Cancelled" ? "bg-orange-100 text-orange-500" : "bg-orange-100 text-orange-600"}`}
-                        >
-                          {previewFollowUp.status}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mt-2.5">
-                      <p className="text-xs text-gray-400 font-medium">
-                        Description
-                      </p>
-                      <p className="text-gray-700 mt-1 text-sm whitespace-pre-wrap">
-                        {previewFollowUp.description || "—"}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
-              <button
-                onClick={() => {
-                  setShowUpdateModal(false);
-                  setSelectedFiles([]);
-                  setPreviewFollowUp(null);
-                }}
-                className="px-5 py-2 rounded-sm text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleUpdate}
-                disabled={updateLoading}
-                className={`px-6 py-2 rounded-sm text-sm font-semibold text-white transition-all shadow-md shadow-orange-200 flex items-center gap-2
-                ${updateLoading ? "bg-orange-400 cursor-not-allowed" : "bg-orange-500 hover:bg-orange-600"}`}
-              >
-                {updateLoading ? (
-                  <>
-                    <svg
-                      className="animate-spin h-4 w-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="white"
-                        strokeWidth="4"
-                        opacity="0.25"
-                      />
-                      <path
-                        fill="white"
-                        d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                      />
-                    </svg>
-                    Add Follow-Up
-                  </>
-                ) : (
-                  "Add Follow-Up"
-                )}
-              </button>
+                  ))}
+                </div>
+              )}
+              <p className="text-xs text-gray-400 mt-2">
+                Max 5MB · JPG, PNG, PDF, XLSX, DWG
+              </p>
             </div>
           </div>
         </div>
-      )}
+
+        {/* RIGHT: Follow-Up History */}
+        <div className="w-1/2 px-6 py-5 flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <p className="text-xs font-bold text-gray-600 uppercase tracking-widest">
+              Follow-Up History
+            </p>
+            <span className="text-xs bg-indigo-50 text-indigo-600 px-2.5 py-1 rounded-full font-semibold border border-indigo-100">
+              {followUpHistory.length} record(s)
+            </span>
+          </div>
+          <div className="space-y-2">
+            {followUpHistory.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-gray-300">
+                <Clock className="w-8 h-8 mb-2" />
+                <p className="text-sm">No history found</p>
+              </div>
+            ) : (
+              followUpHistory.map((item, idx) => (
+                <div
+                  key={item.follow_up_id}
+                  onClick={() =>
+                    setPreviewFollowUp(
+                      previewFollowUp?.follow_up_id === item.follow_up_id
+                        ? null
+                        : item,
+                    )
+                  }
+                  className={`ula-field border rounded-xl p-3 cursor-pointer transition-all select-none
+                    ${previewFollowUp?.follow_up_id === item.follow_up_id ? "border-indigo-400 bg-indigo-50 shadow-sm" : "hover:bg-gray-50 border-gray-200"}`}
+                  style={{ animationDelay: `${0.04 * idx}s` }}
+                >
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      {idx === 0 && (
+                        <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full font-semibold">
+                          Latest
+                        </span>
+                      )}
+                      <p className="font-semibold text-sm text-gray-700">
+                        {item.activity_type}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-gray-400">
+                        {item.follow_up_date
+                          ? new Date(item.follow_up_date).toLocaleDateString()
+                          : "—"}
+                      </span>
+                      {previewFollowUp?.follow_up_id === item.follow_up_id ? (
+                        <ChevronUp className="w-3.5 h-3.5 text-gray-400" />
+                      ) : (
+                        <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1 truncate">
+                    {item.description}
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
+
+          {previewFollowUp && (
+            <div className="mt-4 border border-indigo-200 rounded-xl bg-gradient-to-br from-indigo-50 to-white p-4 text-sm shadow-sm">
+              <div className="flex justify-between items-center mb-3">
+                <p className="font-bold text-indigo-500 text-xs uppercase tracking-wide">
+                  Details
+                </p>
+                <button
+                  onClick={() => setPreviewFollowUp(null)}
+                  className="text-gray-400 hover:text-gray-600 text-xs flex items-center gap-1"
+                >
+                  <X className="w-3 h-3" /> Close
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                {[
+                  { label: "Activity Type", value: previewFollowUp.activity_type },
+                  {
+                    label: "Follow-Up Date",
+                    value: previewFollowUp.follow_up_date
+                      ? new Date(previewFollowUp.follow_up_date).toLocaleDateString()
+                      : "—",
+                  },
+                  { label: "Contact Person", value: previewFollowUp.contact_person },
+                  { label: "Follow-Up By", value: previewFollowUp.follow_up_by },
+                ].map(({ label, value }) => (
+                  <div key={label}>
+                    <p className="text-xs text-gray-400 font-medium">{label}</p>
+                    <p className="font-semibold text-gray-700 text-sm mt-0.5">
+                      {value || "—"}
+                    </p>
+                  </div>
+                ))}
+                <div>
+                  <p className="text-xs text-gray-400 font-medium">Status</p>
+                  <span
+                    className={`text-xs px-2.5 py-0.5 rounded-full font-semibold mt-0.5 inline-block
+                    ${previewFollowUp.status === "Completed" ? "bg-green-100 text-green-600" : previewFollowUp.status === "Cancelled" ? "bg-rose-100 text-rose-600" : "bg-indigo-100 text-indigo-600"}`}
+                  >
+                    {previewFollowUp.status}
+                  </span>
+                </div>
+              </div>
+              <div className="mt-2.5">
+                <p className="text-xs text-gray-400 font-medium">Description</p>
+                <p className="text-gray-700 mt-1 text-sm whitespace-pre-wrap">
+                  {previewFollowUp.description || "—"}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-between items-center gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50">
+        <p className="text-xs text-gray-400 flex items-center gap-1.5">
+          <Info className="w-3.5 h-3.5" /> Fields marked * are required
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={handleCloseUpdateModal}
+            className="px-5 py-2 rounded-lg text-sm font-medium border border-gray-200 text-gray-600 hover:bg-gray-100 flex items-center gap-1.5 transition-all"
+          >
+            <X className="w-3.5 h-3.5" /> Cancel
+          </button>
+          <button
+            onClick={handleUpdate}
+            disabled={updateLoading}
+            className={`px-6 py-2 rounded-lg text-sm font-semibold text-white transition-all shadow-md flex items-center gap-2
+            ${updateLoading ? "bg-indigo-300 cursor-not-allowed shadow-none" : "bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 shadow-indigo-200"}`}
+          >
+            {updateLoading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Add Follow-Up
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-4 h-4" />
+                Add Follow-Up
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* STATUS CHANGE POPUP (Won / Pending) */}
       {showPopup && (
@@ -3572,163 +3654,234 @@ export default function Page() {
       )}
 
       {/* VIEW LEAD MODAL */}
-      {showViewModal && viewLead && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/30">
-          <div className="bg-white w-full max-w-2xl border border-gray-100 rounded-sm shadow-2xl overflow-hidden">
-            <div className="from-orange-100 to-white px-6 py-3 flex items-center justify-between bg-gradient-to-r">
-              <div className="flex items-center gap-3">
-                <div className="w-7 h-7 flex items-center justify-center">
-                  <i className="bi bi-person text-md text-orange-500"></i>
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                    {viewLead.customer_name || "—"}
-                  </p>
-                  <p className="text-gray-400 text-md">
-                    {viewLead.status || "—"}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowViewModal(false)}
-                className="w-7 h-7 flex items-center justify-center text-orange-500 text-md"
-              >
-                <i className="bi bi-x-lg text-sm"></i>
-              </button>
-            </div>
-
-            <div className="p-6 grid grid-cols-2 gap-4">
-              {[
-                {
-                  icon: "bi-building",
-                  label: "Company",
-                  value: viewLead.company_name,
-                },
-                {
-                  icon: "bi-person-circle",
-                  label: "Customer Name",
-                  value: viewLead.customer_name,
-                },
-                {
-                  icon: "bi-flag",
-                  label: "Source",
-                  value: viewLead.source,
-                },
-                {
-                  icon: "bi-geo-alt",
-                  label: "Location",
-                  value: viewLead.location,
-                },
-                {
-                  icon: "bi-diagram-3",
-                  label: "Architecture",
-                  value: viewLead.architecture,
-                },
-                {
-                  icon: "bi-tag",
-                  label: "Category",
-                  value: viewLead.category,
-                },
-                {
-                  icon: "bi-telephone",
-                  label: "Mobile No",
-                  value: viewLead.mobile_no,
-                },
-                {
-                  icon: "bi-person-check",
-                  label: "Assignee",
-                  value: viewLead.assignee,
-                },
-                {
-                  icon: "bi-calendar3",
-                  label: "Created",
-                  value: viewLead.created_at
-                    ? new Date(viewLead.created_at).toLocaleDateString()
-                    : "—",
-                },
-              ].map(({ icon, label, value }) => (
-                <div
-                  key={label}
-                  className="bg-gray-50 rounded-sm px-4 py-3 flex items-center gap-3"
-                >
-                  <i className={`bi ${icon} text-orange-400 text-lg`}></i>
-
-                  <div>
-                    <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
-                      {label}
-                    </p>
-
-                    <p className="text-sm font-semibold text-gray-700">
-                      {value || "—"}
-                    </p>
-                  </div>
-                </div>
-              ))}
-
-              <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-start gap-3">
-                <i className="bi bi-pencil text-orange-400 text-lg"></i>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
-                    Lead Title
-                  </p>
-                  <p className="text-sm font-semibold text-gray-700 break-words whitespace-normal">
-                    {viewLead.reference || "—"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-start gap-3">
-                <i className="bi bi-chat-left-text text-orange-400 text-lg"></i>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
-                    Description
-                  </p>
-                  <p className="text-sm font-semibold text-gray-700 break-words whitespace-normal">
-                    {viewLead.description || "—"}
-                  </p>
-                </div>
-              </div>
-
-              {viewLead.updated_by && (
-                <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-start gap-3">
-                  <i className="bi bi-person-gear text-orange-400 text-lg"></i>
-                  <div>
-                    <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
-                      Updated By
-                    </p>
-                    <p className="text-sm font-semibold text-gray-700">
-                      {viewLead.updated_by}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {viewLead.updated_at && (
-                <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-start gap-3">
-                  <i className="bi bi-clock-history text-orange-400 text-lg"></i>
-                  <div>
-                    <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
-                      Last Updated
-                    </p>
-                    <p className="text-sm font-semibold text-gray-700">
-                      {new Date(viewLead.updated_at).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end px-6 py-4 border-t border-gray-100">
-              <button
-                onClick={() => setShowViewModal(false)}
-                className="px-6 py-2 text-sm font-medium border border-gray-200 rounded-xl text-gray-600 hover:bg-gray-100 transition-all"
-              >
-                Close
-              </button>
-            </div>
+   {(showViewModal || isClosing) && viewLead && (
+  <div
+    className={`fixed inset-0 z-50 flex justify-end bg-gray-900/30 ${
+      isClosing ? "lead-overlay-out" : "lead-overlay-in"
+    }`}
+  >
+    <div
+      className={`bg-white h-full w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col ${
+        isClosing ? "lead-drawer-out" : "lead-drawer-in"
+      }`}
+    >
+      {/* Header */}
+      <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100 shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center shadow-md shadow-indigo-200">
+            <i className="bi bi-eye-fill text-white text-lg"></i>
+          </div>
+          <div>
+            <p className="text-base font-bold text-gray-800">
+              {viewLead.customer_name || "Lead Details"}
+            </p>
+            <p className="text-xs text-gray-400">
+              {viewLead.status
+                ? `Status: ${viewLead.status}`
+                : "Complete information about this lead"}
+            </p>
           </div>
         </div>
-      )}
+        <button
+          onClick={handleCloseModal}
+          className="w-8 h-8 flex items-center justify-center text-violet-500 hover:bg-violet-50 rounded-lg transition-colors"
+        >
+          <i className="bi bi-x-lg text-base"></i>
+        </button>
+      </div>
+
+      {/* Body */}
+      <div className="p-6 grid grid-cols-2 gap-4 overflow-y-auto flex-1">
+        {[
+          {
+            icon: "bi-building",
+            label: "Company",
+            value: viewLead.company_name,
+            bg: "bg-blue-50",
+            iconColor: "text-blue-500",
+          },
+          {
+            icon: "bi-person-circle",
+            label: "Customer Name",
+            value: viewLead.customer_name,
+            bg: "bg-violet-50",
+            iconColor: "text-violet-500",
+          },
+          {
+            icon: "bi-flag",
+            label: "Source",
+            value: viewLead.source,
+            bg: "bg-cyan-50",
+            iconColor: "text-cyan-500",
+          },
+          {
+            icon: "bi-geo-alt",
+            label: "Location",
+            value: viewLead.location,
+            bg: "bg-teal-50",
+            iconColor: "text-teal-500",
+          },
+          {
+            icon: "bi-diagram-3",
+            label: "Architecture",
+            value: viewLead.architecture,
+            bg: "bg-orange-50",
+            iconColor: "text-orange-500",
+          },
+          {
+            icon: "bi-tag",
+            label: "Category",
+            value: viewLead.category,
+            bg: "bg-purple-50",
+            iconColor: "text-purple-500",
+          },
+          {
+            icon: "bi-telephone",
+            label: "Mobile No",
+            value: viewLead.mobile_no,
+            bg: "bg-emerald-50",
+            iconColor: "text-emerald-500",
+          },
+          {
+            icon: "bi-person-check",
+            label: "Assignee",
+            value: viewLead.assignee,
+            bg: "bg-indigo-50",
+            iconColor: "text-indigo-500",
+          },
+          {
+            icon: "bi-calendar3",
+            label: "Created",
+            value: viewLead.created_at
+              ? new Date(viewLead.created_at).toLocaleDateString()
+              : "—",
+            bg: "bg-slate-100",
+            iconColor: "text-slate-500",
+          },
+        ].map(({ icon, label, value, bg, iconColor }) => (
+          <div
+            key={label}
+            className="bg-gray-50 rounded-sm px-4 py-3 flex items-center gap-3"
+          >
+            <div className={`w-9 h-9 rounded-md flex items-center justify-center shrink-0 ${bg}`}>
+              <i className={`bi ${icon} ${iconColor} text-base`}></i>
+            </div>
+
+            <div>
+              <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
+                {label}
+              </p>
+
+              <p className="text-sm font-semibold text-gray-700">
+                {value || "—"}
+              </p>
+            </div>
+          </div>
+        ))}
+
+        <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 bg-amber-50">
+            <i className="bi bi-pencil text-amber-500 text-base"></i>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
+              Lead Title
+            </p>
+            <p className="text-sm font-semibold text-gray-700 break-words whitespace-normal">
+              {viewLead.reference || "—"}
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-start gap-3">
+          <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 bg-blue-50">
+            <i className="bi bi-chat-left-text text-blue-500 text-base"></i>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
+              Description
+            </p>
+            <p className="text-sm font-semibold text-gray-700 break-words whitespace-normal">
+              {viewLead.description || "—"}
+            </p>
+          </div>
+        </div>
+
+        {viewLead.updated_by && (
+          <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-start gap-3">
+            <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 bg-slate-100">
+              <i className="bi bi-person-gear text-slate-500 text-base"></i>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
+                Updated By
+              </p>
+              <p className="text-sm font-semibold text-gray-700">
+                {viewLead.updated_by}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {viewLead.updated_at && (
+          <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-start gap-3">
+            <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 bg-gray-100">
+              <i className="bi bi-clock-history text-gray-500 text-base"></i>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
+                Last Updated
+              </p>
+              <p className="text-sm font-semibold text-gray-700">
+                {new Date(viewLead.updated_at).toLocaleString()}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="flex justify-end px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
+        <button
+          onClick={handleCloseModal}
+          className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium border border-gray-200 rounded-xl text-gray-600 bg-white hover:bg-gray-100 transition-all"
+        >
+          <i className="bi bi-x-lg text-xs"></i>
+          Close
+        </button>
+      </div>
+    </div>
+
+    <style>{`
+      @keyframes leadOverlayFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes leadOverlayFadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+      @keyframes leadDrawerSlideIn {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+      }
+      @keyframes leadDrawerSlideOut {
+        from { transform: translateX(0); }
+        to { transform: translateX(100%); }
+      }
+      .lead-overlay-in { animation: leadOverlayFadeIn 0.2s ease-out forwards; }
+      .lead-overlay-out { animation: leadOverlayFadeOut 0.2s ease-in forwards; }
+      .lead-drawer-in { animation: leadDrawerSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+      .lead-drawer-out { animation: leadDrawerSlideOut 0.25s ease-in forwards; }
+
+      @media (prefers-reduced-motion: reduce) {
+        .lead-overlay-in, .lead-overlay-out, .lead-drawer-in, .lead-drawer-out {
+          animation: none !important;
+        }
+      }
+    `}</style>
+  </div>
+)}
     </>
   );
 }

@@ -848,7 +848,7 @@ export default function Page() {
       {/* Delete Confirmation Modal */}
      {showDeleteModal && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
-    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md border border-gray-100 overflow-hidden animate-[scaleIn_0.25s_ease-out]">
+    <div className="bg-white w-full h-[375px] max-w-md rounded-sm shadow-2xl overflow-hidden animate-[scaleIn_0.25s_ease-out]">
       {/* Header */}
       <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
         <div className="flex items-center gap-3">
@@ -863,24 +863,23 @@ export default function Page() {
         <button
           type="button"
           onClick={handleDeleteCancel}
-          className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-full transition-colors"
+          className="w-8 h-8 flex items-center justify-center text-red-600 transition-colors"
         >
           <X className="w-5 h-5" strokeWidth={2} />
         </button>
       </div>
 
       {/* Body */}
-      <div className="px-6 py-8 text-center">
+      <div className="px-6 pt-4 pb-4  text-center">
         {/* Icon */}
-        <div className="w-24 h-24 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-5">
-          <Trash2 className="w-10 h-10 text-red-600" strokeWidth={1.8} />
-        </div>
-
+        <div className="w-24 h-24 mx-auto rounded-full bg-red-50 flex items-center justify-center mb-5">
+                 <Trash2 className="w-10 h-10 text-red-600" strokeWidth={1.8} />
+               </div>
         {/* Name */}
-        <p className="font-extrabold text-gray-900 text-xl mb-2 uppercase tracking-wide">
+        <h3 className="text-xl font-extrabold text-gray-900 tracking-wide uppercase mb-2">
           {contacts.find((c) => c.id === deleteId)?.contact_person ||
             "This Contact"}
-        </p>
+        </h3>
 
         {/* Divider */}
         <div className="w-10 h-[3px] bg-red-500 rounded-full mx-auto mb-4"></div>
@@ -894,11 +893,11 @@ export default function Page() {
       </div>
 
       {/* Footer Buttons */}
-      <div className="flex gap-3 px-6 pb-6">
+      <div className="flex gap-3.5 px-7 pb-0">
         <button
           type="button"
           onClick={handleDeleteCancel}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-sm text-sm font-semibold border border-blue-300 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <X className="w-4 h-4" strokeWidth={2.2} />
           Cancel
@@ -907,7 +906,7 @@ export default function Page() {
         <button
           type="button"
           onClick={handleDeleteConfirm}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm hover:shadow-md transition-all"
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-sm text-sm font-semibold text-white bg-red-600  shadow-sm hover:shadow-md transition-all disabled:opacity-70 disabled:cursor-not-allowed"
         >
           <Trash2 className="w-4 h-4" strokeWidth={2.2} />
           Delete Contact

@@ -905,17 +905,17 @@ function DeleteCustomerModal({ name, onCancel, onConfirm }) {
 >
   <div
     onClick={(e) => e.stopPropagation()}
-    className={`bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-200 ease-out ${
+    className={`bg-white w-full h-[375px] max-w-md rounded-sm shadow-2xl overflow-hidden transform transition-all duration-200 ease-out ${
       visible ? "opacity-100 scale-100" : "opacity-0 scale-95"
     }`}
   >
     {/* Header */}
-    <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
+      <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-red-50 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-full bg-red-50 flex items-center justify-center">
           <Trash2 size={16} className="text-red-600" strokeWidth={2} />
         </div>
-        <h2 className="text-base font-bold text-gray-900 uppercase tracking-wide">
+          <h2 className="text-base font-bold text-gray-900 uppercase tracking-wide">
           Delete Customer
         </h2>
       </div>
@@ -928,19 +928,19 @@ function DeleteCustomerModal({ name, onCancel, onConfirm }) {
     </div>
 
     {/* Body */}
-    <div className="px-6 pt-8 pb-6 text-center">
+      <div className="px-6 pt-4 pb-4  text-center">
       {/* Icon */}
-      <div className="w-24 h-24 mx-auto rounded-full bg-red-50 flex items-center justify-center mb-5">
-        <Trash2 size={40} className="text-red-600" strokeWidth={1.8} />
-      </div>
+     <div className="w-24 h-24 mx-auto rounded-full bg-red-50 flex items-center justify-center mb-5">
+              <Trash2 className="w-10 h-10 text-red-600" strokeWidth={1.8} />
+            </div>
 
       {/* Name */}
-      <p className="font-extrabold text-gray-900 text-xl uppercase tracking-wide mb-2">
+        <h3 className="text-xl font-extrabold text-gray-900 tracking-wide uppercase mb-2">
         {name?.toUpperCase() || "THIS CUSTOMER"}
-      </p>
+      </h3>
 
       {/* Divider */}
-      <div className="w-10 h-[3px] bg-red-500 rounded-full mx-auto mb-4"></div>
+        <div className="w-10 h-[3px] bg-red-500 rounded-full mx-auto mb-4"></div>
 
       {/* Message */}
       <p className="text-sm text-gray-500 leading-relaxed">
@@ -951,16 +951,16 @@ function DeleteCustomerModal({ name, onCancel, onConfirm }) {
     </div>
 
     {/* Footer Buttons */}
-    <div className="flex gap-3 px-6 pb-6">
+      <div className="flex gap-3.5 px-7 pb-0">
       <button
         onClick={() => closeWith(onCancel)}
-        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-sm text-sm font-semibold border border-blue-300 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <X size={16} strokeWidth={2.2} /> Cancel
       </button>
       <button
         onClick={() => closeWith(onConfirm)}
-        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm hover:shadow-md transition-all"
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-sm text-sm font-semibold text-white bg-red-600  shadow-sm hover:shadow-md transition-all disabled:opacity-70 disabled:cursor-not-allowed"
       >
         <Trash2 size={16} strokeWidth={2.2} /> Delete Customer
       </button>
