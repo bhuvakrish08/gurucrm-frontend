@@ -3,7 +3,8 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "redaxios";
 import Link from "next/link";
 import { toast } from "react-toastify";
-import { User, ToggleLeft, Building2, RotateCcw, Filter, ChevronDown } from "lucide-react";
+// import { User, ToggleLeft, Building2, RotateCcw, Filter, ChevronDown } from "lucide-react";
+import { User, ToggleLeft, Building2, RotateCcw, Filter, ChevronDown, Plus, Pencil, X, Save, Tag } from "lucide-react";
 
 export default function CommonMasterPage({
   title,
@@ -373,39 +374,49 @@ export default function CommonMasterPage({
   </div>
 </div>
 
-        {/* Table */}
-        <form className="p-1 mx-5">
-          <div className="overflow-x-auto overflow-y-auto max-h-[full] custom-scroll bg-white shadow-md rounded-sm p-1 border border-gray-200">
-                <table className="w-full text-sm whitespace-nowrap">
-              <thead>
-                    <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">#</th>
+        {/* ✅ Table — image-2 style: indigo header w/ sort icons, bolder name text, indigo hover highlight */}
+        <form className="p-1 mx-5  pt-3.5">
+          <div className="overflow-x-auto overflow-y-auto max-h-[full] custom-scroll bg-white shadow-md rounded-sm p-2 border border-gray-200">
+                <table className="w-full text-sm text-left text-gray-700 border-collapse whitespace-nowrap">
+              <thead className="bg-indigo-50 border-b border-gray-200 text-xs font-bold text-slate-700 tracking-wider">
+                    <tr>
+                  <th className="py-3 px-4 w-10 text-center">#</th>
                   {extraColumn && (
-                    <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                      {extraColumn.label}
+                    <th className="py-3 px-4 text-left">
+                      {extraColumn.label}{" "}
+                      <i className="bi bi-arrow-down-up text-slate-400 text-[10px]"></i>
                     </th>
                   )}
-                  <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">{title} Name</th>
+                  <th className="py-3 px-4 text-left">
+                    {title} Name{" "}
+                    <i className="bi bi-arrow-down-up text-slate-400 text-[10px]"></i>
+                  </th>
                   {showCheckboxColumn && (
-                    <th className="py-3 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Select</th>
+                    <th className="py-3 px-4 text-left">Select</th>
                   )}
-                  <th className="py-3 px-3  text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
-                  <th className="py-3 px-3  text-xs font-semibold text-gray-400 uppercase tracking-wider">Action</th>
+                  <th className="py-3 px-4 text-center">
+                    Status{" "}
+                    <i className="bi bi-arrow-down-up text-slate-400 text-[10px]"></i>
+                  </th>
+                  <th className="py-3 px-4 text-center">Action</th>
                 </tr>
               </thead>
 
               <tbody>
                 {currentData.map((item, i) => (
-                  <tr key={item.id} className={`hover:bg-gray-50 transition`}>
-                    <td className="py-1 px-4 text-gray-600">
+                  <tr
+                    key={item.id}
+                    className="border-b border-gray-50 hover:bg-indigo-50/30 transition-colors"
+                  >
+                    <td className="py-2 px-4 text-gray-400 text-xs font-medium text-center">
                       {(currentPage - 1) * itemsPerPage + i + 1}
                     </td>
                     {extraColumn && (
-                      <td className="py-2 px-4 text-center">
+                      <td className="py-2 px-4 text-left text-gray-600">
                         {item[extraColumn.key] || "-"}
                       </td>
                     )}
-                    <td className="py-1 px-4 font-medium text-gray-800">
+                    <td className="py-2 px-4 font-semibold text-slate-800">
                       {item.name}
                     </td>
 
@@ -422,7 +433,7 @@ export default function CommonMasterPage({
                       </td>
                     )}
 
-                    <td className="py-1 px-4 text-center">
+                    <td className="py-2 px-4 text-center">
                       <label className="inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
@@ -431,7 +442,7 @@ export default function CommonMasterPage({
                           onChange={() => handleToggle(item.id, item.status)}
                         />
                         <div
-                          className={`relative w-12 h-6 rounded-full transition-all duration-300 ${item.status === 1 ? "bg-orange-500" : "bg-gray-300"}`}
+                          className={`relative w-12 h-6 rounded-full transition-all duration-300 ${item.status === 1 ? "bg-blue-500" : "bg-gray-300"}`}
                         >
                           <div
                             className={`absolute top-1 left-1 w-4 h-3 bg-white rounded-full transition-all duration-300 ${item.status === 1 ? "translate-x-6" : "translate-x-1"}`}
@@ -440,23 +451,23 @@ export default function CommonMasterPage({
                       </label>
                     </td>
 
-                    <td className="py-1 px-4 text-center">
+                    <td className="py-2 px-4 text-center">
                       <div className="flex items-center justify-center gap-2">
                         <button
                           type="button"
                           onClick={() => handleEdit(item)}
-                          className="text-gray-700 hover:text-blue-700"
+                          className="text-blue-500 "
                         >
-                          <i className="bi bi-pencil-square text-lg"></i>
+                          <i className="bi bi-pencil-square text-md"></i>
                         </button>
                         {showDelete && (
                           <button
                             type="button"
                             onClick={() => handleDelete(item.id)}
-                            className="text-rose-600 hover:text-rose-800"
+                            className="text-red-500 "
                             title="Delete"
                           >
-                            <i className="bi bi-trash text-lg"></i>
+                            <i className="bi bi-trash3 text-md"></i>
                           </button>
                         )}
                       </div>
@@ -466,104 +477,131 @@ export default function CommonMasterPage({
               </tbody>
             </table>
 
-            {/* ✅ STANDARDIZED MICARA IMS PAGINATION */}
+            {/* ✅ PAGINATION — image style: "Showing X to Y of Z entries" (left) + indigo "Rows per page" (right) */}
             <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white rounded-b-lg">
-              {/* Left side: Rows per page selector */}
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-slate-500 font-medium">
-                  Rows per page:
-                </span>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-slate-700 bg-white focus:outline-none focus:ring-2 focus:ring-slate-100 transition-all cursor-pointer font-medium"
-                >
-                  {[10, 20, 100, 200].map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Left side: Showing entries text */}
+              <p className="text-sm font-semibold text-slate-800">
+                Showing {data.length === 0 ? 0 : indexOfFirstItem + 1} to{" "}
+                {Math.min(indexOfLastItem, data.length)} of {data.length} entries
+              </p>
 
-
-              {/* Right side: Navigation buttons (only if totalPages > 1) */}
-              {totalPages > 1 && (
-                <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
-                  {/* Previous Button */}
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              {/* Right side: Rows per page selector + navigation (nav only if totalPages > 1) */}
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-slate-600 font-medium">
+                    Rows per page:
+                  </span>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="border border-indigo-300 rounded-lg px-3 py-1.5 text-sm text-indigo-600 font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
                   >
-                    <i className="bi bi-chevron-left text-sm"></i>
-                  </button>
-
-                  {/* Page Buttons */}
-                  <div className="flex items-center gap-1.5">
-                    {getSlidingPages().map((page) => (
-                      <button
-                        type="button"
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${
-                          currentPage === page
-                            ? "bg-[#212121] text-white shadow-md shadow-black/10"
-                            : "border border-slate-200 text-slate-600 hover:bg-slate-50"
-                        }`}
-                      >
-                        {page}
-                      </button>
+                    {[10, 20, 100, 200].map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
                     ))}
-                  </div>
-
-                  {/* Next Button */}
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <i className="bi bi-chevron-right text-sm"></i>
-                  </button>
+                  </select>
                 </div>
-              )}
+
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
+                    {/* Previous Button */}
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <i className="bi bi-chevron-left text-sm"></i>
+                    </button>
+
+                    {/* Page Buttons */}
+                    <div className="flex items-center gap-1.5">
+                      {getSlidingPages().map((page) => (
+                        <button
+                          type="button"
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${
+                            currentPage === page
+                              ? "bg-[#212121] text-white shadow-md shadow-black/10"
+                              : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Next Button */}
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <i className="bi bi-chevron-right text-sm"></i>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
           </div>
         </form>
 
         {/* Modal remains same */}
-        {showForm && (
-          <div className="fixed inset-0 bg-gray-900/30 z-50 flex justify-center items-center">
-            <div className="bg-white rounded-sm shadow-lg p-6 w-[400px] relative">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowForm(false);
-                  setFormName("");
-                  setEditId(null);
-                }}
-                className="absolute top-2 right-4 text-xl text-orange-500 hover:text-orange-600"
-              >
-                ✕
-              </button>
-
-              <h3 className="text-lg mb-3">
-                {editId ? "Edit" : "Add"} {title}
-              </h3>
-              <form onSubmit={handleSubmit}>
+          {showForm && (
+          <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm z-50 flex justify-center items-center p-4">
+            <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+              {/* Header — Plus icon when adding, Pencil icon when editing */}
+              <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                  <span className="w-11 h-11 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-md shadow-indigo-200 shrink-0">
+                    {editId ? (
+                      <Pencil className="w-5 h-5 text-white" strokeWidth={2} />
+                    ) : (
+                      <Plus className="w-5 h-5 text-white" strokeWidth={2.5} />
+                    )}
+                  </span>
+                  <div>
+                    <h2 className="text-base sm:text-lg font-bold text-gray-900">
+                      {editId ? "Edit" : "Add"} {title}
+                    </h2>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {editId
+                        ? `Update the ${title} details`
+                        : `Fill in the details to create a new ${title}`}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForm(false);
+                    setFormName("");
+                    setEditId(null);
+                  }}
+                  title="Close"
+                  className="w-8 h-8 flex items-center justify-center rounded-full text-indigo-600 hover:bg-indigo-50 transition-all shrink-0"
+                >
+                  <X className="w-4 h-4" strokeWidth={2} />
+                </button>
+              </div>
+ 
+              {/* Body */}
+              <form onSubmit={handleSubmit} className="px-6 py-5">
                 {showRadio && (
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">
                       Is Parent?
                     </label>
                     <div className="flex gap-4 items-center">
-                      <label className="flex items-center gap-1">
+                      <label className="flex items-center gap-1.5 text-sm text-gray-700">
                         <input
                           type="radio"
                           name="isParent"
@@ -572,7 +610,7 @@ export default function CommonMasterPage({
                         />
                         <span>Yes</span>
                       </label>
-                      <label className="flex items-center gap-1">
+                      <label className="flex items-center gap-1.5 text-sm text-gray-700">
                         <input
                           type="radio"
                           name="isParent"
@@ -584,41 +622,53 @@ export default function CommonMasterPage({
                     </div>
                   </div>
                 )}
-
+ 
                 {showRadio && isParent && (
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block mb-1.5 text-sm font-medium text-gray-600">
                       Select Parent
                     </label>
-                    <select
-                      value={selectedParent}
-                      onChange={(e) => setSelectedParent(e.target.value)}
-                      className="border p-2 w-full rounded-sm"
-                    >
-                      <option value="">-- Select Parent --</option>
-
-                      {parentOptions.map((opt) => (
-                        <option key={opt.id} value={opt.name}>
-                          {opt.name}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                      <span className="flex items-center justify-center w-10 shrink-0 bg-blue-50 border-r border-gray-100">
+                        <Building2 className="w-4 h-4 text-blue-500" strokeWidth={2} />
+                      </span>
+                      <select
+                        value={selectedParent}
+                        onChange={(e) => setSelectedParent(e.target.value)}
+                        className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent cursor-pointer"
+                      >
+                        <option value="">-- Select Parent --</option>
+ 
+                        {parentOptions.map((opt) => (
+                          <option key={opt.id} value={opt.name}>
+                            {opt.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 )}
-
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {title} Name
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter name"
-                  className="border p-2 w-full rounded-sm mb-3 outline-none  border-orange-300"
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  required
-                />
-
-                <div className="flex justify-end gap-2">
+ 
+                <div className="mb-5">
+                  <label className="block mb-1.5 text-sm font-medium text-gray-600">
+                    {title} Name <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                    <span className="flex items-center justify-center w-10 shrink-0 bg-violet-50 border-r border-gray-100">
+                      <Tag className="w-4 h-4 text-violet-500" strokeWidth={2} />
+                    </span>
+                    <input
+                      type="text"
+                      placeholder="Enter name"
+                      className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
+                      value={formName}
+                      onChange={(e) => setFormName(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+ 
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
                   <button
                     type="button"
                     onClick={() => {
@@ -626,16 +676,16 @@ export default function CommonMasterPage({
                       setFormName("");
                       setEditId(null);
                     }}
-                    className="px-4 py-2 bg-gray-200 rounded-sm text-gray-700 hover:bg-gray-300"
+                    className="px-5 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-all flex items-center gap-2 bg-white"
                   >
-                    Cancel
+                    <X className="w-3.5 h-3.5" strokeWidth={2} /> Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className={`w-24 flex items-center justify-center bg-orange-500 text-white px-4 py-1.5 rounded-sm
-    ${isSubmitting ? "opacity-70 cursor-not-allowed" : "hover:bg-orange-600"}
-  `}
+                    className={`px-6 py-2.5 bg-gradient-to-br from-indigo-500 to-violet-600 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-md flex items-center gap-2 cursor-pointer ${
+                      isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+                    }`}
                   >
                     {isSubmitting ? (
                       <svg
@@ -656,10 +706,11 @@ export default function CommonMasterPage({
                           d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
                         />
                       </svg>
-                    ) : editId ? (
-                      "Update"
                     ) : (
-                      "Save"
+                      <>
+                        <Save className="w-4 h-4" strokeWidth={2} />
+                        {editId ? "Update" : "Save"}
+                      </>
                     )}
                   </button>
                 </div>
