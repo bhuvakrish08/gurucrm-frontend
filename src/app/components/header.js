@@ -171,13 +171,15 @@ export default function Header() {
       });
     } catch (err) {
       // Silently ignore auth errors (token expired / not logged in)
-      // and network errors — they are expected during page load or logout
+      // and network errors — they are expected during page load or logout.
+      // User will be redirected to login by the auth guard. No need to log noise here.
       const status = err?.status || err?.response?.status;
-      if (!status || status === 401 || status === 403 || status === 0) {
+      if (status === 401 || status === 403 || status === 0) {
         setReminders({ today: [], overdue: [] });
         return;
       }
-      console.error("Reminder fetch failed:", err);
+      // For any other unexpected error, log a minimal warning only.
+      console.warn("Reminder fetch failed:", err?.message || err);
     }
   };
 
@@ -204,9 +206,9 @@ export default function Header() {
       if (reminders.overdue.length > 0)
         parts.push(`${reminders.overdue.length} overdue`);
 
-     toast.info(`📋 You have ${parts.join(", ")} task(s) pending!`, {
-  autoClose: 6000,
-});
+      toast.info(`📋 You have ${parts.join(", ")} task(s) pending!`, {
+        autoClose: 6000,
+      });
       localStorage.setItem("reminderDigestShown", todayKey);
     }
   }, [reminders]);
@@ -225,8 +227,8 @@ export default function Header() {
           alertedRef.current.add(r.id);
 
           toast.warning(`⏰ Reminder: "${r.title}" is due now!`, {
-  autoClose: 8000,
-});
+            autoClose: 8000,
+          });
 
           if (
             typeof Notification !== "undefined" &&
@@ -271,7 +273,7 @@ export default function Header() {
         <div className="md:hidden flex items-center gap-2">
           {/* Mobile Calendar Icon */}
           <Link
-            href="/calender"
+            href="/calendar"
             className="relative p-2 text-gray-700 hover:text-orange-500 transition-colors"
             title="Calendar"
           >
@@ -373,39 +375,37 @@ export default function Header() {
           Dashboard
         </Link>
 
-        
-            <div className="relative" ref={customerRef}>
-              <button
-                onClick={() => setCustomerOpen(!customerOpen)}
-                className="hover:text-orange-500 transition-colors cursor-pointer"
-              >
-                Customer ▾
-              </button>
+        <div className="relative" ref={customerRef}>
+          <button
+            onClick={() => setCustomerOpen(!customerOpen)}
+            className="hover:text-orange-500 transition-colors cursor-pointer"
+          >
+            Customer ▾
+          </button>
 
-              {customerOpen && (
-                <div className="absolute left-0 mt-2 w-52 bg-white rounded-md shadow-lg py-2 z-50 border border-gray-100">
-                  <Link
-                    href="/customer-list"
-                    className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
-                  >
-                    Customers
-                  </Link>
-                  <Link
-                    href="/contacts"
-                    className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
-                  >
-                    Contact Details
-                  </Link>
-                  <Link
-                    href="/contactDesignation"
-                    className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
-                  >
-                    Contact Designation
-                  </Link>
-                </div>
-              )}
+          {customerOpen && (
+            <div className="absolute left-0 mt-2 w-52 bg-white rounded-md shadow-lg py-2 z-50 border border-gray-100">
+              <Link
+                href="/customer-list"
+                className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
+              >
+                Customers
+              </Link>
+              <Link
+                href="/contacts"
+                className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
+              >
+                Contact Details
+              </Link>
+              <Link
+                href="/contactDesignation"
+                className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
+              >
+                Contact Designation
+              </Link>
             </div>
-          
+          )}
+        </div>
 
         <div className="relative" ref={salesRef}>
           <button
@@ -469,6 +469,20 @@ export default function Header() {
             Projects
           </Link>
         )}
+        {[
+          "Admin",
+          "Super Admin",
+          "Sales",
+          "Estimation",
+          "Leads Management",
+        ].includes(userRole) && (
+          <Link
+            href="/sales/strategy"
+            className="hover:text-orange-500 transition-colors"
+          >
+            Sales Strategy
+          </Link>
+        )}
         {["Admin", "Super Admin"].includes(userRole) && (
           <Link
             href="/sales/Genexpence"
@@ -492,9 +506,9 @@ export default function Header() {
       <div className="hidden md:flex items-center gap-6">
         {/* ✅ Calendar Icon Button (Desktop) */}
         <Link
-          href="/calender"
+          href="/calendar"
           className={`relative p-2.5 rounded-xl border transition-all ${
-            pathname === "/calender"
+            pathname === "/calendar"
               ? "bg-orange-50 border-orange-300 shadow-md"
               : "bg-white border-gray-200 hover:shadow-md"
           }`}
@@ -506,7 +520,7 @@ export default function Header() {
         >
           <Calendar
             className={`w-5 h-5 ${
-              pathname === "/calender"
+              pathname === "/calendar"
                 ? "text-orange-500"
                 : "text-gray-500 hover:text-orange-500"
             }`}
@@ -619,7 +633,7 @@ export default function Header() {
         <div className="relative" ref={profileRef}>
           <button
             onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full bg-orange-500 text-white font-bold text-sm flex items-center justify-center leading-none cursor-pointer shadow-sm hover:scale-105 transition-all"
+            className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full bg-orange-500 text-white font-bold text-sm flex items-center justify-center leading-none cursor-pointer shadow-sm hover:scale-105 transition-all" 
           >
             {userLetter}
           </button>
@@ -659,7 +673,7 @@ export default function Header() {
           {/* Mobile Calendar Link inside menu */}
           <Link
             onClick={() => setMobileMenuOpen(false)}
-            href="/calender"
+            href="/calendar"
             className="hover:text-orange-500 w-full py-1 flex items-center gap-2"
           >
             <Calendar className="w-4 h-4" />
@@ -670,44 +684,42 @@ export default function Header() {
             )}
           </Link>
 
-          
-              <div className="w-full">
-                <button
-                  onClick={() => setMobileCustomerOpen(!mobileCustomerOpen)}
-                  className="flex justify-between w-full hover:text-orange-500 py-1"
+          <div className="w-full">
+            <button
+              onClick={() => setMobileCustomerOpen(!mobileCustomerOpen)}
+              className="flex justify-between w-full hover:text-orange-500 py-1"
+            >
+              Customer{" "}
+              <span className="ml-1 text-gray-400">
+                {mobileCustomerOpen ? "▴" : "▾"}
+              </span>
+            </button>
+            {mobileCustomerOpen && (
+              <div className="flex flex-col pl-4 mt-2 space-y-3 border-l-2 border-orange-100">
+                <Link
+                  href="/customer-list"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="hover:text-orange-500 text-sm"
                 >
-                  Customer{" "}
-                  <span className="ml-1 text-gray-400">
-                    {mobileCustomerOpen ? "▴" : "▾"}
-                  </span>
-                </button>
-                {mobileCustomerOpen && (
-                  <div className="flex flex-col pl-4 mt-2 space-y-3 border-l-2 border-orange-100">
-                    <Link
-                      href="/customer-list"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="hover:text-orange-500 text-sm"
-                    >
-                      Customers
-                    </Link>
-                    <Link
-                      href="/contacts"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="hover:text-orange-500 text-sm"
-                    >
-                      Contact Details
-                    </Link>
-                    <Link
-                      href="/contactDesignation"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="hover:text-orange-500 text-sm"
-                    >
-                      Contact Designation
-                    </Link>
-                  </div>
-                )}
+                  Customers
+                </Link>
+                <Link
+                  href="/contacts"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="hover:text-orange-500 text-sm"
+                >
+                  Contact Details
+                </Link>
+                <Link
+                  href="/contactDesignation"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="hover:text-orange-500 text-sm"
+                >
+                  Contact Designation
+                </Link>
               </div>
-            
+            )}
+          </div>
 
           <div className="w-full">
             <button
@@ -778,6 +790,22 @@ export default function Header() {
             </Link>
           )}
 
+          {[
+            "Admin",
+            "Super Admin",
+            "Sales",
+            "Estimation",
+            "Leads Management",
+          ].includes(userRole) && (
+            <Link
+              onClick={() => setMobileMenuOpen(false)}
+              href="/sales/strategy"
+              className="hover:text-orange-500 w-full py-1"
+            >
+              Sales Strategy
+            </Link>
+          )}
+
           {["Admin", "Super Admin"].includes(userRole) && (
             <Link
               onClick={() => setMobileMenuOpen(false)}
@@ -812,8 +840,3 @@ export default function Header() {
     </header>
   );
 }
-
-
-
-
-

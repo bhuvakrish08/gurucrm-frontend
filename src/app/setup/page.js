@@ -108,6 +108,24 @@ export default function setupPage() {
                 </div>
               </div>
 
+              {/* Sales Strategy */}
+              {hasRoleAccess(["Super Admin", "Admin", "Sales"]) && (
+                <div className="bg-orange-50 rounded-sm shadow-sm border border-gray-200 p-6">
+                  <h2 className="text-xl font-semibold text-orange-500">
+                    Sales Strategy
+                  </h2>
+                  <hr className="border-gray-300 my-3" />
+                  <div className="flex flex-col space-y-2 text-gray-700">
+                    <Link
+                      href="setup/sales/strategy-categories"
+                      className="hover:text-orange-600 font-semibold text-gray-700"
+                    >
+                      Strategy Categories
+                    </Link>
+                  </div>
+                </div>
+              )}
+
               {/* Expense */}
               {hasRoleAccess(["Super Admin", "Admin"]) && (
                 <div className="bg-orange-50 rounded-sm shadow-sm border border-gray-200 p-6">
