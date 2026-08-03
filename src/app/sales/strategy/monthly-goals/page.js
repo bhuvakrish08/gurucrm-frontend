@@ -368,10 +368,10 @@ export default function MonthlyGoalsPage() {
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 shrink-0">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-[15px] font-semibold text-slate-700">Financial Year:</span>
-                  <div className="w-[140px]">
+              <div className="flex flex-wrap items-center gap-3 shrink-0 w-full lg:w-auto mt-4 lg:mt-0">
+                <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                  <span className="text-[15px] font-semibold text-slate-700 whitespace-nowrap">Financial Year:</span>
+                  <div className="w-full sm:w-[140px] shrink-0">
                     <Select
                       value={financialYear}
                       onChange={(val) => { setFinancialYear(val); setEditMode(false); }}
@@ -439,8 +439,8 @@ export default function MonthlyGoalsPage() {
               </div>
             ) : (
               <div className="overflow-x-scroll w-full custom-scrollbar">
-                <table className="min-w-full border-collapse text-[13px]">
-                  <thead>
+                <table className="min-w-max w-full border-collapse text-[13px]">
+                  <thead className="sticky top-0 z-40 bg-[#0F172A] shadow-md">
                     <tr>
                       <th
                         rowSpan={2}
@@ -747,11 +747,11 @@ export default function MonthlyGoalsPage() {
                   <p className="text-sm font-bold">Loading breakdown...</p>
                 </div>
               ) : (
-                <div className="w-full xl:min-w-full min-w-max pb-4">
-                  <table className="w-full border-collapse border border-[#E7EEF7] text-sm breakdown-table">
-                    <thead className="bg-[#EEF2FF] border-b border-[#E0E7FF]">
+                <div className="w-full min-w-max pb-4 overflow-x-auto">
+                  <table className="min-w-[1000px] w-full border-collapse border border-[#E7EEF7] text-sm breakdown-table">
+                    <thead className="bg-[#EEF2FF] border-b border-[#E0E7FF] sticky top-0 z-20">
                       <tr className="h-[68px]">
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-left min-w-[220px]">Main Category</th>
+                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-left min-w-[220px] sticky left-0 bg-[#EEF2FF] z-30 shadow-[1px_0_0_#E0E7FF]">Main Category</th>
                         <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right min-w-[140px]">Base Goal</th>
                         <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right min-w-[135px] leading-tight">+ Carry <br /> Shortfall</th>
                         <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right min-w-[135px] leading-tight">− Excess Credit</th>
@@ -767,7 +767,7 @@ export default function MonthlyGoalsPage() {
                         const rowBg = idx % 2 === 0 ? "bg-white" : "bg-[#FCFCFD]";
                         return (
                           <tr key={cat.strategyCategoryId} className={`breakdown-row ${rowBg} h-[74px]`}>
-                            <td className="py-4 pl-[22px] pr-[18px] text-left font-semibold text-slate-900 border border-[#E7EEF7] text-[18px] leading-[1.3] whitespace-nowrap align-middle">{cat.categoryName}</td>
+                            <td className={`py-4 pl-[22px] pr-[18px] text-left font-semibold text-slate-900 border border-[#E7EEF7] text-[18px] leading-[1.3] whitespace-nowrap align-middle sticky left-0 z-10 ${rowBg} shadow-[1px_0_0_#E7EEF7]`}>{cat.categoryName}</td>
                             <td className="py-4 px-[18px] font-semibold text-slate-800 border border-[#E7EEF7] text-[16px] whitespace-nowrap align-middle">{formatCurrency(cat.baseGoal)}</td>
                             <td className="py-4 px-[18px] font-semibold text-red-600 border border-[#E7EEF7] text-[16px] whitespace-nowrap align-middle">{formatCurrency(cat.incomingShortfall)}</td>
                             <td className="py-4 px-[18px] font-semibold text-green-600 border border-[#E7EEF7] text-[16px] whitespace-nowrap align-middle">{formatCurrency(cat.incomingExcessCredit)}</td>

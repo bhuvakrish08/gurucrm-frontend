@@ -348,10 +348,10 @@ export default function QuarterStrategyPage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-5 shrink-0">
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-slate-500">Financial Year</span>
-                  <div className="w-[140px]">
+              <div className="flex flex-wrap items-center gap-3 sm:gap-5 shrink-0 w-full sm:w-auto mt-3 sm:mt-0">
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <span className="text-sm font-medium text-slate-500 whitespace-nowrap">Financial Year</span>
+                  <div className="w-full sm:w-[140px] shrink-0">
                     <Select
                       value={financialYear}
                       onChange={setFinancialYear}
@@ -361,9 +361,9 @@ export default function QuarterStrategyPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-slate-500">Quarter</span>
-                  <div className="w-[140px]">
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <span className="text-sm font-medium text-slate-500 whitespace-nowrap">Quarter</span>
+                  <div className="w-full sm:w-[140px] shrink-0">
                     <Select
                       value={quarterNumber}
                       onChange={(val) => setQuarterNumber(Number(val))}
@@ -501,23 +501,23 @@ export default function QuarterStrategyPage() {
                 <p className="text-sm text-slate-500 max-w-[300px]">There is no summary data available for the selected quarter.</p>
               </div>
             ) : (
-              <div className="overflow-x-auto w-full custom-scrollbar">
-                <table className="w-full border-collapse text-sm table-auto">
-                  <thead className="bg-[#EEF2FF] border-b border-[#E0E7FF]">
+              <div className="overflow-x-auto w-full custom-scrollbar shadow-sm rounded-md border border-[#E0E7FF]">
+                <table className="min-w-[1000px] w-full border-collapse text-sm table-auto">
+                  <thead className="bg-[#EEF2FF] border-b border-[#E0E7FF] sticky top-0 z-20">
                     <tr>
-                      <th className="w-[22%] py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-left align-middle">CATEGORY</th>
-                      <th className="w-[10%] py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">BASE GOAL</th>
-                      <th className="w-[12%] py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">
+                      <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-left align-middle sticky left-0 bg-[#EEF2FF] z-30 shadow-[1px_0_0_#E0E7FF]">CATEGORY</th>
+                      <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">BASE GOAL</th>
+                      <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">
                         EFFECTIVE GOAL
                       </th>
-                      <th className="w-[12%] py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">ACHIEVEMENT</th>
-                      <th className="w-[10%] py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">
+                      <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">ACHIEVEMENT</th>
+                      <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">
                         VARIANCE
                       </th>
-                      <th className="w-[14%] py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">
+                      <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">
                         CLOSING BALANCE
                       </th>
-                      <th className="w-[10%] py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">BREAKDOWN</th>
+                      <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">BREAKDOWN</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#E8EEF7] bg-white">
@@ -538,8 +538,8 @@ export default function QuarterStrategyPage() {
 
                       return (
                         <React.Fragment key={cat.categoryId}>
-                          <tr className="group hover:bg-[#F8FBFF] hover:shadow-[0_2px_12px_-2px_rgba(37,99,235,0.06)] relative transition-all duration-200 border-b border-[#E8EEF7] cursor-pointer h-[62px]" onClick={() => toggleExpand(cat.categoryId)}>
-                            <td className="px-6 py-2.5 font-semibold text-[#0F172A] relative before:absolute before:left-0 before:top-0 before:h-full before:w-[4px] before:bg-[#2563EB] before:opacity-0 group-hover:before:opacity-100 before:transition-opacity before:duration-200">
+                          <tr className="group hover:bg-[#F8FBFF] relative transition-all duration-200 border-b border-[#E8EEF7] cursor-pointer h-[62px]" onClick={() => toggleExpand(cat.categoryId)}>
+                            <td className="px-6 py-2.5 font-semibold text-[#0F172A] relative bg-white group-hover:bg-[#F8FBFF] sticky left-0 z-10 shadow-[1px_0_0_#E0E7FF] before:absolute before:left-0 before:top-0 before:h-full before:w-[4px] before:bg-[#2563EB] before:opacity-0 group-hover:before:opacity-100 before:transition-opacity before:duration-200">
                               <div className="flex items-center gap-4">
                                 <CategoryDisplay cat={cat} />
                               </div>
@@ -737,21 +737,21 @@ export default function QuarterStrategyPage() {
               </div>
             ) : (
               <div className="pb-6 w-full">
-                <div className="overflow-x-auto w-full custom-scrollbar">
-                  <table className="w-full border-collapse text-sm table-auto">
-                    <thead className="bg-[#EEF2FF] border-b border-[#E0E7FF]">
+                <div className="overflow-x-auto w-full custom-scrollbar shadow-sm rounded-md border border-[#E0E7FF]">
+                  <table className="min-w-[1000px] w-full border-collapse text-sm table-auto">
+                    <thead className="bg-[#EEF2FF] border-b border-[#E0E7FF] sticky top-0 z-20">
                       <tr>
-                        <th className="w-[22%] py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-left align-middle">CATEGORY</th>
-                        <th className="w-[10%] py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">CLOSING BALANCE</th>
-                        <th className="w-[8%] py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">STATUS</th>
+                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-left align-middle sticky left-0 bg-[#EEF2FF] z-30 shadow-[1px_0_0_#E0E7FF]">CATEGORY</th>
+                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">CLOSING BALANCE</th>
+                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">STATUS</th>
                         {(allocationData.targetMonths || []).map(m => (
-                          <th key={m.monthNumber} className="w-[9%] py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">
+                          <th key={m.monthNumber} className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">
                             {m.monthName.toUpperCase()} ({m.shortName.toUpperCase()})
                           </th>
                         ))}
-                        <th className="w-[10%] py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">TOTAL ALLOCATED</th>
-                        <th className="w-[8%] py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">REMAINING</th>
-                        {canEdit && <th className="w-[15%] py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">QUICK SPLIT</th>}
+                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">TOTAL ALLOCATED</th>
+                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">REMAINING</th>
+                        {canEdit && <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">QUICK SPLIT</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#E8EEF7] bg-white">
@@ -775,7 +775,7 @@ export default function QuarterStrategyPage() {
 
                         return (
                           <tr key={cat.categoryId} className={`h-[72px] group relative transition-all duration-200 ${rowBg} hover:shadow-[0_4px_12px_-2px_rgba(37,99,235,0.06)]`}>
-                            <td className={`px-[16px] py-2.5 font-semibold text-[#0F172A] align-middle relative before:absolute before:left-0 before:top-0 before:h-full before:w-[4px] before:bg-[#2563EB] before:transition-opacity before:duration-200 ${isActiveRow ? 'before:opacity-100' : 'before:opacity-0 group-hover:before:opacity-100'}`}>
+                            <td className={`px-[16px] py-2.5 font-semibold text-[#0F172A] align-middle relative sticky left-0 z-10 shadow-[1px_0_0_#E0E7FF] bg-white group-hover:bg-[#F8FBFF] before:absolute before:left-0 before:top-0 before:h-full before:w-[4px] before:bg-[#2563EB] before:transition-opacity before:duration-200 ${isActiveRow ? 'before:opacity-100' : 'before:opacity-0 group-hover:before:opacity-100'}`}>
                               <div className="flex items-center gap-2">
                                 <CategoryDisplay cat={cat} size="sm" />
                               </div>
@@ -963,8 +963,8 @@ export default function QuarterStrategyPage() {
                 </div>
 
                 <div className="text-[12px] font-semibold text-[#64748B] mb-4 uppercase tracking-[0.05em]">Allocation Summary</div>
-                <div className="border border-[#E8EEF7] rounded-md overflow-hidden">
-                  <table className="w-full text-[14px] text-left">
+                <div className="border border-[#E8EEF7] rounded-md overflow-x-auto">
+                  <table className="min-w-max w-full text-[14px] text-left">
                     <thead className="bg-[#EEF2FF] border-b border-[#E0E7FF]">
                       <tr>
                         <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-left">Category</th>

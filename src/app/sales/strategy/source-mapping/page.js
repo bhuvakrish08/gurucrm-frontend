@@ -161,7 +161,7 @@ export default function SourceMappingPage() {
           {/* ── Summary Cards exactly matching Photo ── */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
             {/* Card 1: Total Sub Sources */}
-            <div className="bg-white rounded-md p-5 border border-[#e2e8f0] border-t-4 border-t-[#6366f1] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] flex items-center gap-4.5 transition-all hover:shadow-lg hover:border-[#cbd5e1] hover:-translate-y-0.5">
+            <div className="bg-white rounded-md p-5 border border-[#e2e8f0] border-t-4 border-t-[#6366f1] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] flex items-center gap-4.5 transition-all hover:shadow-lg hover:border-[#cbd5e1] hover:-translate-y-0.5 h-full">
               <div className="w-14 h-14 rounded-md bg-[#e0e7ff] flex items-center justify-center text-[#6366f1] flex-shrink-0 shadow-2xs">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -169,13 +169,13 @@ export default function SourceMappingPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1 truncate">TOTAL LEAD SOURCES</p>
-                <h3 className="text-3xl sm:text-4xl font-black text-slate-800 tracking-tight leading-none">{summary.total_sources || 0}</h3>
+                <h3 className="text-[clamp(1.5rem,3vw,2.25rem)] font-black text-slate-800 tracking-tight leading-none break-words">{summary.total_sources || 0}</h3>
                 <p className="text-xs text-slate-400 font-medium mt-1.5 truncate">All available inquiry sources</p>
               </div>
             </div>
 
             {/* Card 2: Mapped Sources */}
-            <div className="bg-white rounded-md p-5 border border-[#e2e8f0] border-t-4 border-t-[#10b981] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] flex items-center gap-4.5 transition-all hover:shadow-lg hover:border-[#cbd5e1] hover:-translate-y-0.5">
+            <div className="bg-white rounded-md p-5 border border-[#e2e8f0] border-t-4 border-t-[#10b981] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] flex items-center gap-4.5 transition-all hover:shadow-lg hover:border-[#cbd5e1] hover:-translate-y-0.5 h-full">
               <div className="w-14 h-14 rounded-md bg-[#d1fae5] flex items-center justify-center text-[#059669] flex-shrink-0 shadow-2xs">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
@@ -183,13 +183,13 @@ export default function SourceMappingPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1 truncate">MAPPED SOURCES</p>
-                <h3 className="text-3xl sm:text-4xl font-black text-[#0f172a] tracking-tight leading-none">{summary.mapped_count || 0}</h3>
+                <h3 className="text-[clamp(1.5rem,3vw,2.25rem)] font-black text-[#0f172a] tracking-tight leading-none break-words">{summary.mapped_count || 0}</h3>
                 <p className="text-xs text-slate-400 font-medium mt-1.5 truncate">Successfully assigned</p>
               </div>
             </div>
 
             {/* Card 3: Unmapped Sources */}
-            <div className="bg-white rounded-md p-5 border border-[#e2e8f0] border-t-4 border-t-[#f59e0b] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] flex items-center gap-4.5 transition-all hover:shadow-lg hover:border-[#cbd5e1] hover:-translate-y-0.5">
+            <div className="bg-white rounded-md p-5 border border-[#e2e8f0] border-t-4 border-t-[#f59e0b] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] flex items-center gap-4.5 transition-all hover:shadow-lg hover:border-[#cbd5e1] hover:-translate-y-0.5 h-full">
               <div className="w-14 h-14 rounded-md bg-[#fffbeb] flex items-center justify-center text-[#d97706] flex-shrink-0 shadow-2xs">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.992 3 1.732 3z" />
@@ -197,13 +197,13 @@ export default function SourceMappingPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1 truncate">UNMAPPED SOURCES</p>
-                <h3 className="text-3xl sm:text-4xl font-black text-[#d97706] tracking-tight leading-none">{summary.unmapped_count || 0}</h3>
+                <h3 className="text-[clamp(1.5rem,3vw,2.25rem)] font-black text-[#d97706] tracking-tight leading-none break-words">{summary.unmapped_count || 0}</h3>
                 <p className="text-xs text-slate-400 font-medium mt-1.5 truncate">Require category assignment</p>
               </div>
             </div>
 
             {/* Card 4: Affected Closed Revenue */}
-            <div className="bg-white rounded-md p-5 border border-[#e2e8f0] border-t-4 border-t-[#9333ea] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] flex items-center gap-4.5 transition-all hover:shadow-lg hover:border-[#cbd5e1] hover:-translate-y-0.5">
+            <div className="bg-white rounded-md p-5 border border-[#e2e8f0] border-t-4 border-t-[#9333ea] shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] flex items-center gap-4.5 transition-all hover:shadow-lg hover:border-[#cbd5e1] hover:-translate-y-0.5 h-full">
               <div className="w-14 h-14 rounded-md bg-[#f3e8ff] flex items-center justify-center text-[#9333ea] flex-shrink-0 shadow-2xs">
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -211,7 +211,7 @@ export default function SourceMappingPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1 truncate">UNMAPPED WON REVENUE</p>
-                <h3 className="text-3xl sm:text-4xl font-black text-[#0f172a] tracking-tight leading-none">₹{Number(unmappedSummary.total_affected_revenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</h3>
+                <h3 className="text-[clamp(1.5rem,3vw,2.25rem)] font-black text-[#0f172a] tracking-tight leading-none break-words">₹{Number(unmappedSummary.total_affected_revenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</h3>
                 <p className="text-xs text-slate-400 font-medium mt-1.5 truncate">Won revenue excluded until mapped</p>
               </div>
             </div>
@@ -318,11 +318,11 @@ export default function SourceMappingPage() {
                 </button>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-[#e2e8f0] text-left border-collapse">
-                  <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+              <div className="overflow-x-auto w-full shadow-sm rounded-md border-t border-l border-r border-[#e2e8f0]">
+                <table className="min-w-[1000px] w-full divide-y divide-[#e2e8f0] text-left border-collapse">
+                  <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0] sticky top-0 z-20">
                     <tr>
-                      <th className="h-[56px] px-6 align-middle text-[13px] font-[700] text-[#475569] uppercase tracking-[0.06em] text-left">Lead Source</th>
+                      <th className="h-[56px] px-6 align-middle text-[13px] font-[700] text-[#475569] uppercase tracking-[0.06em] text-left sticky left-0 bg-[#F8FAFC] z-30 shadow-[1px_0_0_#e2e8f0]">Lead Source</th>
                       <th className="h-[56px] px-6 align-middle text-[13px] font-[700] text-[#475569] uppercase tracking-[0.06em] text-center">Status</th>
                       <th className="h-[56px] px-6 align-middle text-[13px] font-[700] text-[#475569] uppercase tracking-[0.06em] text-left">Strategy Category</th>
                       <th className="h-[56px] px-6 align-middle text-[13px] font-[700] text-[#475569] uppercase tracking-[0.06em] text-center">Used In</th>
@@ -342,7 +342,7 @@ export default function SourceMappingPage() {
                       return (
                         <tr key={src.source_id} className={`group transition-all duration-200 border-l-[3px] ${isUnmapped ? "border-l-[#f59e0b] hover:bg-[#fffbeb] bg-[#fffcf5]" : "border-l-transparent hover:border-l-[#6366f1] hover:bg-[#f0f3ff]"}`}>
                           {/* Column 1: Lead Source */}
-                          <td className="py-5 px-6 font-bold text-xs text-[#0f172a] whitespace-nowrap">
+                          <td className={`py-5 px-6 font-bold text-xs text-[#0f172a] whitespace-nowrap sticky left-0 z-10 shadow-[1px_0_0_#e2e8f0] ${isUnmapped ? "bg-[#fffcf5] group-hover:bg-[#fffbeb]" : "bg-white group-hover:bg-[#f0f3ff]"}`}>
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-full bg-[#f0f3ff] text-[#6366f1] flex items-center justify-center flex-shrink-0 font-bold shadow-2xs group-hover:bg-[#e0e7ff] transition-colors">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

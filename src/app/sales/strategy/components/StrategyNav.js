@@ -87,7 +87,7 @@ export default function StrategyNav({ rightContent }) {
               <Link
                 key={tab.href}
                 href={tab.href}
-                className={`pb-3.5 pt-3 px-1 text-sm font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
+                className={`pb-3.5 pt-3 px-1 text-sm font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap shrink-0 ${
                   isActive
                     ? "border-[#2563eb] text-[#2563eb]"
                     : "border-transparent text-[#64748b] hover:text-[#0f172a] hover:border-[#cbd5e1]"

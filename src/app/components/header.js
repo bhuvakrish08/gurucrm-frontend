@@ -256,8 +256,8 @@ export default function Header() {
   const reminderCount = reminders.today.length + reminders.overdue.length;
 
   return (
-    <header className="sticky top-0 z-50 flex flex-col md:flex-row items-center justify-between px-4 sm:px-8 py-4 shadow-sm bg-white">
-      <div className="flex w-full md:w-auto items-center justify-between">
+    <header className="sticky top-0 z-50 flex flex-col md:flex-row items-center justify-between px-4 sm:px-8 py-2 md:py-0 md:h-[80px] shadow-sm bg-white">
+      <div className="flex w-full md:w-auto items-center justify-between shrink-0">
         {/* Logo */}
         <div className="flex items-center space-x-2">
           <Image
@@ -367,7 +367,7 @@ export default function Header() {
       </div>
 
       {/* Navigation Links (Desktop) */}
-      <nav className="hidden md:flex space-x-10 text-gray-800 font-medium">
+      <nav className="hidden md:flex flex-1 overflow-x-auto items-center justify-start xl:justify-center space-x-2 lg:space-x-5 xl:space-x-8 px-2 mx-4 text-gray-800 font-medium whitespace-nowrap no-scrollbar h-full">
         <Link
           href="/dashboard"
           className="hover:text-orange-500 transition-colors"
@@ -503,7 +503,7 @@ export default function Header() {
       </nav>
 
       {/* Desktop Right Side Icons */}
-      <div className="hidden md:flex items-center gap-6">
+      <div className="hidden md:flex items-center gap-4 lg:gap-6 shrink-0">
         {/* ✅ Calendar Icon Button (Desktop) */}
         <Link
           href="/calendar"

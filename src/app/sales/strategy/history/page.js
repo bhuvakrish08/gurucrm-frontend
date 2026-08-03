@@ -325,7 +325,7 @@ function AuditRow({ item, onClick }) {
   return (
     <tr className="bg-white hover:bg-[#f8fafc] hover:shadow-[inset_4px_0_0_0_#2563eb] transition-all duration-200 group">
       {/* Action / Badges */}
-      <td className="px-5 py-4 align-middle w-48 transition-colors">
+      <td className="px-5 py-4 align-middle w-48 transition-colors sticky left-0 z-10 shadow-[1px_0_0_#e2e8f0] bg-white group-hover:bg-[#f8fafc]">
         <div className={`inline-flex items-center justify-center min-w-[130px] gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border shadow-sm ${ac.color}`}>
           {ac.icon} {ac.label}
         </div>
@@ -756,18 +756,18 @@ export default function StrategyHistoryPage() {
                   <Button 
                     variant="secondary"
                     onClick={() => setIsFilterExpanded(!isFilterExpanded)}
-                    className="w-[110px] h-[38px] justify-center text-sm"
+                    className="whitespace-nowrap shrink-0 px-4 h-[38px] justify-center text-sm"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                     </svg>
                     Filter {isFilterExpanded ? '▲' : '▼'}
                   </Button>
-                  <Button variant="secondary" onClick={handleExportCSV} className="w-[140px] h-[38px] justify-center text-sm">
+                  <Button variant="secondary" onClick={handleExportCSV} className="whitespace-nowrap shrink-0 px-4 h-[38px] justify-center text-sm">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                     Export CSV
                   </Button>
-                  <Button variant="secondary" onClick={handleExportExcel} className="w-[140px] h-[38px] justify-center text-sm">
+                  <Button variant="secondary" onClick={handleExportExcel} className="whitespace-nowrap shrink-0 px-4 h-[38px] justify-center text-sm">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                     Export Excel
                   </Button>
@@ -902,11 +902,11 @@ export default function StrategyHistoryPage() {
                 </div>
               </div>
             ) : (
-              <div className="overflow-x-auto rounded-t-md border-t border-l border-r border-[#E0E7FF] shadow-sm">
-                <table className="w-full text-left border-collapse">
-                  <thead className="bg-[#EEF2FF] border-b-[2px] border-[#E0E7FF] sticky top-0 z-10">
+              <div className="overflow-x-auto rounded-t-md border-t border-l border-r border-[#E0E7FF] shadow-sm w-full">
+                <table className="min-w-[1000px] w-full text-left border-collapse">
+                  <thead className="bg-[#EEF2FF] border-b-[2px] border-[#E0E7FF] sticky top-0 z-20">
                     <tr className="h-[52px]">
-                      <th className="px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider align-middle">Action</th>
+                      <th className="px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider align-middle sticky left-0 bg-[#EEF2FF] z-30 shadow-[1px_0_0_#e2e8f0]">Action</th>
                       <th className="px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider align-middle">Category</th>
                       <th className="px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider align-middle">Reason</th>
                       <th className="px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">Change</th>

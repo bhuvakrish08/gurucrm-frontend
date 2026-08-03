@@ -688,7 +688,7 @@ export default function StrategyOverviewPage() {
   const navRightControls = (
     <div className="flex flex-wrap items-end gap-3 sm:gap-3.5">
       {/* Financial Year Dropdown */}
-      <div className="w-[140px]">
+      <div className="w-full sm:w-[140px] shrink-0">
         <label className="block text-[11px] font-bold text-[#64748b] uppercase tracking-wider mb-1">
           Financial Year
         </label>
@@ -724,7 +724,7 @@ export default function StrategyOverviewPage() {
 
       {/* Month/Quarter Period Dropdown */}
       {mode === "MONTH" && (
-        <div className="w-[140px]">
+        <div className="w-full sm:w-[140px] shrink-0">
           <label className="block text-[11px] font-bold text-[#64748b] uppercase tracking-wider mb-1">
             Month
           </label>
@@ -737,7 +737,7 @@ export default function StrategyOverviewPage() {
         </div>
       )}
       {mode === "QUARTER" && (
-        <div className="w-[140px]">
+        <div className="w-full sm:w-[140px] shrink-0">
           <label className="block text-[11px] font-bold text-[#64748b] uppercase tracking-wider mb-1">
             Quarter
           </label>
@@ -751,14 +751,14 @@ export default function StrategyOverviewPage() {
       )}
 
       {/* Refresh Button */}
-      <div className="self-end">
+      <div className="self-end w-full sm:w-auto mt-2 sm:mt-0">
         <button
           onClick={() => fetchOverview(financialYear, mode, period)}
           disabled={loading}
-          className="bg-[linear-gradient(135deg,#5B6BFF_0%,#6B5CFF_45%,#7C3AED_100%)] text-white px-4 py-2 rounded-md text-sm font-bold flex items-center gap-2 shadow-[0_4px_14px_0_rgba(91,107,255,0.39)] hover:shadow-[0_6px_20px_rgba(91,107,255,0.23)] hover:-translate-y-[1px] hover:brightness-110 transition-all active:scale-95 active:brightness-95 disabled:opacity-50"
+          className="w-full sm:w-auto bg-[linear-gradient(135deg,#5B6BFF_0%,#6B5CFF_45%,#7C3AED_100%)] text-white px-4 py-2 rounded-md text-sm font-bold flex items-center justify-center gap-2 shadow-[0_4px_14px_0_rgba(91,107,255,0.39)] hover:shadow-[0_6px_20px_rgba(91,107,255,0.23)] hover:-translate-y-[1px] hover:brightness-110 transition-all active:scale-95 active:brightness-95 disabled:opacity-50 whitespace-nowrap shrink-0"
         >
           <svg
-            className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
+            className={`w-4 h-4 shrink-0 ${loading ? "animate-spin" : ""}`}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -813,9 +813,9 @@ export default function StrategyOverviewPage() {
             <AlertStrip alerts={alerts} />
 
             {/* ── Period Banner & Quick Status Pills ── */}
-            <div className="bg-white rounded-md p-4 sm:p-5 border border-[#e2e8f0] shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)] flex flex-wrap items-center justify-between gap-4 mb-6">
+            <div className="bg-gradient-to-r from-white to-[#F8FAFF] rounded-2xl p-4 sm:p-6 border border-[#E5EAF5] shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] flex flex-wrap items-center justify-between gap-4 mb-6">
               <div className="flex items-center">
-                <div className="w-12 h-12 rounded-md bg-[#eff6ff] text-[#2563eb] flex items-center justify-center mr-4 flex-shrink-0 border border-[#bfdbfe]">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-50 to-white text-indigo-600 flex items-center justify-center mr-4 flex-shrink-0 border border-indigo-100 shadow-sm">
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
@@ -832,35 +832,35 @@ export default function StrategyOverviewPage() {
 
               <div className="flex flex-wrap items-center gap-3">
                 {status.categoriesAhead > 0 && (
-                  <div className="bg-[#ecfdf5] text-[#059669] font-bold px-4 py-2 rounded-md border border-[#a7f3d0] flex items-center gap-2 text-sm shadow-2xs">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#10b981] animate-pulse" />
+                  <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 text-emerald-700 font-bold px-5 py-2.5 rounded-xl border border-emerald-200/60 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] flex items-center gap-2 text-[13px] hover:-translate-y-0.5 transition-transform duration-200">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
                     <span>{status.categoriesAhead} Ahead</span>
                   </div>
                 )}
                 {status.categoriesBehind > 0 && (
-                  <div className="bg-[#fff1f2] text-[#e11d48] font-bold px-4 py-2 rounded-md border border-[#fecdd3] flex items-center gap-2 text-sm shadow-2xs">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#f43f5e] animate-pulse" />
+                  <div className="bg-gradient-to-br from-rose-50 to-rose-100/50 text-rose-700 font-bold px-5 py-2.5 rounded-xl border border-rose-200/60 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] flex items-center gap-2 text-[13px] hover:-translate-y-0.5 transition-transform duration-200">
+                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shadow-[0_0_8px_rgba(244,63,94,0.4)]" />
                     <span>{status.categoriesBehind} Behind</span>
                   </div>
                 )}
                 {status.categoriesOnTrack > 0 && (
-                  <div className="bg-[#eff6ff] text-[#2563eb] font-bold px-4 py-2 rounded-md border border-[#bfdbfe] flex items-center gap-2 text-sm shadow-2xs">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#3b82f6] animate-pulse" />
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 text-blue-700 font-bold px-5 py-2.5 rounded-xl border border-blue-200/60 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] flex items-center gap-2 text-[13px] hover:-translate-y-0.5 transition-transform duration-200">
+                    <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.4)]" />
                     <span>{status.categoriesOnTrack} On Track</span>
                   </div>
                 )}
                 {status.categoriesBalanced > 0 && (
-                  <div className="bg-[#f1f5f9] text-[#475569] font-bold px-4 py-2 rounded-md border border-[#e2e8f0] flex items-center gap-2 text-sm shadow-2xs">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#94a3b8]" />
+                  <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 text-slate-700 font-bold px-5 py-2.5 rounded-xl border border-slate-200/60 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] flex items-center gap-2 text-[13px] hover:-translate-y-0.5 transition-transform duration-200">
+                    <span className="w-2 h-2 rounded-full bg-slate-400" />
                     <span>{status.categoriesBalanced} Balanced</span>
                   </div>
                 )}
                 {status.unmappedClosedQuotationCount > 0 && (
                   <a
                     href="/sales/strategy/source-mapping"
-                    className="bg-[#fffbeb] hover:bg-[#fef3c7] text-[#d97706] font-bold px-4 py-2 rounded-md border border-[#fde68a] flex items-center gap-2 text-sm shadow-2xs transition-colors"
+                    className="bg-gradient-to-br from-amber-50 to-amber-100/50 hover:to-amber-100 text-amber-700 font-bold px-5 py-2.5 rounded-xl border border-amber-200/60 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] flex items-center gap-2 text-[13px] transition-all duration-200 hover:-translate-y-0.5"
                   >
-                    <svg className="w-4 h-4 text-[#f59e0b] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                    <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                     <span>{status.unmappedClosedQuotationCount} Unmapped</span>
@@ -872,29 +872,31 @@ export default function StrategyOverviewPage() {
                         {/* ── EXECUTIVE SUMMARY & QUARTER HEALTH ── */}
             {!loading && analytics && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                <div className="lg:col-span-2 bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-6 shadow-lg text-white flex flex-col justify-center relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-8 opacity-10">
-                    <svg className="w-48 h-48" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                <div className="lg:col-span-2 rounded-2xl p-6 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] border border-[#E5EAF5] text-slate-800 flex flex-col justify-center relative overflow-hidden group hover:shadow-[0_8px_32px_-4px_rgba(0,0,0,0.06)] transition-all duration-300" style={{ backgroundImage: 'linear-gradient(135deg, #FFFFFF 0%, #F7F9FF 45%, #EEF4FF 100%)' }}>
+                  <div className="absolute top-0 right-0 -mr-16 -mt-16 w-72 h-72 rounded-full bg-blue-400/10 blur-3xl pointer-events-none"></div>
+                  <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-72 h-72 rounded-full bg-indigo-400/10 blur-3xl pointer-events-none"></div>
+                  <div className="absolute top-1/2 right-0 -translate-y-1/2 p-8 opacity-10 text-indigo-900 pointer-events-none transform group-hover:scale-105 transition-transform duration-700">
+                    <svg className="w-56 h-56" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={0.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                     </svg>
                   </div>
                   <div className="relative z-10">
-                    <h3 className="text-xl font-black tracking-tight mb-2 flex items-center gap-2">
-                      <span className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
-                        <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <h3 className="text-xl font-black tracking-tight mb-2 flex items-center gap-2 text-slate-800">
+                      <span className="w-8 h-8 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center shadow-sm">
+                        <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                       </span>
                       Executive Summary
                     </h3>
-                    <p className="text-slate-300 font-medium text-lg leading-relaxed mt-4">
+                    <p className="text-slate-600 font-medium text-lg leading-relaxed mt-4">
                       {analytics.sentence}
                     </p>
                   </div>
                 </div>
 
-                <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center">
-                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Goal Completion</h3>
+                <div className="bg-white rounded-2xl p-6 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] border border-[#E5EAF5] flex flex-col items-center justify-center text-center">
+                  <h3 className="text-[13px] font-bold text-slate-500 uppercase tracking-[0.05em] mb-5">Goal Completion</h3>
                   <div className="relative w-32 h-32 flex items-center justify-center">
                     <svg className="w-full h-full transform -rotate-90">
                       <circle cx="64" cy="64" r="56" fill="none" stroke="#f1f5f9" strokeWidth="12" />
@@ -930,6 +932,7 @@ export default function StrategyOverviewPage() {
                   title="Base Goal" 
                   value={formatCurrency(kpis.baseGoal)} 
                   subtitle="Original target"
+                  cardBg="bg-[linear-gradient(to_bottom_right,#FFFFFF,#F8FBFF)]"
                   iconPath="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                   iconColors={{ bg: 'text-slate-100', boxBg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200' }}
                 />
@@ -937,8 +940,9 @@ export default function StrategyOverviewPage() {
                   title="Effective Goal" 
                   value={formatCurrency(kpis.effectiveGoal)} 
                   subtitle="Adjusted for carry"
+                  cardBg="bg-[linear-gradient(to_bottom_right,#FFFFFF,#F7F5FF)]"
                   iconPath="M13 10V3L4 14h7v7l9-11h-7z"
-                  iconColors={{ bg: 'text-slate-100', boxBg: 'bg-slate-800', text: 'text-white', border: 'border-slate-800' }}
+                  iconColors={{ bg: 'text-indigo-50', boxBg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-100' }}
                   trend={formatCurrency(Math.abs(kpis.effectiveGoal - kpis.baseGoal))}
                   trendDirection={kpis.effectiveGoal > kpis.baseGoal ? 'up' : 'down'}
                 />
@@ -946,6 +950,7 @@ export default function StrategyOverviewPage() {
                   title="Achievement" 
                   value={formatCurrency(kpis.achievement)} 
                   subtitle="Total revenue booked"
+                  cardBg="bg-[linear-gradient(to_bottom_right,#FFFFFF,#F6FFF9)]"
                   iconPath="M5 13l4 4L19 7"
                   iconColors={{ bg: 'text-emerald-50', boxBg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-200' }}
                   badgeText={`${Number(kpis.achievementPercentage || 0).toFixed(1)}%`}
@@ -955,6 +960,7 @@ export default function StrategyOverviewPage() {
                   title="Variance" 
                   value={formatCurrency(Math.abs(kpis.variance || 0))} 
                   subtitle={kpis.variance >= 0 ? "Exceeding target" : "Short of target"}
+                  cardBg="bg-[linear-gradient(to_bottom_right,#FFFFFF,#F7FAFF)]"
                   iconPath="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
                   iconColors={{ bg: kpis.variance >= 0 ? 'text-blue-50' : 'text-blue-100', boxBg: kpis.variance >= 0 ? 'bg-blue-100' : 'bg-rose-100', text: kpis.variance >= 0 ? 'text-blue-700' : 'text-rose-700', border: kpis.variance >= 0 ? 'border-blue-200' : 'border-rose-200' }}
                   trendDirection={kpis.variance >= 0 ? 'up' : 'down'}
@@ -964,6 +970,7 @@ export default function StrategyOverviewPage() {
                   title="Closing Carry" 
                   value={formatCurrency(status.closingShortfallTotal > 0 ? status.closingShortfallTotal : status.closingExcessTotal)} 
                   subtitle={status.closingShortfallTotal > 0 ? "Net shortfall" : status.closingExcessTotal > 0 ? "Net excess credit" : "Perfectly balanced"}
+                  cardBg="bg-[linear-gradient(to_bottom_right,#FFFFFF,#FCF8FF)]"
                   iconPath="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
                   iconColors={{ bg: 'text-purple-50', boxBg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-200' }}
                   badgeText={status.closingShortfallTotal > 0 ? 'Debt' : status.closingExcessTotal > 0 ? 'Credit' : 'Balanced'}
@@ -1049,7 +1056,12 @@ export default function StrategyOverviewPage() {
                         <p className="text-sm font-semibold text-slate-700 leading-snug">{insight.text}</p>
                       </div>
                     )) : (
-                      <p className="text-sm text-slate-500">No specific insights for this period.</p>
+                    <div className="flex flex-col items-center justify-center p-8 bg-gradient-to-br from-slate-50/50 to-white rounded-xl border border-dashed border-slate-200">
+                      <svg className="w-12 h-12 text-slate-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-[13px] font-medium text-slate-500">No specific insights for this period</p>
+                    </div>
                     )}
                   </div>
                 </DashboardCard>
@@ -1165,8 +1177,8 @@ export default function StrategyOverviewPage() {
 
             {/* ── Category Summary Table ── */}
             {!loading && categories.length > 0 && (
-              <div className="bg-white rounded-md border border-[#e2e8f0] shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)] overflow-hidden">
-                <div className="px-6 py-4.5 border-b border-[#e2e8f0] flex items-center justify-between bg-[#f8fafc]">
+              <div className="bg-white rounded-2xl border border-[#E5EAF5] shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] overflow-hidden">
+                <div className="px-6 py-5 border-b border-[#E5EAF5] flex items-center justify-between bg-transparent">
                   <div>
                     <h3 className="text-base font-bold text-[#0f172a] tracking-tight">
                       Category Breakdown & Rolling Balance
@@ -1179,7 +1191,7 @@ export default function StrategyOverviewPage() {
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
-                    <thead className="bg-[#EEF2FF] border-b border-[#E0E7FF]">
+                    <thead className="bg-gradient-to-r from-slate-50/50 to-white border-b border-[#E5EAF5]">
                       <tr>
                         <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-left">Category</th>
                         <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right">Base Goal</th>
@@ -1190,13 +1202,13 @@ export default function StrategyOverviewPage() {
                         <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right">Closing Carry</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#f1f5f9] text-sm font-medium text-[#334155]">
+                    <tbody className="divide-y divide-slate-100/80 text-sm font-medium text-slate-700">
                       {categories.map((cat) => {
                         return (
                           <tr
                             key={cat.categoryId}
                             onClick={() => setDrawerCategory(cat)}
-                            className="hover:bg-[#f8fafc] transition-colors cursor-pointer"
+                            className="hover:bg-slate-50/70 hover:shadow-[0_2px_12px_-4px_rgba(0,0,0,0.03)] transition-all duration-200 cursor-pointer group"
                           >
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-2.5">
