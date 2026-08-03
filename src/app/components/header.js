@@ -449,7 +449,7 @@ export default function Header() {
           )}
         </div>
 
-        {userRole !== "Leads Management" &&
+        {/* {userRole !== "Leads Management" &&
           userRole !== "Estimation" &&
           userRole !== "Sales" &&
           userRole !== "Proforma invoices" && (
@@ -459,7 +459,7 @@ export default function Header() {
             >
               Task List
             </Link>
-          )}
+          )} */}
 
         {["Admin", "Super Admin"].includes(userRole) && (
           <Link
@@ -768,7 +768,7 @@ export default function Header() {
             )}
           </div>
 
-          {userRole !== "Leads Management" &&
+          {/* {userRole !== "Leads Management" &&
             userRole !== "Estimation" &&
             userRole !== "Sales" &&
             userRole !== "Proforma invoices" && (
@@ -779,7 +779,7 @@ export default function Header() {
               >
                 Task List
               </Link>
-            )}
+            )} */}
           {["Admin", "Super Admin"].includes(userRole) && (
             <Link
               onClick={() => setMobileMenuOpen(false)}
