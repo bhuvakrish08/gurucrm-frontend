@@ -367,7 +367,7 @@ export default function Header() {
       </div>
 
       {/* Navigation Links (Desktop) */}
-      <nav className="hidden md:flex flex-1 overflow-x-auto items-center justify-start xl:justify-center space-x-2 lg:space-x-5 xl:space-x-8 px-2 mx-4 text-gray-800 font-medium whitespace-nowrap no-scrollbar h-full">
+      <nav className="hidden md:flex flex-1 overflow-visible items-center justify-start xl:justify-center space-x-2 lg:space-x-5 xl:space-x-8 px-2 mx-4 text-gray-800 font-medium whitespace-nowrap h-full relative">
         <Link
           href="/dashboard"
           className="hover:text-orange-500 transition-colors"
@@ -384,7 +384,7 @@ export default function Header() {
           </button>
 
           {customerOpen && (
-            <div className="absolute left-0 mt-2 w-52 bg-white rounded-md shadow-lg py-2 z-50 border border-gray-100">
+            <div className="absolute top-full left-0 mt-1 w-52 bg-white rounded-lg shadow-xl border border-gray-200 z-[9999]">
               <Link
                 href="/customer-list"
                 className="hover:text-orange-500 block px-4 py-2 hover:bg-gray-50 transition-colors"
@@ -416,7 +416,7 @@ export default function Header() {
           </button>
 
           {salesOpen && (
-            <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-2 z-50 border border-gray-100">
+            <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-[9999]">
               {userRole !== "Estimation" &&
                 userRole !== "Proforma invoices" && (
                   <Link
