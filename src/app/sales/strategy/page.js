@@ -592,21 +592,33 @@ export default function StrategyOverviewPage() {
   const analytics = React.useMemo(() => {
     if (!overview) return null;
     
+    const vibrantPalette = [
+      '#6366F1', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#0EA5E9', '#14B8A6'
+    ];
+
     // 1. Chart: Goal vs Achievement (Bar)
-    const goalVsAchieveData = categories.map(c => ({
-      name: c.categoryCode,
-      fullName: c.categoryName,
-      Goal: c.effectiveGoal,
-      Achievement: c.achievement,
-      fill: getStyleForCategory(c).dotHex || '#94a3b8'
-    }));
+    const goalVsAchieveData = categories.map((c, i) => {
+      let color = getStyleForCategory(c).dotHex;
+      if (!color || color === '#94a3b8') color = vibrantPalette[i % vibrantPalette.length];
+      return {
+        name: c.categoryCode || c.categoryName.substring(0, 3).toUpperCase(),
+        fullName: c.categoryName,
+        Goal: c.effectiveGoal,
+        Achievement: c.achievement,
+        fill: color
+      };
+    });
 
     // 2. Chart: Category Contribution (Doughnut)
-    const pieData = categories.map(c => ({
-      name: c.categoryName,
-      value: c.achievement,
-      fill: getStyleForCategory(c).dotHex || '#94a3b8'
-    })).filter(c => c.value > 0);
+    const pieData = categories.map((c, i) => {
+      let color = getStyleForCategory(c).dotHex;
+      if (!color || color === '#94a3b8') color = vibrantPalette[i % vibrantPalette.length];
+      return {
+        name: c.categoryName,
+        value: c.achievement,
+        fill: color
+      };
+    }).filter(c => c.value > 0);
 
     // 3. Chart: Monthly Trend (Line)
     const trendMap = {};
@@ -986,13 +998,13 @@ export default function StrategyOverviewPage() {
                 <ChartCard title="Goal vs Achievement" subtitle="Comparison by category" height={320}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={analytics.goalVsAchieveData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }} barGap={0}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b', fontWeight: 600 }} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} tickFormatter={(val) => val >= 100000 ? `₹${(val / 100000).toFixed(0)}L` : val} />
-                      <RechartsTooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(value) => formatCurrency(value)} />
-                      <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: 600 }} />
-                      <Bar dataKey="Goal" fill="#e2e8f0" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                      <Bar dataKey="Achievement" radius={[4, 4, 0, 0]} maxBarSize={40}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#475569', fontWeight: 700 }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#475569', fontWeight: 600 }} tickFormatter={(val) => val >= 100000 ? `₹${(val / 100000).toFixed(0)}L` : val} />
+                      <RechartsTooltip cursor={{ fill: '#F1F5F9' }} contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' }} formatter={(value) => formatCurrency(value)} />
+                      <Legend iconType="circle" wrapperStyle={{ fontSize: '13px', fontWeight: 700, color: '#1E293B' }} />
+                      <Bar dataKey="Goal" fill="#CBD5E1" radius={[6, 6, 0, 0]} maxBarSize={45} />
+                      <Bar dataKey="Achievement" radius={[6, 6, 0, 0]} maxBarSize={45}>
                         {analytics.goalVsAchieveData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.fill} />
                         ))}
@@ -1006,13 +1018,13 @@ export default function StrategyOverviewPage() {
                   {analytics.trendData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={analytics.trendData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b', fontWeight: 600 }} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} tickFormatter={(val) => val >= 100000 ? `₹${(val / 100000).toFixed(0)}L` : val} />
-                        <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(value) => formatCurrency(value)} />
-                        <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: 600 }} />
-                        <Line type="monotone" dataKey="Goal" stroke="#94a3b8" strokeWidth={3} strokeDasharray="5 5" dot={false} activeDot={{ r: 6 }} />
-                        <Line type="monotone" dataKey="Achievement" stroke="#3b82f6" strokeWidth={3} dot={{ strokeWidth: 2, r: 4 }} activeDot={{ r: 6, strokeWidth: 0 }} />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#475569', fontWeight: 700 }} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#475569', fontWeight: 600 }} tickFormatter={(val) => val >= 100000 ? `₹${(val / 100000).toFixed(0)}L` : val} />
+                        <RechartsTooltip contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' }} formatter={(value) => formatCurrency(value)} />
+                        <Legend iconType="circle" wrapperStyle={{ fontSize: '13px', fontWeight: 700, color: '#1E293B' }} />
+                        <Line type="monotone" dataKey="Goal" stroke="#94A3B8" strokeWidth={3} strokeDasharray="5 5" dot={false} activeDot={{ r: 6 }} />
+                        <Line type="monotone" dataKey="Achievement" stroke="#4F46E5" strokeWidth={4} dot={{ strokeWidth: 2, r: 5, fill: '#FFFFFF' }} activeDot={{ r: 8, strokeWidth: 0 }} />
                       </LineChart>
                     </ResponsiveContainer>
                   ) : (
@@ -1030,13 +1042,13 @@ export default function StrategyOverviewPage() {
                   <div className="h-[260px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
-                        <Pie data={analytics.pieData} cx="50%" cy="50%" innerRadius={70} outerRadius={100} paddingAngle={2} dataKey="value" stroke="none">
+                        <Pie data={analytics.pieData} cx="45%" cy="50%" innerRadius={75} outerRadius={105} paddingAngle={3} dataKey="value" stroke="none" cornerRadius={4}>
                           {analytics.pieData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                            <Cell key={`cell-${index}`} fill={entry.fill} style={{ filter: `drop-shadow(0px 4px 6px ${entry.fill}40)` }} />
                           ))}
                         </Pie>
-                        <RechartsTooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} formatter={(value) => formatCurrency(value)} />
-                        <Legend iconType="circle" layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '12px', fontWeight: 600 }} />
+                        <RechartsTooltip contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} formatter={(value) => formatCurrency(value)} />
+                        <Legend iconType="circle" layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '13px', fontWeight: 700, color: '#1E293B' }} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>

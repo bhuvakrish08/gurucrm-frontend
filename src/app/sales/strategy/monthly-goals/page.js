@@ -128,6 +128,53 @@ export default function MonthlyGoalsPage() {
 
   const inputRefs = useRef({});
 
+  // --- New state and refs for improved modal scroll experience ---
+  const tableContainerRef = useRef(null);
+  const customScrollbarRef = useRef(null);
+  const [tableScrollWidth, setTableScrollWidth] = useState(1100);
+  const [modalScrollState, setModalScrollState] = useState({ left: false, right: true });
+  const isSyncing = useRef(false);
+
+  useEffect(() => {
+    if (showDetailModal && tableContainerRef.current) {
+       const observer = new ResizeObserver(() => {
+          if (tableContainerRef.current) {
+             setTableScrollWidth(tableContainerRef.current.scrollWidth);
+             handleTableScroll();
+          }
+       });
+       observer.observe(tableContainerRef.current);
+       return () => observer.disconnect();
+    }
+  }, [showDetailModal, detailData]);
+
+  const handleTableScroll = () => {
+    if (!tableContainerRef.current) return;
+    
+    const { scrollLeft, scrollWidth, clientWidth } = tableContainerRef.current;
+    
+    setModalScrollState({
+      left: scrollLeft > 0,
+      right: scrollLeft < scrollWidth - clientWidth - 2
+    });
+
+    if (!isSyncing.current && customScrollbarRef.current) {
+      isSyncing.current = true;
+      customScrollbarRef.current.scrollLeft = scrollLeft;
+      requestAnimationFrame(() => { isSyncing.current = false; });
+    }
+  };
+
+  const handleCustomScrollbarScroll = () => {
+    if (!customScrollbarRef.current || !tableContainerRef.current) return;
+    
+    if (!isSyncing.current) {
+      isSyncing.current = true;
+      tableContainerRef.current.scrollLeft = customScrollbarRef.current.scrollLeft;
+      requestAnimationFrame(() => { isSyncing.current = false; });
+    }
+  };
+
   const fetchGoalsMatrix = useCallback(async (fy) => {
     setLoading(true);
     try {
@@ -691,10 +738,10 @@ export default function MonthlyGoalsPage() {
       )}
 
       {showDetailModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white rounded-md shadow-2xl w-full max-w-[96vw] overflow-hidden">
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 sm:p-6">
+          <div className="bg-white rounded-md shadow-2xl w-full max-w-[96vw] max-h-[92vh] flex flex-col overflow-hidden">
             <div 
-              className="text-white px-[28px] py-[20px] flex items-center justify-between border-b"
+              className="text-white px-[28px] py-[20px] flex items-center justify-between border-b flex-shrink-0"
               style={{
                 background: "linear-gradient(90deg, #0F172A 0%, #172554 45%, #1E293B 100%)",
                 borderColor: "rgba(255, 255, 255, 0.08)",
@@ -734,12 +781,13 @@ export default function MonthlyGoalsPage() {
                   />
                 </div>
                 
-                <button type="button" onClick={() => setShowDetailModal(false)} className="text-gray-400 hover:text-gray-700 text-2xl leading-none font-light mt-1">x</button>
+                <button type="button" onClick={() => setShowDetailModal(false)} className="text-gray-400 hover:text-white transition-colors text-3xl leading-none font-light mt-1">×</button>
               </div>
             </div>
-            <div className="py-6 pl-5 pr-6 overflow-x-auto xl:overflow-x-visible max-h-[80vh] custom-scrollbar">
+            
+            <div className="flex-1 flex flex-col min-h-0 bg-white p-4 sm:p-6 overflow-hidden">
               {detailLoading || !detailData ? (
-                <div className="py-16 flex flex-col items-center justify-center text-gray-500">
+                <div className="flex-1 flex flex-col items-center justify-center text-gray-500 h-full min-h-[300px]">
                   <svg className="animate-spin h-8 w-8 text-[#5C55FA] mb-3" viewBox="0 0 24 24" fill="none">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -747,76 +795,98 @@ export default function MonthlyGoalsPage() {
                   <p className="text-sm font-bold">Loading breakdown...</p>
                 </div>
               ) : (
-                <div className="w-full min-w-max pb-4 overflow-x-auto">
-                  <table className="min-w-[1000px] w-full border-collapse border border-[#E7EEF7] text-sm breakdown-table">
-                    <thead className="bg-[#EEF2FF] border-b border-[#E0E7FF] sticky top-0 z-20">
-                      <tr className="h-[68px]">
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-left min-w-[220px] sticky left-0 bg-[#EEF2FF] z-30 shadow-[1px_0_0_#E0E7FF]">Main Category</th>
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right min-w-[140px]">Base Goal</th>
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right min-w-[135px] leading-tight">+ Carry <br /> Shortfall</th>
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right min-w-[135px] leading-tight">− Excess Credit</th>
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right min-w-[155px] leading-tight">± Quarter <br /> Adjustments</th>
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right min-w-[150px] leading-tight">= Effective <br /> Goal</th>
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right min-w-[155px] leading-tight">Won <br /> Achievement</th>
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right min-w-[135px]">Variance</th>
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right min-w-[200px]">Closing Balance</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#E7EEF7] bg-white text-right">
-                      {(detailData.categories || []).map((cat, idx) => {
-                        const rowBg = idx % 2 === 0 ? "bg-white" : "bg-[#FCFCFD]";
-                        return (
-                          <tr key={cat.strategyCategoryId} className={`breakdown-row ${rowBg} h-[74px]`}>
-                            <td className={`py-4 pl-[22px] pr-[18px] text-left font-semibold text-slate-900 border border-[#E7EEF7] text-[18px] leading-[1.3] whitespace-nowrap align-middle sticky left-0 z-10 ${rowBg} shadow-[1px_0_0_#E7EEF7]`}>{cat.categoryName}</td>
-                            <td className="py-4 px-[18px] font-semibold text-slate-800 border border-[#E7EEF7] text-[16px] whitespace-nowrap align-middle">{formatCurrency(cat.baseGoal)}</td>
-                            <td className="py-4 px-[18px] font-semibold text-red-600 border border-[#E7EEF7] text-[16px] whitespace-nowrap align-middle">{formatCurrency(cat.incomingShortfall)}</td>
-                            <td className="py-4 px-[18px] font-semibold text-green-600 border border-[#E7EEF7] text-[16px] whitespace-nowrap align-middle">{formatCurrency(cat.incomingExcessCredit)}</td>
-                            <td className="py-4 px-[18px] font-semibold text-blue-600 border border-[#E7EEF7] text-[16px] whitespace-nowrap align-middle">{formatCurrency(cat.quarterShortfallAddition - cat.quarterExcessReduction)}</td>
-                            <td 
-                              className="py-4 px-[18px] font-bold text-blue-900 border border-[#E7EEF7] text-[16px] whitespace-nowrap align-middle"
-                              style={{ background: "linear-gradient(180deg, #F6FAFF 0%, #EDF4FF 100%)" }}
-                            >
-                              {formatCurrency(cat.effectiveGoal)}
-                            </td>
-                            <td className="py-4 px-[18px] font-semibold text-green-600 border border-[#E7EEF7] text-[16px] whitespace-nowrap align-middle">{formatCurrency(cat.achievement)}</td>
-                            <td className={`py-4 px-[18px] font-semibold border border-[#E7EEF7] text-[16px] whitespace-nowrap align-middle ${cat.variance > 0 ? "text-green-600" : cat.variance < 0 ? "text-red-600" : "text-slate-400"}`}>
-                              {formatCurrency(cat.variance)}
-                            </td>
-                            <td className="py-4 px-[18px] border border-[#E7EEF7] bg-[#F8FAFC]/30 text-[16px] align-middle">
-                              {cat.closingShortfall > 0 ? (
-                                <div className="flex flex-col items-end gap-2">
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-red-100 text-red-700 whitespace-nowrap">
-                                    Shortfall
-                                  </span>
-                                  <span className="text-[14px] text-red-600 font-bold whitespace-nowrap">
-                                    {formatCurrency(cat.closingShortfall)}
-                                  </span>
-                                </div>
-                              ) : cat.closingExcess > 0 ? (
-                                <div className="flex flex-col items-end gap-2">
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-green-100 text-green-700 whitespace-nowrap">
-                                    Excess
-                                  </span>
-                                  <span className="text-[14px] text-green-600 font-bold whitespace-nowrap">
-                                    {formatCurrency(cat.closingExcess)}
-                                  </span>
-                                </div>
-                              ) : (
-                                <div className="flex flex-col items-end gap-2">
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-slate-100 text-slate-600 whitespace-nowrap">
-                                    Balanced
-                                  </span>
-                                  <span className="text-[14px] text-slate-400 font-bold whitespace-nowrap">
-                                    ₹0
-                                  </span>
-                                </div>
-                              )}
-                            </td>
+                <div className="relative flex flex-col flex-1 bg-white border border-[#E7EEF7] rounded-md shadow-sm overflow-hidden h-full">
+                  
+                  {/* Right shadow overlay */}
+                  <div className={`absolute right-0 top-0 bottom-0 w-12 pointer-events-none transition-opacity duration-300 z-40 ${modalScrollState.right ? 'opacity-100' : 'opacity-0'}`} style={{ background: 'linear-gradient(to left, rgba(15,23,42,0.06), transparent)' }} />
+                  
+                  {/* Table Container - Vertically and Horizontally Scrollable */}
+                  <div 
+                     ref={tableContainerRef}
+                     onScroll={handleTableScroll}
+                     className="flex-1 overflow-auto hide-horizontal-scrollbar relative"
+                  >
+                     <table className="min-w-[1100px] w-full border-collapse text-sm breakdown-table">
+                        <thead className="bg-[#EEF2FF] sticky top-0 z-30">
+                          <tr className="h-[68px]">
+                            <th className={`py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-left min-w-[220px] sticky left-0 bg-[#EEF2FF] z-40 transition-shadow duration-300 ${modalScrollState.left ? 'shadow-[6px_0_12px_rgba(0,0,0,0.06)] border-r border-[#E0E7FF]' : 'shadow-[1px_0_0_#E0E7FF]'}`}>Main Category</th>
+                            <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right min-w-[140px]">Base Goal</th>
+                            <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right min-w-[135px] leading-tight">+ Carry <br /> Shortfall</th>
+                            <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right min-w-[135px] leading-tight">− Excess Credit</th>
+                            <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right min-w-[155px] leading-tight">± Quarter <br /> Adjustments</th>
+                            <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right min-w-[150px] leading-tight">= Effective <br /> Goal</th>
+                            <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right min-w-[155px] leading-tight">Won <br /> Achievement</th>
+                            <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right min-w-[135px]">Variance</th>
+                            <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right min-w-[200px]">Closing Balance</th>
                           </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                        </thead>
+                        <tbody className="divide-y divide-[#E7EEF7] bg-white text-right">
+                          {(detailData.categories || []).map((cat, idx) => {
+                            const rowBg = idx % 2 === 0 ? "bg-white" : "bg-[#FCFCFD]";
+                            return (
+                              <tr key={cat.strategyCategoryId} className={`breakdown-row ${rowBg} h-[74px]`}>
+                                <td className={`py-4 pl-[22px] pr-[18px] text-left font-semibold text-slate-900 border border-[#E7EEF7] text-[18px] leading-[1.3] whitespace-nowrap align-middle sticky left-0 z-20 ${rowBg} transition-shadow duration-300 ${modalScrollState.left ? 'shadow-[6px_0_12px_rgba(0,0,0,0.06)] border-r border-[#E7EEF7]' : 'shadow-[1px_0_0_#E7EEF7]'}`}>{cat.categoryName}</td>
+                                <td className="py-4 px-[18px] font-semibold text-slate-800 border border-[#E7EEF7] text-[16px] whitespace-nowrap align-middle">{formatCurrency(cat.baseGoal)}</td>
+                                <td className="py-4 px-[18px] font-semibold text-red-600 border border-[#E7EEF7] text-[16px] whitespace-nowrap align-middle">{formatCurrency(cat.incomingShortfall)}</td>
+                                <td className="py-4 px-[18px] font-semibold text-green-600 border border-[#E7EEF7] text-[16px] whitespace-nowrap align-middle">{formatCurrency(cat.incomingExcessCredit)}</td>
+                                <td className="py-4 px-[18px] font-semibold text-blue-600 border border-[#E7EEF7] text-[16px] whitespace-nowrap align-middle">{formatCurrency(cat.quarterShortfallAddition - cat.quarterExcessReduction)}</td>
+                                <td 
+                                  className="py-4 px-[18px] font-bold text-blue-900 border border-[#E7EEF7] text-[16px] whitespace-nowrap align-middle"
+                                  style={{ background: "linear-gradient(180deg, #F6FAFF 0%, #EDF4FF 100%)" }}
+                                >
+                                  {formatCurrency(cat.effectiveGoal)}
+                                </td>
+                                <td className="py-4 px-[18px] font-semibold text-green-600 border border-[#E7EEF7] text-[16px] whitespace-nowrap align-middle">{formatCurrency(cat.achievement)}</td>
+                                <td className={`py-4 px-[18px] font-semibold border border-[#E7EEF7] text-[16px] whitespace-nowrap align-middle ${cat.variance > 0 ? "text-green-600" : cat.variance < 0 ? "text-red-600" : "text-slate-400"}`}>
+                                  {formatCurrency(cat.variance)}
+                                </td>
+                                <td className="py-4 px-[18px] border border-[#E7EEF7] bg-[#F8FAFC]/30 text-[16px] align-middle">
+                                  {cat.closingShortfall > 0 ? (
+                                    <div className="flex flex-col items-end gap-2">
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-red-100 text-red-700 whitespace-nowrap">
+                                        Shortfall
+                                      </span>
+                                      <span className="text-[14px] text-red-600 font-bold whitespace-nowrap">
+                                        {formatCurrency(cat.closingShortfall)}
+                                      </span>
+                                    </div>
+                                  ) : cat.closingExcess > 0 ? (
+                                    <div className="flex flex-col items-end gap-2">
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-green-100 text-green-700 whitespace-nowrap">
+                                        Excess
+                                      </span>
+                                      <span className="text-[14px] text-green-600 font-bold whitespace-nowrap">
+                                        {formatCurrency(cat.closingExcess)}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex flex-col items-end gap-2">
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-extrabold tracking-wider uppercase bg-slate-100 text-slate-600 whitespace-nowrap">
+                                        Balanced
+                                      </span>
+                                      <span className="text-[14px] text-slate-400 font-bold whitespace-nowrap">
+                                        ₹0
+                                      </span>
+                                    </div>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                     </table>
+                  </div>
+                  
+                  {/* Dedicated Bottom Sticky Scrollbar Container */}
+                  <div className="bg-[#F8FAFC] border-t border-[#E7EEF7] px-1 py-2 flex-shrink-0 z-40">
+                     <div 
+                       ref={customScrollbarRef}
+                       onScroll={handleCustomScrollbarScroll}
+                       className="strategy-bottom-scrollbar w-full"
+                     >
+                        <div style={{ width: `${tableScrollWidth}px`, height: '1px' }}></div>
+                     </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -840,6 +910,44 @@ export default function MonthlyGoalsPage() {
           background: #4C508B !important;
           border-radius: 9999px;
         }
+
+        /* New custom scrollbar for modal */
+        .hide-horizontal-scrollbar {
+          overflow-x: auto;
+          overflow-y: auto;
+        }
+        .hide-horizontal-scrollbar::-webkit-scrollbar {
+          width: 8px;
+          height: 0px; /* Hide horizontal scrollbar but keep vertical */
+        }
+        .hide-horizontal-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .hide-horizontal-scrollbar::-webkit-scrollbar-thumb {
+          background: #CBD5E1;
+          border-radius: 4px;
+        }
+
+        .strategy-bottom-scrollbar {
+           overflow-x: auto;
+           overflow-y: hidden;
+        }
+        .strategy-bottom-scrollbar::-webkit-scrollbar {
+          height: 12px;
+        }
+        .strategy-bottom-scrollbar::-webkit-scrollbar-track {
+          background: #E5E7EB;
+          border-radius: 9999px;
+          margin: 0 4px;
+        }
+        .strategy-bottom-scrollbar::-webkit-scrollbar-thumb {
+          background: linear-gradient(90deg, #6366f1, #a855f7) !important;
+          border-radius: 9999px;
+        }
+        .strategy-bottom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(90deg, #4f46e5, #9333ea) !important;
+        }
+
         /* Premium Row Hover on Month Cells Only */
         tbody tr td.month-cell {
           transition: background-color 180ms ease-in-out !important;
