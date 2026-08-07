@@ -3728,7 +3728,7 @@ export default function Dashboard() {
                   <div className="flex justify-between items-center mb-1">
                     <div>
                       <h3 className="text-sm font-extrabold text-gray-800">
-                        Pending Invoices
+                        Running Project Invoices
                       </h3>
                       <p className="text-[10px] text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
                         Proforma Collection
@@ -3805,7 +3805,7 @@ export default function Dashboard() {
                   <div className="flex justify-between items-center mb-1">
                     <div>
                       <h3 className="text-sm font-extrabold text-gray-800">
-                        Completed Invoices
+                        Completed Project Invoices
                       </h3>
                       <p className="text-[10px] text-gray-500 font-semibold mt-0.5 uppercase tracking-wider">
                         Proforma Collection
