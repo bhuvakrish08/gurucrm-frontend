@@ -36,21 +36,32 @@ export default function ProformaPage() {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [updateLoading, setUpdateLoading] = useState(false);
 
-  const [quotationData, setQuotationData] = useState(null);
+  const [quotationFiles, setQuotationFiles] = useState([]);
+  const [selectedQuotationNo, setSelectedQuotationNo] = useState("");
   const [showQuotationModal, setShowQuotationModal] = useState(false);
+  const [quotationLoading, setQuotationLoading] = useState(false);
 
-  const handleQuotationView = async (quotationId) => {
+  const handleQuotationView = async (quotationId, quotationNo = "") => {
+    if (!quotationId) return;
     try {
+      setQuotationLoading(true);
+      setSelectedQuotationNo(quotationNo);
       const res = await axios.get(
-        `${API}/api/pi/quotation-file/${quotationId}`,
+        `${API}/api/pi/quotation-files/${quotationId}`,
       );
-      if (res.data.success) {
-        window.open(res.data.file, "_blank");
+      if (res.data.success && res.data.files && res.data.files.length > 0) {
+        setQuotationFiles(res.data.files);
+        if (res.data.quotation?.quotation_no) {
+          setSelectedQuotationNo(res.data.quotation.quotation_no);
+        }
+        setShowQuotationModal(true);
       } else {
-        toast.error(res.data.message);
+        toast.info(res.data.message || "No quotation documents found");
       }
     } catch (err) {
-      toast.error("Unable to open attachment");
+      toast.error("Unable to fetch quotation documents");
+    } finally {
+      setQuotationLoading(false);
     }
   };
 
@@ -69,12 +80,7 @@ export default function ProformaPage() {
   const exportRef = useRef(null);
   const debounceRef = useRef(null);
 
-  const [pct9, setPct9] = useState("");
-  const [amt9, setAmt9] = useState("");
-  const [pct18, setPct18] = useState("");
-  const [amt18, setAmt18] = useState("");
-
-  const [activePartTab, setActivePartTab] = useState("b");
+  const [amtInput, setAmtInput] = useState("");
   const [activeTab, setActiveTab] = useState("pending");
 
   const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -278,145 +284,67 @@ export default function ProformaPage() {
   };
 
   const getGrandTotal = (pi) => {
-    if (pi.follow_ups && pi.follow_ups.length > 0) {
-      const f = pi.follow_ups[pi.follow_ups.length - 1];
-      if (f.proforma_percentage > 0)
-        return (f.total / f.proforma_percentage) * 100;
+    if (!pi) return 0;
+    if (pi.quotation_grand_total && Number(pi.quotation_grand_total) > 0) {
+      return Number(pi.quotation_grand_total);
     }
-    if (pi.proforma_percentage > 0)
-      return (pi.total / pi.proforma_percentage) * 100;
-    return pi.total || 0;
-  };
-
-  const getBaseAmounts = (pi) => {
-    const rawAmt9 = Number(pi.split_amount_9 ?? pi.amount_9 ?? 0);
-    const rawAmt18 = Number(pi.split_amount_18 ?? pi.amount_18 ?? 0);
-    const rawTax9 = Number(pi.split_tax_9 ?? pi.tax_9 ?? 0);
-    const rawTax18 = Number(pi.split_tax_18 ?? pi.tax_18 ?? 0);
-    const base9 = rawAmt9 + rawTax9;
-    const base18 = rawAmt18 + rawTax18;
-    return { base9, base18 };
-  };
-
-  const getDefaultTab = (pi) => {
-    const { base9, base18 } = getBaseAmounts(pi);
-    if (base9 > 0 && base18 > 0) return "a";
-    if (base18 > 0) return "b";
-    if (base9 > 0) return "a";
-    return "b";
-  };
-
-  const getUsedSplitPct = (pi, excludeId = null) => {
     const followUps = pi.follow_ups || [];
-    let used9 = 0,
-      used18 = 0;
+    if (followUps.length > 0) {
+      const latest = followUps[0];
+      const amt = Number(latest.total_18 || 0) + Number(latest.total_9 || 0) || Number(latest.total || 0);
+      const pct = Number(latest.proforma_percentage_18 || 0) + Number(latest.proforma_percentage_9 || 0) || Number(latest.proforma_percentage || 0);
+      if (pct > 0 && amt > 0) return (amt / pct) * 100;
+    }
+    if (Number(pi.proforma_percentage || 0) > 0 && Number(pi.total || 0) > 0) {
+      return (Number(pi.total) / Number(pi.proforma_percentage)) * 100;
+    }
+    return Number(pi.total || 0);
+  };
+
+  const getPIPaidTotal = (pi, excludeId = null) => {
+    if (!pi) return 0;
+    const followUps = pi.follow_ups || [];
+    let total = 0;
     followUps.forEach((f) => {
       if (excludeId && f.id === excludeId) return;
-      used9 += Number(f.proforma_percentage_9 || 0);
-      used18 += Number(f.proforma_percentage_18 || 0);
+      total += Number(f.total || 0) || (Number(f.total_18 || 0) + Number(f.total_9 || 0));
     });
-    return { used9, used18 };
-  };
-
-  const handlePct9Change = (val) => {
-    setPct9(val);
-    if (val === "" || val === null) {
-      setAmt9("");
-      return;
-    }
-    const num = Number(val);
-    if (!isNaN(num) && selectedPI) {
-      const { base9 } = getBaseAmounts(selectedPI);
-      setAmt9(((base9 * num) / 100).toFixed(2));
-    }
-  };
-
-  const handleAmt9Change = (val) => {
-    setAmt9(val);
-    if (val === "" || val === null) {
-      setPct9("");
-      return;
-    }
-    const num = Number(val);
-    if (!isNaN(num) && selectedPI) {
-      const { base9 } = getBaseAmounts(selectedPI);
-      if (base9 > 0) setPct9(parseFloat(((num / base9) * 100).toFixed(4)));
-    }
-  };
-
-  const handlePct18Change = (val) => {
-    setPct18(val);
-    if (val === "" || val === null) {
-      setAmt18("");
-      return;
-    }
-    const num = Number(val);
-    if (!isNaN(num) && selectedPI) {
-      const { base18 } = getBaseAmounts(selectedPI);
-      setAmt18(((base18 * num) / 100).toFixed(2));
-    }
-  };
-
-  const handleAmt18Change = (val) => {
-    setAmt18(val);
-    if (val === "" || val === null) {
-      setPct18("");
-      return;
-    }
-    const num = Number(val);
-    if (!isNaN(num) && selectedPI) {
-      const { base18 } = getBaseAmounts(selectedPI);
-      if (base18 > 0) setPct18(parseFloat(((num / base18) * 100).toFixed(4)));
-    }
+    return total;
   };
 
   const resetModal = () => {
     setShowModal(false);
     setEditing(null);
-    setPct9("");
-    setAmt9("");
-    setPct18("");
-    setAmt18("");
+    setAmtInput("");
     setActiveIndex(null);
-    setActivePartTab("b");
   };
 
   const handleSubmitFollowUp = async () => {
-    const new9 = Number(pct9 || 0);
-    const new18 = Number(pct18 || 0);
-    const { base9: b9, base18: b18 } = getBaseAmounts(selectedPI);
-
-    if (b9 > 0 && b18 === 0 && new9 <= 0) {
-      toast.error("Please enter Part A (Other Charges) percentage");
-      return;
-    }
-    if (b18 > 0 && b9 === 0 && new18 <= 0) {
-      toast.error("Please enter Part B (Project Value) percentage");
-      return;
-    }
-    if (b9 > 0 && b18 > 0 && new9 <= 0 && new18 <= 0) {
-      toast.error("Please enter at least one amount (Part A or Part B)");
+    const enteredAmt = Number(amtInput || 0);
+    if (enteredAmt <= 0) {
+      toast.error("Please enter a valid amount");
       return;
     }
 
-    const { used9, used18 } = getUsedSplitPct(selectedPI);
-    if (b9 > 0 && used9 + new9 > 100) {
-      toast.error(`Part A: Only ${(100 - used9).toFixed(2)}% remaining`);
+    const grandTotal = getGrandTotal(selectedPI);
+    const usedAmt = getPIPaidTotal(selectedPI);
+    if (grandTotal > 0 && (usedAmt + enteredAmt > grandTotal + 0.5)) {
+      const rem = Math.max(0, grandTotal - usedAmt);
+      toast.error(`Amount exceeds remaining balance. Only Rs. ${rem.toFixed(2)} remaining`);
       return;
     }
-    if (b18 > 0 && used18 + new18 > 100) {
-      toast.error(`Part B: Only ${(100 - used18).toFixed(2)}% remaining`);
-      return;
-    }
+
+    const enteredPct = grandTotal > 0 ? (enteredAmt / grandTotal) * 100 : 0;
+    const usedPct = grandTotal > 0 ? (usedAmt / grandTotal) * 100 : 0;
 
     try {
       setSubmitLoading(true);
       const res = await axios.post(
         `${API}/api/pi/add-followup/${selectedPI.pi_id}`,
-        { percentage_9: new9, percentage_18: new18 },
+        { amount: enteredAmt, percentage: enteredPct },
       );
       const confirmedTotal =
-        res.data?.total_percentage ?? (used9 + new9 + used18 + new18) / 2;
+        res.data?.total_percentage ?? (usedPct + enteredPct);
       await updateStatus(selectedPI.pi_id, confirmedTotal);
       toast.success(
         confirmedTotal >= 100
@@ -433,46 +361,30 @@ export default function ProformaPage() {
   };
 
   const handleUpdate = async () => {
-    const new9 = Number(pct9 || 0);
-    const new18 = Number(pct18 || 0);
-    const { base9: b9, base18: b18 } = getBaseAmounts(selectedPI);
-
-    if (b9 > 0 && b18 === 0 && new9 <= 0) {
-      toast.error("Enter valid percentage for Part A");
-      return;
-    }
-    if (b18 > 0 && b9 === 0 && new18 <= 0) {
-      toast.error("Enter valid percentage for Part B");
-      return;
-    }
-    if (b9 > 0 && b18 > 0 && new9 <= 0 && new18 <= 0) {
-      toast.error("Enter valid percentage for at least one part");
+    const enteredAmt = Number(amtInput || 0);
+    if (enteredAmt <= 0) {
+      toast.error("Please enter a valid amount");
       return;
     }
 
-    const { used9, used18 } = getUsedSplitPct(selectedPI, editing.id);
-    if (b9 > 0 && used9 + new9 > 100) {
-      toast.error(`Part A: Only ${(100 - used9).toFixed(2)}% remaining`);
+    const grandTotal = getGrandTotal(selectedPI);
+    const usedOther = getPIPaidTotal(selectedPI, editing?.id);
+
+    if (grandTotal > 0 && (usedOther + enteredAmt > grandTotal + 0.5)) {
+      const rem = Math.max(0, grandTotal - usedOther);
+      toast.error(`Amount exceeds remaining balance. Only Rs. ${rem.toFixed(2)} remaining`);
       return;
     }
-    if (b18 > 0 && used18 + new18 > 100) {
-      toast.error(`Part B: Only ${(100 - used18).toFixed(2)}% remaining`);
-      return;
-    }
+
+    const enteredPct = grandTotal > 0 ? (enteredAmt / grandTotal) * 100 : 0;
 
     try {
       setUpdateLoading(true);
       await axios.put(
         `${API}/api/pi/update-followup/${selectedPI.pi_id}/${editing.id}`,
-        { percentage_9: new9, percentage_18: new18 },
+        { amount: enteredAmt, percentage: enteredPct },
       );
-      const grandTotal = getGrandTotal(selectedPI);
-      const { base9, base18 } = getBaseAmounts(selectedPI);
-      const newAmt9 = (base9 * new9) / 100;
-      const newAmt18 = (base18 * new18) / 100;
-      const newTotal = newAmt9 + newAmt18;
-      const newOverall = grandTotal > 0 ? (newTotal / grandTotal) * 100 : 0;
-      const newTotalOverall = used9 + used18 + newOverall;
+      const newTotalOverall = grandTotal > 0 ? ((usedOther + enteredAmt) / grandTotal) * 100 : 0;
       await updateStatus(selectedPI.pi_id, newTotalOverall);
       toast.success(
         newTotalOverall >= 100
@@ -490,10 +402,8 @@ export default function ProformaPage() {
 
   const handleEdit = (item) => {
     setEditing(item);
-    setPct9(item.proforma_percentage_9 || "");
-    setAmt9(item.total_9 || "");
-    setPct18(item.proforma_percentage_18 || "");
-    setAmt18(item.total_18 || "");
+    const itemAmt = Number(item.total || 0) || (Number(item.total_18 || 0) + Number(item.total_9 || 0));
+    setAmtInput(itemAmt ? String(itemAmt) : "");
   };
 
   const exportToExcel = async () => {
@@ -612,23 +522,9 @@ export default function ProformaPage() {
         (a, b) => new Date(b.created_at) - new Date(a.created_at),
       );
 
-      const historyA = sortedFollowUps.filter(
-        (f) => Number(f.proforma_percentage_9 || 0) > 0,
-      );
-      const historyB = sortedFollowUps.filter(
-        (f) => Number(f.proforma_percentage_18 || 0) > 0,
-      );
-
-      const { base9, base18 } = getBaseAmounts(item);
       const grandTotal = getGrandTotal(item);
-
-      const latestFollowUp = sortedFollowUps[0];
-      const totalPaid = latestFollowUp
-        ? Number(latestFollowUp.total || 0)
-        : Number(item.total || 0);
-      const totalPaidPct = latestFollowUp
-        ? Number(latestFollowUp.proforma_percentage || 0)
-        : Number(item.proforma_percentage || 0);
+      const totalPaid = getPIPaidTotal(item);
+      const totalPaidPct = grandTotal > 0 ? (totalPaid / grandTotal) * 100 : Number(item.proforma_percentage || 0);
 
       const piNumber = item.pi_number || formatPINumber(index ?? 0);
       const piDate = item.pi_date ? new Date(item.pi_date) : new Date();
@@ -742,7 +638,7 @@ export default function ProformaPage() {
       const leftRows = [
         ["Customer:", item.customer_name || "-"],
         ["Assignee:", item.assignee || "-"],
-        ["Quotation:", item.quotation_no || "-"],
+        ["Quotation No:", item.quotation_no || "-"],
         [
           "Created:",
           item.created_at
@@ -753,8 +649,8 @@ export default function ProformaPage() {
       const rightRows = [
         ["PI Number:", piNumber],
         ["PI Date:", piDate.toLocaleDateString("en-GB")],
-        ["Grand Total:", `Rs. ${Number(grandTotal).toLocaleString("en-IN")}`],
-        ["Total Paid %:", `${totalPaidPct.toFixed(0)}%`],
+        ["Grand Total:", `Rs. ${grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+        ["Total Paid %:", `${totalPaidPct.toFixed(2)}%`],
       ];
 
       leftRows.forEach(([label, value], i) => {
@@ -783,24 +679,28 @@ export default function ProformaPage() {
       doc.setFontSize(10);
       doc.setTextColor(234, 88, 12);
       doc.setFont(undefined, "bold");
-      doc.text("PAYMENT HISTORY — OTHER CHARGES", 14, cursorY);
+      doc.text("PAYMENT HISTORY", 14, cursorY);
       cursorY += 2;
 
-      const historyRowsA = historyA.map((h, i) => [
-        i + 1,
-        h.created_at ? new Date(h.created_at).toLocaleDateString("en-GB") : "-",
-        i === 0 ? "Latest Follow-Up" : `Follow-Up #${historyA.length - i}`,
-        `${Number(h.proforma_percentage_9 || 0).toFixed(0)}%`,
-        `Rs. ${Number(h.total_9 || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`,
-        i === 0 ? "Latest" : "Received",
-      ]);
+      const historyRows = sortedFollowUps.map((h, i) => {
+        const amt = Number(h.total || 0) || (Number(h.total_18 || 0) + Number(h.total_9 || 0));
+        const pct = grandTotal > 0 ? (amt / grandTotal) * 100 : (Number(h.proforma_percentage || 0) || (Number(h.proforma_percentage_18 || 0) + Number(h.proforma_percentage_9 || 0)));
+        return [
+          i + 1,
+          h.created_at ? new Date(h.created_at).toLocaleDateString("en-GB") : "-",
+          i === 0 ? "Latest Follow-Up" : `Follow-Up #${sortedFollowUps.length - i}`,
+          `${pct.toFixed(2)}%`,
+          `Rs. ${amt.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+          i === 0 ? "Latest" : "Received",
+        ];
+      });
 
       autoTable(doc, {
         startY: cursorY + 2,
         head: [["#", "Date", "Description", "Paid %", "Amount", "Status"]],
         body:
-          historyRowsA.length > 0
-            ? historyRowsA
+          historyRows.length > 0
+            ? historyRows
             : [["-", "-", "No follow-up recorded", "-", "-", "-"]],
         theme: "grid",
         styles: { fontSize: 8.5, cellPadding: 2.5, textColor: [40, 40, 40] },
@@ -811,47 +711,6 @@ export default function ProformaPage() {
           fontSize: 8.5,
         },
         alternateRowStyles: { fillColor: [255, 247, 237] },
-        columnStyles: {
-          0: { cellWidth: 10 },
-          3: { cellWidth: 22 },
-          5: { cellWidth: 24 },
-        },
-        margin: { left: 14, right: 14 },
-      });
-
-      cursorY = doc.lastAutoTable.finalY + 10;
-
-      doc.setFontSize(10);
-      doc.setTextColor(37, 99, 235);
-      doc.setFont(undefined, "bold");
-      doc.text("PAYMENT HISTORY — PROJECT VALUE", 14, cursorY);
-      cursorY += 2;
-
-      const historyRowsB = historyB.map((h, i) => [
-        i + 1,
-        h.created_at ? new Date(h.created_at).toLocaleDateString("en-GB") : "-",
-        i === 0 ? "Latest Follow-Up" : `Follow-Up #${historyB.length - i}`,
-        `${Number(h.proforma_percentage_18 || 0).toFixed(0)}%`,
-        `Rs. ${Number(h.total_18 || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`,
-        i === 0 ? "Latest" : "Received",
-      ]);
-
-      autoTable(doc, {
-        startY: cursorY + 2,
-        head: [["#", "Date", "Description", "Paid %", "Amount", "Status"]],
-        body:
-          historyRowsB.length > 0
-            ? historyRowsB
-            : [["-", "-", "No follow-up recorded", "-", "-", "-"]],
-        theme: "grid",
-        styles: { fontSize: 8.5, cellPadding: 2.5, textColor: [40, 40, 40] },
-        headStyles: {
-          fillColor: [37, 99, 235],
-          textColor: [255, 255, 255],
-          fontStyle: "bold",
-          fontSize: 8.5,
-        },
-        alternateRowStyles: { fillColor: [239, 246, 255] },
         columnStyles: {
           0: { cellWidth: 10 },
           3: { cellWidth: 22 },
@@ -878,8 +737,8 @@ export default function ProformaPage() {
 
       const summaryX = pageWidth - 14 - 78;
       const summaryRows = [
-        ["Grand Total", `Rs. ${Number(grandTotal).toLocaleString("en-IN")}`],
-        ["Total Paid", `Rs. ${Number(totalPaid).toLocaleString("en-IN")}`],
+        ["Grand Total", `Rs. ${grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+        ["Total Paid", `Rs. ${totalPaid.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
         ["Follow-ups", `${followUps.length} record(s)`],
       ];
       summaryRows.forEach(([label, value], i) => {
@@ -1360,7 +1219,7 @@ export default function ProformaPage() {
                               )}
                             </td>
                             <td className="py-3 px-3 font-semibold text-slate-800">
-                              Rs.{Number(item.total).toLocaleString()}
+                              Rs.{Number(item.total || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </td>
                             <td className="py-3 px-3">
                               <div className="flex items-center gap-2">
@@ -1368,12 +1227,12 @@ export default function ProformaPage() {
                                   <div
                                     className={`h-1.5 rounded-full transition-all ${Number(item.proforma_percentage) >= 100 ? "bg-green-500" : Number(item.proforma_percentage) >= 50 ? "bg-orange-400" : "bg-blue-400"}`}
                                     style={{
-                                      width: `${Math.min(Number(item.proforma_percentage), 100)}%`,
+                                      width: `${Math.min(Number(item.proforma_percentage || 0), 100)}%`,
                                     }}
                                   ></div>
                                 </div>
                                 <span className="font-semibold text-slate-800 text-xs">
-                                  {item.proforma_percentage}%
+                                  {Number(item.proforma_percentage || 0).toFixed(2)}%
                                 </span>
                               </div>
                             </td>
@@ -1409,12 +1268,8 @@ export default function ProformaPage() {
                                 onClick={() => {
                                   setSelectedPI(item);
                                   setEditing(null);
-                                  setPct9("");
-                                  setAmt9("");
-                                  setPct18("");
-                                  setAmt18("");
+                                  setAmtInput("");
                                   setActiveIndex(null);
-                                  setActivePartTab(getDefaultTab(item));
                                   setShowModal(true);
                                 }}
                                 className="w-9 h-9 rounded-full border border-blue-300 text-blue-500 flex items-center justify-center mx-auto hover:bg-blue-50 cursor-pointer transition-all"
@@ -1425,9 +1280,9 @@ export default function ProformaPage() {
                             <td className="py-3 px-3 text-center">
                               <button
                                 onClick={() =>
-                                  handleQuotationView(item.quotation_id)
+                                  handleQuotationView(item.quotation_id, item.quotation_no)
                                 }
-                                title="View Quotation File"
+                                title="View Quotation Files"
                                 className="group relative w-9 h-9 rounded-full border border-blue-200 bg-blue-50 flex items-center justify-center mx-auto hover:bg-blue-500 hover:border-blue-500 transition-all cursor-pointer"
                               >
                                 <i className="bi bi-eye text-blue-600 group-hover:text-white text-base transition-all"></i>
@@ -1534,45 +1389,27 @@ export default function ProformaPage() {
       {showModal &&
         selectedPI &&
         (() => {
-          const { base9, base18 } = getBaseAmounts(selectedPI);
-          const { used9, used18 } = getUsedSplitPct(selectedPI, editing?.id);
+          const grandTotal = getGrandTotal(selectedPI);
+          const usedAmt = getPIPaidTotal(selectedPI, editing?.id);
+          const usedPct = grandTotal > 0 ? (usedAmt / grandTotal) * 100 : 0;
 
-          const entered9 = Number(pct9 || 0);
-          const entered18 = Number(pct18 || 0);
+          const remainingAmt = Math.max(0, grandTotal - usedAmt);
+          const remainingPct = Math.max(0, 100 - usedPct);
 
-          const remaining9 = 100 - used9;
-          const remaining18 = 100 - used18;
+          const enteredAmt = Number(amtInput || 0);
+          const enteredPct = grandTotal > 0 ? (enteredAmt / grandTotal) * 100 : 0;
 
-          const after9 = remaining9 - entered9;
-          const after18 = remaining18 - entered18;
+          const afterAmt = remainingAmt - enteredAmt;
+          const afterPct = remainingPct - enteredPct;
+          const isOver = grandTotal > 0 && afterAmt < -0.5 && enteredAmt > 0;
+          const isDisabled = isOver || submitLoading || updateLoading;
 
-          const afterAmt9 = (base9 * after9) / 100;
-          const afterAmt18 = (base18 * after18) / 100;
-
-          const over9 = base9 > 0 && after9 < 0 && entered9 > 0;
-          const over18 = base18 > 0 && after18 < 0 && entered18 > 0;
-          const isDisabled = over9 || over18 || submitLoading || updateLoading;
-
-          const activeParts = (base9 > 0 ? 1 : 0) + (base18 > 0 ? 1 : 0);
-          const totalUsed = (base9 > 0 ? used9 : 0) + (base18 > 0 ? used18 : 0);
-          const totalEntered =
-            (base9 > 0 ? entered9 : 0) + (base18 > 0 ? entered18 : 0);
-          const avgUsed = activeParts > 0 ? totalUsed / activeParts : 0;
-          const avgEntered = activeParts > 0 ? totalEntered / activeParts : 0;
-          const barFill = Math.min(avgUsed + avgEntered, 100);
-          const barOver = over9 || over18;
+          const barFill = Math.min(usedPct + enteredPct, 100);
+          const barOver = isOver;
 
           const allFollowUps = selectedPI.follow_ups || [];
-          const historyA = allFollowUps.filter(
-            (f) => Number(f.proforma_percentage_9 || 0) > 0,
-          );
-          const historyB = allFollowUps.filter(
-            (f) => Number(f.proforma_percentage_18 || 0) > 0,
-          );
-          const shownHistory = activePartTab === "a" ? historyA : historyB;
 
           return (
-             
 <div
   id="proformaDrawerOverlay"
   className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm"
@@ -1602,7 +1439,7 @@ export default function ProformaPage() {
     className="bg-white w-full max-w-[980px] h-full shadow-2xl border-l border-gray-100 overflow-hidden flex flex-col"
     style={{ animation: "prfSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1)" }}
   >
-    {/* ── Header (Image-2 style: white bg + gradient update icon + progress strip) ── */}
+    {/* ── Header ── */}
     <div className="bg-white flex-shrink-0 z-10">
       <div className="flex justify-between items-center px-6 py-4">
         <div className="flex items-center gap-3">
@@ -1619,7 +1456,7 @@ export default function ProformaPage() {
               Update Proforma Activities
             </h2>
             <p className="text-[10px] text-gray-500 font-medium">
-              Track part-wise proforma progress
+              Track proforma progress
             </p>
           </div>
         </div>
@@ -1644,42 +1481,7 @@ export default function ProformaPage() {
     <div className="flex flex-col md:flex-row flex-1 overflow-y-auto">
       {/* ── LEFT PANEL ── */}
       <div className="w-full md:w-1/2 px-6 py-5 border-b md:border-b-0 md:border-r border-gray-100">
-        {/* Part Tabs */}
-        <div className="flex border-b border-gray-200 mb-4">
-          <button
-            onClick={() => base9 > 0 && setActivePartTab("a")}
-            disabled={base9 === 0}
-            className={`px-5 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-all ${
-              base9 === 0
-                ? "border-transparent text-gray-300 cursor-not-allowed opacity-40"
-                : activePartTab === "a"
-                  ? "border-violet-500 text-violet-600"
-                  : "border-transparent text-gray-400 hover:text-gray-600"
-            }`}
-          >
-            Other Charges
-            {base9 === 0 && (
-              <span className="ml-1 text-[10px]">🔒</span>
-            )}
-          </button>
-          <button
-            onClick={() => base18 > 0 && setActivePartTab("b")}
-            disabled={base18 === 0}
-            className={`px-5 py-2.5 text-xs font-semibold border-b-2 -mb-px transition-all ${
-              base18 === 0
-                ? "border-transparent text-gray-300 cursor-not-allowed opacity-40"
-                : activePartTab === "b"
-                  ? "border-indigo-500 text-indigo-600"
-                  : "border-transparent text-gray-400 hover:text-gray-600"
-            }`}
-          >
-            Project Value
-            {base18 === 0 && (
-              <span className="ml-1 text-[10px]">🔒</span>
-            )}
-          </button>
-        </div>
- 
+
         {/* Summary */}
         <div className="space-y-1 text-sm mb-4">
           <div className="flex justify-between py-1.5 border-b border-gray-50">
@@ -1692,7 +1494,7 @@ export default function ProformaPage() {
           </div>
           <div className="flex justify-between py-1.5 border-b border-gray-50">
             <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">
-              Quotation
+              Quotation No
             </span>
             <span className="font-medium text-gray-700">
               {selectedPI.quotation_no ||
@@ -1700,25 +1502,14 @@ export default function ProformaPage() {
                 "-"}
             </span>
           </div>
-          {activePartTab === "a" ? (
-            <div className="flex justify-between py-1.5">
-              <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">
-                Part A Base (Other Charges, incl. tax)
-              </span>
-              <span className="font-semibold text-violet-600">
-                Rs.{Number(base9).toLocaleString("en-IN")}
-              </span>
-            </div>
-          ) : (
-            <div className="flex justify-between py-1.5">
-              <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">
-                Part B Base (Project Value, incl. tax)
-              </span>
-              <span className="font-semibold text-indigo-600">
-                Rs.{Number(base18).toLocaleString("en-IN")}
-              </span>
-            </div>
-          )}
+          <div className="flex justify-between py-1.5">
+            <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">
+              PI Base Amount (incl. tax)
+            </span>
+            <span className="font-semibold text-indigo-600">
+              Rs. {grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </div>
         </div>
  
         {/* Overall progress bar */}
@@ -1734,215 +1525,78 @@ export default function ProformaPage() {
           </div>
           <div className="flex justify-between mt-1">
             <span className="text-xs text-gray-400">
-              Used: {avgUsed.toFixed(1)}%
-              {avgEntered > 0 && ` + ${avgEntered.toFixed(1)}% new`}
+              Used: {usedPct.toFixed(2)}%
+              {enteredPct > 0 && ` + ${enteredPct.toFixed(2)}% new`}
             </span>
-            <span className="text-xs text-gray-400">100%</span>
-          </div>
-          <div className="flex gap-2 mt-2">
-            {base9 > 0 && (
-              <span className="text-[10px] bg-violet-50 border border-violet-100 text-violet-600 px-2 py-0.5 rounded-full font-semibold">
-                A: {used9.toFixed(1)}% used
-              </span>
-            )}
-            {base18 > 0 && (
-              <span className="text-[10px] bg-indigo-50 border border-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full font-semibold">
-                B: {used18.toFixed(1)}% used
-              </span>
-            )}
+            <span className="text-xs text-gray-400">100.00%</span>
           </div>
         </div>
  
-        {/* Part A Form */}
-        {activePartTab === "a" && (
-          <div
-            className={`rounded-xl border p-4 ${over9 ? "border-red-200 bg-red-50" : "border-violet-100 bg-violet-50/30"}`}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-bold text-violet-600 uppercase tracking-widest">
-                Part A — Other Charges
-              </p>
-              <span className="text-xs bg-violet-100 text-violet-600 px-2 py-0.5 rounded-full font-semibold">
-                Used: {used9.toFixed(1)}% | Rem:{" "}
-                {remaining9.toFixed(1)}%
+        {/* Form (Amount Only) */}
+        <div
+          className={`rounded-xl border p-4 ${isOver ? "border-red-200 bg-red-50" : "border-indigo-100 bg-indigo-50/20"}`}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-bold text-indigo-600 uppercase tracking-widest">
+              Proforma Invoice
+            </p>
+            <span className="text-xs bg-indigo-100 text-indigo-600 px-2.5 py-1 rounded-full font-bold">
+              Used: {usedPct.toFixed(2)}% | Rem: {remainingPct.toFixed(2)}%
+            </span>
+          </div>
+          <div className="mb-3">
+            <div className="flex justify-between items-center mb-1">
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Amount
+              </label>
+              <span className="text-xs font-bold text-violet-600">
+                Percentage: {enteredPct.toFixed(2)}%
               </span>
             </div>
-            <div className="flex gap-3 mb-2">
-              <div className="flex-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Percentage
-                </label>
-                <div className="relative mt-1.5">
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={pct9}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (v === "") {
-                        handlePct9Change("");
-                        return;
-                      }
-                      const n = Number(v);
-                      if (n >= 0 && n <= 100) handlePct9Change(n);
-                    }}
-                    className="w-full border border-gray-200 rounded-xl pl-3 pr-8 py-2 text-sm focus:ring-1 focus:ring-violet-300 focus:border-violet-300 outline-none bg-white"
-                    placeholder="0"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
-                    %
-                  </span>
-                </div>
-              </div>
-              <div className="flex-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Amount
-                </label>
-                <div className="relative mt-1.5">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
-                    Rs.
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    value={amt9}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (v === "") {
-                        handleAmt9Change("");
-                        return;
-                      }
-                      handleAmt9Change(Number(v));
-                    }}
-                    className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-sm focus:ring-1 focus:ring-violet-300 focus:border-violet-300 outline-none bg-white"
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-            </div>
-            <div
-              className={`flex justify-between text-xs font-semibold px-2 py-1.5 rounded-lg ${over9 ? "bg-red-100 text-red-600" : after9 === 0 && entered9 > 0 ? "bg-green-100 text-green-600" : "bg-white text-gray-500 border border-gray-100"}`}
-            >
-              <span>Remaining after entry:</span>
-              <span>
-                {over9
-                  ? `Over by ${Math.abs(after9).toFixed(2)}%`
-                  : entered9 > 0
-                    ? `${after9.toFixed(2)}% | Rs.${Number(afterAmt9).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
-                    : `${remaining9.toFixed(2)}% | Rs.${Number((base9 * remaining9) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
+            <div className="relative mt-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">
+                Rs.
               </span>
+              <input
+                type="number"
+                min="0"
+                step="any"
+                value={amtInput}
+                onChange={(e) => setAmtInput(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-sm font-semibold focus:ring-1 focus:ring-indigo-300 focus:border-indigo-300 outline-none bg-white text-gray-800"
+                placeholder="0.00"
+              />
             </div>
           </div>
-        )}
- 
-        {/* Part B Form */}
-        {activePartTab === "b" && (
           <div
-            className={`rounded-xl border p-4 ${over18 ? "border-red-200 bg-red-50" : "border-indigo-100 bg-indigo-50/20"}`}
+            className={`flex justify-between text-xs font-semibold px-3 py-2 rounded-lg ${isOver ? "bg-red-100 text-red-600" : afterAmt === 0 && enteredAmt > 0 ? "bg-green-100 text-green-600" : "bg-white text-gray-600 border border-gray-100 shadow-sm"}`}
           >
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-bold text-indigo-600 uppercase tracking-widest">
-                Part B — Project Value
-              </p>
-              <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full font-semibold">
-                Used: {used18.toFixed(1)}% | Rem:{" "}
-                {remaining18.toFixed(1)}%
-              </span>
-            </div>
-            <div className="flex gap-3 mb-2">
-              <div className="flex-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Percentage
-                </label>
-                <div className="relative mt-1.5">
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={pct18}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (v === "") {
-                        handlePct18Change("");
-                        return;
-                      }
-                      const n = Number(v);
-                      if (n >= 0 && n <= 100) handlePct18Change(n);
-                    }}
-                    className="w-full border border-gray-200 rounded-xl pl-3 pr-8 py-2 text-sm focus:ring-1 focus:ring-indigo-300 focus:border-indigo-300 outline-none bg-white"
-                    placeholder="0"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
-                    %
-                  </span>
-                </div>
-              </div>
-              <div className="flex-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Amount
-                </label>
-                <div className="relative mt-1.5">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">
-                    Rs.
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    value={amt18}
-                    onChange={(e) => {
-                      const v = e.target.value;
-                      if (v === "") {
-                        handleAmt18Change("");
-                        return;
-                      }
-                      handleAmt18Change(Number(v));
-                    }}
-                    className="w-full border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-sm focus:ring-1 focus:ring-indigo-300 focus:border-indigo-300 outline-none bg-white"
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
-            </div>
-            <div
-              className={`flex justify-between text-xs font-semibold px-2 py-1.5 rounded-lg ${over18 ? "bg-red-100 text-red-600" : after18 === 0 && entered18 > 0 ? "bg-green-100 text-green-600" : "bg-white text-gray-500 border border-gray-100"}`}
-            >
-              <span>Remaining after entry:</span>
-              <span>
-                {over18
-                  ? `Over by ${Math.abs(after18).toFixed(2)}%`
-                  : entered18 > 0
-                    ? `${after18.toFixed(2)}% | Rs.${Number(afterAmt18).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`
-                    : `${remaining18.toFixed(2)}% | Rs.${Number((base18 * remaining18) / 100).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`}
-              </span>
-            </div>
+            <span>Remaining after entry:</span>
+            <span>
+              {isOver
+                ? `Over by Rs. ${Math.abs(afterAmt).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${Math.abs(afterPct).toFixed(2)}%)`
+                : `${afterPct.toFixed(2)}% | Rs. ${afterAmt.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+            </span>
           </div>
-        )}
+        </div>
       </div>
  
       {/* ── RIGHT PANEL — History ── */}
       <div className="w-full md:w-1/2 px-6 py-5 bg-slate-50/50">
         <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
-          {activePartTab === "a"
-            ? "Part A — Other Charges History"
-            : "Part B — Project Value History"}
+          PROFORMA PAYMENT HISTORY
         </p>
         <div className="space-y-2 overflow-y-auto max-h-[500px]">
-          {shownHistory.length === 0 ? (
+          {allFollowUps.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-gray-300">
               <i className="bi bi-clock-history text-3xl mb-2"></i>
               <p className="text-sm">No history found</p>
             </div>
           ) : (
-            shownHistory.map((h, index) => {
+            allFollowUps.map((h, index) => {
               const isLatest = index === 0;
-              const pct9v = Number(h.proforma_percentage_9 || 0);
-              const pct18v = Number(h.proforma_percentage_18 || 0);
-              const t9v = Number(h.total_9 || 0);
-              const t18v = Number(h.total_18 || 0);
-              const displayPct =
-                activePartTab === "a" ? pct9v : pct18v;
-              const displayAmt = activePartTab === "a" ? t9v : t18v;
+              const amt = Number(h.total || 0) || (Number(h.total_18 || 0) + Number(h.total_9 || 0));
+              const pct = grandTotal > 0 ? (amt / grandTotal) * 100 : (Number(h.proforma_percentage || 0) || (Number(h.proforma_percentage_18 || 0) + Number(h.proforma_percentage_9 || 0)));
  
               return (
                 <div key={h.id}>
@@ -1954,9 +1608,7 @@ export default function ProformaPage() {
                     }
                     className={`border rounded-xl p-3 cursor-pointer transition-all select-none bg-white ${
                       isLatest
-                        ? activePartTab === "a"
-                          ? "border-violet-400 bg-violet-50 shadow-sm"
-                          : "border-indigo-400 bg-indigo-50 shadow-sm"
+                        ? "border-indigo-400 bg-indigo-50 shadow-sm"
                         : "hover:bg-violet-50/40 hover:border-violet-200 border-gray-200"
                     }`}
                   >
@@ -1964,14 +1616,13 @@ export default function ProformaPage() {
                       <div className="flex items-center gap-2">
                         {isLatest && (
                           <span
-                            className={`text-xs px-2 py-0.5 rounded-full font-semibold ${activePartTab === "a" ? "bg-violet-100 text-violet-600" : "bg-indigo-100 text-indigo-600"}`}
+                            className="text-xs px-2 py-0.5 rounded-full font-semibold bg-indigo-100 text-indigo-600"
                           >
                             Latest
                           </span>
                         )}
                         <p className="font-semibold text-sm text-gray-700">
-                          {displayPct.toFixed(1)}% → Rs.
-                          {Number(displayAmt).toLocaleString()}
+                          {pct.toFixed(2)}% → Rs. {amt.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -1995,30 +1646,6 @@ export default function ProformaPage() {
                           className={`bi ${activeIndex === index ? "bi-chevron-up" : "bi-chevron-down"} text-gray-400 text-xs`}
                         ></i>
                       </div>
-                    </div>
- 
-                    {/* Mini chip */}
-                    <div className="flex gap-3 mt-2">
-                      {activePartTab === "a" ? (
-                        <div className="flex items-center gap-1.5 text-xs text-violet-600 bg-violet-50 border border-violet-100 rounded-lg px-2 py-1">
-                          <span className="font-bold">A:</span>
-                          <span>{pct9v.toFixed(1)}%</span>
-                          <span className="text-gray-400">|</span>
-                          <span>
-                            Rs.{Number(t9v).toLocaleString("en-IN")}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 text-xs text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-lg px-2 py-1">
-                          <span className="font-bold">B:</span>
-                          <span>{pct18v.toFixed(1)}%</span>
-                          <span className="text-gray-400">|</span>
-                          <span>
-                            Rs.
-                            {Number(t18v).toLocaleString("en-IN")}
-                          </span>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -2046,13 +1673,6 @@ export default function ProformaPage() {
             ? "bg-gray-300 cursor-not-allowed shadow-none"
             : "hover:shadow-lg hover:shadow-violet-200"
         }`}
-        // style={
-        //   isDisabled
-        //     ? {}
-        //     : {
-        //         background: "linear-gradient(to right, #6366f1, #8b5cf6)",
-        //       }
-        // }
       >
         {submitLoading || updateLoading ? (
           <>
@@ -2228,6 +1848,93 @@ export default function ProformaPage() {
                 type="button"
                 onClick={() => setShowSplitModal(false)}
                 className="px-5 py-2 rounded-lg text-sm font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all cursor-pointer border-0"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── QUOTATION FILES POPUP MODAL ── */}
+      {showQuotationModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-gray-100 flex flex-col text-gray-800 animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex justify-between items-center px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 backdrop-blur-md rounded-xl flex items-center justify-center text-white">
+                  <i className="bi bi-file-earmark-pdf text-xl"></i>
+                </div>
+                <div>
+                  <h2 className="text-base font-bold tracking-wide">
+                    Quotation Attachments
+                  </h2>
+                  <p className="text-xs text-blue-100 font-medium">
+                    {selectedQuotationNo ? `Quotation No: ${selectedQuotationNo}` : "Uploaded Documents"}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowQuotationModal(false)}
+                className="w-8 h-8 rounded-full hover:bg-white/20 transition-colors flex items-center justify-center text-white bg-transparent border-0 cursor-pointer text-lg"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* List Body */}
+            <div className="p-6 max-h-[60vh] overflow-y-auto space-y-3">
+              {quotationFiles.length === 0 ? (
+                <div className="text-center py-10 text-gray-400">
+                  <i className="bi bi-folder-x text-4xl mb-2 block text-gray-300"></i>
+                  No attachments found for this quotation.
+                </div>
+              ) : (
+                quotationFiles.map((file, idx) => {
+                  const fileName = file.file_name || (file.file_path ? file.file_path.split("/").pop() : `Document #${idx + 1}`);
+                  return (
+                    <div
+                      key={file.id || idx}
+                      className="flex items-center justify-between p-4 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-blue-50/50 hover:border-blue-200 transition-all group"
+                    >
+                      <div className="flex items-center gap-3.5 min-w-0 pr-3">
+                        <div className="w-10 h-10 rounded-lg bg-red-50 text-red-500 border border-red-100 flex items-center justify-center flex-shrink-0 group-hover:bg-red-500 group-hover:text-white transition-colors">
+                          <i className="bi bi-file-earmark-pdf-fill text-lg"></i>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-sm text-gray-800 truncate" title={fileName}>
+                            {fileName}
+                          </p>
+                          {file.created_at && (
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              Uploaded on: {new Date(file.created_at).toLocaleDateString("en-IN", { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => window.open(file.file_path, "_blank")}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-sm transition-all flex-shrink-0 cursor-pointer"
+                      >
+                        <i className="bi bi-box-arrow-up-right"></i>
+                        Open
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-between items-center px-6 py-3.5 bg-gray-50 border-t border-gray-100">
+              <span className="text-xs font-medium text-gray-500">
+                Total Files: <strong className="text-gray-700">{quotationFiles.length}</strong>
+              </span>
+              <button
+                onClick={() => setShowQuotationModal(false)}
+                className="px-5 py-2 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
               >
                 Close
               </button>
