@@ -349,6 +349,45 @@ function Page() {
     }
   };
 
+  const fetchProjects = async () => {
+    try {
+      setLoading(true);
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        throw new Error("You are not logged in. Please login again.");
+      }
+
+      const res = await fetch(`${API_BASE_URL}/api/project/list`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.status === 401) {
+        throw new Error("Session expired. Please login again.");
+      }
+
+      if (!res.ok) {
+        throw new Error(`Request failed with status ${res.status}`);
+      }
+
+      const json = await res.json();
+
+      if (!json.success) {
+        throw new Error(json.message || "Failed to load projects");
+      }
+
+      setProjects(json.data);
+      setError(null);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (viewMode === "analytics" && !analyticsData) {
       fetchAnalytics();
@@ -356,47 +395,6 @@ function Page() {
   }, [viewMode]);
 
   useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        setLoading(true);
-
-        // ⚠️ Update 'token' below to match the actual key name you use
-        // when saving the JWT after login (check DevTools → Application → Local Storage)
-        const token = localStorage.getItem("token");
-
-        if (!token) {
-          throw new Error("You are not logged in. Please login again.");
-        }
-
-        const res = await fetch(`${API_BASE_URL}/api/project/list`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (res.status === 401) {
-          throw new Error("Session expired. Please login again.");
-        }
-
-        if (!res.ok) {
-          throw new Error(`Request failed with status ${res.status}`);
-        }
-
-        const json = await res.json();
-
-        if (!json.success) {
-          throw new Error(json.message || "Failed to load projects");
-        }
-
-        setProjects(json.data);
-        setError(null);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     const fetchArchitects = async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/api/architect`);
@@ -415,6 +413,8 @@ function Page() {
     fetchArchitects();
   }, []);
 
+  const [groupTotalAmount, setGroupTotalAmount] = useState(0);
+
   // Manage Architecture assignment modal logic
   const handleManageArchitecture = async (project) => {
     setSelectedProject(project);
@@ -422,6 +422,7 @@ function Page() {
     setModalError(null);
     setLoadingArch(true);
     setShowArchModal(true);
+    setGroupTotalAmount(Number(project.amount) || 0);
 
     try {
       const token = localStorage.getItem("token");
@@ -443,6 +444,7 @@ function Page() {
       const json = await res.json();
       if (json.success) {
         setAssignedArchitects(json.data || []);
+        setGroupTotalAmount(json.totalGroupAmount || Number(project.amount) || 0);
       } else {
         throw new Error(json.message || "Failed to load project architectures");
       }
@@ -479,17 +481,17 @@ function Page() {
         email: arch.email,
         mobile_no: arch.mobile_no,
         address: arch.address,
-        percentage: 0,
+        percentage: "0.00",
         architecture_amount: 0,
       },
     ]);
   };
 
   const updatePercentage = (index, value) => {
-    const val = parseFloat(value);
-    const pct = isNaN(val) ? 0 : val;
-    const baseAmount = Number(selectedProject?.amount || 0);
-    const amount = baseAmount * (pct / 100);
+    const pct = parseFloat(value);
+    const percentage = isNaN(pct) ? 0 : pct;
+    const baseAmount = groupTotalAmount || Number(selectedProject?.amount || 0);
+    const amount = (baseAmount * percentage) / 100;
 
     setAssignedArchitects((prev) => {
       const copy = [...prev];
@@ -502,7 +504,7 @@ function Page() {
   const updateAmount = (index, value) => {
     const val = parseFloat(value);
     const amount = isNaN(val) ? 0 : val;
-    const baseAmount = Number(selectedProject?.amount || 0);
+    const baseAmount = groupTotalAmount || Number(selectedProject?.amount || 0);
     const pct = baseAmount > 0 ? (amount / baseAmount) * 100 : 0;
 
     setAssignedArchitects((prev) => {
@@ -539,21 +541,7 @@ function Page() {
         throw new Error(json.message || "Failed to update architectures");
       }
 
-      // Update the projects list locally to show new totals
-      setProjects((prev) =>
-        prev.map((p) => {
-          if (p.id === selectedProject.id) {
-            return {
-              ...p,
-              architecture_net_amount: json.data.architecture_net_amount,
-              expense_net_amount: json.data.expense_net_amount,
-              net_revenue_amount: json.data.net_revenue_amount,
-            };
-          }
-          return p;
-        }),
-      );
-
+      await fetchProjects();
       setShowArchModal(false);
     } catch (err) {
       setModalError(err.message);
@@ -568,6 +556,7 @@ function Page() {
     setExpenseModalError(null);
     setLoadingExpense(true);
     setShowExpenseModal(true);
+    setGroupTotalAmount(Number(project.amount) || 0);
 
     // Reset inputs
     setNewExpenseCategory("");
@@ -604,6 +593,7 @@ function Page() {
       const expJson = await expRes.json();
       if (expJson.success) {
         setProjectExpenses(expJson.data || []);
+        setGroupTotalAmount(expJson.totalGroupAmount || Number(project.amount) || 0);
       } else {
         throw new Error(expJson.message || "Failed to load project expenses");
       }
@@ -673,21 +663,7 @@ function Page() {
         throw new Error(json.message || "Failed to update project expenses");
       }
 
-      // Update the projects list locally to show new totals
-      setProjects((prev) =>
-        prev.map((p) => {
-          if (p.id === selectedProject.id) {
-            return {
-              ...p,
-              architecture_net_amount: json.data.architecture_net_amount,
-              expense_net_amount: json.data.expense_net_amount,
-              net_revenue_amount: json.data.net_revenue_amount,
-            };
-          }
-          return p;
-        }),
-      );
-
+      await fetchProjects();
       setShowExpenseModal(false);
     } catch (err) {
       setExpenseModalError(err.message);

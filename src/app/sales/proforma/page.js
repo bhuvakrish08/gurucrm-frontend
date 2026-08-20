@@ -5,6 +5,7 @@ import Link from "next/link";
 import Header from "@/app/components/header";
 import { toast } from "react-toastify";
 import useAuth from "@/app/components/useAuth";
+import { parseExcelDate, parseExcelNumber, applyColumnFormats } from "@/utils/excelUtils";
 import {
   CalendarDays,
   ListChecks,
@@ -412,21 +413,26 @@ export default function ProformaPage() {
       const exportData = piData.map((item, index) => ({
         "No.": index + 1,
         "PI No": formatPINumber(index),
-        "PI Date": item.pi_date
-          ? new Date(item.pi_date).toLocaleDateString()
-          : "",
+        "PI Date": parseExcelDate(item.pi_date),
         "Customer Name": item.customer_name || "",
         "Quotation No": item.quotation_no || "",
         Assignee: item.assignee || "",
-        Total: item.total || "",
-        "Proforma %": item.proforma_percentage || "",
+        Total: parseExcelNumber(item.total, 0),
+        "Proforma %": item.proforma_percentage !== null && item.proforma_percentage !== undefined && item.proforma_percentage !== ""
+          ? parseExcelNumber(item.proforma_percentage, 0) / 100
+          : "",
         Status: item.status || "",
         Stage: item.stage || "pending",
-        "Created At": item.created_at
-          ? new Date(item.created_at).toLocaleDateString()
-          : "",
+        "Created At": parseExcelDate(item.created_at),
       }));
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const worksheet = XLSX.utils.json_to_sheet(exportData, {
+        cellDates: true,
+        dateNF: "dd-mm-yyyy",
+      });
+      applyColumnFormats(XLSX, worksheet, exportData, {
+        Total: "#,##0.00",
+        "Proforma %": "0%",
+      });
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Proforma");
       const colWidths = Object.keys(exportData[0] || {}).map((key) => ({

@@ -8,6 +8,7 @@ import Header from "../components/header";
 import Select from "react-select";
 import { X, FileImage, FileText } from "lucide-react";
 import useAuth from "../components/useAuth";
+import { parseExcelDate } from "@/utils/excelUtils";
 
 /* ================================================================
    SlideOverModal — reusable right-side slide-in panel
@@ -152,28 +153,19 @@ export default function Page() {
       const exportData = tasks.map((item, index) => ({
         "#": index + 1,
         "Task Name": item.task_name || "",
-        "Start Date": item.start_date
-          ? new Date(item.start_date)
-              .toLocaleDateString("en-GB")
-              .replace(/\//g, "-")
-          : "",
-        "Due Date": item.due_date
-          ? new Date(item.due_date)
-              .toLocaleDateString("en-GB")
-              .replace(/\//g, "-")
-          : "",
+        "Start Date": parseExcelDate(item.start_date),
+        "Due Date": parseExcelDate(item.due_date),
         Priority: item.priority || "",
         Assignee: item.assignee || "",
         Status: item.status_name || "",
         "Created By": item.created_by_name || "",
-        "Created At": item.created_at
-          ? new Date(item.created_at)
-              .toLocaleDateString("en-GB")
-              .replace(/\//g, "-")
-          : "",
+        "Created At": parseExcelDate(item.created_at),
       }));
 
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const worksheet = XLSX.utils.json_to_sheet(exportData, {
+        cellDates: true,
+        dateNF: "dd-mm-yyyy",
+      });
       const workbook = XLSX.utils.book_new();
 
       XLSX.utils.book_append_sheet(workbook, worksheet, "Tasks");

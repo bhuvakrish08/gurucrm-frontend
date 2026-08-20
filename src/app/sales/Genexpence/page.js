@@ -20,6 +20,7 @@ import {
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { parseExcelDate, parseExcelNumber } from "@/utils/excelUtils";
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL;
 const NetProfitAPI = `${API_BASE}/api/net-profit`;
@@ -368,27 +369,55 @@ export default function NetProfitPage() {
       return;
     }
     const periodLabel = getPeriodLabel();
+    const revNum = parseExcelNumber(netRevenue, 0);
+    const expNum = parseExcelNumber(totalExpense, 0);
+    const profitNum = parseExcelNumber(netProfit, 0);
+
+    const expStartRow = 9;
+    const expEndRow = expStartRow + expenses.length - 1;
+
     const wsData = [
       ["Net Profit Report"],
       [`Period: ${periodLabel}`],
       [],
-      ["Total Revenue", netRevenue],
-      ["Total Expenses", totalExpense],
-      ["Net Profit", netProfit],
+      ["Total Revenue", revNum],
+      ["Total Expenses", expNum],
+      ["Net Profit", profitNum],
       [],
       ["#", "Expense Name", "Type", "Date", "Amount", "Notes"],
       ...expenses.map((exp, i) => [
         i + 1,
         exp.notes || exp.expense_name,
         exp.expense_name,
-        exp.expense_date,
-        Number(exp.amount || 0),
+        parseExcelDate(exp.expense_date),
+        parseExcelNumber(exp.amount, 0),
         exp.notes || "",
       ]),
       [],
-      ["", "", "", "Total", totalExpense, ""],
+      ["", "", "", "Total", expNum, ""],
     ];
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const ws = XLSX.utils.aoa_to_sheet(wsData, {
+      cellDates: true,
+      dateNF: "dd-mm-yyyy",
+    });
+
+    // Apply number format to summary cards
+    ["B4", "B5", "B6"].forEach((ref) => {
+      if (ws[ref]) ws[ref].z = "#,##0.00";
+    });
+
+    // Apply number format to Expense Amount column
+    for (let r = expStartRow; r <= expEndRow; r++) {
+      if (ws[`E${r}`]) ws[`E${r}`].z = "#,##0.00";
+    }
+
+    // Add Excel SUM formula for Total Expenses
+    const totalCellRef = `E${expEndRow + 2}`;
+    if (ws[totalCellRef]) {
+      ws[totalCellRef].z = "#,##0.00";
+      ws[totalCellRef].f = `SUM(E${expStartRow}:E${expEndRow})`;
+    }
+
     ws["!cols"] = [{ wch: 6 }, { wch: 28 }, { wch: 16 }, { wch: 14 }, { wch: 14 }, { wch: 24 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Expenses");

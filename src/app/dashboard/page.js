@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import Header from "@/app/components/header";
 import axios from "redaxios";
+import { getCache, setCache, fetchWithRetry } from "@/utils/slowNetworkHelper";
 import Swal from "sweetalert2";
 import {
   Users,
@@ -416,7 +417,7 @@ export default function Dashboard() {
 
   useAuth();
 
-  // Fetch dashboard data
+  // Fetch dashboard data with retries, timeouts, and progressive caching for extreme slow networks
   const fetchData = useCallback(async () => {
     const currentToken = localStorage.getItem("token");
     if (!currentToken) return;
@@ -424,189 +425,223 @@ export default function Dashboard() {
     try {
       const config = { headers: { Authorization: `Bearer ${currentToken}` } };
 
-      const [
-        leadsRes,
-        customersRes,
-        tasksRes,
-        todosRes,
-        quotationsRes,
-        piRes,
-        contractsRes,
-        productsRes,
-        trafficLightRes,
-        leadFollowUpRes,
-        quotationFollowUpRes,
-      ] = await Promise.all([
-        axios
-          .get(`${API_BASE}/api/lead/read`, config)
-          .catch(() => ({ data: { result: [] } })),
-        axios
-          .get(`${API_BASE}/api/customers/get-customers?limit=100`, config)
-          .catch(() => ({ data: { data: [] } })),
-        axios
-          .get(`${API_BASE}/api/tasks/read`, config)
-          .catch(() => ({ data: { result: [] } })),
-        axios
-          .get(`${API_BASE}/api/todos/read`, config)
-          .catch(() => ({ data: [] })),
-        axios
-          .get(`${API_BASE}/api/quotation/read`, config)
-          .catch(() => ({ data: { result: [] } })),
-        axios
-          .get(`${API_BASE}/api/pi/list`, config)
-          .catch(() => ({ data: { data: [] } })),
-        axios
-          .get(`${API_BASE}/api/contract-types/read`, config)
-          .catch(() => ({ data: [] })),
-        axios
-          .get(`${API_BASE}/api/product-master/read`, config)
-          .catch(() => ({ data: [] })),
-        axios
-          .get(`${API_BASE}/api/lead/analytics/traffic-light`, config)
-          .catch(() => ({ data: { result: [] } })),
-        axios
-          .get(`${API_BASE}/api/followup/lead-follow-up/upcoming`, config)
-          .catch(() => ({ data: { today: [], tomorrow: [], day_after: [] } })),
-        axios
-          .get(`${API_BASE}/api/followup/quotation/upcoming-followups`, config)
-          .catch(() => ({ data: { today: [], tomorrow: [], day_after: [] } })),
-      ]);
+      const fetchLeadsTask = fetchWithRetry(`${API_BASE}/api/lead/read`, config)
+        .then((res) => {
+          const resData = Array.isArray(res.data?.result) ? res.data.result : [];
+          setLeads(resData);
+          setCache("leads", resData);
+        })
+        .catch(() => {});
 
-      setLeads(
-        Array.isArray(leadsRes.data?.result) ? leadsRes.data.result : [],
-      );
-      setCustomers(
-        Array.isArray(customersRes.data?.data) ? customersRes.data.data : [],
-      );
+      const fetchCustomersTask = fetchWithRetry(
+        `${API_BASE}/api/customers/get-customers?limit=100`,
+        config
+      )
+        .then((res) => {
+          const resData = Array.isArray(res.data?.data) ? res.data.data : [];
+          setCustomers(resData);
+          setCache("customers", resData);
+        })
+        .catch(() => {});
 
-      const fetchedTasks =
-        tasksRes.data?.result || tasksRes.data?.data || tasksRes.data;
-      setTasks(Array.isArray(fetchedTasks) ? fetchedTasks : []);
+      const fetchTasksTask = fetchWithRetry(`${API_BASE}/api/tasks/read`, config)
+        .then((res) => {
+          const raw = res.data?.result || res.data?.data || res.data;
+          const resData = Array.isArray(raw) ? raw : [];
+          setTasks(resData);
+          setCache("tasks", resData);
+        })
+        .catch(() => {});
 
-      const fetchedTodos =
-        todosRes.data?.result || todosRes.data?.data || todosRes.data;
-      setTodos(Array.isArray(fetchedTodos) ? fetchedTodos : []);
+      const fetchTodosTask = fetchWithRetry(`${API_BASE}/api/todos/read`, config)
+        .then((res) => {
+          const raw = res.data?.result || res.data?.data || res.data;
+          const resData = Array.isArray(raw) ? raw : [];
+          setTodos(resData);
+          setCache("todos", resData);
+        })
+        .catch(() => {});
 
-      let fetchedQuotations =
-        quotationsRes.data?.result ||
-        quotationsRes.data?.data ||
-        quotationsRes.data;
-      if (!Array.isArray(fetchedQuotations)) {
-        fetchedQuotations = [];
-      }
-      const userRole = localStorage.getItem("role") || "";
-      const userFirstName = (localStorage.getItem("username") || "")
-        .split(" ")[0]
-        .toLowerCase();
-      if (userRole.toLowerCase() === "sales") {
-        fetchedQuotations = fetchedQuotations.filter((q) => {
-          const qAssignees = q.assignee
-            ? q.assignee.split(",").map((name) => name.trim().toLowerCase())
-            : [];
-          const lAssignees = q.lead_assignee
-            ? q.lead_assignee
-                .split(",")
-                .map((name) => name.trim().toLowerCase())
-            : [];
-          const hasBeenAssigned =
-            qAssignees.some((name) => name.includes(userFirstName)) ||
-            lAssignees.some((name) => name.includes(userFirstName));
+      const fetchQuotationsTask = fetchWithRetry(
+        `${API_BASE}/api/quotation/read`,
+        config
+      )
+        .then((res) => {
+          let fetchedQuotations =
+            res.data?.result || res.data?.data || res.data;
+          if (!Array.isArray(fetchedQuotations)) {
+            fetchedQuotations = [];
+          }
+          const userRole = localStorage.getItem("role") || "";
+          const userFirstName = (localStorage.getItem("username") || "")
+            .split(" ")[0]
+            .toLowerCase();
+          if (userRole.toLowerCase() === "sales") {
+            fetchedQuotations = fetchedQuotations.filter((q) => {
+              const qAssignees = q.assignee
+                ? q.assignee.split(",").map((name) => name.trim().toLowerCase())
+                : [];
+              const lAssignees = q.lead_assignee
+                ? q.lead_assignee
+                    .split(",")
+                    .map((name) => name.trim().toLowerCase())
+                : [];
+              const hasBeenAssigned =
+                qAssignees.some((name) => name.includes(userFirstName)) ||
+                lAssignees.some((name) => name.includes(userFirstName));
 
-          let inLog = false;
-          if (q.assignee_log) {
-            try {
-              const logs = JSON.parse(q.assignee_log);
-              inLog = logs.some(
-                (log) =>
-                  (log.previous_assignee &&
-                    log.previous_assignee
-                      .toLowerCase()
-                      .includes(userFirstName)) ||
-                  (log.new_assignee &&
-                    log.new_assignee.toLowerCase().includes(userFirstName)),
+              let inLog = false;
+              if (q.assignee_log) {
+                try {
+                  const logs = JSON.parse(q.assignee_log);
+                  inLog = logs.some(
+                    (log) =>
+                      (log.previous_assignee &&
+                        log.previous_assignee
+                          .toLowerCase()
+                          .includes(userFirstName)) ||
+                      (log.new_assignee &&
+                        log.new_assignee.toLowerCase().includes(userFirstName)),
+                  );
+                } catch {}
+              }
+              return hasBeenAssigned || inLog;
+            });
+          } else if (userRole.toLowerCase() === "estimation") {
+            fetchedQuotations = fetchedQuotations.filter((q) => {
+              const qAssignees = q.assignee
+                ? q.assignee.split(",").map((name) => name.trim().toLowerCase())
+                : [];
+              const lAssignees = q.lead_assignee
+                ? q.lead_assignee
+                    .split(",")
+                    .map((name) => name.trim().toLowerCase())
+                : [];
+
+              const matchesQuotation = qAssignees.some((name) =>
+                name.includes(userFirstName),
               );
-            } catch {}
+              const matchesLead = lAssignees.some((name) =>
+                name.includes(userFirstName),
+              );
+
+              if (qAssignees.length === 0) {
+                return matchesLead;
+              }
+              return matchesQuotation;
+            });
           }
-          return hasBeenAssigned || inLog;
-        });
-      } else if (userRole.toLowerCase() === "estimation") {
-        fetchedQuotations = fetchedQuotations.filter((q) => {
-          const qAssignees = q.assignee
-            ? q.assignee.split(",").map((name) => name.trim().toLowerCase())
-            : [];
-          const lAssignees = q.lead_assignee
-            ? q.lead_assignee
-                .split(",")
-                .map((name) => name.trim().toLowerCase())
-            : [];
+          setQuotations(fetchedQuotations);
+          setCache("quotations", fetchedQuotations);
+        })
+        .catch(() => {});
 
-          const matchesQuotation = qAssignees.some((name) =>
-            name.includes(userFirstName),
-          );
-          const matchesLead = lAssignees.some((name) =>
-            name.includes(userFirstName),
-          );
-
-          if (qAssignees.length === 0) {
-            return matchesLead;
+      const fetchPiTask = fetchWithRetry(`${API_BASE}/api/pi/list`, config)
+        .then((res) => {
+          let fetchedPis = res.data?.data || res.data?.result || res.data;
+          if (!Array.isArray(fetchedPis)) {
+            fetchedPis = [];
           }
-          return matchesQuotation;
-        });
-      }
-      setQuotations(fetchedQuotations);
+          const userRole = localStorage.getItem("role") || "";
+          const userFirstName = (localStorage.getItem("username") || "")
+            .split(" ")[0]
+            .toLowerCase();
+          if (userRole.toLowerCase() === "proforma invoices") {
+            fetchedPis = fetchedPis.filter((pi) => {
+              const piAssignees = pi.assignee
+                ? pi.assignee.split(",").map((name) => name.trim().toLowerCase())
+                : [];
+              return piAssignees.some((name) => name.includes(userFirstName));
+            });
+          }
+          setPis(fetchedPis);
+          setCache("pis", fetchedPis);
+        })
+        .catch(() => {});
 
-      let fetchedPis = piRes.data?.data || piRes.data?.result || piRes.data;
-      if (!Array.isArray(fetchedPis)) {
-        fetchedPis = [];
-      }
-      if (userRole.toLowerCase() === "proforma invoices") {
-        fetchedPis = fetchedPis.filter((pi) => {
-          const piAssignees = pi.assignee
-            ? pi.assignee.split(",").map((name) => name.trim().toLowerCase())
-            : [];
-          return piAssignees.some((name) => name.includes(userFirstName));
-        });
-      }
-      setPis(fetchedPis);
+      const fetchContractsTask = fetchWithRetry(
+        `${API_BASE}/api/contract-types/read`,
+        config
+      )
+        .then((res) => {
+          const raw = res.data?.data || res.data;
+          const resData = Array.isArray(raw) ? raw : [];
+          setContracts(resData);
+          setCache("contracts", resData);
+        })
+        .catch(() => {});
 
-      const fetchedContracts = contractsRes.data?.data || contractsRes.data;
-      setContracts(Array.isArray(fetchedContracts) ? fetchedContracts : []);
+      const fetchProductsTask = fetchWithRetry(
+        `${API_BASE}/api/product-master/read`,
+        config
+      )
+        .then((res) => {
+          const raw = res.data?.data || res.data;
+          const resData = Array.isArray(raw) ? raw : [];
+          setProducts(resData);
+          setCache("products", resData);
+        })
+        .catch(() => {});
 
-      const fetchedProducts = productsRes.data?.data || productsRes.data;
-      setProducts(Array.isArray(fetchedProducts) ? fetchedProducts : []);
+      const fetchTrafficLightTask = fetchWithRetry(
+        `${API_BASE}/api/lead/analytics/traffic-light`,
+        config
+      )
+        .then((res) => {
+          const raw = res.data?.result || [];
+          const resData = Array.isArray(raw) ? raw : [];
+          setTrafficLightStats(resData);
+          setCache("trafficLightStats", resData);
+        })
+        .catch(() => {});
 
-      const fetchedTrafficLight = trafficLightRes.data?.result || [];
-      setTrafficLightStats(
-        Array.isArray(fetchedTrafficLight) ? fetchedTrafficLight : [],
-      );
+      const fetchFollowUpsTask = Promise.allSettled([
+        fetchWithRetry(`${API_BASE}/api/followup/lead-follow-up/upcoming`, config).catch(() => ({ data: { today: [], tomorrow: [], day_after: [] } })),
+        fetchWithRetry(`${API_BASE}/api/followup/quotation/upcoming-followups`, config).catch(() => ({ data: { today: [], tomorrow: [], day_after: [] } })),
+      ]).then(([leadRes, quoteRes]) => {
+        const leadFU = (leadRes.status === "fulfilled" && leadRes.value?.data) || {};
+        const quoteFU = (quoteRes.status === "fulfilled" && quoteRes.value?.data) || {};
 
-      // Merge lead + quotation follow-ups into unified, date-sorted buckets
-      const mergeBucket = (leadArr = [], quoteArr = []) => {
-        const leadItems = (Array.isArray(leadArr) ? leadArr : []).map(
-          (item) => ({
-            ...item,
-            type: "lead",
-          }),
-        );
-        const quoteItems = (Array.isArray(quoteArr) ? quoteArr : []).map(
-          (item) => ({
-            ...item,
-            type: "quotation",
-          }),
-        );
-        return [...leadItems, ...quoteItems].sort(
-          (a, b) => new Date(a.follow_up_date) - new Date(b.follow_up_date),
-        );
-      };
+        const mergeBucket = (leadArr = [], quoteArr = []) => {
+          const leadItems = (Array.isArray(leadArr) ? leadArr : []).map(
+            (item) => ({
+              ...item,
+              type: "lead",
+            }),
+          );
+          const quoteItems = (Array.isArray(quoteArr) ? quoteArr : []).map(
+            (item) => ({
+              ...item,
+              type: "quotation",
+            }),
+          );
+          return [...leadItems, ...quoteItems].sort(
+            (a, b) => new Date(a.follow_up_date) - new Date(b.follow_up_date),
+          );
+        };
 
-      const leadFU = leadFollowUpRes.data || {};
-      const quoteFU = quotationFollowUpRes.data || {};
-
-      setFollowUps({
-        today: mergeBucket(leadFU.today, quoteFU.today),
-        tomorrow: mergeBucket(leadFU.tomorrow, quoteFU.tomorrow),
-        day_after: mergeBucket(leadFU.day_after, quoteFU.day_after),
+        const updatedFollowups = {
+          today: mergeBucket(leadFU.today, quoteFU.today),
+          tomorrow: mergeBucket(leadFU.tomorrow, quoteFU.tomorrow),
+          day_after: mergeBucket(leadFU.day_after, quoteFU.day_after),
+        };
+        setFollowUps(updatedFollowups);
+        setCache("followUps", updatedFollowups);
+        setLoadingFollowUps(false);
       });
+
+      await Promise.allSettled([
+        fetchLeadsTask,
+        fetchCustomersTask,
+        fetchTasksTask,
+        fetchTodosTask,
+        fetchQuotationsTask,
+        fetchPiTask,
+        fetchContractsTask,
+        fetchProductsTask,
+        fetchTrafficLightTask,
+        fetchFollowUpsTask,
+      ]);
     } catch (error) {
       console.error("Dashboard Data Fetch Error:", error);
     } finally {
@@ -616,61 +651,131 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
+    // 1. Instant hydration from LocalStorage cache (0ms render on slow internet)
+    const cachedLeads = getCache("leads");
+    const cachedCustomers = getCache("customers");
+    const cachedTasks = getCache("tasks");
+    const cachedTodos = getCache("todos");
+    const cachedQuotations = getCache("quotations");
+    const cachedPis = getCache("pis");
+    const cachedContracts = getCache("contracts");
+    const cachedProducts = getCache("products");
+    const cachedTrafficLight = getCache("trafficLightStats");
+    const cachedFollowUps = getCache("followUps");
+
+    let hasCached = false;
+    if (cachedLeads) { setLeads(cachedLeads); hasCached = true; }
+    if (cachedCustomers) { setCustomers(cachedCustomers); hasCached = true; }
+    if (cachedTasks) { setTasks(cachedTasks); hasCached = true; }
+    if (cachedTodos) { setTodos(cachedTodos); hasCached = true; }
+    if (cachedQuotations) { setQuotations(cachedQuotations); hasCached = true; }
+    if (cachedPis) { setPis(cachedPis); hasCached = true; }
+    if (cachedContracts) { setContracts(cachedContracts); hasCached = true; }
+    if (cachedProducts) { setProducts(cachedProducts); hasCached = true; }
+    if (cachedTrafficLight) { setTrafficLightStats(cachedTrafficLight); hasCached = true; }
+    if (cachedFollowUps) { setFollowUps(cachedFollowUps); setLoadingFollowUps(false); }
+
+    if (hasCached) {
+      setLoading(false);
+    }
+
+    // 2. Background revalidation
     fetchData();
     setRole(localStorage.getItem("role") || "");
 
-    // Keep follow-ups fresh: re-fetch every 5 minutes so items whose date
-    // has passed automatically fall off the list (the backend query only
-    // ever returns today -> +2 days).
-    const interval = setInterval(fetchData, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    // Refresh every 5 minutes if online and tab is active
+    const interval = setInterval(() => {
+      if (!document.hidden && navigator.onLine !== false) {
+        fetchData();
+      }
+    }, 5 * 60 * 1000);
+
+    const handleOnline = () => {
+      fetchData();
+    };
+
+    window.addEventListener("online", handleOnline);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("online", handleOnline);
+    };
   }, [fetchData]);
 
   const handleAddTodo = async (e) => {
     e.preventDefault();
     if (!newTodoTitle.trim()) return;
+    const titleToSave = newTodoTitle;
+    setNewTodoTitle("");
     setAddingTodo(true);
+
     try {
       const currentToken = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${currentToken}` } };
 
       if (editingTodoId) {
-        // Edit mode
-        await axios.put(
-          `${API_BASE}/api/todos/update/${editingTodoId}`,
-          { title: newTodoTitle },
-          config,
+        // Optimistic Edit
+        const previousTodos = [...todos];
+        const updatedTodos = todos.map((todo) =>
+          todo.id === editingTodoId
+            ? { ...todo, title: titleToSave, description: titleToSave }
+            : todo
         );
-        setTodos(
-          todos.map((todo) =>
-            todo.id === editingTodoId
-              ? { ...todo, title: newTodoTitle, description: newTodoTitle }
-              : todo,
-          ),
-        );
-        toast.success("To-do updated!");
+        setTodos(updatedTodos);
+        setCache("todos", updatedTodos);
         setEditingTodoId(null);
+        toast.success("To-do updated!");
+
+        try {
+          await axios.put(
+            `${API_BASE}/api/todos/update/${editingTodoId}`,
+            { title: titleToSave },
+            config,
+          );
+        } catch (err) {
+          console.error(err);
+          setTodos(previousTodos);
+          setCache("todos", previousTodos);
+          toast.error("Failed to update to-do");
+        }
       } else {
-        // Add mode
-        const res = await axios.post(
-          `${API_BASE}/api/todos/insert`,
-          { title: newTodoTitle },
-          config,
-        );
-        if (res.data) {
-          setTodos([
-            { ...res.data, created_at: new Date().toISOString() },
-            ...todos,
-          ]);
-          toast.success("To-do added successfully!");
+        // Optimistic Add
+        const tempId = `temp_${Date.now()}`;
+        const newTodoObj = {
+          id: tempId,
+          title: titleToSave,
+          description: titleToSave,
+          is_finished: 0,
+          created_at: new Date().toISOString(),
+        };
+        const previousTodos = [...todos];
+        const updatedTodos = [newTodoObj, ...todos];
+        setTodos(updatedTodos);
+        setCache("todos", updatedTodos);
+        toast.success("To-do added successfully!");
+
+        try {
+          const res = await axios.post(
+            `${API_BASE}/api/todos/insert`,
+            { title: titleToSave },
+            config,
+          );
+          if (res.data) {
+            const finalTodos = updatedTodos.map((todo) =>
+              todo.id === tempId
+                ? { ...res.data, created_at: new Date().toISOString() }
+                : todo
+            );
+            setTodos(finalTodos);
+            setCache("todos", finalTodos);
+          }
+        } catch (err) {
+          console.error(err);
+          setTodos(previousTodos);
+          setCache("todos", previousTodos);
+          toast.error("Failed to add to-do");
         }
       }
-      setNewTodoTitle("");
-    } catch (err) {
-      console.error(err);
-      toast.error(
-        editingTodoId ? "Failed to update to-do" : "Failed to add to-do",
-      );
     } finally {
       setAddingTodo(false);
     }
@@ -679,7 +784,6 @@ export default function Dashboard() {
   const startEditTodo = (todo) => {
     setEditingTodoId(todo.id);
     setNewTodoTitle(todo.title || todo.description || "");
-    // scroll to top of todo section (optional)
   };
 
   const handleDeleteTodo = async (id) => {
@@ -721,32 +825,43 @@ export default function Dashboard() {
 
     if (!confirmed) return;
 
+    // Optimistic Delete
+    const previousTodos = [...todos];
+    const updatedTodos = todos.filter((t) => t.id !== id);
+    setTodos(updatedTodos);
+    setCache("todos", updatedTodos);
+    toast.success("Task deleted");
+
     try {
       const currentToken = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${currentToken}` } };
       await axios.delete(`${API_BASE}/api/todos/delete/${id}`, config);
-      setTodos(todos.filter((t) => t.id !== id));
-      toast.success("Task deleted");
     } catch (err) {
       console.error("Error deleting todo:", err);
+      setTodos(previousTodos);
+      setCache("todos", previousTodos);
       toast.error("Failed to delete task");
     }
   };
 
   const handleToggleTodo = async (id) => {
+    // Optimistic Toggle
+    const previousTodos = [...todos];
+    const updatedTodos = todos.map((todo) =>
+      todo.id === id ? { ...todo, is_finished: !todo.is_finished } : todo,
+    );
+    setTodos(updatedTodos);
+    setCache("todos", updatedTodos);
+    toast.success("Task updated!");
+
     try {
       const currentToken = localStorage.getItem("token");
       const config = { headers: { Authorization: `Bearer ${currentToken}` } };
       await axios.put(`${API_BASE}/api/todos/finish/${id}`, {}, config);
-
-      setTodos(
-        todos.map((todo) =>
-          todo.id === id ? { ...todo, is_finished: !todo.is_finished } : todo,
-        ),
-      );
-      toast.success("Task updated!");
     } catch (err) {
       console.error(err);
+      setTodos(previousTodos);
+      setCache("todos", previousTodos);
       toast.error("Failed to update task");
     }
   };

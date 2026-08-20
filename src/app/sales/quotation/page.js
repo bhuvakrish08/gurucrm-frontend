@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import Select from "react-select";
 import { checkRole } from "@/utils/checkRole";
 import useAuth from "@/app/components/useAuth";
+import { parseExcelDate, parseExcelNumber, applyColumnFormats } from "@/utils/excelUtils";
 import { Building2, User, Bookmark } from "lucide-react";
 import { Trash2, X } from "lucide-react";
 export default function QuotationPage() {
@@ -509,28 +510,25 @@ const closeUpdateDrawer = () => {
         "Customer Name": q.customer_name || "",
         Reference: q.reference || "",
         "Quotation No": q.quotation_no || "",
-        "Created Date": q.first_quotation_date
-          ? new Date(q.first_quotation_date).toLocaleDateString()
-          : "",
-        "Last Activity": q.quotation_date
-          ? new Date(q.quotation_date).toLocaleDateString()
-          : q.quotation_created_at
-            ? new Date(q.quotation_created_at).toLocaleDateString()
-            : "",
-        "Grand Total (₹)": q.grand_total
-          ? Number(q.grand_total).toLocaleString()
-          : "",
+        "Created Date": parseExcelDate(q.first_quotation_date),
+        "Last Activity": parseExcelDate(q.quotation_date || q.quotation_created_at),
+        "Grand Total (₹)": parseExcelNumber(q.grand_total, 0),
         Assignee: q.assignee || "",
         Status: q.displayStatus || "",
-        "Proforma %": q.proforma_percentage
-          ? `${Number(q.proforma_percentage).toFixed(0)}%`
-          : "-",
-        "Updated By": q.updated_by || "",
-        "Updated At": q.updated_at
-          ? new Date(q.updated_at).toLocaleString("en-IN")
+        "Proforma %": q.proforma_percentage !== null && q.proforma_percentage !== undefined && q.proforma_percentage !== ""
+          ? parseExcelNumber(q.proforma_percentage, 0) / 100
           : "",
+        "Updated By": q.updated_by || "",
+        "Updated At": parseExcelDate(q.updated_at),
       }));
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const worksheet = XLSX.utils.json_to_sheet(exportData, {
+        cellDates: true,
+        dateNF: "dd-mm-yyyy",
+      });
+      applyColumnFormats(XLSX, worksheet, exportData, {
+        "Grand Total (₹)": "#,##0.00",
+        "Proforma %": "0%",
+      });
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Quotations");
       const colWidths = Object.keys(exportData[0]).map((key) => ({
@@ -978,6 +976,13 @@ const closeUpdateDrawer = () => {
   // Returns a colored dot JSX based on quotation_dot_color from API
   // ===================================================
   const getQuotationTrafficDot = (q) => {
+    const status = q?.quotation_status || "Pending";
+
+    // Only show traffic light color dot for Pending and Sent stages
+    if (!["Pending", "Sent"].includes(status)) {
+      return null;
+    }
+
     const color = q.quotation_dot_color || "green"; // 'green' | 'yellow' | 'red'
 
     const dotColors = {
@@ -986,33 +991,30 @@ const closeUpdateDrawer = () => {
       red: "#ef4444",
     };
 
-    const isPending =
-      !q.latest_quotation_id ||
-      ["Pending", "Revision"].includes(q.quotation_status);
+    const tooltips =
+      status === "Sent"
+        ? {
+            green: "✅ Sent: Converted/Responded in < 3 days",
+            yellow: "⚠️ Sent: Pending 3 to 5 days — Attention needed",
+            red: "🔴 Sent: Overdue > 5 days — Critical",
+          }
+        : {
+            green: "✅ Pending: Response time on track (< 24h)",
+            yellow: "⚠️ Pending: Action delayed (24h - 48h)",
+            red: "🔴 Pending: Action critically delayed (> 48h)",
+          };
 
-    const tooltips = isPending
-      ? {
-          green: "✅ Response time on track (< 24h)",
-          yellow: "⚠️ Action delayed (> 24h) — Attention needed",
-          red: "🔴 Action critically delayed (> 48h)",
-        }
-      : {
-          green: "✅ Completed on track (< 24h)",
-          yellow: "⚠️ Completed late (24h - 48h)",
-          red: "🔴 Completed late (48h+)",
-        };
-
-    const isPulse = isPending && (color === "yellow" || color === "red");
+    const isPulse = color === "yellow" || color === "red";
 
     return (
       <span
-        title={tooltips[color]}
+        title={tooltips[color] || tooltips.green}
         style={{
           display: "inline-block",
           width: 9,
           height: 9,
           borderRadius: "50%",
-          backgroundColor: dotColors[color],
+          backgroundColor: dotColors[color] || dotColors.green,
           flexShrink: 0,
           animation: isPulse ? "pulse 1.5s infinite" : "none",
         }}
@@ -2412,7 +2414,7 @@ const closeUpdateDrawer = () => {
                     backgroundColor: "#22c55e",
                   }}
                 />
-                On track
+                On track (&lt; 3 days for Sent)
               </span>
               <span className="flex items-center gap-1.5">
                 <span
@@ -2424,7 +2426,7 @@ const closeUpdateDrawer = () => {
                     backgroundColor: "#eab308",
                   }}
                 />
-                24h no follow-up
+                3 - 5 days
               </span>
               <span className="flex items-center gap-1.5">
                 <span
@@ -2436,7 +2438,7 @@ const closeUpdateDrawer = () => {
                     backgroundColor: "#ef4444",
                   }}
                 />
-                48h+ overdue
+                &gt; 5 days overdue
               </span>
             </div>
           </div>

@@ -10,6 +10,7 @@ import CheckPermission from "@/app/components/CheckPermission";
 import useAuth from "@/app/components/useAuth";
 import { toast } from "react-toastify";
 import * as XLSX from "xlsx";
+import { parseExcelDate, parseExcelNumber } from "@/utils/excelUtils";
 import CategoryDisplay from "@/app/components/CategoryDisplay";
 import { Select } from "../components/Select";
 
@@ -641,13 +642,13 @@ export default function StrategyHistoryPage() {
     return filteredItems.map(item => {
       const ac = getActionConfig(item.actionType);
       return {
-        "Timestamp": formatDateTime(item.createdAt),
+        "Timestamp": parseExcelDate(item.createdAt),
         "User": getUserDisplayName(item.performedBy),
         "Action": ac.label,
         "Strategy Category": item.categoryName || "—",
         "Reason": item.reason || "—",
-        "Old Value": item.oldValue ? Number(item.oldValue) : 0,
-        "New Value": item.newValue ? Number(item.newValue) : 0,
+        "Old Value": parseExcelNumber(item.oldValue, 0),
+        "New Value": parseExcelNumber(item.newValue, 0),
         "Status": item.actionType.includes("DELETE") ? "Deleted" : "Active"
       };
     });
@@ -678,7 +679,10 @@ export default function StrategyHistoryPage() {
       return;
     }
     const data = getExportData();
-    const ws = XLSX.utils.json_to_sheet(data);
+    const ws = XLSX.utils.json_to_sheet(data, {
+      cellDates: true,
+      dateNF: "dd-mm-yyyy hh:mm",
+    });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Audit History");
     const dateStr = new Date().toISOString().split("T")[0];

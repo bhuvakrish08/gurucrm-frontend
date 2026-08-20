@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { checkRole } from "@/utils/checkRole";
 import useAuth from "@/app/components/useAuth";
+import { parseExcelDate } from "@/utils/excelUtils";
 import { Sparkles } from "lucide-react";
 import { Trash2} from "lucide-react";
 
@@ -427,16 +428,15 @@ const handleCloseUpdateModal = () => {
         "Lead Title": lead.reference || "",
         Source: lead.source || "",
         Assignee: lead.assignee || "",
-        "Next Follow Up": lead.next_follow_up_date
-          ? new Date(lead.next_follow_up_date).toLocaleDateString()
-          : "",
-        "Created At": lead.created_at
-          ? new Date(lead.created_at).toLocaleDateString()
-          : "",
+        "Next Follow Up": parseExcelDate(lead.next_follow_up_date),
+        "Created At": parseExcelDate(lead.created_at),
         Status: lead.status || "",
       }));
 
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const worksheet = XLSX.utils.json_to_sheet(exportData, {
+        cellDates: true,
+        dateNF: "dd-mm-yyyy",
+      });
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Leads");
 
@@ -1010,14 +1010,14 @@ const handleCloseUpdateModal = () => {
 
     const tooltips = isPending
       ? {
-          green: "✅ Follow-up on track (< 24h)",
-          yellow: "⚠️ No follow-up in 24h — Attention needed",
-          red: "🔴 No follow-up in 48h+ — Critical",
+          green: "✅ Follow-up on track (<= 24h)",
+          yellow: "⚠️ No follow-up in 24h - 48h — Attention needed",
+          red: "🔴 No follow-up in > 48h — Critical",
         }
       : {
-          green: "✅ Completed on track (< 24h)",
-          yellow: "⚠️ Completed late (24h - 48h)",
-          red: "🔴 Completed late (48h+)",
+          green: "✅ Converted to Won on track (<= 24h)",
+          yellow: "⚠️ Converted to Won in 24h - 48h",
+          red: "🔴 Converted to Won in > 48h",
         };
 
     const isPulse = isPending && (color === "yellow" || color === "red");
@@ -1476,7 +1476,7 @@ const handleCloseUpdateModal = () => {
                     backgroundColor: "#22c55e",
                   }}
                 />
-                On track
+                On track (&le; 24h)
               </span>
               <span className="flex items-center gap-1.5">
                 <span
@@ -1488,7 +1488,7 @@ const handleCloseUpdateModal = () => {
                     backgroundColor: "#eab308",
                   }}
                 />
-                24h no follow-up
+                24h - 48h
               </span>
               <span className="flex items-center gap-1.5">
                 <span
@@ -1500,7 +1500,7 @@ const handleCloseUpdateModal = () => {
                     backgroundColor: "#ef4444",
                   }}
                 />
-                48h+ overdue
+                &gt; 48h overdue
               </span>
             </div>
           </div>
