@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import axios from "redaxios";
 import Header from "@/app/components/header";
@@ -13,14 +13,14 @@ export default function Page() {
 
     const [modules, setModules] = useState([]);
 
-    useEffect(() => {
-        fetchModules();
-    }, []);
-
-    const fetchModules = async () => {
+    const fetchModules = useCallback(async () => {
         const res = await axios.get(`${API_BASE}/api/notifications/read`);
         setModules(res.data);
-    };
+    }, [API_BASE]);
+
+    useEffect(() => {
+        fetchModules();
+    }, [fetchModules]);
 
     const handleToggle = async (id, field, currentValue) => {
         const newValue = !currentValue;

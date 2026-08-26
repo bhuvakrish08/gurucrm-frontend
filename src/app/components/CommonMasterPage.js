@@ -54,9 +54,13 @@ export default function CommonMasterPage({
         if (status) params.status = status;
 
         const res = await axios.get(listApi, { params, headers: getHeaders() });
-        setData(res.data);
+        const listData = Array.isArray(res.data)
+          ? res.data
+          : (res.data?.data || res.data?.result || res.data?.rows || []);
+        setData(listData);
       } catch (err) {
         console.error("Fetch error:", err);
+        setData([]);
       }
     }, [listApi, getHeaders]);
 
@@ -76,7 +80,8 @@ export default function CommonMasterPage({
     if (!parentListApi) return;
     try {
       const res = await axios.get(parentListApi, { headers: getHeaders() });
-      setParentOptions(res.data);
+      const optionsData = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      setParentOptions(optionsData);
     } catch (err) {
       console.error("Error fetching parent options:", err);
     }
@@ -84,28 +89,37 @@ export default function CommonMasterPage({
 
   useEffect(() => {
     fetchData();
-    if (showRadio && parentListApi) fetchParentOptions();
-  }, [fetchData, showRadio, parentListApi, fetchParentOptions]);
+    if (parentListApi) fetchParentOptions();
+  }, [fetchData, parentListApi, fetchParentOptions]);
 
   useEffect(() => {
-    if (showForm && showRadio && parentListApi) fetchParentOptions();
-  }, [showForm, showRadio, parentListApi, fetchParentOptions]);
+    if (showForm && parentListApi) fetchParentOptions();
+  }, [showForm, parentListApi, fetchParentOptions]);
 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const parentVal = selectedParent || selectedExtraValue || "";
     const payload = {
-      parent_designation: selectedParent || "",
       name: formName,
+      parent_designation: parentVal,
     };
+    if (extraColumn?.key) {
+      payload[extraColumn.key] = parentVal;
+    }
 
     try {
       setIsSubmitting(true); // ✅ START
 
       if (editId) {
+        const existing = data.find((d) => d.id === editId);
+        if (existing && existing.status !== undefined) {
+          payload.status = existing.status;
+        }
         await axios.put(`${saveApi}/update/${editId}`, payload, { headers: getHeaders() });
         toast.success("Updated successfully");
       } else {
+        payload.status = 1;
         await axios.post(`${saveApi}/insert`, payload, { headers: getHeaders() });
         toast.success("Inserted successfully");
       }
@@ -160,13 +174,12 @@ export default function CommonMasterPage({
 
   const handleEdit = (item) => {
     setEditId(item.id);
-    setFormName(item.name);
-    setSelectedParent(item.parent_designation || "");
-    setIsParent(item[radioField] === 1);
+    setFormName(item.name || "");
+    const parentVal = item.parent_designation || (extraColumn ? item[extraColumn.key] : "") || "";
+    setSelectedParent(parentVal);
+    setSelectedExtraValue(parentVal);
+    setIsParent(item[radioField] === 1 || Boolean(parentVal));
     setIsDefault(item.default === 1);
-    if (extraColumn && item[extraColumn.key]) {
-      setSelectedExtraValue(item[extraColumn.key]);
-    }
     setShowForm(true);
   };
 
@@ -623,10 +636,10 @@ export default function CommonMasterPage({
                   </div>
                 )}
  
-                {showRadio && isParent && (
+                {parentListApi && (!showRadio || isParent) && (
                   <div className="mb-4">
                     <label className="block mb-1.5 text-sm font-medium text-gray-600">
-                      Select Parent
+                      Select {extraColumn?.label || "Parent"}
                     </label>
                     <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
                       <span className="flex items-center justify-center w-10 shrink-0 bg-blue-50 border-r border-gray-100">

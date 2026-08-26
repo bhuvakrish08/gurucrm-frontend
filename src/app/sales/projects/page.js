@@ -349,7 +349,10 @@ function Page() {
     }
   };
 
-  const fetchProjects = async () => {
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+
+  const fetchProjects = async (page = 1, search = "") => {
     try {
       setLoading(true);
 
@@ -359,7 +362,13 @@ function Page() {
         throw new Error("You are not logged in. Please login again.");
       }
 
-      const res = await fetch(`${API_BASE_URL}/api/project/list`, {
+      const queryParams = new URLSearchParams({
+        page,
+        limit: itemsPerPage,
+      });
+      if (search) queryParams.append("search", search);
+
+      const res = await fetch(`${API_BASE_URL}/api/project/list?${queryParams.toString()}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -380,6 +389,11 @@ function Page() {
       }
 
       setProjects(json.data);
+      if (json.pagination) {
+        setTotalPages(json.pagination.totalPages || 1);
+        setTotalRecords(json.pagination.total || json.data.length);
+        setCurrentPage(json.pagination.page || page);
+      }
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -840,12 +854,12 @@ function Page() {
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const paginatedProjects = projects.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(projects.length / itemsPerPage);
+  const calculatedTotalPages = totalPages > 1 ? totalPages : Math.ceil(projects.length / itemsPerPage);
 
   const getSlidingPages = () => {
     const visibleCount = 5;
-    if (totalPages <= visibleCount) {
-      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    if (calculatedTotalPages <= visibleCount) {
+      return Array.from({ length: calculatedTotalPages }, (_, i) => i + 1);
     }
     let start = currentPage - Math.floor(visibleCount / 2);
     let end = currentPage + Math.floor(visibleCount / 2);
@@ -853,9 +867,9 @@ function Page() {
       start = 1;
       end = visibleCount;
     }
-    if (end > totalPages) {
-      end = totalPages;
-      start = totalPages - visibleCount + 1;
+    if (end > calculatedTotalPages) {
+      end = calculatedTotalPages;
+      start = calculatedTotalPages - visibleCount + 1;
     }
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   };

@@ -18,13 +18,13 @@ export default function PageTransition({ children }) {
     NO_LOADER_ROUTES.includes(pathname);
 
 
-  const [loading,setLoading] = useState(false);
-  const [progress,setProgress] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState(0);
 
 
-  useEffect(()=>{
+  useEffect(() => {
 
-    if(disableLoader){
+    if (disableLoader) {
 
       setLoading(false);
       setProgress(0);
@@ -42,43 +42,43 @@ export default function PageTransition({ children }) {
     document.body.style.overflow = "hidden";
 
 
-    const interval = setInterval(()=>{
+    const interval = setInterval(() => {
 
-      setProgress(prev=>{
+      setProgress(prev => {
 
-        if(prev >= 90) return prev;
+        if (prev >= 90) return prev;
 
         return prev + 6;
 
       });
 
-    },120);
+    }, 120);
 
 
-    const timer = setTimeout(()=>{
+    const timer = setTimeout(() => {
 
       setProgress(100);
 
-      setTimeout(()=>{
+      setTimeout(() => {
 
         setLoading(false);
         setProgress(0);
 
         document.body.style.overflow = "auto";
 
-      },200);
+      }, 200);
 
-    },600);
+    }, 600);
 
 
-    return ()=>{
+    return () => {
 
       clearInterval(interval);
       clearTimeout(timer);
 
     };
 
-  },[pathname,disableLoader]);
+  }, [pathname, disableLoader]);
 
 
 
@@ -90,20 +90,20 @@ export default function PageTransition({ children }) {
 
         loading && !disableLoader && (
 
-          <div className="fixed top-[78px] left-0 w-full z-50">
+          <div className="fixed top-[80px] left-0 w-full z-50">
 
             <div
               className="h-[3px] transition-all duration-200"
               style={{
 
-                width:`${progress}%`,
+                width: `${progress}%`,
 
                 background:
                   "linear-gradient(90deg,#fde68a,#93c5fd,#86efac,#fca5a5,#fde68a)",
 
-                backgroundSize:"300% 100%",
+                backgroundSize: "300% 100%",
 
-                animation:"softColorLoader 1.4s linear infinite"
+                animation: "softColorLoader 1.4s linear infinite"
 
               }}
             />

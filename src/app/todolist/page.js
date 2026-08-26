@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import axios from "redaxios";
+import { getCache, setCache, fetchWithRetry } from "@/utils/slowNetworkHelper";
 import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
 import Header from "../components/header";
@@ -36,12 +37,21 @@ export default function Page() {
 
   // Fetch all todos
   const fetchTodos = useCallback(async () => {
+    // 1. Immediately show cached todos (SWR)
+    const cached = getCache("todos_list_cached");
+    if (cached && Array.isArray(cached)) {
+      setTodos(cached);
+    }
+
     try {
       const config = getConfig();
       if (!config) return;
 
-      const res = await axios.get(`${API_base}/read`, config);
-      setTodos(res.data);
+      const res = await fetchWithRetry(`${API_base}/read`, config, { timeout: 12000, maxRetries: 2 });
+      if (res && res.data) {
+        setTodos(res.data);
+        setCache("todos_list_cached", res.data);
+      }
     } catch (err) {
       console.error("Error fetching todos:", err);
       if (

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "redaxios";
+import { getCache, setCache, fetchWithRetry } from "@/utils/slowNetworkHelper";
 import Link from "next/link";
 import { toast } from "react-toastify";
 import { ChevronUpIcon, ChevronDownIcon } from "lucide-react";
@@ -99,15 +100,30 @@ export default function Page() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const fetchData = async () => {
+    // 1. Immediately show cached tasks if present on page 1 (SWR)
+    if (currentPage === 1 && Object.values(filters).every((v) => !v)) {
+      const cachedTasks = getCache("tasks_list_cached");
+      if (cachedTasks && Array.isArray(cachedTasks)) {
+        setTasks(cachedTasks);
+      }
+    }
+
     try {
-      const res = await axios.get(`${APIBase}/read`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: filters,
-      });
-      setTasks(res.data.result || []);
+      const res = await fetchWithRetry(
+        `${APIBase}/read`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { ...filters, page: currentPage, limit: itemsPerPage },
+        },
+        { timeout: 15000, maxRetries: 2 }
+      );
+      const taskList = res.data.data || res.data.result || [];
+      setTasks(taskList);
+      if (currentPage === 1 && Object.values(filters).every((v) => !v)) {
+        setCache("tasks_list_cached", taskList);
+      }
     } catch (err) {
-      console.log(err);
-      toast.error(err?.data?.message || "Failed to load tasks");
+      console.log("[Tasks Fetch Error]", err);
     }
   };
 

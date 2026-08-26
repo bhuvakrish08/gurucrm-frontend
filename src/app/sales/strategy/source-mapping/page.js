@@ -309,7 +309,7 @@ export default function SourceMappingPage() {
                   </svg>
                 </div>
                 <h3 className="text-lg font-black text-slate-800 mb-1.5">No Lead Sources Found</h3>
-                <p className="text-sm font-medium text-slate-500 max-w-sm mx-auto">We couldn't find any lead sources matching your current search criteria or filter status.</p>
+                <p className="text-sm font-medium text-slate-500 max-w-sm mx-auto">We couldn&apos;t find any lead sources matching your current search criteria or filter status.</p>
                 <button 
                   onClick={() => { setSearch(""); setFilterStatus("all"); }}
                   className="mt-6 px-5 py-2.5 bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#334155] text-sm font-bold rounded-md transition-colors shadow-sm"

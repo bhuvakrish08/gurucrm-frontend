@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
@@ -29,7 +30,9 @@ import {
   FileText,
   AlertCircle,
 } from "lucide-react";
+
 import {
+  ResponsiveContainer,
   AreaChart,
   Area,
   LineChart,
@@ -40,7 +43,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
   Legend,
   PieChart,
   Pie,
@@ -53,6 +55,7 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
 } from "recharts";
+
 import useAuth from "../components/useAuth";
 
 const API_BASE = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
@@ -425,7 +428,7 @@ export default function Dashboard() {
     try {
       const config = { headers: { Authorization: `Bearer ${currentToken}` } };
 
-      const fetchLeadsTask = fetchWithRetry(`${API_BASE}/api/lead/read`, config)
+      const fetchLeadsTask = fetchWithRetry(`${API_BASE}/api/lead/read?limit=50`, config)
         .then((res) => {
           const resData = Array.isArray(res.data?.result) ? res.data.result : [];
           setLeads(resData);
@@ -434,7 +437,7 @@ export default function Dashboard() {
         .catch(() => {});
 
       const fetchCustomersTask = fetchWithRetry(
-        `${API_BASE}/api/customers/get-customers?limit=100`,
+        `${API_BASE}/api/customers/get-customers?limit=50`,
         config
       )
         .then((res) => {
@@ -444,7 +447,7 @@ export default function Dashboard() {
         })
         .catch(() => {});
 
-      const fetchTasksTask = fetchWithRetry(`${API_BASE}/api/tasks/read`, config)
+      const fetchTasksTask = fetchWithRetry(`${API_BASE}/api/tasks/read?limit=50`, config)
         .then((res) => {
           const raw = res.data?.result || res.data?.data || res.data;
           const resData = Array.isArray(raw) ? raw : [];
@@ -463,7 +466,7 @@ export default function Dashboard() {
         .catch(() => {});
 
       const fetchQuotationsTask = fetchWithRetry(
-        `${API_BASE}/api/quotation/read`,
+        `${API_BASE}/api/quotation/read?limit=50`,
         config
       )
         .then((res) => {

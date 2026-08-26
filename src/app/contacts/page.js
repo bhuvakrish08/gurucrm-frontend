@@ -55,6 +55,8 @@ export default function Page() {
     try {
       const res = await axios.get(`${API_base}/read`, {
         params: {
+          page: currentPage,
+          limit: itemsPerPage,
           search1: filters.company_name,
           search2: filters.customer_name,
           search3: filters.contact_person,
@@ -67,7 +69,7 @@ export default function Page() {
     } catch {
       toast.error("Failed to load contacts");
     }
-  }, [filters]);
+  }, [filters, currentPage, itemsPerPage]);
 
   useEffect(() => {
     const delay = setTimeout(fetchData, 300);

@@ -3926,9 +3926,8 @@ export default function CustomerList() {
   const fetchCustomers = async () => {
     try {
       const query = new URLSearchParams({
-        // Remove server-side pagination to allow client-side slicing
-        // page,
-        // limit: 10,
+        page: currentPage,
+        limit: itemsPerPage,
         search,
         sortBy: sortConfig.key,
         order: sortConfig.direction,

@@ -292,16 +292,14 @@ function GoalChangeSummary({ item }) {
 }
 
 function AllocationChangeSummary({ item }) {
-  const newAllocs = Array.isArray(item.newValue) ? item.newValue : [];
-  if (newAllocs.length === 0) {
+  let newAllocs = Array.isArray(item.newValue) ? item.newValue : [];
+  if (newAllocs.length === 0 && typeof item.newValue === "string") {
     try {
-      const parsed = typeof item.newValue === "string" ? JSON.parse(item.newValue) : item.newValue;
-      if (Array.isArray(parsed)) {
-        return <AllocationChangeSummary item={{ ...item, newValue: parsed }} />;
-      }
+      const parsed = JSON.parse(item.newValue);
+      if (Array.isArray(parsed)) newAllocs = parsed;
     } catch (e) {}
-    return null;
   }
+  if (newAllocs.length === 0) return null;
   return (
     <div className="mt-2 flex flex-wrap gap-2">
       {newAllocs.map((alloc, i) => (

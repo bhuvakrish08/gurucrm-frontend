@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import axios from "redaxios";
+import { getCache, setCache, fetchWithRetry } from "@/utils/slowNetworkHelper";
 import Link from "next/link";
 import Header from "@/app/components/header";
 import { useRouter } from "next/navigation";
@@ -10,6 +11,7 @@ import useAuth from "@/app/components/useAuth";
 import { parseExcelDate } from "@/utils/excelUtils";
 import { Sparkles } from "lucide-react";
 import { Trash2} from "lucide-react";
+import SkeletonTable from "@/app/components/SkeletonTable";
 
 import {
   RefreshCw,
@@ -180,13 +182,32 @@ const handleCloseUpdateModal = () => {
 
   const getToken = () => localStorage.getItem("token");
 
-  const fetchLeads = async () => {
+  const fetchLeads = async (page = 1, searchQuery = "") => {
+    setLoading(true);
+    // 1. Immediately show cached data if on page 1
+    if (page === 1 && !searchQuery) {
+      const cachedLeads = getCache("leads_list_cached");
+      if (cachedLeads && Array.isArray(cachedLeads)) {
+        setLeads(cachedLeads);
+      }
+    }
+
     try {
-      const res = await axios.get(`${API_BASE}/api/lead/read`, {
-        headers: {
-          Authorization: `Bearer ${getToken()}`,
-        },
+      const params = new URLSearchParams({
+        page: page,
+        limit: "all",
       });
+      if (searchQuery) params.append("search", searchQuery);
+
+      const res = await fetchWithRetry(
+        `${API_BASE}/api/lead/read?${params.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${getToken()}`,
+          },
+        },
+        { timeout: 15000, maxRetries: 2 }
+      );
 
       const formatted = (res.data?.result || []).map((item) => {
         let finalStatus = "Pending";
@@ -196,15 +217,18 @@ const handleCloseUpdateModal = () => {
       });
 
       setLeads(formatted);
+      if (page === 1 && !searchQuery) {
+        setCache("leads_list_cached", formatted);
+      }
     } catch (err) {
-      console.log(err);
+      console.log("[Leads Fetch Error]", err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchLeads();
+    fetchLeads(1);
   }, []);
 
   useEffect(() => {
@@ -1441,7 +1465,7 @@ const handleCloseUpdateModal = () => {
               className={`pb-3 text-sm font-semibold cursor-pointer relative flex items-center gap-2 ${activeTab === "Won" ? "text-green-600" : "text-gray-400 hover:text-gray-600"}`}
             >
               <i className="bi bi-trophy"></i>
-              Wonon
+              Won
               <span className="bg-green-100 text-green-600 text-xs px-2 py-0.5 rounded-full font-bold">
                 {wonCount}
               </span>
@@ -1507,7 +1531,7 @@ const handleCloseUpdateModal = () => {
 
           <div className="p-4">
             {loading ? (
-              <div className="text-center py-10 text-gray-400">Loading...</div>
+              <SkeletonTable rows={8} columns={9} />
             ) : (
               <div
                 className="overflow-x-auto overflow-y-scroll max-h-[600px] custom-scroll"

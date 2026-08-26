@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import axios from "redaxios";
+import { getCache, setCache, fetchWithRetry } from "@/utils/slowNetworkHelper";
 import Link from "next/link";
 import Header from "@/app/components/header";
 import { toast } from "react-toastify";
@@ -358,10 +359,21 @@ const closeUpdateDrawer = () => {
   // FETCH
   // ========================
   const fetchQuotations = async () => {
+    // 1. Instantly display cached data if present (SWR)
+    const cachedQuotations = getCache("quotations_list_cached");
+    if (cachedQuotations && Array.isArray(cachedQuotations)) {
+      setQuotations(cachedQuotations);
+      setLoading(false);
+    }
+
     try {
-      const res = await axios.get(`${API_BASE}/api/quotation/read`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
+      const res = await fetchWithRetry(
+        `${API_BASE}/api/quotation/read`,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        },
+        { timeout: 15000, maxRetries: 2 }
+      );
 
       const data = (res.data?.result || []).map((item) => {
         const finalStatus =
@@ -452,8 +464,9 @@ const closeUpdateDrawer = () => {
         });
       }
       setQuotations(filteredData);
+      setCache("quotations_list_cached", filteredData);
     } catch (err) {
-      console.log(err);
+      console.log("[Quotations Fetch Error]", err);
     } finally {
       setLoading(false);
     }
@@ -509,6 +522,7 @@ const closeUpdateDrawer = () => {
         "Company Name": q.company_name || "",
         "Customer Name": q.customer_name || "",
         Reference: q.reference || "",
+        "Mobile No": q.mobile_no || "",
         "Quotation No": q.quotation_no || "",
         "Created Date": parseExcelDate(q.first_quotation_date),
         "Last Activity": parseExcelDate(q.quotation_date || q.quotation_created_at),
@@ -3165,6 +3179,14 @@ const closeUpdateDrawer = () => {
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-gray-400 font-medium">
+                      Mobile No
+                    </span>
+                    <span className="font-semibold text-gray-700">
+                      {selectedLead.mobile_no || "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-gray-400 font-medium">
                       Assignee
                     </span>
                     <span className="font-semibold text-gray-700">
@@ -3633,10 +3655,10 @@ const closeUpdateDrawer = () => {
             </div>
             <div>
               <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
-                {selectedLead?.company_name}
+                {selectedLead?.company_name} {selectedLead?.mobile_no ? `(${selectedLead.mobile_no})` : ""}
               </h2>
               <p className="text-xs text-gray-500 font-medium">
-                Quotation Management
+                Quotation Management {selectedLead?.customer_name ? `• ${selectedLead.customer_name}` : ""}
               </p>
             </div>
           </div>
@@ -5704,6 +5726,12 @@ const closeUpdateDrawer = () => {
             label: "Customer Name",
             value: viewQuotation.customer_name,
             color: "bg-violet-50 text-violet-500",
+          },
+          {
+            icon: "bi-telephone",
+            label: "Mobile No",
+            value: viewQuotation.mobile_no || "—",
+            color: "bg-blue-50 text-blue-500",
           },
           {
             icon: "bi-tag",

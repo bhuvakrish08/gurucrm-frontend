@@ -411,22 +411,20 @@ function CategoryDrawer({ category, financialYear, mode, period, apiBase, onClos
                     Page {contribs.pagination.page} of {contribs.pagination.totalPages}
                   </span>
                   <div className="flex gap-2">
-                    <Button
-                      variant="secondary"
+                    <button
                       disabled={contribs.pagination.page <= 1}
                       onClick={() => fetchContribs(contribs.pagination.page - 1)}
-                      className="px-4 h-[38px] text-sm"
+                      className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg disabled:opacity-50"
                     >
                       Previous
-                    </Button>
-                    <Button
-                      variant="secondary"
+                    </button>
+                    <button
                       disabled={contribs.pagination.page >= contribs.pagination.totalPages}
                       onClick={() => fetchContribs(contribs.pagination.page + 1)}
-                      className="px-4 h-[38px] text-sm"
+                      className="px-4 py-2 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg disabled:opacity-50"
                     >
                       Next
-                    </Button>
+                    </button>
                   </div>
                 </div>
               )}
