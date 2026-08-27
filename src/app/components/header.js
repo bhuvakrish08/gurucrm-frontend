@@ -274,7 +274,7 @@ export default function Header() {
           {/* Mobile Calendar Icon */}
           <Link
             href="/calendar"
-            className="relative p-2 text-gray-700 hover:text-orange-500 transition-colors"
+            className="relative p-2 text-gray-700 hover:text-violet-600 transition-colors"
             title="Calendar"
           >
             <Calendar className="w-6 h-6" />
@@ -301,7 +301,7 @@ export default function Header() {
 
             {showNotifications && (
               <div className="fixed top-20 left-1/2 -translate-x-1/2 w-[95%] max-w-sm bg-white rounded-2xl shadow-2xl border border-gray-100 z-[9999] overflow-hidden">
-                <div className="p-4 bg-orange-500 flex justify-between items-center">
+                <div className="p-4 bg-gradient-to-r from-indigo-500 to-violet-600 flex justify-between items-center">
                   <h3 className="font-bold text-white flex items-center gap-2">
                     <Bell size={18} />
                     Notifications
@@ -322,7 +322,7 @@ export default function Header() {
                       className={`p-3 rounded-xl mb-2 ${
                         activity.is_read
                           ? "bg-white opacity-70"
-                          : "bg-orange-50 border border-orange-100"
+                          : "bg-violet-50 border border-violet-100"
                       }`}
                     >
                       <p className="text-sm font-medium text-gray-700">
@@ -509,7 +509,7 @@ export default function Header() {
           href="/calendar"
           className={`relative p-2.5 rounded-xl border transition-all ${
             pathname === "/calendar"
-              ? "bg-orange-50 border-orange-300 shadow-md"
+              ? "bg-violet-50 border-violet-300 shadow-md"
               : "bg-white border-gray-200 hover:shadow-md"
           }`}
           title={
@@ -521,8 +521,8 @@ export default function Header() {
           <Calendar
             className={`w-5 h-5 ${
               pathname === "/calendar"
-                ? "text-orange-500"
-                : "text-gray-500 hover:text-orange-500"
+                ? "text-violet-600"
+                : "text-gray-500 hover:text-violet-600"
             }`}
           />
           {/* ✅ NEW: today's-task indicator dot */}
@@ -540,7 +540,7 @@ export default function Header() {
             <Bell
               className={`w-5 h-5 ${
                 activities.some((a) => !a.is_read)
-                  ? "text-orange-500"
+                  ? "text-violet-600"
                   : "text-gray-500"
               }`}
             />
@@ -558,7 +558,7 @@ export default function Header() {
               <div className="absolute top-2 right-5 w-4 h-4 bg-white border-l border-t border-gray-100 rotate-45"></div>
 
               {/* Header */}
-              <div className="p-4 bg-orange-500 rounded-t-2xl flex justify-between items-center relative z-10">
+              <div className="p-4 bg-gradient-to-r from-indigo-500 to-violet-600 rounded-t-2xl flex justify-between items-center relative z-10">
                 <h3 className="font-bold text-white flex items-center gap-2">
                   <Bell size={18} />
                   Notifications
@@ -585,7 +585,7 @@ export default function Header() {
                       className={`p-3 rounded-xl mb-2 ${
                         activity.is_read
                           ? "bg-white opacity-70"
-                          : "bg-orange-50 border border-orange-100"
+                          : "bg-violet-50 border border-violet-100"
                       }`}
                     >
                       <div className="flex gap-3">
@@ -593,7 +593,7 @@ export default function Header() {
                           className={`w-8 h-8 rounded-full flex items-center justify-center ${
                             activity.is_read
                               ? "bg-gray-100 text-gray-400"
-                              : "bg-orange-100 text-orange-600"
+                              : "bg-violet-100 text-violet-600"
                           }`}
                         >
                           <Activity size={14} />
@@ -613,7 +613,7 @@ export default function Header() {
                             {!activity.is_read && (
                               <button
                                 onClick={() => handleMarkAsRead(activity.id)}
-                                className="text-xs text-orange-600 font-semibold cursor-pointer"
+                                className="text-xs text-violet-600 hover:text-violet-700 font-semibold cursor-pointer"
                               >
                                 Mark Read
                               </button>
@@ -633,7 +633,7 @@ export default function Header() {
         <div className="relative" ref={profileRef}>
           <button
             onClick={() => setShowProfileMenu(!showProfileMenu)}
-            className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full bg-orange-500 text-white font-bold text-sm flex items-center justify-center leading-none cursor-pointer shadow-sm hover:scale-105 transition-all" 
+            className="w-10 h-10 min-w-[40px] min-h-[40px] rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-white font-bold text-sm flex items-center justify-center leading-none cursor-pointer shadow-md hover:shadow-lg hover:shadow-violet-200 hover:scale-105 transition-all" 
           >
             {userLetter}
           </button>

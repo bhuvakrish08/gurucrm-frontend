@@ -120,7 +120,7 @@ function StatusCheckbox({ status, onClick, size = "md" }) {
 
   const base =
     `${dims} rounded-md border-2 flex items-center justify-center transition-colors duration-150 cursor-pointer ` +
-    `hover:border-orange-500 hover:text-orange-500`;
+    `hover:border-violet-500 hover:text-violet-500`;
 
   if (status === "Completed") {
     return (
@@ -214,7 +214,7 @@ function MultiAssigneeSelect({ users, selected, onChange }) {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-left focus:outline-none focus:ring-2 focus:ring-orange-400 flex items-center justify-between gap-2 bg-white"
+        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-left focus:outline-none focus:ring-2 focus:ring-violet-400 flex items-center justify-between gap-2 bg-white"
       >
         <span className="flex flex-wrap gap-1 flex-1">
           {selectedUsers.length === 0 ? (
@@ -223,7 +223,7 @@ function MultiAssigneeSelect({ users, selected, onChange }) {
             selectedUsers.map((u) => (
               <span
                 key={u.id}
-                className="bg-orange-100 text-orange-700 text-xs px-2 py-0.5 rounded-full"
+                className="bg-violet-100 text-violet-700 text-xs px-2 py-0.5 rounded-full font-medium"
               >
                 {u.name}
               </span>
@@ -255,13 +255,13 @@ function MultiAssigneeSelect({ users, selected, onChange }) {
               return (
                 <label
                   key={u.id}
-                  className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-orange-50 cursor-pointer"
+                  className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-violet-50 cursor-pointer"
                 >
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={() => toggle(u.id)}
-                    className="rounded border-gray-300 text-orange-500 focus:ring-orange-400"
+                    className="rounded border-gray-300 text-violet-600 focus:ring-violet-400"
                   />
                   {u.name}
                 </label>
@@ -374,7 +374,7 @@ function ActivityModal({ open, onClose, editData, users, onSaved }) {
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-orange-500 text-2xl leading-none transition-colors"
+            className="text-gray-400 hover:text-violet-600 text-2xl leading-none transition-colors"
           >
             &times;
           </button>
@@ -396,7 +396,7 @@ function ActivityModal({ open, onClose, editData, users, onSaved }) {
               value={form.title}
               onChange={(e) => set("title", e.target.value)}
               placeholder="Meeting with client..."
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
             />
           </div>
 
@@ -409,7 +409,7 @@ function ActivityModal({ open, onClose, editData, users, onSaved }) {
               value={form.description}
               onChange={(e) => set("description", e.target.value)}
               placeholder="Optional notes..."
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 resize-none"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none"
             />
           </div>
 
@@ -422,7 +422,7 @@ function ActivityModal({ open, onClose, editData, users, onSaved }) {
                 type="date"
                 value={form.activity_date}
                 onChange={(e) => set("activity_date", e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
               />
             </div>
             <div>
@@ -433,7 +433,7 @@ function ActivityModal({ open, onClose, editData, users, onSaved }) {
                 type="time"
                 value={form.activity_time}
                 onChange={(e) => set("activity_time", e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
               />
             </div>
           </div>
@@ -462,7 +462,7 @@ function ActivityModal({ open, onClose, editData, users, onSaved }) {
                   )
                 }
                 placeholder="Assignee names or IDs, comma separated"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
               />
             )}
           </div>
@@ -475,7 +475,7 @@ function ActivityModal({ open, onClose, editData, users, onSaved }) {
               <select
                 value={form.priority}
                 onChange={(e) => set("priority", e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
               >
                 {PRIORITIES.map((p) => (
                   <option key={p}>{p}</option>
@@ -511,14 +511,14 @@ function ActivityModal({ open, onClose, editData, users, onSaved }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm hover:bg-gray-50 hover:text-orange-500 transition-colors"
+              className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm hover:bg-gray-50 hover:text-violet-600 transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white py-2 rounded-lg text-sm font-medium transition-colors"
+              className="flex-1 bg-gradient-to-r from-indigo-500 to-violet-600 hover:opacity-95 disabled:opacity-50 text-white py-2 rounded-lg text-sm font-semibold transition-all shadow-md hover:shadow-lg hover:shadow-violet-200"
             >
               {loading ? "Saving..." : isEdit ? "Update" : "Create"}
             </button>
@@ -561,7 +561,7 @@ function DeleteModal({ open, onClose, onConfirm, title }) {
         <div className="flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm hover:bg-gray-50 hover:text-orange-500 transition-colors"
+            className="flex-1 border border-gray-300 text-gray-700 py-2 rounded-lg text-sm hover:bg-gray-50 hover:text-violet-600 transition-colors"
           >
             Cancel
           </button>
@@ -612,7 +612,7 @@ function DetailModal({
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-orange-500 text-2xl leading-none mt-0.5 transition-colors"
+            className="text-gray-400 hover:text-violet-600 text-2xl leading-none mt-0.5 transition-colors"
           >
             &times;
           </button>
@@ -706,7 +706,7 @@ function DetailModal({
                 onClose();
                 onEdit(event);
               }}
-              className="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1.5"
+              className="flex-1 bg-gradient-to-r from-indigo-500 to-violet-600 hover:opacity-95 text-white py-2 rounded-lg text-sm font-semibold transition-all shadow-md hover:shadow-lg hover:shadow-violet-200 flex items-center justify-center gap-1.5"
             >
               <svg
                 className="w-4 h-4"
@@ -894,9 +894,9 @@ export default function CalendarPage() {
         <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+              <div className="w-9 h-9 bg-gradient-to-r from-indigo-500 to-violet-600 rounded-xl shadow-md flex items-center justify-center">
                 <svg
-                  className="w-4 h-4 text-white"
+                  className="w-4.5 h-4.5 text-white"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -917,14 +917,14 @@ export default function CalendarPage() {
               <button
                 onClick={() => setViewMode("calendar")}
                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all
-                ${viewMode === "calendar" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-orange-500"}`}
+                ${viewMode === "calendar" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-violet-600"}`}
               >
                 Calendar
               </button>
               <button
                 onClick={() => setViewMode("list")}
                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all
-                ${viewMode === "list" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-orange-500"}`}
+                ${viewMode === "list" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-violet-600"}`}
               >
                 List
               </button>
@@ -935,7 +935,7 @@ export default function CalendarPage() {
                   setEditData(null);
                   setShowForm(true);
                 }}
-                className="flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                className="flex items-center gap-1.5 bg-gradient-to-r from-indigo-500 to-violet-600 hover:opacity-95 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all shadow-md hover:shadow-lg hover:shadow-violet-200"
               >
                 <svg
                   className="w-4 h-4"
@@ -989,7 +989,7 @@ export default function CalendarPage() {
                   <select
                     value={filterAssignee}
                     onChange={(e) => setFilterAssignee(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-white"
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white"
                   >
                     <option value="">All Assignees</option>
                     {users.map((u) => (
@@ -1008,7 +1008,7 @@ export default function CalendarPage() {
                   <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
                     <button
                       onClick={prevMonth}
-                      className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-orange-500 transition-colors"
+                      className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-violet-600 transition-colors"
                     >
                       <svg
                         className="w-4 h-4"
@@ -1030,14 +1030,14 @@ export default function CalendarPage() {
                       </h2>
                       <button
                         onClick={goToday}
-                        className="text-xs text-orange-500 hover:text-orange-600 hover:underline"
+                        className="text-xs text-violet-600 hover:text-violet-700 font-semibold hover:underline"
                       >
                         Today
                       </button>
                     </div>
                     <button
                       onClick={nextMonth}
-                      className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-orange-500 transition-colors"
+                      className="p-2 hover:bg-gray-100 rounded-lg text-gray-600 hover:text-violet-600 transition-colors"
                     >
                       <svg
                         className="w-4 h-4"
@@ -1088,11 +1088,11 @@ export default function CalendarPage() {
                           key={day}
                           onClick={() => handleDateCellClick(dateStr)}
                           className={`min-h-[80px] border-b border-r border-gray-50 p-1.5 cursor-pointer transition-colors
-                          ${isSel ? "bg-orange-50" : "hover:bg-gray-50"}`}
+                          ${isSel ? "bg-violet-50/70 border-violet-200" : "hover:bg-gray-50"}`}
                         >
                           <div
                             className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium mb-1 mx-auto
-                            ${isToday ? "bg-orange-500 text-white" : isSel ? "text-orange-600 font-bold" : "text-gray-700"}`}
+                            ${isToday ? "bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-sm font-bold" : isSel ? "text-violet-700 font-bold" : "text-gray-700"}`}
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedDate(dateStr);
@@ -1108,7 +1108,7 @@ export default function CalendarPage() {
                                   e.stopPropagation();
                                   setDetailEvent(ev);
                                 }}
-                                className="flex items-center gap-1 text-[10px] bg-blue-500 text-white rounded px-1 py-0.5 truncate cursor-pointer hover:bg-orange-600"
+                                className="flex items-center gap-1 text-[10px] bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded px-1 py-0.5 truncate cursor-pointer hover:opacity-90 shadow-xs"
                               >
                                 <span
                                   onClick={(ev2) => {
@@ -1131,7 +1131,7 @@ export default function CalendarPage() {
                             ))}
                             {dayEvts.length > 2 && (
                               <div
-                                className="text-[10px] text-gray-400 hover:text-orange-500 text-center"
+                                className="text-[10px] text-gray-400 hover:text-violet-600 text-center font-medium"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setSelectedDate(dateStr);
@@ -1169,7 +1169,7 @@ export default function CalendarPage() {
                           setEditData({ _prefillDate: selectedDate });
                           setShowForm(true);
                         }}
-                        className="w-8 h-8 bg-orange-500 hover:bg-orange-600 text-white rounded-lg flex items-center justify-center transition-colors"
+                        className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-violet-600 hover:opacity-95 text-white rounded-lg flex items-center justify-center transition-all shadow-md"
                       >
                         <svg
                           className="w-4 h-4"
@@ -1220,7 +1220,7 @@ export default function CalendarPage() {
                         {selectedEvents.map((ev) => (
                           <div
                             key={ev.id}
-                            className="border border-gray-100 rounded-xl p-3 cursor-pointer hover:border-orange-200 hover:bg-orange-50/50 transition-all group"
+                            className="border border-gray-100 rounded-xl p-3 cursor-pointer hover:border-violet-200 hover:bg-violet-50/50 transition-all group"
                           >
                             <div className="flex items-start gap-2.5">
                               {/* ✅ Checkbox: click thi status cycle thay, baki div click thi detail khule */}
@@ -1244,7 +1244,7 @@ export default function CalendarPage() {
                                 onClick={() => setDetailEvent(ev)}
                               >
                                 <div className="flex items-start justify-between gap-2">
-                                  <p className="text-sm font-medium text-gray-800 group-hover:text-orange-600 leading-snug">
+                                  <p className="text-sm font-medium text-gray-800 group-hover:text-violet-600 leading-snug">
                                     {ev.title}
                                   </p>
                                   <span
@@ -1286,12 +1286,12 @@ export default function CalendarPage() {
                   placeholder="Search activities..."
                   value={searchQ}
                   onChange={(e) => setSearchQ(e.target.value)}
-                  className="flex-1 min-w-[200px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="flex-1 min-w-[200px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
                 />
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white"
                 >
                   <option value="All">All Statuses</option>
                   {STATUSES.map((s) => (
@@ -1301,7 +1301,7 @@ export default function CalendarPage() {
                 <select
                   value={filterPriority}
                   onChange={(e) => setFilterPriority(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white"
                 >
                   <option value="All">All Priorities</option>
                   {PRIORITIES.map((p) => (
@@ -1312,7 +1312,7 @@ export default function CalendarPage() {
                 <select
                   value={filterAssignee}
                   onChange={(e) => setFilterAssignee(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white"
                 >
                   <option value="">All Assignees</option>
                   {users.map((u) => (
@@ -1359,7 +1359,7 @@ export default function CalendarPage() {
                       </div>
                       <div className="col-span-3">
                         <p
-                          className="text-sm font-medium text-gray-800 cursor-pointer hover:text-orange-500 transition-colors truncate"
+                          className="text-sm font-medium text-gray-800 cursor-pointer hover:text-violet-600 transition-colors truncate"
                           onClick={() => setDetailEvent(ev)}
                         >
                           {ev.title}
@@ -1415,7 +1415,7 @@ export default function CalendarPage() {
                               setEditData(ev);
                               setShowForm(true);
                             }}
-                            className="p-1.5 hover:bg-orange-50 rounded-lg text-gray-400 hover:text-orange-500 transition-colors"
+                            className="p-1.5 hover:bg-violet-50 rounded-lg text-gray-400 hover:text-violet-600 transition-colors"
                             title="Edit"
                           >
                             <svg
