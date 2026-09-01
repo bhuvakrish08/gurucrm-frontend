@@ -368,6 +368,7 @@ const handleCloseUpdateModal = () => {
     } catch (err) {
       console.error(err);
       const msg =
+        err?.response?.data?.message ||
         err?.data?.message ||
         err?.message ||
         "Failed to add lead. Please try again.";

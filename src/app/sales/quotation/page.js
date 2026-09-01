@@ -1158,7 +1158,7 @@ const closeUpdateDrawer = () => {
       toast.error("Quotation is locked. Cannot edit participation.");
       return;
     }
-    if (!readOnly && form.quotation_status !== "Sent") {
+    if (!readOnly && !["Sent", "Approved", "Won"].includes(form.quotation_status)) {
       toast.error("Tax calculations can only be configured in the Sent stage.");
       return;
     }
@@ -2688,79 +2688,147 @@ const closeUpdateDrawer = () => {
 
                             {/* follow-up */}
                             <td className="text-center">
-                              <button
-                                onClick={async () => {
-                                  try {
-                                    setSelectedLead(q);
-                                    setSelectedQuotation({
-                                      id: q.latest_quotation_id,
-                                      quotation_no: q.quotation_no,
-                                    });
+                              {q.follow_up_date || q.latest_follow_up_date ? (
+                                <span
+                                  onClick={async () => {
+                                    try {
+                                      setSelectedLead(q);
+                                      setSelectedQuotation({
+                                        id: q.latest_quotation_id,
+                                        quotation_no: q.quotation_no,
+                                      });
+                                      setFollowUpTab("quotation");
+                                      setUpdateForm({
+                                        follow_up_date: new Date()
+                                          .toISOString()
+                                          .split("T")[0],
+                                        activity_type: "",
+                                        follow_up_by: "",
+                                        contact_person: "",
+                                        quotation_no: q.quotation_no || "",
+                                        description: "",
+                                      });
+                                      setSelectedFiles([]);
+                                      setPreviewFollowUp(null);
 
-                                    // BUG FIX #1: Default to "quotation" tab
-                                    setFollowUpTab("quotation");
-
-                                    setUpdateForm({
-                                      follow_up_date: new Date()
-                                        .toISOString()
-                                        .split("T")[0],
-                                      activity_type: "",
-                                      follow_up_by: "",
-                                      contact_person: "",
-                                      // BUG FIX #2: Pre-fill quotation_no from row data
-                                      quotation_no: q.quotation_no || "",
-                                      description: "",
-                                    });
-
-                                    setSelectedFiles([]);
-                                    setPreviewFollowUp(null);
-
-                                    // Fetch history
-                                    const res = await axios.get(
-                                      `${API_BASE}/api/quotation-revision/${q.latest_quotation_id}/full-details`,
-                                      {
-                                        headers: {
-                                          Authorization: `Bearer ${localStorage.getItem("token")}`,
+                                      const res = await axios.get(
+                                        `${API_BASE}/api/quotation-revision/${q.latest_quotation_id}/full-details`,
+                                        {
+                                          headers: {
+                                            Authorization: `Bearer ${localStorage.getItem("token")}`,
+                                          },
                                         },
-                                      },
-                                    );
+                                      );
 
-                                    const quotationHistory =
-                                      res.data?.data?.revisions?.map(
-                                        (item) => ({
-                                          ...item,
-                                          module_type: "quotation",
-                                        }),
-                                      ) || [];
+                                      const quotationHistory =
+                                        res.data?.data?.revisions?.map(
+                                          (item) => ({
+                                            ...item,
+                                            module_type: "quotation",
+                                          }),
+                                        ) || [];
 
-                                    const salesHistory =
-                                      res.data?.data?.follow_ups?.map(
-                                        (item) => ({
-                                          ...item,
-                                          module_type: "sales",
-                                        }),
-                                      ) || [];
+                                      const salesHistory =
+                                        res.data?.data?.follow_ups?.map(
+                                          (item) => ({
+                                            ...item,
+                                            module_type: "sales",
+                                          }),
+                                        ) || [];
 
-                                    const mergedHistory = [
-                                      ...quotationHistory,
-                                      ...salesHistory,
-                                    ].sort(
-                                      (a, b) =>
-                                        new Date(b.created_at) -
-                                        new Date(a.created_at),
-                                    );
+                                      const mergedHistory = [
+                                        ...quotationHistory,
+                                        ...salesHistory,
+                                      ].sort(
+                                        (a, b) =>
+                                          new Date(b.created_at) -
+                                          new Date(a.created_at),
+                                      );
 
-                                    setFollowUpHistory(mergedHistory);
-                                    setShowUpdateModal(true);
-                                  } catch (err) {
-                                    console.log(err);
-                                    toast.error("Failed to load history");
-                                  }
-                                }}
-                                className="w-9 h-9 rounded-full border border-blue-300 text-blue-500 bg-white flex items-center justify-center mx-auto hover:bg-blue-50 transition-all duration-200"
-                              >
-                                <i className="bi bi-plus text-xl"></i>
-                              </button>
+                                      setFollowUpHistory(mergedHistory);
+                                      setShowUpdateModal(true);
+                                    } catch (err) {
+                                      console.log(err);
+                                      toast.error("Failed to load history");
+                                    }
+                                  }}
+                                  className="font-semibold text-blue-600 hover:underline cursor-pointer text-xs"
+                                  title="Click to view follow-up history"
+                                >
+                                  {new Date(
+                                    q.follow_up_date || q.latest_follow_up_date,
+                                  ).toLocaleDateString("en-IN")}
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      setSelectedLead(q);
+                                      setSelectedQuotation({
+                                        id: q.latest_quotation_id,
+                                        quotation_no: q.quotation_no,
+                                      });
+                                      setFollowUpTab("quotation");
+                                      setUpdateForm({
+                                        follow_up_date: new Date()
+                                          .toISOString()
+                                          .split("T")[0],
+                                        activity_type: "",
+                                        follow_up_by: "",
+                                        contact_person: "",
+                                        quotation_no: q.quotation_no || "",
+                                        description: "",
+                                      });
+                                      setSelectedFiles([]);
+                                      setPreviewFollowUp(null);
+
+                                      const res = await axios.get(
+                                        `${API_BASE}/api/quotation-revision/${q.latest_quotation_id}/full-details`,
+                                        {
+                                          headers: {
+                                            Authorization: `Bearer ${localStorage.getItem("token")}`,
+                                          },
+                                        },
+                                      );
+
+                                      const quotationHistory =
+                                        res.data?.data?.revisions?.map(
+                                          (item) => ({
+                                            ...item,
+                                            module_type: "quotation",
+                                          }),
+                                        ) || [];
+
+                                      const salesHistory =
+                                        res.data?.data?.follow_ups?.map(
+                                          (item) => ({
+                                            ...item,
+                                            module_type: "sales",
+                                          }),
+                                        ) || [];
+
+                                      const mergedHistory = [
+                                        ...quotationHistory,
+                                        ...salesHistory,
+                                      ].sort(
+                                        (a, b) =>
+                                          new Date(b.created_at) -
+                                          new Date(a.created_at),
+                                      );
+
+                                      setFollowUpHistory(mergedHistory);
+                                      setShowUpdateModal(true);
+                                    } catch (err) {
+                                      console.log(err);
+                                      toast.error("Failed to load history");
+                                    }
+                                  }}
+                                  className="w-9 h-9 rounded-full border border-blue-300 text-blue-500 bg-white flex items-center justify-center mx-auto hover:bg-blue-50 transition-all duration-200"
+                                  title="Add Follow-up"
+                                >
+                                  <i className="bi bi-plus text-xl"></i>
+                                </button>
+                              )}
                             </td>
 
                             <td className="px-3">
@@ -3808,7 +3876,7 @@ const closeUpdateDrawer = () => {
                         e.preventDefault();
                         if (
                           (isAdmin || isSales) &&
-                          form.quotation_status === "Sent"
+                          ["Sent", "Approved", "Won"].includes(form.quotation_status)
                         ) {
                           openSplitModal(false);
                         }
@@ -3817,7 +3885,7 @@ const closeUpdateDrawer = () => {
                     className="w-full border border-indigo-200 focus:border-violet-400 rounded-lg pl-2 pr-10 sm:pl-3 sm:pr-10 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50 transition-colors"
                   />
                   {(isAdmin || isSales) &&
-                    form.quotation_status === "Sent" && (
+                    ["Sent", "Approved", "Won"].includes(form.quotation_status) && (
                       <button
                         type="button"
                         onClick={() => openSplitModal(false)}

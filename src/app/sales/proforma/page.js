@@ -82,6 +82,8 @@ export default function ProformaPage() {
   const debounceRef = useRef(null);
 
   const [amtInput, setAmtInput] = useState("");
+  const [amtInput18, setAmtInput18] = useState("");
+  const [amtInput9, setAmtInput9] = useState("");
   const [activeTab, setActiveTab] = useState("pending");
 
   const [showMobileFilters, setShowMobileFilters] = useState(false);
@@ -313,98 +315,256 @@ export default function ProformaPage() {
     return total;
   };
 
+  const getSplitBase18 = (pi) => {
+    if (!pi) return 0;
+    const amt = Number(pi.split_amount_18 !== undefined && pi.split_amount_18 !== null && pi.split_amount_18 !== "" ? pi.split_amount_18 : (pi.amount_18 || 0));
+    const tax = Number(pi.split_tax_18 !== undefined && pi.split_tax_18 !== null && pi.split_tax_18 !== "" ? pi.split_tax_18 : (pi.tax_18 || 0));
+    return amt + tax;
+  };
+
+  const getSplitBase9 = (pi) => {
+    if (!pi) return 0;
+    const amt = Number(pi.split_amount_9 !== undefined && pi.split_amount_9 !== null && pi.split_amount_9 !== "" ? pi.split_amount_9 : (pi.amount_9 || 0));
+    const tax = Number(pi.split_tax_9 !== undefined && pi.split_tax_9 !== null && pi.split_tax_9 !== "" ? pi.split_tax_9 : (pi.tax_9 || 0));
+    return amt + tax;
+  };
+
+  const isTwoSplitPI = (pi) => {
+    if (!pi) return false;
+    const base18 = getSplitBase18(pi);
+    const base9 = getSplitBase9(pi);
+    return base18 > 0 && base9 > 0;
+  };
+
+  const getPIPaid18 = (pi, excludeId = null) => {
+    if (!pi) return 0;
+    const followUps = pi.follow_ups || [];
+    let total = 0;
+    followUps.forEach((f) => {
+      if (excludeId && f.id === excludeId) return;
+      total += Number(f.total_18 || 0);
+    });
+    return total;
+  };
+
+  const getPIPaid9 = (pi, excludeId = null) => {
+    if (!pi) return 0;
+    const followUps = pi.follow_ups || [];
+    let total = 0;
+    followUps.forEach((f) => {
+      if (excludeId && f.id === excludeId) return;
+      total += Number(f.total_9 || 0);
+    });
+    return total;
+  };
+
   const resetModal = () => {
     setShowModal(false);
     setEditing(null);
     setAmtInput("");
+    setAmtInput18("");
+    setAmtInput9("");
     setActiveIndex(null);
   };
 
   const handleSubmitFollowUp = async () => {
-    const enteredAmt = Number(amtInput || 0);
-    if (enteredAmt <= 0) {
-      toast.error("Please enter a valid amount");
-      return;
-    }
+    if (isTwoSplitPI(selectedPI)) {
+      const entered18 = Number(amtInput18 || 0);
+      const entered9  = Number(amtInput9 || 0);
+      const totalEntered = entered18 + entered9;
 
-    const grandTotal = getGrandTotal(selectedPI);
-    const usedAmt = getPIPaidTotal(selectedPI);
-    if (grandTotal > 0 && (usedAmt + enteredAmt > grandTotal + 0.5)) {
-      const rem = Math.max(0, grandTotal - usedAmt);
-      toast.error(`Amount exceeds remaining balance. Only Rs. ${rem.toFixed(2)} remaining`);
-      return;
-    }
+      if (totalEntered <= 0) {
+        toast.error("Please enter a valid amount for at least one split");
+        return;
+      }
 
-    const enteredPct = grandTotal > 0 ? (enteredAmt / grandTotal) * 100 : 0;
-    const usedPct = grandTotal > 0 ? (usedAmt / grandTotal) * 100 : 0;
+      const base18 = getSplitBase18(selectedPI);
+      const base9  = getSplitBase9(selectedPI);
+      const used18 = getPIPaid18(selectedPI);
+      const used9  = getPIPaid9(selectedPI);
 
-    try {
-      setSubmitLoading(true);
-      const res = await axios.post(
-        `${API}/api/pi/add-followup/${selectedPI.pi_id}`,
-        { amount: enteredAmt, percentage: enteredPct },
-      );
-      const confirmedTotal =
-        res.data?.total_percentage ?? (usedPct + enteredPct);
-      await updateStatus(selectedPI.pi_id, confirmedTotal);
-      toast.success(
-        confirmedTotal >= 100
-          ? "Follow-up added & marked as Won!"
-          : "Follow-up added successfully",
-      );
-      resetModal();
-      fetchPI();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Error");
-    } finally {
-      setSubmitLoading(false);
+      if (entered18 > 0 && used18 + entered18 > base18 + 0.5) {
+        const rem18 = Math.max(0, base18 - used18);
+        toast.error(`Part 1 amount exceeds remaining balance. Only Rs. ${rem18.toFixed(2)} remaining`);
+        return;
+      }
+
+      if (entered9 > 0 && used9 + entered9 > base9 + 0.5) {
+        const rem9 = Math.max(0, base9 - used9);
+        toast.error(`Part 2 amount exceeds remaining balance. Only Rs. ${rem9.toFixed(2)} remaining`);
+        return;
+      }
+
+      const grandTotal = getGrandTotal(selectedPI);
+      const usedAmt = getPIPaidTotal(selectedPI);
+
+      try {
+        setSubmitLoading(true);
+        const res = await axios.post(
+          `${API}/api/pi/add-followup/${selectedPI.pi_id}`,
+          { amount_18: entered18, amount_9: entered9 },
+        );
+        const confirmedTotal =
+          res.data?.total_percentage ?? (grandTotal > 0 ? ((usedAmt + totalEntered) / grandTotal) * 100 : 0);
+        await updateStatus(selectedPI.pi_id, confirmedTotal);
+        toast.success(
+          confirmedTotal >= 100
+            ? "Follow-up added & marked as Won!"
+            : "Follow-up added successfully",
+        );
+        resetModal();
+        fetchPI();
+      } catch (err) {
+        toast.error(err.response?.data?.message || "Error");
+      } finally {
+        setSubmitLoading(false);
+      }
+    } else {
+      const enteredAmt = Number(amtInput || 0);
+      if (enteredAmt <= 0) {
+        toast.error("Please enter a valid amount");
+        return;
+      }
+
+      const grandTotal = getGrandTotal(selectedPI);
+      const usedAmt = getPIPaidTotal(selectedPI);
+      if (grandTotal > 0 && (usedAmt + enteredAmt > grandTotal + 0.5)) {
+        const rem = Math.max(0, grandTotal - usedAmt);
+        toast.error(`Amount exceeds remaining balance. Only Rs. ${rem.toFixed(2)} remaining`);
+        return;
+      }
+
+      const enteredPct = grandTotal > 0 ? (enteredAmt / grandTotal) * 100 : 0;
+      const usedPct = grandTotal > 0 ? (usedAmt / grandTotal) * 100 : 0;
+
+      try {
+        setSubmitLoading(true);
+        const res = await axios.post(
+          `${API}/api/pi/add-followup/${selectedPI.pi_id}`,
+          { amount: enteredAmt, percentage: enteredPct },
+        );
+        const confirmedTotal =
+          res.data?.total_percentage ?? (usedPct + enteredPct);
+        await updateStatus(selectedPI.pi_id, confirmedTotal);
+        toast.success(
+          confirmedTotal >= 100
+            ? "Follow-up added & marked as Won!"
+            : "Follow-up added successfully",
+        );
+        resetModal();
+        fetchPI();
+      } catch (err) {
+        toast.error(err.response?.data?.message || "Error");
+      } finally {
+        setSubmitLoading(false);
+      }
     }
   };
 
   const handleUpdate = async () => {
-    const enteredAmt = Number(amtInput || 0);
-    if (enteredAmt <= 0) {
-      toast.error("Please enter a valid amount");
-      return;
-    }
+    if (isTwoSplitPI(selectedPI)) {
+      const entered18 = Number(amtInput18 || 0);
+      const entered9  = Number(amtInput9 || 0);
+      const totalEntered = entered18 + entered9;
 
-    const grandTotal = getGrandTotal(selectedPI);
-    const usedOther = getPIPaidTotal(selectedPI, editing?.id);
+      if (totalEntered <= 0) {
+        toast.error("Please enter a valid amount for at least one split");
+        return;
+      }
 
-    if (grandTotal > 0 && (usedOther + enteredAmt > grandTotal + 0.5)) {
-      const rem = Math.max(0, grandTotal - usedOther);
-      toast.error(`Amount exceeds remaining balance. Only Rs. ${rem.toFixed(2)} remaining`);
-      return;
-    }
+      const base18 = getSplitBase18(selectedPI);
+      const base9  = getSplitBase9(selectedPI);
+      const usedOther18 = getPIPaid18(selectedPI, editing?.id);
+      const usedOther9  = getPIPaid9(selectedPI, editing?.id);
 
-    const enteredPct = grandTotal > 0 ? (enteredAmt / grandTotal) * 100 : 0;
+      if (entered18 > 0 && usedOther18 + entered18 > base18 + 0.5) {
+        const rem18 = Math.max(0, base18 - usedOther18);
+        toast.error(`Part 1 amount exceeds remaining balance. Only Rs. ${rem18.toFixed(2)} remaining`);
+        return;
+      }
 
-    try {
-      setUpdateLoading(true);
-      await axios.put(
-        `${API}/api/pi/update-followup/${selectedPI.pi_id}/${editing.id}`,
-        { amount: enteredAmt, percentage: enteredPct },
-      );
-      const newTotalOverall = grandTotal > 0 ? ((usedOther + enteredAmt) / grandTotal) * 100 : 0;
-      await updateStatus(selectedPI.pi_id, newTotalOverall);
-      toast.success(
-        newTotalOverall >= 100
-          ? "Updated & marked as Won!"
-          : "Updated successfully",
-      );
-      resetModal();
-      fetchPI();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Update failed");
-    } finally {
-      setUpdateLoading(false);
+      if (entered9 > 0 && usedOther9 + entered9 > base9 + 0.5) {
+        const rem9 = Math.max(0, base9 - usedOther9);
+        toast.error(`Part 2 amount exceeds remaining balance. Only Rs. ${rem9.toFixed(2)} remaining`);
+        return;
+      }
+
+      const grandTotal = getGrandTotal(selectedPI);
+      const usedOther = getPIPaidTotal(selectedPI, editing?.id);
+
+      try {
+        setUpdateLoading(true);
+        await axios.put(
+          `${API}/api/pi/update-followup/${selectedPI.pi_id}/${editing.id}`,
+          { amount_18: entered18, amount_9: entered9 },
+        );
+        const newTotalOverall = grandTotal > 0 ? ((usedOther + totalEntered) / grandTotal) * 100 : 0;
+        await updateStatus(selectedPI.pi_id, newTotalOverall);
+        toast.success(
+          newTotalOverall >= 100
+            ? "Updated & marked as Won!"
+            : "Updated successfully",
+        );
+        resetModal();
+        fetchPI();
+      } catch (err) {
+        toast.error(err.response?.data?.message || "Update failed");
+      } finally {
+        setUpdateLoading(false);
+      }
+    } else {
+      const enteredAmt = Number(amtInput || 0);
+      if (enteredAmt <= 0) {
+        toast.error("Please enter a valid amount");
+        return;
+      }
+
+      const grandTotal = getGrandTotal(selectedPI);
+      const usedOther = getPIPaidTotal(selectedPI, editing?.id);
+
+      if (grandTotal > 0 && (usedOther + enteredAmt > grandTotal + 0.5)) {
+        const rem = Math.max(0, grandTotal - usedOther);
+        toast.error(`Amount exceeds remaining balance. Only Rs. ${rem.toFixed(2)} remaining`);
+        return;
+      }
+
+      const enteredPct = grandTotal > 0 ? (enteredAmt / grandTotal) * 100 : 0;
+
+      try {
+        setUpdateLoading(true);
+        await axios.put(
+          `${API}/api/pi/update-followup/${selectedPI.pi_id}/${editing.id}`,
+          { amount: enteredAmt, percentage: enteredPct },
+        );
+        const newTotalOverall = grandTotal > 0 ? ((usedOther + enteredAmt) / grandTotal) * 100 : 0;
+        await updateStatus(selectedPI.pi_id, newTotalOverall);
+        toast.success(
+          newTotalOverall >= 100
+            ? "Updated & marked as Won!"
+            : "Updated successfully",
+        );
+        resetModal();
+        fetchPI();
+      } catch (err) {
+        toast.error(err.response?.data?.message || "Update failed");
+      } finally {
+        setUpdateLoading(false);
+      }
     }
   };
 
   const handleEdit = (item) => {
     setEditing(item);
-    const itemAmt = Number(item.total || 0) || (Number(item.total_18 || 0) + Number(item.total_9 || 0));
-    setAmtInput(itemAmt ? String(itemAmt) : "");
+    if (isTwoSplitPI(selectedPI)) {
+      setAmtInput18(item.total_18 ? String(item.total_18) : "");
+      setAmtInput9(item.total_9 ? String(item.total_9) : "");
+      setAmtInput("");
+    } else {
+      const itemAmt = Number(item.total || 0) || (Number(item.total_18 || 0) + Number(item.total_9 || 0));
+      setAmtInput(itemAmt ? String(itemAmt) : "");
+      setAmtInput18("");
+      setAmtInput9("");
+    }
   };
 
   const exportToExcel = async () => {
@@ -652,12 +812,27 @@ export default function ProformaPage() {
             : "-",
         ],
       ];
-      const rightRows = [
-        ["PI Number:", piNumber],
-        ["PI Date:", piDate.toLocaleDateString("en-GB")],
-        ["Grand Total:", `Rs. ${grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
-        ["Total Paid %:", `${totalPaidPct.toFixed(2)}%`],
-      ];
+      const isSplit = isTwoSplitPI(item);
+      const base18 = getSplitBase18(item);
+      const base9  = getSplitBase9(item);
+      const paid18 = getPIPaid18(item);
+      const paid9  = getPIPaid9(item);
+      const rem18  = Math.max(0, base18 - paid18);
+      const rem9   = Math.max(0, base9 - paid9);
+
+      const rightRows = isSplit
+        ? [
+            ["PI Number:", piNumber],
+            ["PI Date:", piDate.toLocaleDateString("en-GB")],
+            ["Part 1 (18%):", `Rs. ${base18.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+            ["Part 2 (9%):", `Rs. ${base9.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+          ]
+        : [
+            ["PI Number:", piNumber],
+            ["PI Date:", piDate.toLocaleDateString("en-GB")],
+            ["Grand Total:", `Rs. ${grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+            ["Total Paid %:", `${totalPaidPct.toFixed(2)}%`],
+          ];
 
       leftRows.forEach(([label, value], i) => {
         const y = boxTop + 12 + i * 5.5;
@@ -688,26 +863,47 @@ export default function ProformaPage() {
       doc.text("PAYMENT HISTORY", 14, cursorY);
       cursorY += 2;
 
-      const historyRows = sortedFollowUps.map((h, i) => {
-        const amt = Number(h.total || 0) || (Number(h.total_18 || 0) + Number(h.total_9 || 0));
-        const pct = grandTotal > 0 ? (amt / grandTotal) * 100 : (Number(h.proforma_percentage || 0) || (Number(h.proforma_percentage_18 || 0) + Number(h.proforma_percentage_9 || 0)));
-        return [
-          i + 1,
-          h.created_at ? new Date(h.created_at).toLocaleDateString("en-GB") : "-",
-          i === 0 ? "Latest Follow-Up" : `Follow-Up #${sortedFollowUps.length - i}`,
-          `${pct.toFixed(2)}%`,
-          `Rs. ${amt.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-          i === 0 ? "Latest" : "Received",
-        ];
-      });
+      let tableHead = [["#", "Date", "Description", "Paid %", "Amount", "Status"]];
+      let historyRows = [];
+
+      if (isSplit) {
+        tableHead = [["#", "Date", "Description", "Part 1 Paid (18%)", "Part 2 Paid (9%)", "Total Paid", "Status"]];
+        historyRows = sortedFollowUps.map((h, i) => {
+          const amt18 = Number(h.total_18 || 0);
+          const amt9  = Number(h.total_9 || 0);
+          const totalAmt = amt18 + amt9 || Number(h.total || 0);
+          return [
+            i + 1,
+            h.created_at ? new Date(h.created_at).toLocaleDateString("en-GB") : "-",
+            i === 0 ? "Latest Follow-Up" : `Follow-Up #${sortedFollowUps.length - i}`,
+            `Rs. ${amt18.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            `Rs. ${amt9.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            `Rs. ${totalAmt.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            i === 0 ? "Latest" : "Received",
+          ];
+        });
+      } else {
+        historyRows = sortedFollowUps.map((h, i) => {
+          const amt = Number(h.total || 0) || (Number(h.total_18 || 0) + Number(h.total_9 || 0));
+          const pct = grandTotal > 0 ? (amt / grandTotal) * 100 : (Number(h.proforma_percentage || 0) || (Number(h.proforma_percentage_18 || 0) + Number(h.proforma_percentage_9 || 0)));
+          return [
+            i + 1,
+            h.created_at ? new Date(h.created_at).toLocaleDateString("en-GB") : "-",
+            i === 0 ? "Latest Follow-Up" : `Follow-Up #${sortedFollowUps.length - i}`,
+            `${pct.toFixed(2)}%`,
+            `Rs. ${amt.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            i === 0 ? "Latest" : "Received",
+          ];
+        });
+      }
 
       autoTable(doc, {
         startY: cursorY + 2,
-        head: [["#", "Date", "Description", "Paid %", "Amount", "Status"]],
+        head: tableHead,
         body:
           historyRows.length > 0
             ? historyRows
-            : [["-", "-", "No follow-up recorded", "-", "-", "-"]],
+            : [isSplit ? ["-", "-", "No follow-up recorded", "-", "-", "-", "-"] : ["-", "-", "No follow-up recorded", "-", "-", "-"]],
         theme: "grid",
         styles: { fontSize: 8.5, cellPadding: 2.5, textColor: [40, 40, 40] },
         headStyles: {
@@ -717,11 +913,9 @@ export default function ProformaPage() {
           fontSize: 8.5,
         },
         alternateRowStyles: { fillColor: [255, 247, 237] },
-        columnStyles: {
-          0: { cellWidth: 10 },
-          3: { cellWidth: 22 },
-          5: { cellWidth: 24 },
-        },
+        columnStyles: isSplit
+          ? { 0: { cellWidth: 8 }, 3: { cellWidth: 32 }, 4: { cellWidth: 32 }, 5: { cellWidth: 32 }, 6: { cellWidth: 20 } }
+          : { 0: { cellWidth: 10 }, 3: { cellWidth: 22 }, 5: { cellWidth: 24 } },
         margin: { left: 14, right: 14 },
       });
 
@@ -741,33 +935,42 @@ export default function ProformaPage() {
       doc.text("This is a system-generated document.", 14, cursorY + 6);
       doc.text("No signature is required.", 14, cursorY + 11);
 
-      const summaryX = pageWidth - 14 - 78;
-      const summaryRows = [
-        ["Grand Total", `Rs. ${grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
-        ["Total Paid", `Rs. ${totalPaid.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
-        ["Follow-ups", `${followUps.length} record(s)`],
-      ];
+      const summaryX = pageWidth - 14 - 85;
+      const summaryRows = isSplit
+        ? [
+            ["Part 1 Total (18%)", `Rs. ${base18.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+            ["Part 1 Paid", `Rs. ${paid18.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+            ["Part 2 Total (9%)", `Rs. ${base9.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+            ["Part 2 Paid", `Rs. ${paid9.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+            ["Grand Total", `Rs. ${grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+            ["Total Paid", `Rs. ${totalPaid.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+          ]
+        : [
+            ["Grand Total", `Rs. ${grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+            ["Total Paid", `Rs. ${totalPaid.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
+            ["Follow-ups", `${followUps.length} record(s)`],
+          ];
       summaryRows.forEach(([label, value], i) => {
-        const y = cursorY - 4 + i * 7;
-        doc.setFontSize(8.5);
+        const y = cursorY - 4 + i * 6.5;
+        doc.setFontSize(8);
         doc.setTextColor(130, 130, 130);
         doc.setFont(undefined, "normal");
         doc.text(label, summaryX, y);
         doc.setFont(undefined, "bold");
         doc.setTextColor(40, 40, 40);
-        doc.text(String(value), summaryX + 78, y, { align: "right" });
+        doc.text(String(value), summaryX + 85, y, { align: "right" });
       });
 
-      const finalBoxY = cursorY - 4 + summaryRows.length * 7 + 3;
+      const finalBoxY = cursorY - 4 + summaryRows.length * 6.5 + 3;
       const finalBoxColor =
         statusLabel === "WON / PAID" ? [22, 163, 74] : [234, 88, 12];
       doc.setFillColor(...finalBoxColor);
-      doc.roundedRect(summaryX, finalBoxY, 78, 8, 1.5, 1.5, "F");
+      doc.roundedRect(summaryX, finalBoxY, 85, 8, 1.5, 1.5, "F");
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(8.5);
       doc.setFont(undefined, "bold");
       doc.text("Final Status", summaryX + 3, finalBoxY + 5.5);
-      doc.text(statusLabel, summaryX + 75, finalBoxY + 5.5, { align: "right" });
+      doc.text(statusLabel, summaryX + 82, finalBoxY + 5.5, { align: "right" });
 
       const safeName = (item.customer_name || "Customer").replace(
         /[^a-zA-Z0-9]/g,
@@ -1231,7 +1434,13 @@ export default function ProformaPage() {
                               <div className="flex items-center gap-2">
                                 <div className="w-16 bg-gray-100 rounded-full h-1.5">
                                   <div
-                                    className={`h-1.5 rounded-full transition-all ${Number(item.proforma_percentage) >= 100 ? "bg-green-500" : Number(item.proforma_percentage) >= 50 ? "bg-orange-400" : "bg-blue-400"}`}
+                                    className={`h-1.5 rounded-full transition-all ${
+                                      Number(item.proforma_percentage) >= 100
+                                        ? "bg-green-500"
+                                        : Number(item.proforma_percentage) >= 50
+                                          ? "bg-orange-400"
+                                          : "bg-blue-400"
+                                    }`}
                                     style={{
                                       width: `${Math.min(Number(item.proforma_percentage || 0), 100)}%`,
                                     }}
@@ -1396,20 +1605,56 @@ export default function ProformaPage() {
         selectedPI &&
         (() => {
           const grandTotal = getGrandTotal(selectedPI);
+          const hasTwoSplits = isTwoSplitPI(selectedPI);
+
+          const base18 = getSplitBase18(selectedPI);
+          const base9  = getSplitBase9(selectedPI);
+
+          const used18 = getPIPaid18(selectedPI, editing?.id);
+          const used9  = getPIPaid9(selectedPI, editing?.id);
+
+          const rem18 = Math.max(0, base18 - used18);
+          const rem9  = Math.max(0, base9 - used9);
+
           const usedAmt = getPIPaidTotal(selectedPI, editing?.id);
           const usedPct = grandTotal > 0 ? (usedAmt / grandTotal) * 100 : 0;
-
           const remainingAmt = Math.max(0, grandTotal - usedAmt);
           const remainingPct = Math.max(0, 100 - usedPct);
 
-          const enteredAmt = Number(amtInput || 0);
+          let enteredAmt = 0;
+          let isOver = false;
+          let isDisabled = false;
+
+          let afterAmt18 = 0;
+          let afterAmt9 = 0;
+          let isOver18 = false;
+          let isOver9 = false;
+
+          let enteredAmt18 = 0;
+          let enteredAmt9 = 0;
+
+          if (hasTwoSplits) {
+            enteredAmt18 = Number(amtInput18 || 0);
+            enteredAmt9 = Number(amtInput9 || 0);
+            enteredAmt = enteredAmt18 + enteredAmt9;
+
+            afterAmt18 = rem18 - enteredAmt18;
+            afterAmt9  = rem9 - enteredAmt9;
+
+            isOver18 = base18 > 0 && afterAmt18 < -0.5 && enteredAmt18 > 0;
+            isOver9  = base9 > 0 && afterAmt9 < -0.5 && enteredAmt9 > 0;
+            const isOverCombined = grandTotal > 0 && (usedAmt + enteredAmt > grandTotal + 0.5) && enteredAmt > 0;
+
+            isOver = isOver18 || isOver9 || isOverCombined;
+            isDisabled = isOver || (enteredAmt18 === 0 && enteredAmt9 === 0) || submitLoading || updateLoading;
+          } else {
+            enteredAmt = Number(amtInput || 0);
+            const afterAmt = remainingAmt - enteredAmt;
+            isOver = grandTotal > 0 && afterAmt < -0.5 && enteredAmt > 0;
+            isDisabled = isOver || enteredAmt <= 0 || submitLoading || updateLoading;
+          }
+
           const enteredPct = grandTotal > 0 ? (enteredAmt / grandTotal) * 100 : 0;
-
-          const afterAmt = remainingAmt - enteredAmt;
-          const afterPct = remainingPct - enteredPct;
-          const isOver = grandTotal > 0 && afterAmt < -0.5 && enteredAmt > 0;
-          const isDisabled = isOver || submitLoading || updateLoading;
-
           const barFill = Math.min(usedPct + enteredPct, 100);
           const barOver = isOver;
 
@@ -1462,7 +1707,7 @@ export default function ProformaPage() {
               Update Proforma Activities
             </h2>
             <p className="text-[10px] text-gray-500 font-medium">
-              Track proforma progress
+              Track proforma progress {hasTwoSplits ? "(Two-Split Payment)" : "(Single Payment)"}
             </p>
           </div>
         </div>
@@ -1538,53 +1783,139 @@ export default function ProformaPage() {
           </div>
         </div>
  
-        {/* Form (Amount Only) */}
-        <div
-          className={`rounded-xl border p-4 ${isOver ? "border-red-200 bg-red-50" : "border-indigo-100 bg-indigo-50/20"}`}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-bold text-indigo-600 uppercase tracking-widest">
-              Proforma Invoice
-            </p>
-            <span className="text-xs bg-indigo-100 text-indigo-600 px-2.5 py-1 rounded-full font-bold">
-              Used: {usedPct.toFixed(2)}% | Rem: {remainingPct.toFixed(2)}%
-            </span>
-          </div>
-          <div className="mb-3">
-            <div className="flex justify-between items-center mb-1">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Amount
-              </label>
-              <span className="text-xs font-bold text-violet-600">
-                Percentage: {enteredPct.toFixed(2)}%
+        {/* Form Inputs */}
+        {hasTwoSplits ? (
+          <div className="space-y-4">
+            {/* Part 1: Project Value (18% Split) */}
+            <div className={`rounded-xl border p-4 ${isOver18 ? "border-red-200 bg-red-50" : "border-blue-100 bg-blue-50/20"}`}>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-bold text-blue-700 uppercase tracking-widest">
+                  Part 1: Project Value (18% Tax)
+                </p>
+                <span className="text-[11px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">
+                  Total: Rs. {base18.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs text-gray-500 mb-2">
+                <span>Paid: Rs. {used18.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="font-semibold text-blue-600">Rem: Rs. {rem18.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">
+                  Rs.
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={amtInput18}
+                  onChange={(e) => setAmtInput18(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-sm font-semibold focus:ring-1 focus:ring-blue-400 focus:border-blue-400 outline-none bg-white text-gray-800"
+                  placeholder="Enter Part 1 Amount"
+                />
+              </div>
+              {enteredAmt18 > 0 && (
+                <div className={`mt-2 text-xs font-semibold px-3 py-1.5 rounded-lg flex justify-between ${isOver18 ? "bg-red-100 text-red-600" : "bg-white text-gray-600 border border-gray-100"}`}>
+                  <span>After entry:</span>
+                  <span>{isOver18 ? `Over limit by Rs. ${Math.abs(afterAmt18).toFixed(2)}` : `Rem: Rs. ${afterAmt18.toFixed(2)}`}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Part 2: Other Charges (9% Split) */}
+            <div className={`rounded-xl border p-4 ${isOver9 ? "border-red-200 bg-red-50" : "border-orange-100 bg-orange-50/20"}`}>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-bold text-orange-700 uppercase tracking-widest">
+                  Part 2: Other Charges (9% Tax)
+                </p>
+                <span className="text-[11px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">
+                  Total: Rs. {base9.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs text-gray-500 mb-2">
+                <span>Paid: Rs. {used9.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="font-semibold text-orange-600">Rem: Rs. {rem9.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">
+                  Rs.
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={amtInput9}
+                  onChange={(e) => setAmtInput9(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-sm font-semibold focus:ring-1 focus:ring-orange-400 focus:border-orange-400 outline-none bg-white text-gray-800"
+                  placeholder="Enter Part 2 Amount"
+                />
+              </div>
+              {enteredAmt9 > 0 && (
+                <div className={`mt-2 text-xs font-semibold px-3 py-1.5 rounded-lg flex justify-between ${isOver9 ? "bg-red-100 text-red-600" : "bg-white text-gray-600 border border-gray-100"}`}>
+                  <span>After entry:</span>
+                  <span>{isOver9 ? `Over limit by Rs. ${Math.abs(afterAmt9).toFixed(2)}` : `Rem: Rs. ${afterAmt9.toFixed(2)}`}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Total Entered Summary */}
+            <div className="bg-indigo-50/50 p-3 rounded-xl border border-indigo-100 flex justify-between items-center text-xs font-bold text-indigo-900">
+              <span>Total Entered Amount:</span>
+              <span className="text-sm text-indigo-700">
+                Rs. {enteredAmt.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
-            <div className="relative mt-1">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">
-                Rs.
-              </span>
-              <input
-                type="number"
-                min="0"
-                step="any"
-                value={amtInput}
-                onChange={(e) => setAmtInput(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-sm font-semibold focus:ring-1 focus:ring-indigo-300 focus:border-indigo-300 outline-none bg-white text-gray-800"
-                placeholder="0.00"
-              />
-            </div>
           </div>
+        ) : (
           <div
-            className={`flex justify-between text-xs font-semibold px-3 py-2 rounded-lg ${isOver ? "bg-red-100 text-red-600" : afterAmt === 0 && enteredAmt > 0 ? "bg-green-100 text-green-600" : "bg-white text-gray-600 border border-gray-100 shadow-sm"}`}
+            className={`rounded-xl border p-4 ${isOver ? "border-red-200 bg-red-50" : "border-indigo-100 bg-indigo-50/20"}`}
           >
-            <span>Remaining after entry:</span>
-            <span>
-              {isOver
-                ? `Over by Rs. ${Math.abs(afterAmt).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${Math.abs(afterPct).toFixed(2)}%)`
-                : `${afterPct.toFixed(2)}% | Rs. ${afterAmt.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-            </span>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-bold text-indigo-600 uppercase tracking-widest">
+                Proforma Invoice
+              </p>
+              <span className="text-xs bg-indigo-100 text-indigo-600 px-2.5 py-1 rounded-full font-bold">
+                Used: {usedPct.toFixed(2)}% | Rem: {remainingPct.toFixed(2)}%
+              </span>
+            </div>
+            <div className="mb-3">
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Amount
+                </label>
+                <span className="text-xs font-bold text-violet-600">
+                  Percentage: {enteredPct.toFixed(2)}%
+                </span>
+              </div>
+              <div className="relative mt-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">
+                  Rs.
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={amtInput}
+                  onChange={(e) => setAmtInput(e.target.value)}
+                  className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-sm font-semibold focus:ring-1 focus:ring-indigo-300 focus:border-indigo-300 outline-none bg-white text-gray-800"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+            {enteredAmt > 0 && (
+              <div
+                className={`flex justify-between text-xs font-semibold px-3 py-2 rounded-lg ${isOver ? "bg-red-100 text-red-600" : (remainingAmt - enteredAmt) === 0 ? "bg-green-100 text-green-600" : "bg-white text-gray-600 border border-gray-100 shadow-sm"}`}
+              >
+                <span>Remaining after entry:</span>
+                <span>
+                  {isOver
+                    ? `Over by Rs. ${Math.abs(remainingAmt - enteredAmt).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                    : `${(remainingPct - enteredPct).toFixed(2)}% | Rs. ${(remainingAmt - enteredAmt).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                </span>
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </div>
  
       {/* ── RIGHT PANEL — History ── */}
@@ -1601,7 +1932,9 @@ export default function ProformaPage() {
           ) : (
             allFollowUps.map((h, index) => {
               const isLatest = index === 0;
-              const amt = Number(h.total || 0) || (Number(h.total_18 || 0) + Number(h.total_9 || 0));
+              const amt18 = Number(h.total_18 || 0);
+              const amt9 = Number(h.total_9 || 0);
+              const amt = Number(h.total || 0) || (amt18 + amt9);
               const pct = grandTotal > 0 ? (amt / grandTotal) * 100 : (Number(h.proforma_percentage || 0) || (Number(h.proforma_percentage_18 || 0) + Number(h.proforma_percentage_9 || 0)));
  
               return (
@@ -1653,6 +1986,12 @@ export default function ProformaPage() {
                         ></i>
                       </div>
                     </div>
+                    {hasTwoSplits && (amt18 > 0 || amt9 > 0) && (
+                      <div className="mt-2 pt-2 border-t border-gray-100 flex gap-4 text-xs text-gray-500">
+                        <span>Part 1: <strong className="text-blue-600">Rs. {amt18.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+                        <span>Part 2: <strong className="text-orange-600">Rs. {amt9.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
