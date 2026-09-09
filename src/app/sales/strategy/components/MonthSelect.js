@@ -7,7 +7,7 @@ export function MonthSelect({
   onChange, 
   options = [], 
   placeholder = "Select Target Month",
-  className = "w-full h-[44px]",
+  className = "w-full h-[40px]",
   disabled = false
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -39,8 +39,8 @@ export function MonthSelect({
       const spaceBelow = window.innerHeight - rect.bottom;
       const placement = spaceBelow < 400 && rect.top > spaceBelow ? 'top' : 'bottom';
       setSelectPos({
-        top: placement === 'bottom' ? rect.bottom + 8 : undefined,
-        bottom: placement === 'top' ? window.innerHeight - rect.top + 8 : undefined,
+        top: placement === 'bottom' ? rect.bottom + 6 : undefined,
+        bottom: placement === 'top' ? window.innerHeight - rect.top + 6 : undefined,
         left: rect.left,
         width: rect.width > 260 ? rect.width : 260
       });
@@ -59,13 +59,15 @@ export function MonthSelect({
         ref={buttonRef}
         onClick={handleOpen}
         disabled={disabled}
-        className={`${className} px-3.5 flex items-center justify-between border rounded-md text-sm font-semibold transition-all focus:outline-none bg-white text-slate-800 ${
-          disabled ? 'opacity-50 cursor-not-allowed border-slate-200' : 'cursor-pointer hover:border-[#6366F1]'
-        } ${isOpen ? 'border-[#818CF8] ring-1 ring-[#818CF8]' : disabled ? '' : 'border-[#818CF8]'}`}
+        className={`${className} px-3.5 flex items-center justify-between border rounded-lg text-sm font-semibold transition-all focus:outline-none bg-white text-slate-800 shadow-2xs ${
+          disabled
+            ? 'opacity-50 cursor-not-allowed border-slate-200 bg-slate-50'
+            : 'cursor-pointer hover:border-slate-400'
+        } ${isOpen ? 'border-indigo-500 ring-2 ring-indigo-100' : 'border-slate-300'}`}
       >
-        <span className={!value ? "text-slate-500" : "truncate pr-2"}>{selectedLabel}</span>
-        <svg className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180 text-[#6366f1]' : 'text-slate-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+        <span className={!value ? "text-slate-400 font-normal" : "truncate pr-2 font-semibold text-slate-800"}>{selectedLabel}</span>
+        <svg className={`w-4 h-4 shrink-0 transition-transform duration-150 ${isOpen ? 'rotate-180 text-indigo-600' : 'text-slate-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
@@ -73,13 +75,13 @@ export function MonthSelect({
         <>
           <div className="fixed inset-0 z-[9998]" onClick={() => setIsOpen(false)} />
           <div
-            className="fixed z-[9999] bg-white border border-slate-200 rounded-[10px] shadow-xl text-left flex flex-col overflow-hidden"
+            className="fixed z-[9999] bg-white border border-slate-200 rounded-xl shadow-lg text-left flex flex-col overflow-hidden"
             style={{ 
               top: selectPos.top, 
               bottom: selectPos.bottom, 
               left: selectPos.left, 
               minWidth: selectPos.width,
-              animation: '0.15s ease-out 0s 1 normal forwards running fadeInSlide'
+              animation: '0.12s ease-out 0s 1 normal forwards running fadeInSlide'
             }}
           >
             <style>{`
@@ -93,15 +95,15 @@ export function MonthSelect({
             `}</style>
             
             {/* Header */}
-            <div className="flex items-start justify-between px-3 py-2.5 border-b border-slate-100 bg-[#F8FAFC]">
+            <div className="flex items-start justify-between px-3.5 py-2.5 border-b border-slate-100 bg-[#F8FAFC]">
               <div className="flex flex-col">
-                <span className="text-[13px] font-bold text-slate-700 leading-tight">Select Target Month</span>
-                <span className="text-[11px] font-medium text-slate-500 mt-0.5">Choose the month for allocation.</span>
+                <span className="text-[13px] font-bold text-slate-800 leading-tight">Select Target Month</span>
+                <span className="text-[11px] font-medium text-slate-500 mt-0.5">Choose destination month for allocation</span>
               </div>
               <button 
                 type="button" 
                 onClick={() => setIsOpen(false)}
-                className="text-slate-400 hover:text-slate-600 transition-colors p-1"
+                className="text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded hover:bg-slate-200/50"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -121,22 +123,21 @@ export function MonthSelect({
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search month..." 
-                  className="w-full h-[36px] pl-8 pr-3 bg-white border border-slate-200 hover:border-[#818CF8] rounded-md text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-[#818CF8] focus:ring-2 focus:ring-[#818CF8]/20 transition-all"
+                  className="w-full h-[34px] pl-8 pr-3 bg-white border border-slate-200 hover:border-slate-300 rounded-lg text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
                 />
               </div>
             </div>
 
-            <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-2 bg-white">
+            <div className="max-h-[280px] overflow-y-auto custom-scrollbar p-1.5 bg-white">
               {[1, 2, 3, 4].map((q, index) => {
                 const groupOpts = groupedOptions[q];
                 if (!groupOpts || groupOpts.length === 0) return null;
                 
-                // Determine if we need a divider. We only add a divider if there are rendered groups before this one.
                 const hasPreviousGroups = [1, 2, 3, 4].slice(0, index).some(prevQ => groupedOptions[prevQ] && groupedOptions[prevQ].length > 0);
 
                 return (
-                  <div key={q} className={`flex flex-col space-y-0.5 ${hasPreviousGroups ? 'mt-2 pt-2 border-t border-slate-100' : ''}`}>
-                    <div className="px-[14px] py-1.5 text-[11px] font-bold text-indigo-400 uppercase tracking-wider">
+                  <div key={q} className={`flex flex-col space-y-0.5 ${hasPreviousGroups ? 'mt-2 pt-1.5 border-t border-slate-100' : ''}`}>
+                    <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       {quarterLabels[q]}
                     </div>
                     {groupOpts.map((opt) => (
@@ -144,16 +145,16 @@ export function MonthSelect({
                         key={opt.monthNumber}
                         type="button"
                         onClick={() => { onChange(opt.monthNumber); setIsOpen(false); }}
-                        className={`w-full flex items-center justify-between px-[14px] h-[40px] rounded-md text-[13px] font-bold transition-colors cursor-pointer ${
+                        className={`w-full flex items-center justify-between px-3 h-[36px] rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                           String(value) === String(opt.monthNumber) 
-                            ? 'bg-[#EEF2FF] text-[#4F46E5]' 
-                            : 'text-slate-700 hover:bg-[#EEF2FF] hover:text-[#4F46E5] focus:bg-[#EEF2FF] focus:text-[#4F46E5] focus:outline-none'
+                            ? 'bg-indigo-50 text-indigo-700 font-bold' 
+                            : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 focus:bg-slate-50 focus:text-slate-900 focus:outline-none'
                         }`}
                       >
-                        {opt.monthName} (Q{q})
+                        <span>{opt.monthName} (Q{q})</span>
                         {String(value) === String(opt.monthNumber) && (
-                          <svg className="w-4 h-4 text-[#4F46E5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                          <svg className="w-4 h-4 text-indigo-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                           </svg>
                         )}
                       </button>

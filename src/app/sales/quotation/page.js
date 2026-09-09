@@ -1804,6 +1804,9 @@ const closeUpdateDrawer = () => {
         formData.append("company_name", selectedLead.company_name);
         formData.append("customer_name", selectedLead.customer_name);
         formData.append("reference", selectedLead.reference);
+        if (selectedLead.strategy_category_id) {
+          formData.append("strategy_category_id", selectedLead.strategy_category_id);
+        }
         Object.keys(form).forEach((key) => formData.append(key, form[key]));
         if (selectedFiles.length > 0) {
           selectedFiles.forEach((file) => formData.append("files", file));
@@ -2490,6 +2493,12 @@ const closeUpdateDrawer = () => {
                         Architecture
                       </th>
                       <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
+                        Source
+                      </th>
+                      <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
+                        Sales Strategy Category
+                      </th>
+                      <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
                         Create Quotation
                       </th>
                       <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
@@ -2590,6 +2599,27 @@ const closeUpdateDrawer = () => {
 
                             <td className="px-3">{q.location || "-"}</td>
                             <td className="px-3">{q.architecture || "-"}</td>
+                            <td className="px-3">
+                              <span className="inline-block px-2.5 py-1 bg-gray-100 text-gray-700 rounded-md text-xs font-medium whitespace-nowrap">
+                                {q.source || "-"}
+                              </span>
+                            </td>
+                            <td className="px-3">
+                              {q.strategy_category_name ? (
+                                <span
+                                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap shadow-2xs border ${
+                                    q.strategy_category_badge_bg && q.strategy_category_badge_text
+                                      ? `${q.strategy_category_badge_bg} ${q.strategy_category_badge_text} border-transparent`
+                                      : "bg-indigo-50 text-indigo-700 border-indigo-100/70"
+                                  }`}
+                                >
+                                  <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70"></span>
+                                  {q.strategy_category_name}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 text-xs">—</span>
+                              )}
+                            </td>
 
                             <td className="text-lg px-3 text-center">
                               {q.latest_quotation_id ? (
@@ -3722,11 +3752,39 @@ const closeUpdateDrawer = () => {
               <i className="bi bi-receipt text-lg text-white"></i>
             </div>
             <div>
+<<<<<<< Updated upstream
               <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
                 {selectedLead?.company_name} {selectedLead?.mobile_no ? `(${selectedLead.mobile_no})` : ""}
               </h2>
               <p className="text-xs text-gray-500 font-medium">
                 Quotation Management {selectedLead?.customer_name ? `• ${selectedLead.customer_name}` : ""}
+=======
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
+                  {selectedLead?.company_name || selectedLead?.customer_name || "Quotation"}
+                </h2>
+                {selectedLead?.strategy_category_name && (
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold border ${
+                      selectedLead.strategy_category_badge_bg && selectedLead.strategy_category_badge_text
+                        ? `${selectedLead.strategy_category_badge_bg} ${selectedLead.strategy_category_badge_text} border-transparent`
+                        : "bg-indigo-50 text-indigo-700 border-indigo-100"
+                    }`}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-75"></span>
+                    {selectedLead.strategy_category_name}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 font-medium flex items-center gap-2 mt-0.5">
+                <span>Quotation Management</span>
+                {selectedLead?.source && (
+                  <>
+                    <span>•</span>
+                    <span className="text-gray-600">Source: {selectedLead.source}</span>
+                  </>
+                )}
+>>>>>>> Stashed changes
               </p>
             </div>
           </div>
@@ -5836,6 +5894,12 @@ const closeUpdateDrawer = () => {
             label: "Source",
             value: viewQuotation.source,
             color: "bg-cyan-50 text-cyan-500",
+          },
+          {
+            icon: "bi-bullseye",
+            label: "Sales Strategy Category",
+            value: viewQuotation.strategy_category_name || (viewQuotation.strategy_category_id ? `Category #${viewQuotation.strategy_category_id}` : "—"),
+            color: "bg-indigo-50 text-indigo-500",
           },
           {
             icon: "bi-currency-rupee",

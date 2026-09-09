@@ -674,20 +674,7 @@ export default function MonthlyGoalsPage() {
             )}
           </div>
 
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-[12px] font-bold text-slate-800">
-            <span className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-[#3b82f6]" /> Q1: Apr - Jun
-            </span>
-            <span className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-[#10b981]" /> Q2: Jul - Sep
-            </span>
-            <span className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-[#f59e0b]" /> Q3: Oct - Dec
-            </span>
-            <span className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-[#ef4444]" /> Q4: Jan - Mar
-            </span>
-          </div>
+
         </main>
 
       {showDiscardConfirm && (

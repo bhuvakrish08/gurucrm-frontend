@@ -18,6 +18,9 @@ import DashboardCard from './components/executive/DashboardCard';
 import MetricCard from './components/executive/MetricCard';
 import ChartCard from './components/executive/ChartCard';
 import RankingCard from './components/executive/RankingCard';
+import MonthCarryAllocationModal from "./components/MonthCarryAllocationModal";
+import { Button } from "./components/Button";
+import CategoryDetailDrawer from "./components/CategoryDetailDrawer";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants & Metadata
@@ -132,14 +135,165 @@ function getStatusBadge(status) {
   }
 }
 
+/**
+ * Deterministic Forecast Status Thresholds (Display-only):
+ * Projected Achievement >= 100% -> Exceeded (emerald)
+ * Projected Achievement >= 90%  -> On Track (emerald)
+ * Projected Achievement >= 75%  -> At Risk (amber)
+ * Projected Achievement < 75%   -> Behind (rose)
+ *
+ * NOTE: These thresholds apply ONLY to the forecast display and do NOT mutate
+ * backend performanceStatus or existing calculations.
+ */
+function getForecastStatus(projectedPct) {
+  const pct = Number(projectedPct) || 0;
+  if (pct >= 100) {
+    return {
+      label: "Exceeded",
+      badgeCls: "bg-[#ecfdf5] text-[#059669] border border-[#a7f3d0] font-bold",
+      dotCls: "bg-emerald-500",
+      textCls: "text-emerald-700",
+      progressBg: "bg-emerald-500",
+    };
+  }
+  if (pct >= 90) {
+    return {
+      label: "On Track",
+      badgeCls: "bg-[#ecfdf5] text-[#059669] border border-[#a7f3d0] font-bold",
+      dotCls: "bg-emerald-500",
+      textCls: "text-emerald-700",
+      progressBg: "bg-emerald-500",
+    };
+  }
+  if (pct >= 75) {
+    return {
+      label: "At Risk",
+      badgeCls: "bg-[#fffbeb] text-[#d97706] border border-[#fde68a] font-bold",
+      dotCls: "bg-amber-500",
+      textCls: "text-amber-700",
+      progressBg: "bg-amber-500",
+    };
+  }
+  return {
+    label: "Behind",
+    badgeCls: "bg-[#fff1f2] text-[#e11d48] border border-[#fecdd3] font-bold",
+    dotCls: "bg-rose-500",
+    textCls: "text-rose-700",
+    progressBg: "bg-rose-500",
+  };
+}
+
+/**
+ * Source Performance Status Visual Mapping:
+ * AHEAD    -> emerald (bg-emerald-50 text-emerald-700 border-emerald-200)
+ * ON_TRACK -> indigo  (bg-indigo-50 text-indigo-700 border-indigo-200)
+ * BEHIND   -> rose    (bg-rose-50 text-rose-700 border-rose-200)
+ * BALANCED -> slate   (bg-slate-100 text-slate-700 border-slate-200)
+ */
+function getSourcePerformanceStatusBadge(status) {
+  switch (status) {
+    case "AHEAD":
+      return {
+        label: "Ahead",
+        badgeCls: "bg-emerald-50 text-emerald-700 border-emerald-200 font-bold",
+        dotCls: "bg-emerald-500",
+      };
+    case "ON_TRACK":
+      return {
+        label: "On Track",
+        badgeCls: "bg-indigo-50 text-indigo-700 border-indigo-200 font-bold",
+        dotCls: "bg-indigo-500",
+      };
+    case "BEHIND":
+      return {
+        label: "Behind",
+        badgeCls: "bg-rose-50 text-rose-700 border-rose-200 font-bold",
+        dotCls: "bg-rose-500",
+      };
+    case "BALANCED":
+    default:
+      return {
+        label: status || "Balanced",
+        badgeCls: "bg-slate-100 text-slate-700 border-slate-200 font-bold",
+        dotCls: "bg-slate-400",
+      };
+  }
+}
+
+/**
+ * Source Health Bar Color Rules:
+ * 0–74.99%  -> rose
+ * 75–89.99% -> amber
+ * 90–99.99% -> indigo
+ * 100%+     -> emerald
+ */
+function getSourceHealthBarColor(pct) {
+  const p = Number(pct) || 0;
+  if (p >= 100) return "bg-emerald-500";
+  if (p >= 90) return "bg-indigo-600";
+  if (p >= 75) return "bg-amber-500";
+  return "bg-rose-500";
+}
+
+/**
+ * Deterministic Source Momentum Status (DISPLAY-ONLY):
+ * >= +10% -> Strong (emerald)
+ * >= +3%  -> Improving (emerald)
+ * > -3%   -> Stable (slate / indigo)
+ * > -10%  -> Weakening (amber)
+ * <= -10% -> Critical (rose)
+ */
+function getMomentumStatus(momentumPct) {
+  const p = Number(momentumPct) || 0;
+  if (p >= 10) {
+    return {
+      label: "Strong",
+      icon: "↑",
+      badgeCls: "bg-emerald-50 text-emerald-700 border-emerald-200 font-bold",
+      textCls: "text-emerald-700",
+    };
+  }
+  if (p >= 3) {
+    return {
+      label: "Improving",
+      icon: "↗",
+      badgeCls: "bg-emerald-50 text-emerald-700 border-emerald-200 font-bold",
+      textCls: "text-emerald-700",
+    };
+  }
+  if (p > -3) {
+    return {
+      label: "Stable",
+      icon: "→",
+      badgeCls: "bg-slate-100 text-slate-700 border-slate-200 font-bold",
+      textCls: "text-slate-700",
+    };
+  }
+  if (p > -10) {
+    return {
+      label: "Weakening",
+      icon: "↘",
+      badgeCls: "bg-amber-50 text-amber-700 border-amber-200 font-bold",
+      textCls: "text-amber-700",
+    };
+  }
+  return {
+    label: "Critical",
+    icon: "↓",
+    badgeCls: "bg-rose-50 text-rose-700 border-rose-200 font-bold",
+    textCls: "text-rose-700",
+  };
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Drill-Down Drawer Component
 // ─────────────────────────────────────────────────────────────────────────────
 
-function CategoryDrawer({ category, financialYear, mode, period, apiBase, onClose }) {
+function CategoryDrawer({ category, financialYear, mode, period, apiBase, onClose, onRefresh }) {
   const [contribs, setContribs] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [isMonthModalOpen, setIsMonthModalOpen] = useState(false);
   const drawerRef = useRef(null);
 
   const fetchContribs = useCallback(
@@ -277,30 +431,62 @@ function CategoryDrawer({ category, financialYear, mode, period, apiBase, onClos
         {(category.closingShortfall > 0 || category.closingExcess > 0) && (
           <div className="px-8 mt-4">
             <div
-              className={`rounded-xl px-5 py-4 border flex items-start gap-3.5 shadow-sm ${
+              className={`rounded-xl px-5 py-4 border flex items-center justify-between shadow-sm ${
                 category.closingShortfall > 0
                   ? "bg-rose-50 border-rose-100/50"
                   : "bg-emerald-50 border-emerald-100/50"
               }`}
             >
-              <div className={`mt-0.5 w-6 h-6 rounded-full flex items-center justify-center font-bold ${
-                category.closingShortfall > 0 ? "bg-rose-200 text-rose-700" : "bg-emerald-200 text-emerald-700"
-              }`}>
-                {category.closingShortfall > 0 ? "!" : "✓"}
+              <div className="flex items-start gap-3.5">
+                <div className={`mt-0.5 w-6 h-6 rounded-full flex items-center justify-center font-bold ${
+                  category.closingShortfall > 0 ? "bg-rose-200 text-rose-700" : "bg-emerald-200 text-emerald-700"
+                }`}>
+                  {category.closingShortfall > 0 ? "!" : "✓"}
+                </div>
+                <div>
+                  <p className={`text-sm font-extrabold ${category.closingShortfall > 0 ? "text-rose-900" : "text-emerald-900"}`}>
+                    {category.closingShortfall > 0 ? "Closing Shortfall" : "Closing Excess Credit"}
+                  </p>
+                  <p className={`text-xl font-black mt-0.5 ${category.closingShortfall > 0 ? "text-rose-700" : "text-emerald-700"}`}>
+                    {formatCurrencyFull(category.closingShortfall > 0 ? category.closingShortfall : category.closingExcess)}
+                  </p>
+                  <p className={`text-xs font-semibold mt-1 ${category.closingShortfall > 0 ? "text-rose-600/80" : "text-emerald-600/80"}`}>
+                    {category.closingShortfall > 0 ? "Will increase next month's effective goal" : "Will be carried forward to next month"}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className={`text-sm font-extrabold ${category.closingShortfall > 0 ? "text-rose-900" : "text-emerald-900"}`}>
-                  {category.closingShortfall > 0 ? "Closing Shortfall" : "Closing Excess Credit"}
-                </p>
-                <p className={`text-xl font-black mt-0.5 ${category.closingShortfall > 0 ? "text-rose-700" : "text-emerald-700"}`}>
-                  {formatCurrencyFull(category.closingShortfall > 0 ? category.closingShortfall : category.closingExcess)}
-                </p>
-                <p className={`text-xs font-semibold mt-1 ${category.closingShortfall > 0 ? "text-rose-600/80" : "text-emerald-600/80"}`}>
-                  {category.closingShortfall > 0 ? "Will increase next month's effective goal" : "Will be carried forward to next month"}
-                </p>
-              </div>
+              
+              {mode === "MONTH" && (
+                <div className="flex-shrink-0 ml-4">
+                  <Button
+                    variant="primary"
+                    onClick={() => setIsMonthModalOpen(true)}
+                    className="whitespace-nowrap shadow-sm"
+                  >
+                    Allocate Carry
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
+        )}
+
+        {/* Render Modal */}
+        {mode === "MONTH" && isMonthModalOpen && (
+          <MonthCarryAllocationModal
+            isOpen={isMonthModalOpen}
+            onClose={() => setIsMonthModalOpen(false)}
+            onSave={(result) => {
+              setIsMonthModalOpen(false);
+              toast.success("Carry allocation saved successfully.");
+              if (onRefresh) onRefresh();
+            }}
+            sourceMonth={Number(period)}
+            sourceMonthName={MONTHS_META.find((m) => m.monthNumber === Number(period))?.name || ""}
+            financialYear={financialYear}
+            categoryId={category.categoryId}
+            categoryName={category.categoryName}
+          />
         )}
 
         {/* SOURCE BREAKDOWN */}
@@ -527,7 +713,7 @@ export default function StrategyOverviewPage() {
   // Selectors State
   const [financialYear, setFinancialYear] = useState(getCurrentFY);
   const [mode, setMode] = useState("MONTH");
-  const [period, setPeriod] = useState(() => getCurrentMonth());
+  const [period, setPeriod] = useState(4);
 
   // Data State
   const [loading, setLoading] = useState(true);
@@ -536,10 +722,14 @@ export default function StrategyOverviewPage() {
   // Drawer State
   const [drawerCategory, setDrawerCategory] = useState(null);
 
+  // AI Assistant State (UI + local question only for Phase 6)
+  const [aiQuestion, setAiQuestion] = useState("");
+  const [aiSubmitted, setAiSubmitted] = useState(false);
+
   // Mode change handler
   const handleModeChange = (newMode) => {
     setMode(newMode);
-    if (newMode === "MONTH") setPeriod(getCurrentMonth());
+    if (newMode === "MONTH") setPeriod(4);
     else if (newMode === "QUARTER") {
       const m = getCurrentMonth();
       setPeriod(m >= 4 && m <= 6 ? 1 : m >= 7 && m <= 9 ? 2 : m >= 10 && m <= 12 ? 3 : 4);
@@ -687,12 +877,598 @@ export default function StrategyOverviewPage() {
     };
   }, [overview, kpis, status, categories]);
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // FY FORECAST INTELLIGENCE (Phase 2 Quota-Safe Read-Only Derived Intelligence)
+  // ─────────────────────────────────────────────────────────────────────────────
+  /**
+   * Deterministic Forecast Calculations:
+   * Financial Year: April 1 -> March 31
+   * Completed months: April through currently selected month (1 to 12)
+   * Remaining months: Selected month + 1 through March (0 if March / FY complete)
+   *
+   * Formulations:
+   * - Goal To Date: sum of effectiveGoal for completed months
+   * - Achievement To Date: sum of achievement for completed months
+   * - FY Effective Goal: sum of effectiveGoal for April through March (never base goal)
+   * - FY Achievement To Date: sum of achievement for completed months
+   * - Remaining Goal: max(0, FY Effective Goal - Achievement To Date)
+   * - Current Monthly Run Rate: Achievement To Date / completed months
+   * - Required Monthly Run Rate: Remaining Goal / remaining months (or 0 if FY complete)
+   * - Projected FY Achievement: Achievement To Date + (Current Monthly Run Rate * remaining months)
+   * - Projected FY Achievement %: Projected FY Achievement / FY Effective Goal * 100
+   * - Projected Shortfall: max(0, FY Effective Goal - Projected FY Achievement)
+   * - Projected Excess: max(0, Projected FY Achievement - FY Effective Goal)
+   *
+   * Forecast Status Thresholds (Display-only):
+   * - Projected Achievement >= 100% -> Exceeded
+   * - Projected Achievement >= 90%  -> On Track
+   * - Projected Achievement >= 75%  -> At Risk
+   * - Projected Achievement < 75%   -> Behind
+   */
+  const forecastData = React.useMemo(() => {
+    if (!overview || !categories || categories.length === 0) return null;
+
+    // 1. Determine completed months count based on Indian FY order (April=1 .. March=12)
+    const completedMonths = (() => {
+      if (mode === "YEAR") return 12;
+      if (mode === "QUARTER") {
+        const q = Number(period) || 1;
+        return Math.min(12, Math.max(1, q * 3));
+      }
+      const m = Number(period) || 4;
+      return m >= 4 ? m - 3 : m + 9;
+    })();
+
+    const remainingMonths = Math.max(0, 12 - completedMonths);
+    const isFYComplete = remainingMonths === 0;
+
+    // Check if rich multi-month sequence is available across categories
+    const hasMultiMonthSequence = categories.some(c => (c.monthsSequence || []).length > 1);
+
+    // 2. Category-level forecast calculations
+    const categoryForecasts = categories.map((cat) => {
+      const monthsSeq = cat.monthsSequence || [];
+      let catGoalToDate = 0;
+      let catAchievementToDate = 0;
+      let catFYEffectiveGoal = 0;
+
+      if (hasMultiMonthSequence && monthsSeq.length > 1) {
+        // Multi-month sequence present (e.g. YEAR or QUARTER view)
+        const completedMonthsData = monthsSeq.filter((m) => {
+          const fyOrd = m.monthNumber >= 4 ? m.monthNumber - 3 : m.monthNumber + 9;
+          return fyOrd <= completedMonths;
+        });
+
+        catGoalToDate = completedMonthsData.reduce((s, m) => s + (Number(m.effectiveGoal) || 0), 0);
+        catAchievementToDate = completedMonthsData.reduce((s, m) => s + (Number(m.achievement) || 0), 0);
+
+        if (monthsSeq.length === 12) {
+          catFYEffectiveGoal = monthsSeq.reduce((s, m) => s + (Number(m.effectiveGoal) || 0), 0);
+        } else {
+          const avgGoal = monthsSeq.length > 0
+            ? monthsSeq.reduce((s, m) => s + (Number(m.effectiveGoal) || 0), 0) / monthsSeq.length
+            : (Number(cat.effectiveGoal) || 0);
+          catFYEffectiveGoal = avgGoal * 12;
+        }
+      } else {
+        // Single period / month data available in active view
+        const monthlyGoal = Number(cat.effectiveGoal) || 0;
+        const monthlyAch = Number(cat.achievement) || 0;
+        catGoalToDate = monthlyGoal * completedMonths;
+        catAchievementToDate = monthlyAch * completedMonths;
+        catFYEffectiveGoal = monthlyGoal * 12;
+      }
+
+      catGoalToDate = Math.round(catGoalToDate * 100) / 100;
+      catAchievementToDate = Math.round(catAchievementToDate * 100) / 100;
+      catFYEffectiveGoal = Math.round(catFYEffectiveGoal * 100) / 100;
+
+      const catRemainingGoal = Math.max(0, catFYEffectiveGoal - catAchievementToDate);
+      const catCurrentRunRate = completedMonths > 0 ? catAchievementToDate / completedMonths : 0;
+      const catRequiredRunRate = remainingMonths > 0 ? catRemainingGoal / remainingMonths : 0;
+      const catProjectedFYAchievement = catAchievementToDate + (catCurrentRunRate * remainingMonths);
+
+      let catProjectedPct = 0;
+      if (catFYEffectiveGoal > 0) {
+        catProjectedPct = (catProjectedFYAchievement / catFYEffectiveGoal) * 100;
+      } else if (catFYEffectiveGoal === 0 && catProjectedFYAchievement > 0) {
+        catProjectedPct = 100;
+      }
+
+      const catProjectedShortfall = Math.max(0, catFYEffectiveGoal - catProjectedFYAchievement);
+      const catProjectedExcess = Math.max(0, catProjectedFYAchievement - catFYEffectiveGoal);
+
+      return {
+        ...cat,
+        goalToDate: catGoalToDate,
+        achievementToDate: catAchievementToDate,
+        fyEffectiveGoal: catFYEffectiveGoal,
+        remainingGoal: catRemainingGoal,
+        currentRunRate: catCurrentRunRate,
+        requiredRunRate: catRequiredRunRate,
+        projectedFYAchievement: catProjectedFYAchievement,
+        projectedAchievementPct: catProjectedPct,
+        projectedShortfall: catProjectedShortfall,
+        projectedExcess: catProjectedExcess,
+        status: getForecastStatus(catProjectedPct),
+      };
+    });
+
+    // 3. Aggregate FY Totals
+    const goalToDate = categoryForecasts.reduce((s, c) => s + c.goalToDate, 0);
+    const achievementToDate = categoryForecasts.reduce((s, c) => s + c.achievementToDate, 0);
+    const fyEffectiveGoal = categoryForecasts.reduce((s, c) => s + c.fyEffectiveGoal, 0);
+    const remainingGoal = Math.max(0, fyEffectiveGoal - achievementToDate);
+    const currentRunRate = completedMonths > 0 ? achievementToDate / completedMonths : 0;
+    const requiredRunRate = remainingMonths > 0 ? remainingGoal / remainingMonths : 0;
+    const projectedFYAchievement = achievementToDate + (currentRunRate * remainingMonths);
+
+    let projectedAchievementPct = 0;
+    if (fyEffectiveGoal > 0) {
+      projectedAchievementPct = (projectedFYAchievement / fyEffectiveGoal) * 100;
+    } else if (fyEffectiveGoal === 0 && projectedFYAchievement > 0) {
+      projectedAchievementPct = 100;
+    }
+
+    const projectedShortfall = Math.max(0, fyEffectiveGoal - projectedFYAchievement);
+    const projectedExcess = Math.max(0, projectedFYAchievement - fyEffectiveGoal);
+
+    // 4. Deterministic Forecast Status for Total
+    const forecastStatus = getForecastStatus(projectedAchievementPct);
+
+    // 5. Top 3 Highest-Risk Categories for "Forecast Risk" list
+    const highestRiskCategories = [...categoryForecasts]
+      .sort((a, b) => {
+        if (a.projectedAchievementPct !== b.projectedAchievementPct) {
+          return a.projectedAchievementPct - b.projectedAchievementPct;
+        }
+        return b.projectedShortfall - a.projectedShortfall;
+      })
+      .slice(0, 3);
+
+    return {
+      completedMonths,
+      remainingMonths,
+      isFYComplete,
+      goalToDate,
+      achievementToDate,
+      fyEffectiveGoal,
+      remainingGoal,
+      currentRunRate,
+      requiredRunRate,
+      projectedFYAchievement,
+      projectedAchievementPct,
+      projectedShortfall,
+      projectedExcess,
+      status: forecastStatus,
+      categoryForecasts,
+      highestRiskCategories,
+    };
+  }, [overview, categories, mode, period]);
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // SOURCE PERFORMANCE MANAGEMENT INSIGHTS (Phase 3 Read-Only)
+  // ─────────────────────────────────────────────────────────────────────────────
+  const sourceInsights = React.useMemo(() => {
+    if (!categories || categories.length === 0) return null;
+
+    // 1. Best Performing Source: Highest achievementPercentage
+    const sortedByAchieve = [...categories].sort(
+      (a, b) => (Number(b.achievementPercentage) || 0) - (Number(a.achievementPercentage) || 0)
+    );
+    const bestPerforming = sortedByAchieve[0] || null;
+
+    // 2. Highest Risk Source: Lowest achievementPercentage among sources with effectiveGoal > 0
+    const sourcesWithGoal = categories.filter((c) => (Number(c.effectiveGoal) || 0) > 0);
+    const sortedByRisk = [...sourcesWithGoal].sort(
+      (a, b) => (Number(a.achievementPercentage) || 0) - (Number(b.achievementPercentage) || 0)
+    );
+    const highestRisk = sortedByRisk[0] || null;
+
+    // 3. Largest Revenue Gap: Source with the lowest variance (most negative variance)
+    const sortedByVariance = [...categories].sort(
+      (a, b) => (Number(a.variance) || 0) - (Number(b.variance) || 0)
+    );
+    const largestGap = sortedByVariance[0] || null;
+
+    return {
+      bestPerforming,
+      highestRisk,
+      largestGap,
+    };
+  }, [categories]);
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // SOURCE MOMENTUM INTELLIGENCE (Phase 4 Quota-Safe Read-Only Derived Metrics)
+  // ─────────────────────────────────────────────────────────────────────────────
+  const momentumData = React.useMemo(() => {
+    if (!overview || !categories || categories.length === 0) return null;
+
+    // 1. Determine completed months count based on Indian FY order (April=1 .. March=12)
+    const completedMonthsCount = (() => {
+      if (mode === "YEAR") return 12;
+      if (mode === "QUARTER") {
+        const q = Number(period) || 1;
+        return Math.min(12, Math.max(1, q * 3));
+      }
+      const m = Number(period) || 4;
+      return m >= 4 ? m - 3 : m + 9;
+    })();
+
+    const fyOrder = [4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3];
+
+    // 2. Compute momentum metrics for each category/source
+    const sourcesMomentum = categories.map((cat) => {
+      const monthsSeq = cat.monthsSequence || [];
+
+      // Sort sequence by Indian FY order
+      const sortedSeq = [...monthsSeq].sort(
+        (a, b) => fyOrder.indexOf(a.monthNumber) - fyOrder.indexOf(b.monthNumber)
+      );
+
+      // Only use completed/available months with actual strategy data
+      let completedMonths = sortedSeq.filter((m) => {
+        const ord = m.monthNumber >= 4 ? m.monthNumber - 3 : m.monthNumber + 9;
+        return ord <= completedMonthsCount;
+      });
+
+      if (completedMonths.length === 0) {
+        completedMonths = [cat];
+      }
+
+      // Latest completed month
+      const latestMonth = completedMonths[completedMonths.length - 1] || cat;
+      const latestAchievement = Number(latestMonth.achievement) || 0;
+      const latestEffectiveGoal = Number(latestMonth.effectiveGoal) || 0;
+      const latestAchievementPct =
+        latestEffectiveGoal > 0
+          ? (latestAchievement / latestEffectiveGoal) * 100
+          : latestAchievement > 0
+          ? 100
+          : 0;
+
+      // 1. Average Monthly Achievement
+      const avgMonthlyAchievement =
+        completedMonths.length > 0
+          ? completedMonths.reduce((s, m) => s + (Number(m.achievement) || 0), 0) /
+            completedMonths.length
+          : 0;
+
+      // 2 & 3. Best Month & Weakest Month
+      let bestMonthName = latestMonth.monthShortName || latestMonth.monthName || "Current";
+      let weakestMonthName = latestMonth.monthShortName || latestMonth.monthName || "Current";
+
+      if (completedMonths.length > 1) {
+        const sortedByAch = [...completedMonths].sort(
+          (a, b) => (Number(b.achievement) || 0) - (Number(a.achievement) || 0)
+        );
+        const bestM = sortedByAch[0];
+        const weakM = sortedByAch[sortedByAch.length - 1];
+        bestMonthName = bestM.monthShortName || bestM.monthName || String(bestM.monthNumber);
+        weakestMonthName = weakM.monthShortName || weakM.monthName || String(weakM.monthNumber);
+      }
+
+      // 4. Momentum Calculation
+      let momentumPct = 0;
+      let earlierAverage = 0;
+      if (completedMonths.length > 1) {
+        const earlierMonths = completedMonths.slice(0, completedMonths.length - 1);
+        earlierAverage =
+          earlierMonths.reduce((s, m) => s + (Number(m.achievement) || 0), 0) /
+          earlierMonths.length;
+
+        if (earlierAverage > 0) {
+          momentumPct = ((latestAchievement - earlierAverage) / earlierAverage) * 100;
+        } else if (latestAchievement > 0) {
+          momentumPct = 100;
+        }
+      }
+
+      const momentumStatus =
+        completedMonths.length <= 1
+          ? {
+              label: "Stable",
+              icon: "→",
+              badgeCls: "bg-slate-100 text-slate-700 border-slate-200 font-bold",
+              textCls: "text-slate-700",
+            }
+          : getMomentumStatus(momentumPct);
+
+      // 5. Carry Exposure (Latest completed month's effectiveCarryForward)
+      const carryExposure = Number(latestMonth?.effectiveCarryForward) || 0;
+
+      // 6. FY Projected Achievement % (Reusing same formula as FY Forecast)
+      const achievementToDate = completedMonths.reduce(
+        (s, m) => s + (Number(m.achievement) || 0),
+        0
+      );
+      const remainingMonths = Math.max(0, 12 - completedMonths.length);
+      const currentRunRate =
+        completedMonths.length > 0 ? achievementToDate / completedMonths.length : 0;
+      const projectedFYAchievement =
+        achievementToDate + currentRunRate * remainingMonths;
+
+      let fyEffectiveGoal = 0;
+      if (monthsSeq.length === 12) {
+        fyEffectiveGoal = monthsSeq.reduce((s, m) => s + (Number(m.effectiveGoal) || 0), 0);
+      } else {
+        const avgGoal =
+          monthsSeq.length > 0
+            ? monthsSeq.reduce((s, m) => s + (Number(m.effectiveGoal) || 0), 0) /
+              monthsSeq.length
+            : Number(cat.effectiveGoal) || 0;
+        fyEffectiveGoal = avgGoal * 12;
+      }
+
+      let projectedFYPct = 0;
+      if (fyEffectiveGoal > 0) {
+        projectedFYPct = (projectedFYAchievement / fyEffectiveGoal) * 100;
+      } else if (fyEffectiveGoal === 0 && projectedFYAchievement > 0) {
+        projectedFYPct = 100;
+      }
+
+      // Sparkline monthly achievements
+      const maxAch = Math.max(
+        ...completedMonths.map((m) => Number(m.achievement) || 0),
+        1
+      );
+      const sparklineData = completedMonths.map((m, idx) => ({
+        monthName: m.monthShortName || m.monthName || String(m.monthNumber),
+        achievement: Number(m.achievement) || 0,
+        pctOfMax: Math.max(15, Math.min(100, ((Number(m.achievement) || 0) / maxAch) * 100)),
+        isLatest: idx === completedMonths.length - 1,
+      }));
+
+      return {
+        ...cat,
+        completedMonthsCount: completedMonths.length,
+        avgMonthlyAchievement,
+        bestMonthName,
+        weakestMonthName,
+        latestAchievement,
+        latestAchievementPct,
+        momentumPct,
+        momentumStatus,
+        carryExposure,
+        projectedFYPct,
+        sparklineData,
+      };
+    });
+
+    // 3. Management Summary (3 tiny summary signals at top)
+    // Signal 1: Strongest Momentum (highest positive momentumPct)
+    const sortedByMomentumDesc = [...sourcesMomentum].sort(
+      (a, b) => b.momentumPct - a.momentumPct
+    );
+    const strongestMomentum = sortedByMomentumDesc[0] || null;
+
+    // Signal 2: Weakest Momentum (lowest momentumPct)
+    const sortedByMomentumAsc = [...sourcesMomentum].sort(
+      (a, b) => a.momentumPct - b.momentumPct
+    );
+    const weakestMomentum = sortedByMomentumAsc[0] || null;
+
+    // Signal 3: Highest Carry Exposure (largest latest effectiveCarryForward)
+    const sortedByCarry = [...sourcesMomentum].sort(
+      (a, b) => b.carryExposure - a.carryExposure
+    );
+    const highestCarryExposure =
+      sortedByCarry[0]?.carryExposure > 0 ? sortedByCarry[0] : (sortedByCarry[0] || null);
+
+    return {
+      sourcesMomentum,
+      strongestMomentum,
+      weakestMomentum,
+      highestCarryExposure,
+    };
+  }, [overview, categories, mode, period]);
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // EXECUTIVE DECISION CENTER (Phase 5 Quota-Safe Read-Only)
+  // ─────────────────────────────────────────────────────────────────────────────
+  const decisionData = React.useMemo(() => {
+    if (!overview || !categories || categories.length === 0 || !momentumData) return null;
+
+    const sourcesMomentum = momentumData.sourcesMomentum || [];
+
+    // Map each source into decision items
+    const decisionItems = sourcesMomentum.map((src) => {
+      const achPct = Number(src.achievementPercentage) || 0;
+      const effGoal = Number(src.effectiveGoal) || 0;
+      const carryExp = Number(src.carryExposure) || 0;
+      const momPct = Number(src.momentumPct) || 0;
+      const momLabel = src.momentumStatus?.label || "Stable";
+
+      let status = "Performing Well";
+      let statusBadgeCls = "bg-emerald-50 text-emerald-700 border-emerald-200";
+      let baseReason = "Target achieved or exceeded.";
+      let baseAction = "Maintain current execution and protect momentum.";
+
+      if (achPct < 75) {
+        status = "Needs Attention";
+        statusBadgeCls = "bg-rose-50 text-rose-700 border-rose-200";
+        baseReason = "Achievement is below 75% of target.";
+        baseAction = "Review pipeline and increase conversion focus.";
+      } else if (achPct < 90) {
+        status = "Watch";
+        statusBadgeCls = "bg-amber-50 text-amber-700 border-amber-200";
+        baseReason = "Achievement is between 75% and 90% of target.";
+        baseAction = "Monitor weekly performance and improve near-term closure.";
+      } else if (achPct < 100) {
+        status = "Performing Well";
+        statusBadgeCls = "bg-emerald-50 text-emerald-700 border-emerald-200";
+        baseReason = "Achievement is on track at 90%–100% of target.";
+        baseAction = "Maintain pace and close the remaining target gap.";
+      }
+
+      // Carry Signal (strictly latestMonth.effectiveCarryForward)
+      let carryNote = "";
+      let carryAction = "";
+      if (carryExp > 0 && achPct < 90) {
+        carryNote = " Carry exposure is increasing pressure on upcoming targets.";
+        carryAction = "Prioritize carry resolution before adding further target pressure.";
+      }
+
+      // Momentum Signal
+      let momentumNote = "";
+      if (momPct <= -10) {
+        momentumNote = ` Critical momentum drop (${momPct.toFixed(1)}%).`;
+        if (status === "Performing Well") {
+          status = "Watch";
+          statusBadgeCls = "bg-amber-50 text-amber-700 border-amber-200";
+        }
+      } else if (momPct > -10 && momPct <= -3) {
+        momentumNote = ` Weakening monthly momentum (${momPct.toFixed(1)}%).`;
+        if (status === "Performing Well" && achPct < 100) {
+          status = "Watch";
+          statusBadgeCls = "bg-amber-50 text-amber-700 border-amber-200";
+        }
+      } else if (momPct >= 10) {
+        momentumNote = ` Strong momentum (+${momPct.toFixed(1)}%).`;
+      }
+
+      const fullReason = `${baseReason}${carryNote}${momentumNote}`;
+      const fullAction = carryAction || baseAction;
+
+      return {
+        ...src,
+        decisionStatus: status,
+        decisionBadgeCls: statusBadgeCls,
+        reason: fullReason.trim(),
+        recommendedAction: fullAction,
+        isWatchCandidate:
+          (achPct >= 75 && achPct < 90) ||
+          momLabel === "Weakening" ||
+          momLabel === "Critical" ||
+          carryExp > 0,
+      };
+    });
+
+    // Sort Priority Actions: Needs Attention first, then Watch, then Performing Well
+    const priorityWeight = { "Needs Attention": 1, "Watch": 2, "Performing Well": 3 };
+    const sortedActions = [...decisionItems]
+      .sort((a, b) => {
+        const wA = priorityWeight[a.decisionStatus] || 4;
+        const wB = priorityWeight[b.decisionStatus] || 4;
+        if (wA !== wB) return wA - wB;
+        return (Number(a.achievementPercentage) || 0) - (Number(b.achievementPercentage) || 0);
+      })
+      .slice(0, 5);
+
+    // Summary Card 1: NEEDS ATTENTION
+    // Highest-risk source: effectiveGoal > 0, lowest achievementPercentage. If tied, higher carryExposure wins.
+    const sourcesWithGoal = decisionItems.filter((c) => (Number(c.effectiveGoal) || 0) > 0);
+    const sortedForAttention = [...sourcesWithGoal].sort((a, b) => {
+      const diff = (Number(a.achievementPercentage) || 0) - (Number(b.achievementPercentage) || 0);
+      if (Math.abs(diff) > 0.01) return diff;
+      return (Number(b.carryExposure) || 0) - (Number(a.carryExposure) || 0);
+    });
+    const needsAttentionSource = sortedForAttention[0] || null;
+
+    // Summary Card 2: WATCH
+    // Source where: achievementPercentage >= 75 && < 90 OR momentum Weakening/Critical OR carryExposure > 0
+    const watchCandidates = decisionItems.filter((c) => c.isWatchCandidate && c !== needsAttentionSource);
+    const watchSource = watchCandidates[0] || decisionItems.find((c) => c.isWatchCandidate) || null;
+
+    // Summary Card 3: PERFORMING WELL
+    // Highest achievementPercentage among sources where effectiveGoal > 0
+    const sortedForPerforming = [...sourcesWithGoal].sort(
+      (a, b) => (Number(b.achievementPercentage) || 0) - (Number(a.achievementPercentage) || 0)
+    );
+    const performingWellSource = sortedForPerforming[0] || null;
+
+    // Overall Management Statement
+    const sourcesToEval = sourcesWithGoal.length > 0 ? sourcesWithGoal : decisionItems;
+    const allExceeding = sourcesToEval.length > 0 && sourcesToEval.every((c) => (Number(c.achievementPercentage) || 0) >= 100);
+    const allOnTrack = sourcesToEval.length > 0 && sourcesToEval.every((c) => (Number(c.achievementPercentage) || 0) >= 90);
+    const sourcesBelow75 = sourcesToEval.filter((c) => (Number(c.achievementPercentage) || 0) < 75);
+
+    let overallStatement = "";
+    let overallToneCls = "bg-slate-100 text-slate-700 border-slate-200";
+
+    if (allExceeding) {
+      overallStatement = "All primary sources are currently exceeding effective targets.";
+      overallToneCls = "bg-emerald-50 text-emerald-700 border-emerald-200";
+    } else if (allOnTrack) {
+      overallStatement = "Sales performance is broadly on track across all sources.";
+      overallToneCls = "bg-emerald-50 text-emerald-700 border-emerald-200";
+    } else if (sourcesBelow75.length === 1) {
+      overallStatement = "Overall performance is stable, but one source requires attention.";
+      overallToneCls = "bg-amber-50 text-amber-700 border-amber-200";
+    } else {
+      overallStatement = "Sales performance requires attention across multiple sources.";
+      overallToneCls = "bg-rose-50 text-rose-700 border-rose-200";
+    }
+
+    return {
+      decisionItems,
+      sortedActions,
+      needsAttentionSource,
+      watchSource,
+      performingWellSource,
+      overallStatement,
+      overallToneCls,
+    };
+  }, [overview, categories, momentumData]);
+
   const periodLabel =
     mode === "MONTH"
       ? MONTHS_META.find((m) => m.monthNumber === Number(period))?.name || ""
       : mode === "QUARTER"
       ? QUARTERS_META.find((q) => q.quarterNumber === Number(period))?.label || ""
       : "Full Year";
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // AI MANAGEMENT ASSISTANT CONTEXT (Phase 6 Read-Only Verified Local Context)
+  // ─────────────────────────────────────────────────────────────────────────────
+  const aiManagementContext = React.useMemo(() => {
+    if (!overview || !categories || categories.length === 0) return null;
+
+    return {
+      financialYear,
+      selectedPeriod: periodLabel,
+      overall: {
+        effectiveGoal: Number(kpis.effectiveGoal) || 0,
+        achievement: Number(kpis.achievement) || 0,
+        achievementPercentage: Number(kpis.achievementPercentage) || 0,
+        variance: Number(kpis.variance) || 0,
+      },
+      forecast: forecastData ? {
+        achievementToDate: forecastData.achievementToDate,
+        currentMonthlyRunRate: forecastData.currentRunRate,
+        requiredMonthlyRunRate: forecastData.requiredRunRate,
+        remainingGoal: forecastData.remainingGoal,
+        projectedFYAchievement: forecastData.projectedFYAchievement,
+        projectedFYAchievementPercentage: forecastData.projectedAchievementPct,
+        projectedShortfall: forecastData.projectedShortfall,
+        projectedExcess: forecastData.projectedExcess,
+      } : null,
+      sources: (momentumData?.sourcesMomentum || []).map((src) => ({
+        categoryName: src.categoryName,
+        categoryCode: src.categoryCode,
+        effectiveGoal: Number(src.effectiveGoal) || 0,
+        achievement: Number(src.achievement) || 0,
+        achievementPercentage: Number(src.achievementPercentage) || 0,
+        variance: Number(src.variance) || 0,
+        performanceStatus: src.performanceStatus,
+        latestMonthAchievement: Number(src.latestAchievement) || 0,
+        momentumPercentage: Number(src.momentumPct) || 0,
+        momentumStatus: src.momentumStatus?.label || "Stable",
+        effectiveCarryForward: Number(src.carryExposure) || 0,
+      })),
+      executive: decisionData ? {
+        needsAttention: decisionData.needsAttentionSource?.categoryName || null,
+        watch: decisionData.watchSource?.categoryName || null,
+        performingWell: decisionData.performingWellSource?.categoryName || null,
+        priorityActions: decisionData.sortedActions.map((a) => ({
+          source: a.categoryName,
+          status: a.decisionStatus,
+          reason: a.reason,
+          action: a.recommendedAction,
+        })),
+      } : null,
+    };
+  }, [financialYear, periodLabel, kpis, forecastData, momentumData, decisionData, overview, categories]);
 
   // Controls Slot rendered inside the Strategy Overview Tab immediately below Navigation Tabs
   const navRightControls = (
@@ -712,18 +1488,18 @@ export default function StrategyOverviewPage() {
 
       {/* View Mode Toggle Pill Container */}
       <div>
-        <label className="block text-[11px] font-bold text-[#64748b] uppercase tracking-wider mb-1">
+        <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
           View Mode
         </label>
-        <div className="flex bg-[#f1f5f9] p-1 rounded-md border border-[#e2e8f0] shadow-inner gap-1">
+        <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 gap-1">
           {["MONTH", "QUARTER", "YEAR"].map((m) => (
             <button
               key={m}
               onClick={() => handleModeChange(m)}
-              className={`px-3.5 py-1 text-xs font-bold rounded-md transition-all ${
+              className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
                 mode === m
-                  ? "bg-[#2563eb] text-white shadow-xs"
-                  : "text-[#64748b] hover:text-[#0f172a] hover:bg-white/60"
+                  ? "bg-indigo-600 text-white shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-white/60"
               }`}
             >
               {m === "MONTH" ? "Monthly" : m === "QUARTER" ? "Quarterly" : "Annual"}
@@ -735,27 +1511,27 @@ export default function StrategyOverviewPage() {
       {/* Month/Quarter Period Dropdown */}
       {mode === "MONTH" && (
         <div className="w-full sm:w-[140px] shrink-0">
-          <label className="block text-[11px] font-bold text-[#64748b] uppercase tracking-wider mb-1">
+          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
             Month
           </label>
           <Select
             value={period}
             onChange={(val) => setPeriod(Number(val))}
             options={MONTHS_META.map(m => ({ value: String(m.monthNumber), label: m.name }))}
-            className="w-full h-[40px] shadow-2xs"
+            className="w-full h-[38px] shadow-2xs"
           />
         </div>
       )}
       {mode === "QUARTER" && (
         <div className="w-full sm:w-[140px] shrink-0">
-          <label className="block text-[11px] font-bold text-[#64748b] uppercase tracking-wider mb-1">
+          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
             Quarter
           </label>
           <Select
             value={period}
             onChange={(val) => setPeriod(Number(val))}
             options={QUARTERS_META.map(q => ({ value: String(q.quarterNumber), label: q.label }))}
-            className="w-full h-[40px] shadow-2xs"
+            className="w-full h-[38px] shadow-2xs"
           />
         </div>
       )}
@@ -765,7 +1541,7 @@ export default function StrategyOverviewPage() {
         <button
           onClick={() => fetchOverview(financialYear, mode, period)}
           disabled={loading}
-          className="w-full sm:w-auto bg-[linear-gradient(135deg,#5B6BFF_0%,#6B5CFF_45%,#7C3AED_100%)] text-white px-4 py-2 rounded-md text-sm font-bold flex items-center justify-center gap-2 shadow-[0_4px_14px_0_rgba(91,107,255,0.39)] hover:shadow-[0_6px_20px_rgba(91,107,255,0.23)] hover:-translate-y-[1px] hover:brightness-110 transition-all active:scale-95 active:brightness-95 disabled:opacity-50 whitespace-nowrap shrink-0"
+          className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-4 h-[38px] rounded-lg text-sm font-semibold flex items-center justify-center gap-2 shadow-xs transition-colors disabled:opacity-50 whitespace-nowrap shrink-0"
         >
           <svg
             className={`w-4 h-4 shrink-0 ${loading ? "animate-spin" : ""}`}
@@ -799,519 +1575,525 @@ export default function StrategyOverviewPage() {
 
         {isStrategyOverviewTab && (
           <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pb-20 pt-4 sm:pt-6">
-            {/* ── Header Controls (Financial Year, View Mode, Month, Refresh) immediately below Navigation Tabs ── */}
-            <div className="bg-white rounded-md p-4 sm:p-5 border border-[#e2e8f0] shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)] flex flex-wrap items-center justify-between gap-4 mb-6">
+
+            {/* ══════════════════════════════════════════════════════════════
+                SECTION 1: HEADER / COMMAND BAR
+            ══════════════════════════════════════════════════════════════ */}
+            <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-2xs flex flex-wrap items-center justify-between gap-4 mb-5">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-md bg-[#eff6ff] text-[#2563eb] flex items-center justify-center font-bold border border-[#bfdbfe] shadow-2xs">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100/80 shadow-2xs">
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                 </div>
                 <div>
-                  <h2 className="text-base sm:text-lg font-bold text-[#0f172a] tracking-tight">
-                    Strategy Overview Controls
+                  <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
+                    Sales Strategy Command Center
                   </h2>
-                  <p className="text-xs text-[#64748b] font-medium mt-0.5">
-                    Select financial year, view mode, and period for target tracking
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    {financialYear} &bull; {periodLabel} &bull; Progressive Disclosure (Overview &rarr; Category &rarr; Quotation)
                   </p>
                 </div>
               </div>
-              {navRightControls}
-            </div>
 
-            {/* ── Alert Strip ── */}
-            <AlertStrip alerts={alerts} />
-
-            {/* ── Period Banner & Quick Status Pills ── */}
-            <div className="bg-gradient-to-r from-white to-[#F8FAFF] rounded-2xl p-4 sm:p-6 border border-[#E5EAF5] shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] flex flex-wrap items-center justify-between gap-4 mb-6">
-              <div className="flex items-center">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-50 to-white text-indigo-600 flex items-center justify-center mr-4 flex-shrink-0 border border-indigo-100 shadow-sm">
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
+              {/* Controls Slot */}
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="w-full sm:w-[140px] shrink-0">
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Financial Year</label>
+                  <Select value={financialYear} onChange={setFinancialYear} options={AVAILABLE_YEARS.map(y => ({ value: y, label: y }))} className="w-full h-[38px] shadow-2xs" />
                 </div>
                 <div>
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-[#64748b] block mb-0.5">
-                    Period
-                  </span>
-                  <h3 className="text-lg sm:text-xl font-bold text-[#0f172a] tracking-tight">
-                    {financialYear} — {periodLabel}
-                  </h3>
+                  <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">View Mode</label>
+                  <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200/80 gap-1">
+                    {["MONTH", "QUARTER", "YEAR"].map((m) => (
+                      <button key={m} onClick={() => handleModeChange(m)}
+                        className={`px-3.5 py-1 text-xs font-bold rounded-lg transition-all ${mode === m ? "bg-indigo-600 text-white shadow-2xs" : "text-slate-600 hover:text-slate-900 hover:bg-white/60"}`}>
+                        {m === "MONTH" ? "Monthly" : m === "QUARTER" ? "Quarterly" : "Annual"}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-3">
-                {status.categoriesAhead > 0 && (
-                  <div className="bg-gradient-to-br from-emerald-50 to-emerald-100/50 text-emerald-700 font-bold px-5 py-2.5 rounded-xl border border-emerald-200/60 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] flex items-center gap-2 text-[13px] hover:-translate-y-0.5 transition-transform duration-200">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
-                    <span>{status.categoriesAhead} Ahead</span>
+                {mode === "MONTH" && (
+                  <div className="w-full sm:w-[130px] shrink-0">
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Month</label>
+                    <Select value={period} onChange={(val) => setPeriod(Number(val))} options={MONTHS_META.map(m => ({ value: String(m.monthNumber), label: m.name }))} className="w-full h-[38px] shadow-2xs" />
                   </div>
                 )}
-                {status.categoriesBehind > 0 && (
-                  <div className="bg-gradient-to-br from-rose-50 to-rose-100/50 text-rose-700 font-bold px-5 py-2.5 rounded-xl border border-rose-200/60 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] flex items-center gap-2 text-[13px] hover:-translate-y-0.5 transition-transform duration-200">
-                    <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shadow-[0_0_8px_rgba(244,63,94,0.4)]" />
-                    <span>{status.categoriesBehind} Behind</span>
+                {mode === "QUARTER" && (
+                  <div className="w-full sm:w-[140px] shrink-0">
+                    <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Quarter</label>
+                    <Select value={period} onChange={(val) => setPeriod(Number(val))} options={QUARTERS_META.map(q => ({ value: String(q.quarterNumber), label: q.label }))} className="w-full h-[38px] shadow-2xs" />
                   </div>
                 )}
-                {status.categoriesOnTrack > 0 && (
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 text-blue-700 font-bold px-5 py-2.5 rounded-xl border border-blue-200/60 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] flex items-center gap-2 text-[13px] hover:-translate-y-0.5 transition-transform duration-200">
-                    <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.4)]" />
-                    <span>{status.categoriesOnTrack} On Track</span>
-                  </div>
-                )}
-                {status.categoriesBalanced > 0 && (
-                  <div className="bg-gradient-to-br from-slate-50 to-slate-100/50 text-slate-700 font-bold px-5 py-2.5 rounded-xl border border-slate-200/60 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] flex items-center gap-2 text-[13px] hover:-translate-y-0.5 transition-transform duration-200">
-                    <span className="w-2 h-2 rounded-full bg-slate-400" />
-                    <span>{status.categoriesBalanced} Balanced</span>
-                  </div>
-                )}
-                {status.unmappedClosedQuotationCount > 0 && (
-                  <a
-                    href="/sales/strategy/source-mapping"
-                    className="bg-gradient-to-br from-amber-50 to-amber-100/50 hover:to-amber-100 text-amber-700 font-bold px-5 py-2.5 rounded-xl border border-amber-200/60 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)] flex items-center gap-2 text-[13px] transition-all duration-200 hover:-translate-y-0.5"
-                  >
-                    <svg className="w-4 h-4 text-amber-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                <div className="self-end">
+                  <button onClick={() => fetchOverview(financialYear, mode, period)} disabled={loading}
+                    className="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white px-4 h-[38px] rounded-xl text-xs font-bold flex items-center gap-2 shadow-2xs transition-colors disabled:opacity-50 whitespace-nowrap cursor-pointer">
+                    <svg className={`w-3.5 h-3.5 shrink-0 ${loading ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                     </svg>
-                    <span>{status.unmappedClosedQuotationCount} Unmapped</span>
-                  </a>
-                )}
+                    <span>Refresh</span>
+                  </button>
+                </div>
               </div>
             </div>
 
-                        {/* ── EXECUTIVE SUMMARY & QUARTER HEALTH ── */}
-            {!loading && analytics && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                <div className="lg:col-span-2 rounded-2xl p-6 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.04)] border border-[#E5EAF5] text-slate-800 flex flex-col justify-center relative overflow-hidden group hover:shadow-[0_8px_32px_-4px_rgba(0,0,0,0.06)] transition-all duration-300" style={{ backgroundImage: 'linear-gradient(135deg, #FFFFFF 0%, #F7F9FF 45%, #EEF4FF 100%)' }}>
-                  <div className="absolute top-0 right-0 -mr-16 -mt-16 w-72 h-72 rounded-full bg-blue-400/10 blur-3xl pointer-events-none"></div>
-                  <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-72 h-72 rounded-full bg-indigo-400/10 blur-3xl pointer-events-none"></div>
-                  <div className="absolute top-1/2 right-0 -translate-y-1/2 p-8 opacity-10 text-indigo-900 pointer-events-none transform group-hover:scale-105 transition-transform duration-700">
-                    <svg className="w-56 h-56" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={0.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                    </svg>
-                  </div>
-                  <div className="relative z-10">
-                    <h3 className="text-xl font-black tracking-tight mb-2 flex items-center gap-2 text-slate-800">
-                      <span className="w-8 h-8 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center shadow-sm">
-                        <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      </span>
-                      Executive Summary
-                    </h3>
-                    <p className="text-slate-600 font-medium text-lg leading-relaxed mt-4">
-                      {analytics.sentence}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-2xl p-6 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] border border-[#E5EAF5] flex flex-col items-center justify-center text-center">
-                  <h3 className="text-[13px] font-bold text-slate-500 uppercase tracking-[0.05em] mb-5">Goal Completion</h3>
-                  <div className="relative w-32 h-32 flex items-center justify-center">
-                    <svg className="w-full h-full transform -rotate-90">
-                      <circle cx="64" cy="64" r="56" fill="none" stroke="#f1f5f9" strokeWidth="12" />
-                      <circle 
-                        cx="64" cy="64" r="56" 
-                        fill="none" 
-                        stroke={kpis.achievementPercentage >= 100 ? "#10b981" : "#3b82f6"} 
-                        strokeWidth="12" 
-                        strokeDasharray={2 * Math.PI * 56} 
-                        strokeDashoffset={2 * Math.PI * 56 * (1 - Math.min(100, kpis.achievementPercentage || 0) / 100)} 
-                        strokeLinecap="round"
-                        className="transition-all duration-1000 ease-out"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-3xl font-black text-slate-800">{Number(kpis.achievementPercentage || 0).toFixed(0)}%</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ── KPI Cards Row (Executive Enhanced) ── */}
-            {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="h-36 bg-white rounded-md border border-[#e2e8f0] p-5 animate-pulse" />
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-                <MetricCard 
-                  title="Base Goal" 
-                  value={formatCurrency(kpis.baseGoal)} 
-                  subtitle="Original target"
-                  cardBg="bg-[linear-gradient(to_bottom_right,#FFFFFF,#F8FBFF)]"
-                  iconPath="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  iconColors={{ bg: 'text-slate-100', boxBg: 'bg-slate-50', text: 'text-slate-600', border: 'border-slate-200' }}
-                />
-                <MetricCard 
-                  title="Effective Goal" 
-                  value={formatCurrency(kpis.effectiveGoal)} 
-                  subtitle="Adjusted for carry"
-                  cardBg="bg-[linear-gradient(to_bottom_right,#FFFFFF,#F7F5FF)]"
-                  iconPath="M13 10V3L4 14h7v7l9-11h-7z"
-                  iconColors={{ bg: 'text-indigo-50', boxBg: 'bg-indigo-50', text: 'text-indigo-600', border: 'border-indigo-100' }}
-                  trend={formatCurrency(Math.abs(kpis.effectiveGoal - kpis.baseGoal))}
-                  trendDirection={kpis.effectiveGoal > kpis.baseGoal ? 'up' : 'down'}
-                />
-                <MetricCard 
-                  title="Achievement" 
-                  value={formatCurrency(kpis.achievement)} 
-                  subtitle="Total revenue booked"
-                  cardBg="bg-[linear-gradient(to_bottom_right,#FFFFFF,#F6FFF9)]"
-                  iconPath="M5 13l4 4L19 7"
-                  iconColors={{ bg: 'text-emerald-50', boxBg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-200' }}
-                  badgeText={`${Number(kpis.achievementPercentage || 0).toFixed(1)}%`}
-                  trendDirection={kpis.achievementPercentage >= 100 ? 'up' : 'blue'}
-                />
-                <MetricCard 
-                  title="Variance" 
-                  value={formatCurrency(Math.abs(kpis.variance || 0))} 
-                  subtitle={kpis.variance >= 0 ? "Exceeding target" : "Short of target"}
-                  cardBg="bg-[linear-gradient(to_bottom_right,#FFFFFF,#F7FAFF)]"
-                  iconPath="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-                  iconColors={{ bg: kpis.variance >= 0 ? 'text-blue-50' : 'text-blue-100', boxBg: kpis.variance >= 0 ? 'bg-blue-100' : 'bg-rose-100', text: kpis.variance >= 0 ? 'text-blue-700' : 'text-rose-700', border: kpis.variance >= 0 ? 'border-blue-200' : 'border-rose-200' }}
-                  trendDirection={kpis.variance >= 0 ? 'up' : 'down'}
-                  badgeText={kpis.variance >= 0 ? 'Surplus' : 'Shortfall'}
-                />
-                <MetricCard 
-                  title="Closing Carry" 
-                  value={formatCurrency(status.closingShortfallTotal > 0 ? status.closingShortfallTotal : status.closingExcessTotal)} 
-                  subtitle={status.closingShortfallTotal > 0 ? "Net shortfall" : status.closingExcessTotal > 0 ? "Net excess credit" : "Perfectly balanced"}
-                  cardBg="bg-[linear-gradient(to_bottom_right,#FFFFFF,#FCF8FF)]"
-                  iconPath="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
-                  iconColors={{ bg: 'text-purple-50', boxBg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-200' }}
-                  badgeText={status.closingShortfallTotal > 0 ? 'Debt' : status.closingExcessTotal > 0 ? 'Credit' : 'Balanced'}
-                  trendDirection={status.closingExcessTotal > 0 ? 'up' : status.closingShortfallTotal > 0 ? 'down' : 'blue'}
-                />
-              </div>
-            )}
-
-            {/* ── CHARTS ROW ── */}
-            {!loading && analytics && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                {/* Goal vs Achievement Bar Chart */}
-                <ChartCard title="Goal vs Achievement" subtitle="Comparison by category" height={320}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={analytics.goalVsAchieveData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }} barGap={0}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#475569', fontWeight: 700 }} />
-                      <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#475569', fontWeight: 600 }} tickFormatter={(val) => val >= 100000 ? `₹${(val / 100000).toFixed(0)}L` : val} />
-                      <RechartsTooltip cursor={{ fill: '#F1F5F9' }} contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' }} formatter={(value) => formatCurrency(value)} />
-                      <Legend iconType="circle" wrapperStyle={{ fontSize: '13px', fontWeight: 700, color: '#1E293B' }} />
-                      <Bar dataKey="Goal" fill="#CBD5E1" radius={[6, 6, 0, 0]} maxBarSize={45} />
-                      <Bar dataKey="Achievement" radius={[6, 6, 0, 0]} maxBarSize={45}>
-                        {analytics.goalVsAchieveData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </ChartCard>
-
-                {/* Monthly Trend Line Chart */}
-                <ChartCard title="Monthly Trend" subtitle="Achievement trajectory" height={320}>
-                  {analytics.trendData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={analytics.trendData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#475569', fontWeight: 700 }} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#475569', fontWeight: 600 }} tickFormatter={(val) => val >= 100000 ? `₹${(val / 100000).toFixed(0)}L` : val} />
-                        <RechartsTooltip contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)' }} formatter={(value) => formatCurrency(value)} />
-                        <Legend iconType="circle" wrapperStyle={{ fontSize: '13px', fontWeight: 700, color: '#1E293B' }} />
-                        <Line type="monotone" dataKey="Goal" stroke="#94A3B8" strokeWidth={3} strokeDasharray="5 5" dot={false} activeDot={{ r: 6 }} />
-                        <Line type="monotone" dataKey="Achievement" stroke="#4F46E5" strokeWidth={4} dot={{ strokeWidth: 2, r: 5, fill: '#FFFFFF' }} activeDot={{ r: 8, strokeWidth: 0 }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="h-full flex items-center justify-center text-slate-400 font-medium">No trend data available</div>
-                  )}
-                </ChartCard>
-              </div>
-            )}
-
-            {/* ── INSIGHTS, PIE & RANKING ROW ── */}
-            {!loading && analytics && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-                {/* Category Contribution Doughnut */}
-                <DashboardCard title="Revenue Contribution" subtitle="Breakdown by category">
-                  <div className="h-[260px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie data={analytics.pieData} cx="45%" cy="50%" innerRadius={75} outerRadius={105} paddingAngle={3} dataKey="value" stroke="none" cornerRadius={4}>
-                          {analytics.pieData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.fill} style={{ filter: `drop-shadow(0px 4px 6px ${entry.fill}40)` }} />
-                          ))}
-                        </Pie>
-                        <RechartsTooltip contentStyle={{ borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} formatter={(value) => formatCurrency(value)} />
-                        <Legend iconType="circle" layout="vertical" verticalAlign="middle" align="right" wrapperStyle={{ fontSize: '13px', fontWeight: 700, color: '#1E293B' }} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                </DashboardCard>
-
-                {/* Smart Insights */}
-                <DashboardCard title="Smart Insights" subtitle="Automated observations">
-                  <div className="space-y-4 pt-2">
-                    {analytics.smartInsights.length > 0 ? analytics.smartInsights.map((insight, idx) => (
-                      <div key={idx} className="flex items-start gap-3">
-                        <div className={`mt-0.5 w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          insight.type === 'success' ? 'bg-emerald-100 text-emerald-600' :
-                          insight.type === 'danger' ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600'
-                        }`}>
-                          {insight.type === 'success' ? '✓' : insight.type === 'danger' ? '!' : 'i'}
-                        </div>
-                        <p className="text-sm font-semibold text-slate-700 leading-snug">{insight.text}</p>
-                      </div>
-                    )) : (
-                    <div className="flex flex-col items-center justify-center p-8 bg-gradient-to-br from-slate-50/50 to-white rounded-xl border border-dashed border-slate-200">
-                      <svg className="w-12 h-12 text-slate-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <p className="text-[13px] font-medium text-slate-500">No specific insights for this period</p>
-                    </div>
-                    )}
-                  </div>
-                </DashboardCard>
-
-                {/* Performance Ranking */}
-                <DashboardCard title="Category Rankings" subtitle="Best and worst performers">
-                  <div className="flex flex-col">
-                    {analytics.topPerformer && (
-                      <RankingCard rank={1} title="Top Performer" categoryName={analytics.topPerformer.categoryName} value={formatCurrency(analytics.topPerformer.achievement)} subValue={`${Number(analytics.topPerformer.achievementPercentage || 0).toFixed(0)}% Achieved`} iconColorHex={getStyleForCategory(analytics.topPerformer).dotHex} badgeText="MVP" badgeType="success" />
-                    )}
-                    {analytics.lowestPerformer && analytics.lowestPerformer.categoryId !== analytics.topPerformer?.categoryId && (
-                      <RankingCard rank={5} title="Needs Attention" categoryName={analytics.lowestPerformer.categoryName} value={formatCurrency(analytics.lowestPerformer.achievement)} subValue={`${Number(analytics.lowestPerformer.achievementPercentage || 0).toFixed(0)}% Achieved`} iconColorHex={getStyleForCategory(analytics.lowestPerformer).dotHex} badgeType="danger" />
-                    )}
-                    {analytics.highestAchiever && (
-                      <RankingCard rank="★" title="Highest Revenue" categoryName={analytics.highestAchiever.categoryName} value={formatCurrency(analytics.highestAchiever.achievement)} iconColorHex={getStyleForCategory(analytics.highestAchiever).dotHex} />
-                    )}
-                    {analytics.largestCarry && (
-                      <RankingCard rank="+" title="Largest Carry Fwd" categoryName={analytics.largestCarry.categoryName} value={formatCurrency(analytics.largestCarry.closingExcess)} iconColorHex={getStyleForCategory(analytics.largestCarry).dotHex} badgeText="Credit" />
-                    )}
-                  </div>
-                </DashboardCard>
-              </div>
-            )}
-
-            {/* ── Category Performance Grid (Original clickable cards) ── */}
-            <div className="mb-4 flex items-center justify-between mt-8">
-              <h3 className="text-lg font-bold text-[#0f172a] tracking-tight">Category Breakdown</h3>
-              <span className="text-xs font-medium text-[#64748b]">
-                Click any card to view contributing quotations
-              </span>
-            </div>
-
-            {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="h-64 bg-white rounded-md border border-[#e2e8f0] p-5 animate-pulse" />
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
-                {categories.map((cat) => {
-                  const statusBadge = getStatusBadge(cat.performanceStatus);
-                  const achievedPct = Math.min(100, Math.max(0, Number(cat.achievementPercentage || 0)));
-                  return (
-                    <div
-                      key={cat.categoryId}
-                      onClick={() => setDrawerCategory(cat)}
-                      className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm hover:shadow-md hover:border-slate-300 transition-all cursor-pointer flex flex-col justify-between group active:scale-[0.99]"
-                    >
-                      <div>
-                        <div className="flex items-center justify-between gap-2 mb-3">
-                          <span className="text-[10px] font-extrabold text-slate-400 tracking-wider uppercase">{cat.categoryCode}</span>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${statusBadge.cls}`}>{statusBadge.label}</span>
-                        </div>
-                        <div className="mb-3"><CategoryDisplay cat={cat} size="sm" /></div>
-                        <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mb-4">
-                          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${achievedPct}%`, backgroundColor: getStyleForCategory(cat).dotHex }} />
-                        </div>
-                        <div className="grid grid-cols-2 gap-y-3 gap-x-2 text-xs border-t border-slate-100 pt-3.5">
-                          <div>
-                            <span className="text-slate-500 block font-medium">Effective</span>
-                            <span className="font-bold text-slate-800 text-[13px]">{formatCurrency(cat.effectiveGoal)}</span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-slate-500 block font-medium">Achieved</span>
-                            <span className={`font-bold text-[13px] ${getStyleForCategory(cat).text}`}>{formatCurrency(cat.achievement)}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                        {cat.closingShortfall > 0 ? (
-                          <span className="text-rose-600 font-bold flex items-center gap-1 truncate">⚠ Shortfall: {formatCurrency(cat.closingShortfall)}</span>
-                        ) : cat.closingExcess > 0 ? (
-                          <span className="text-emerald-600 font-bold flex items-center gap-1 truncate">✓ Excess: {formatCurrency(cat.closingExcess)}</span>
-                        ) : (
-                          <span className="text-slate-400 font-semibold">No carry</span>
-                        )}
-                        <span className="text-slate-300 group-hover:text-blue-500 font-bold transition-colors">→</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            
-            {/* ── Executive Footer ── */}
+            {/* ══════════════════════════════════════════════════════════════
+                SECTION 2: SMART ATTENTION BAR (Single Intelligent Alert Strip)
+            ══════════════════════════════════════════════════════════════ */}
             {!loading && (
-              <div className="mt-12 mb-4 p-6 bg-white border border-slate-200 rounded-xl shadow-sm flex flex-wrap items-center justify-between gap-6">
-                <div>
-                  <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-1">Total Achievement</h4>
-                  <div className="text-3xl font-black text-blue-600">{formatCurrency(kpis.achievement)}</div>
-                </div>
-                <div className="flex gap-8 flex-wrap">
-                  <div>
-                    <div className="text-xs font-bold text-slate-500 uppercase">Effective Goal</div>
-                    <div className="text-lg font-bold text-slate-800">{formatCurrency(kpis.effectiveGoal)}</div>
+              <div className="mb-5">
+                {status.categoriesBehind > 0 || status.closingShortfallTotal > 0 || status.unmappedClosedQuotationCount > 0 ? (
+                  <div className="bg-rose-50/70 border border-rose-200/80 rounded-2xl p-4 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                        !
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-black text-rose-900 uppercase tracking-wider">Attention Required</h4>
+                        <div className="flex flex-wrap items-center gap-3 text-xs font-bold text-rose-700 mt-0.5">
+                          {status.categoriesBehind > 0 && (
+                            <span>&bull; {status.categoriesBehind} category{status.categoriesBehind > 1 ? "ies" : ""} behind target</span>
+                          )}
+                          {status.closingShortfallTotal > 0 && (
+                            <span>&bull; {formatCurrency(status.closingShortfallTotal)} total shortfall requires attention</span>
+                          )}
+                          {status.unmappedClosedQuotationCount > 0 && (
+                            <a href="/sales/strategy/source-mapping" className="underline hover:text-rose-900 transition-colors">
+                              &bull; {status.unmappedClosedQuotationCount} unmapped quotation{status.unmappedClosedQuotationCount > 1 ? "s" : ""} require source review
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    {status.unmappedClosedQuotationCount > 0 && (
+                      <a href="/sales/strategy/source-mapping" className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-colors shadow-2xs whitespace-nowrap">
+                        Review Unmapped
+                      </a>
+                    )}
                   </div>
-                  <div>
-                    <div className="text-xs font-bold text-slate-500 uppercase">Variance</div>
-                    <div className={`text-lg font-bold ${kpis.variance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                      {kpis.variance >= 0 ? '+' : ''}{formatCurrency(kpis.variance)}
+                ) : (
+                  <div className="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-4 shadow-2xs flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm flex-shrink-0">
+                      ✓
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-emerald-900 uppercase tracking-wider">Strategy Performance On Track</h4>
+                      <p className="text-xs font-semibold text-emerald-700 mt-0.5">
+                        All categories for {periodLabel} are meeting or exceeding effective target goals.
+                      </p>
                     </div>
                   </div>
-                  <div>
-                    <div className="text-xs font-bold text-slate-500 uppercase">Net Carry</div>
-                    <div className="text-lg font-bold text-slate-800">
-                      {status.closingShortfallTotal > 0 ? `-${formatCurrency(status.closingShortfallTotal)}` : `+${formatCurrency(status.closingExcessTotal)}`}
+                )}
+              </div>
+            )}
+
+            {/* ══════════════════════════════════════════════════════════════
+                SECTION 3: EXECUTIVE PERFORMANCE SUMMARY
+            ══════════════════════════════════════════════════════════════ */}
+            {!loading && analytics && (
+              <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs mb-5 relative overflow-hidden"
+                style={{ backgroundImage: "linear-gradient(135deg, #FFFFFF 0%, #F8FAFF 50%, #EEF4FF 100%)" }}>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex items-start gap-3.5 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0 border border-indigo-100 shadow-2xs mt-0.5">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-black text-indigo-700 uppercase tracking-widest block mb-1">
+                        Executive Performance Summary &bull; {periodLabel.toUpperCase()}
+                      </span>
+                      <h3 className="text-lg font-black text-slate-900 tracking-tight">
+                        {formatCurrency(kpis.achievement)} achieved against {formatCurrency(kpis.effectiveGoal)} effective goal
+                      </h3>
+                      <p className="text-xs font-semibold text-slate-600 leading-relaxed mt-1">
+                        {analytics.sentence}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 flex-shrink-0 pt-2 md:pt-0 border-t md:border-t-0 border-slate-100">
+                    <div className="text-right">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Achievement Rate</span>
+                      <span className={`text-xl font-black tabular-nums ${
+                        kpis.achievementPercentage >= 100 ? "text-emerald-700" :
+                        kpis.achievementPercentage >= 90  ? "text-indigo-700"  :
+                        kpis.achievementPercentage >= 75  ? "text-amber-700"   : "text-rose-700"
+                      }`}>
+                        {Number(kpis.achievementPercentage || 0).toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="h-8 w-px bg-slate-200" />
+                    <div className="text-right">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Remaining Goal</span>
+                      <span className="text-xl font-black text-slate-800 tabular-nums">
+                        {formatCurrency(Math.max(0, (kpis.effectiveGoal || 0) - (kpis.achievement || 0)))}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* ── Category Summary Table ── */}
-            {!loading && categories.length > 0 && (
-              <div className="bg-white rounded-2xl border border-[#E5EAF5] shadow-[0_2px_12px_-4px_rgba(0,0,0,0.05)] overflow-hidden">
-                <div className="px-6 py-5 border-b border-[#E5EAF5] flex items-center justify-between bg-transparent">
-                  <div>
-                    <h3 className="text-base font-bold text-[#0f172a] tracking-tight">
-                      Category Breakdown & Rolling Balance
-                    </h3>
-                    <p className="text-xs text-[#64748b] font-medium mt-0.5">
-                      Detailed view of target adjustments, achievement variance, and closing carries
-                    </p>
-                  </div>
-                </div>
+            {/* ══════════════════════════════════════════════════════════════
+                SECTION 4: CORE KPI STRIP (5 Semantic KPI Cards)
+            ══════════════════════════════════════════════════════════════ */}
+            {loading ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="h-28 bg-white rounded-2xl border border-slate-200 animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
+                {/* 1. Base Goal */}
+                <MetricCard
+                  title="Base Goal" value={formatCurrency(kpis.baseGoal)} subtitle="Original target"
+                  cardBg="bg-white" iconPath="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  iconColors={{ bg: "text-slate-100", boxBg: "bg-slate-50", text: "text-slate-600", border: "border-slate-200" }}
+                />
 
+                {/* 2. Effective Goal */}
+                <MetricCard
+                  title="Effective Goal" value={formatCurrency(kpis.effectiveGoal)} subtitle="Adjusted for carry"
+                  cardBg="bg-white" iconPath="M13 10V3L4 14h7v7l9-11h-7z"
+                  iconColors={{ bg: "text-indigo-50", boxBg: "bg-indigo-50", text: "text-indigo-600", border: "border-indigo-100" }}
+                  trend={formatCurrency(Math.abs(kpis.effectiveGoal - kpis.baseGoal))}
+                  trendDirection={kpis.effectiveGoal > kpis.baseGoal ? "up" : "down"}
+                />
+
+                {/* 3. Achievement */}
+                <MetricCard
+                  title="Achievement" value={formatCurrency(kpis.achievement)} subtitle="Total revenue booked"
+                  cardBg="bg-white" iconPath="M5 13l4 4L19 7"
+                  iconColors={{ bg: "text-emerald-50", boxBg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" }}
+                  badgeText={`${Number(kpis.achievementPercentage || 0).toFixed(1)}%`}
+                  trendDirection={kpis.achievementPercentage >= 100 ? "up" : "blue"}
+                />
+
+                {/* 4. Variance */}
+                <MetricCard
+                  title="Variance" value={formatCurrency(Math.abs(kpis.variance || 0))}
+                  subtitle={kpis.variance >= 0 ? "Exceeding target" : "Short of target"}
+                  cardBg="bg-white" iconPath="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                  iconColors={{ bg: kpis.variance >= 0 ? "text-emerald-50" : "text-rose-50", boxBg: kpis.variance >= 0 ? "bg-emerald-50" : "bg-rose-50", text: kpis.variance >= 0 ? "text-emerald-700" : "text-rose-700", border: kpis.variance >= 0 ? "border-emerald-200" : "border-rose-200" }}
+                  trendDirection={kpis.variance >= 0 ? "up" : "down"}
+                  badgeText={kpis.variance >= 0 ? "Surplus" : "Shortfall"}
+                />
+
+                {/* 5. Semantic Carry Position */}
+                <MetricCard
+                  title="Carry Position"
+                  value={
+                    status.closingShortfallTotal > 0
+                      ? `${formatCurrency(status.closingShortfallTotal)} Shortfall`
+                      : status.closingExcessTotal > 0
+                      ? `${formatCurrency(status.closingExcessTotal)} Excess Credit`
+                      : "Balanced"
+                  }
+                  subtitle={
+                    status.closingShortfallTotal > 0
+                      ? "Net carry shortfall"
+                      : status.closingExcessTotal > 0
+                      ? "Net excess carried forward"
+                      : "Zero net carry balance"
+                  }
+                  cardBg="bg-white" iconPath="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                  iconColors={{
+                    bg: status.closingShortfallTotal > 0 ? "text-rose-50" : status.closingExcessTotal > 0 ? "text-emerald-50" : "text-slate-50",
+                    boxBg: status.closingShortfallTotal > 0 ? "bg-rose-50" : status.closingExcessTotal > 0 ? "bg-emerald-50" : "bg-slate-50",
+                    text: status.closingShortfallTotal > 0 ? "text-rose-700" : status.closingExcessTotal > 0 ? "text-emerald-700" : "text-slate-600",
+                    border: status.closingShortfallTotal > 0 ? "border-rose-200" : status.closingExcessTotal > 0 ? "border-emerald-200" : "border-slate-200"
+                  }}
+                  badgeText={status.closingShortfallTotal > 0 ? "Shortfall" : status.closingExcessTotal > 0 ? "Credit" : "Balanced"}
+                  trendDirection={status.closingExcessTotal > 0 ? "up" : status.closingShortfallTotal > 0 ? "down" : "blue"}
+                />
+              </div>
+            )}
+
+            {/* ══════════════════════════════════════════════════════════════
+                SECTION 5: STRATEGY CATEGORY PERFORMANCE TABLE (Main Content)
+            ══════════════════════════════════════════════════════════════ */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden mb-5">
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <div>
+                  <h3 className="text-sm font-black text-slate-900 tracking-tight">Strategy Category Performance</h3>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">Primary single source of truth &bull; Click any category row to inspect details & quotations</p>
+                </div>
+                <span className="text-xs font-bold text-slate-400 hidden sm:block">{periodLabel}</span>
+              </div>
+
+              {loading ? (
+                <div className="p-5 space-y-3">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="h-12 bg-slate-50 rounded-xl animate-pulse" />
+                  ))}
+                </div>
+              ) : categories.length === 0 ? (
+                <div className="py-14 flex flex-col items-center justify-center text-center">
+                  <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3 text-2xl">
+                    📭
+                  </div>
+                  <p className="text-sm font-bold text-slate-700">No category performance data</p>
+                </div>
+              ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                    <thead className="bg-gradient-to-r from-slate-50/50 to-white border-b border-[#E5EAF5]">
-                      <tr>
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-left">Category</th>
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right">Base Goal</th>
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right">Effective Goal</th>
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right">Achievement</th>
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right">Variance</th>
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right">Achieved %</th>
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right">Closing Carry</th>
+                  <table className="w-full text-left border-collapse text-sm">
+                    <thead>
+                      <tr className="bg-slate-50/80 border-b border-slate-200">
+                        <th className="py-3 px-5 text-xs font-bold text-slate-600 uppercase tracking-wider">Category</th>
+                        <th className="py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider text-right">Goal</th>
+                        <th className="py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider text-right">Achievement</th>
+                        <th className="py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider text-right min-w-[140px]">Achievement %</th>
+                        <th className="py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider text-right">Variance</th>
+                        <th className="py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider text-center">Status</th>
+                        <th className="py-3 px-4 text-xs font-bold text-slate-600 uppercase tracking-wider text-center">Details</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100/80 text-sm font-medium text-slate-700">
+                    <tbody className="divide-y divide-slate-100">
                       {categories.map((cat) => {
+                        const sb = getStatusBadge(cat.performanceStatus);
+                        const progressWidth = Math.min(100, Math.max(0, cat.achievementPercentage || 0));
+                        const healthBarColor = (() => {
+                          const p = Number(cat.achievementPercentage) || 0;
+                          if (p >= 100) return "bg-emerald-500";
+                          if (p >= 90)  return "bg-indigo-600";
+                          if (p >= 75)  return "bg-amber-500";
+                          return "bg-rose-500";
+                        })();
                         return (
-                          <tr
-                            key={cat.categoryId}
-                            onClick={() => setDrawerCategory(cat)}
-                            className="hover:bg-slate-50/70 hover:shadow-[0_2px_12px_-4px_rgba(0,0,0,0.03)] transition-all duration-200 cursor-pointer group"
-                          >
-                            <td className="px-6 py-4">
-                              <div className="flex items-center gap-2.5">
-                                <CategoryDisplay cat={cat} size="sm" />
-                              </div>
+                          <tr key={cat.categoryId} onClick={() => setDrawerCategory(cat)}
+                            className="hover:bg-indigo-50/40 transition-colors cursor-pointer group">
+                            <td className="py-3.5 px-5">
+                              <CategoryDisplay cat={cat} size="sm" />
                             </td>
-                            <td className="px-5 py-4 text-right font-semibold text-[#0f172a]">
-                              {formatCurrency(cat.baseGoal)}
-                            </td>
-                            <td className="px-5 py-4 text-right font-bold text-[#0f172a]">
+                            <td className="py-3.5 px-4 text-right font-bold text-slate-900 tabular-nums text-sm">
                               {formatCurrency(cat.effectiveGoal)}
                             </td>
-                            <td className="px-5 py-4 text-right font-bold" style={{ color: getStyleForCategory(cat).dotHex }}>
+                            <td className="py-3.5 px-4 text-right font-bold text-slate-900 tabular-nums text-sm">
                               {formatCurrency(cat.achievement)}
                             </td>
-                            <td
-                              className={`px-5 py-4 text-right font-bold ${
-                                cat.variance >= 0 ? "text-[#059669]" : "text-[#e11d48]"
-                              }`}
-                            >
-                              {cat.variance >= 0 ? "+" : ""}
-                              {formatCurrency(cat.variance)}
+                            <td className="py-3.5 px-4 text-right tabular-nums">
+                              <div className="flex flex-col items-end gap-1.5">
+                                <span className="font-black text-slate-900 text-sm">
+                                  {Number(cat.achievementPercentage || 0).toFixed(1)}%
+                                </span>
+                                <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                  <div className={`h-full rounded-full transition-all duration-500 ${healthBarColor}`} style={{ width: `${progressWidth}%` }} />
+                                </div>
+                              </div>
                             </td>
-                            <td className="px-5 py-4 text-right font-bold text-[#0f172a]">
-                              {Number(cat.achievementPercentage || 0).toFixed(1)}%
+                            <td className={`py-3.5 px-4 text-right font-bold tabular-nums text-sm ${cat.variance >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                              {cat.variance >= 0 ? "+" : ""}{formatCurrency(cat.variance)}
                             </td>
-                            <td className="px-6 py-4 text-right font-bold">
-                              {cat.closingShortfall > 0 ? (
-                                <span className="text-[#e11d48]">-{formatCurrency(cat.closingShortfall)}</span>
-                              ) : cat.closingExcess > 0 ? (
-                                <span className="text-[#059669]">+{formatCurrency(cat.closingExcess)}</span>
-                              ) : (
-                                <span className="text-[#94a3b8] font-medium">—</span>
-                              )}
+                            <td className="py-3.5 px-4 text-center">
+                              <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${sb.cls}`}>
+                                {sb.label}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 text-center">
+                              <span className="inline-flex items-center gap-1 text-xs font-extrabold text-indigo-600 group-hover:text-indigo-800 transition-colors">
+                                Details
+                                <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                </svg>
+                              </span>
                             </td>
                           </tr>
                         );
                       })}
                     </tbody>
-                    <tfoot className="bg-[#f8fafc] border-t-2 border-[#e2e8f0] font-bold text-sm text-[#0f172a]">
+                    {/* Totals Footer */}
+                    <tfoot className="bg-slate-50/90 border-t-2 border-slate-200 font-black text-sm text-slate-900">
                       <tr>
-                        <td className="px-6 py-4 text-[#0f172a]">Total</td>
-                        <td className="px-5 py-4 text-right text-[#0f172a]">
-                          {formatCurrency(kpis.baseGoal)}
+                        <td className="px-5 py-3.5 text-slate-900">Total</td>
+                        <td className="px-4 py-3.5 text-right tabular-nums">{formatCurrency(kpis.effectiveGoal)}</td>
+                        <td className="px-4 py-3.5 text-right text-indigo-600 tabular-nums">{formatCurrency(kpis.achievement)}</td>
+                        <td className="px-4 py-3.5 text-right tabular-nums">{Number(kpis.achievementPercentage || 0).toFixed(1)}%</td>
+                        <td className={`px-4 py-3.5 text-right tabular-nums ${kpis.variance >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
+                          {kpis.variance >= 0 ? "+" : ""}{formatCurrency(kpis.variance)}
                         </td>
-                        <td className="px-5 py-4 text-right text-[#0f172a]">
-                          {formatCurrency(kpis.effectiveGoal)}
-                        </td>
-                        <td className="px-5 py-4 text-right font-bold text-[#2563eb]">
-                          {formatCurrency(kpis.achievement)}
-                        </td>
-                        <td
-                          className={`px-5 py-4 text-right font-bold ${
-                            kpis.variance >= 0 ? "text-[#059669]" : "text-[#e11d48]"
-                          }`}
-                        >
-                          {kpis.variance >= 0 ? "+" : ""}
-                          {formatCurrency(kpis.variance)}
-                        </td>
-                        <td className="px-5 py-4 text-right font-bold text-[#2563eb]">
-                          {Number(kpis.achievementPercentage || 0).toFixed(1)}%
-                        </td>
-                        <td className="px-6 py-4 text-right font-bold">
-                          {status.closingShortfallTotal > 0 ? (
-                            <span className="text-[#e11d48]">
-                              -{formatCurrency(status.closingShortfallTotal)}
-                            </span>
-                          ) : status.closingExcessTotal > 0 ? (
-                            <span className="text-[#059669]">
-                              +{formatCurrency(status.closingExcessTotal)}
-                            </span>
-                          ) : (
-                            <span className="text-[#94a3b8] font-medium">—</span>
-                          )}
-                        </td>
+                        <td className="px-4 py-3.5" />
+                        <td className="px-4 py-3.5" />
                       </tr>
                     </tfoot>
                   </table>
                 </div>
+              )}
+            </div>
+
+            {/* ══════════════════════════════════════════════════════════════
+                SECTION 7: PERFORMANCE TREND CHART
+            ══════════════════════════════════════════════════════════════ */}
+            {!loading && analytics && (
+              <div className="mb-5">
+                <ChartCard title="Performance Trend" subtitle={`Goal vs Achievement trajectory for ${periodLabel}`} height={280}>
+                  {analytics.trendData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={analytics.trendData} margin={{ top: 16, right: 20, left: 10, bottom: 4 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: "#475569", fontWeight: 700 }} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#475569", fontWeight: 600 }} tickFormatter={(val) => val >= 100000 ? `₹${(val / 100000).toFixed(0)}L` : val} />
+                        <RechartsTooltip contentStyle={{ borderRadius: "10px", border: "1px solid #E2E8F0" }} formatter={(value) => formatCurrency(value)} />
+                        <Legend iconType="circle" wrapperStyle={{ fontSize: "12px", fontWeight: 700, color: "#1E293B" }} />
+                        <Line type="monotone" dataKey="Goal" stroke="#94A3B8" strokeWidth={3} strokeDasharray="5 5" dot={false} activeDot={{ r: 5 }} />
+                        <Line type="monotone" dataKey="Achievement" stroke="#4F46E5" strokeWidth={3} dot={{ strokeWidth: 2, r: 4, fill: "#FFFFFF" }} activeDot={{ r: 7, strokeWidth: 0 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-slate-400 font-medium text-xs">
+                      No multi-period trend trajectory data for this selection
+                    </div>
+                  )}
+                </ChartCard>
               </div>
             )}
+
+            {/* ══════════════════════════════════════════════════════════════
+                SECTION 8: PERFORMANCE DRIVERS & SECTION 9: ACTION CENTER
+            ══════════════════════════════════════════════════════════════ */}
+            {!loading && categories.length > 0 && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+
+                {/* ── SECTION 8: PERFORMANCE DRIVERS ── */}
+                <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs">
+                  <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 tracking-tight">Performance Drivers</h3>
+                      <p className="text-xs text-slate-500 font-medium mt-0.5">Category insights influencing current results</p>
+                    </div>
+                    <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded-md">
+                      Data Derived
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {/* Top Performer */}
+                    {analytics.topPerformer && (
+                      <div
+                        onClick={() => setDrawerCategory(analytics.topPerformer)}
+                        className="bg-emerald-50/40 rounded-xl p-3.5 border border-emerald-100 hover:border-emerald-200 transition-all cursor-pointer flex items-center justify-between"
+                      >
+                        <div>
+                          <span className="text-[10px] font-extrabold text-emerald-800 uppercase tracking-wider block">Top Performer</span>
+                          <span className="text-sm font-black text-slate-900 mt-0.5 block">{analytics.topPerformer.categoryName}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-sm font-black text-emerald-700 tabular-nums block">
+                            {Number(analytics.topPerformer.achievementPercentage || 0).toFixed(0)}% Target
+                          </span>
+                          <span className="text-xs font-bold text-slate-600 tabular-nums">
+                            {formatCurrency(analytics.topPerformer.achievement)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Biggest Shortfall */}
+                    {analytics.lowestPerformer && analytics.lowestPerformer.categoryId !== analytics.topPerformer?.categoryId && (
+                      <div
+                        onClick={() => setDrawerCategory(analytics.lowestPerformer)}
+                        className="bg-rose-50/40 rounded-xl p-3.5 border border-rose-100 hover:border-rose-200 transition-all cursor-pointer flex items-center justify-between"
+                      >
+                        <div>
+                          <span className="text-[10px] font-extrabold text-rose-800 uppercase tracking-wider block">Biggest Shortfall</span>
+                          <span className="text-sm font-black text-slate-900 mt-0.5 block">{analytics.lowestPerformer.categoryName}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-sm font-black text-rose-700 tabular-nums block">
+                            {formatCurrency(Math.abs(analytics.lowestPerformer.variance || 0))} Gap
+                          </span>
+                          <span className="text-xs font-bold text-slate-600 tabular-nums">
+                            {Number(analytics.lowestPerformer.achievementPercentage || 0).toFixed(0)}% Achieved
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Strongest Revenue Contributor */}
+                    {analytics.highestAchiever && (
+                      <div
+                        onClick={() => setDrawerCategory(analytics.highestAchiever)}
+                        className="bg-blue-50/40 rounded-xl p-3.5 border border-blue-100 hover:border-blue-200 transition-all cursor-pointer flex items-center justify-between"
+                      >
+                        <div>
+                          <span className="text-[10px] font-extrabold text-blue-800 uppercase tracking-wider block">Strongest Revenue Contributor</span>
+                          <span className="text-sm font-black text-slate-900 mt-0.5 block">{analytics.highestAchiever.categoryName}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-sm font-black text-blue-700 tabular-nums block">
+                            {formatCurrency(analytics.highestAchiever.achievement)}
+                          </span>
+                          <span className="text-xs font-bold text-slate-600 tabular-nums">
+                            Revenue Booked
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* ── SECTION 9: ACTION CENTER ── */}
+                <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-2xs">
+                  <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+                    <div>
+                      <h3 className="text-sm font-black text-slate-900 tracking-tight">Action Center</h3>
+                      <p className="text-xs text-slate-500 font-medium mt-0.5">Prioritized category review triggers</p>
+                    </div>
+                    <span className="text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-md">
+                      Action Required
+                    </span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {categories.filter(c => c.variance < 0 || c.performanceStatus === "BEHIND").length > 0 ? (
+                      categories.filter(c => c.variance < 0 || c.performanceStatus === "BEHIND").slice(0, 3).map((cat) => (
+                        <div
+                          key={cat.categoryId}
+                          onClick={() => setDrawerCategory(cat)}
+                          className="bg-rose-50/50 rounded-xl p-3.5 border border-rose-100 hover:border-rose-200 transition-all cursor-pointer flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="text-rose-600 font-bold text-sm">⚠</span>
+                            <div className="min-w-0">
+                              <span className="text-xs font-extrabold text-slate-900 truncate block">{cat.categoryName}</span>
+                              <span className="text-[11px] font-medium text-rose-700 block">
+                                {formatCurrency(Math.abs(cat.variance || 0))} behind effective goal target
+                              </span>
+                            </div>
+                          </div>
+                          <span className="bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-bold px-3 py-1 rounded-lg transition-colors flex-shrink-0">
+                            Review Category
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-6 text-center bg-slate-50/60 rounded-xl border border-dashed border-slate-200">
+                        <span className="text-emerald-600 font-bold text-lg block mb-1">✓</span>
+                        <p className="text-xs font-bold text-slate-700">No urgent category actions required</p>
+                        <p className="text-[11px] font-medium text-slate-500 mt-0.5">All strategy categories are meeting target run-rates.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+              </div>
+            )}
+
           </main>
         )}
 
-        {/* ── Drill-Down Drawer ── */}
+        {/* ── LEVEL 2: Category Detail Drawer ── */}
         {isStrategyOverviewTab && drawerCategory && (
-          <CategoryDrawer
+          <CategoryDetailDrawer
             category={drawerCategory}
             financialYear={financialYear}
             mode={mode}
             period={period}
             apiBase={API_BASE}
             onClose={() => setDrawerCategory(null)}
+            onRefresh={() => fetchOverview(financialYear, mode, period)}
           />
         )}
       </div>

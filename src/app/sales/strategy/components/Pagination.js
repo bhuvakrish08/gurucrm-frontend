@@ -82,7 +82,7 @@ export default function Pagination({
         </div>
       ) : (
         <div className="flex items-center">
-          <span className="text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1.5 rounded-md border border-slate-200 shadow-sm">
+          <span className="text-xs font-semibold text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 shadow-2xs">
             Page 1 of 1
           </span>
         </div>

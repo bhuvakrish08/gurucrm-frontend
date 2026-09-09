@@ -27,8 +27,8 @@ export function Select({
       const spaceBelow = window.innerHeight - rect.bottom;
       const placement = spaceBelow < 250 && rect.top > spaceBelow ? 'top' : 'bottom';
       setSelectPos({
-        top: placement === 'bottom' ? rect.bottom + 8 : undefined,
-        bottom: placement === 'top' ? window.innerHeight - rect.top + 8 : undefined,
+        top: placement === 'bottom' ? rect.bottom + 6 : undefined,
+        bottom: placement === 'top' ? window.innerHeight - rect.top + 6 : undefined,
         left: rect.left,
         width: rect.width
       });
@@ -46,13 +46,15 @@ export function Select({
         ref={buttonRef}
         onClick={handleOpen}
         disabled={disabled}
-        className={`${className} px-3.5 flex items-center justify-between border rounded-md text-sm font-semibold transition-all focus:outline-none bg-white ${
-          disabled ? 'opacity-50 cursor-not-allowed border-slate-200' : 'cursor-pointer hover:border-[#6366F1]'
-        } ${isOpen ? 'border-[#818CF8] ring-1 ring-[#818CF8]' : disabled ? '' : 'border-[#818CF8]'}`}
+        className={`${className} px-3.5 flex items-center justify-between border rounded-lg text-sm font-semibold transition-all focus:outline-none bg-white text-slate-800 shadow-2xs ${
+          disabled
+            ? 'opacity-50 cursor-not-allowed border-slate-200 bg-slate-50'
+            : 'cursor-pointer hover:border-slate-400'
+        } ${isOpen ? 'border-indigo-500 ring-2 ring-indigo-100' : 'border-slate-300'}`}
       >
-        <span className={!value ? "text-slate-500" : "truncate pr-2"}>{selectedLabel}</span>
-        <svg className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180 text-[#6366f1]' : 'text-slate-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+        <span className={!value ? "text-slate-400 font-normal" : "truncate pr-2 font-semibold text-slate-800"}>{selectedLabel}</span>
+        <svg className={`w-4 h-4 shrink-0 transition-transform duration-150 ${isOpen ? 'rotate-180 text-indigo-600' : 'text-slate-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
@@ -60,13 +62,13 @@ export function Select({
         <>
           <div className="fixed inset-0 z-[9998]" onClick={() => setIsOpen(false)} />
           <div
-            className="fixed z-[9999] bg-white border border-slate-200 rounded-[10px] shadow-xl p-2 text-left flex flex-col"
+            className="fixed z-[9999] bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 text-left flex flex-col"
             style={{ 
               top: selectPos.top, 
               bottom: selectPos.bottom, 
               left: selectPos.left, 
               minWidth: selectPos.width,
-              animation: '0.15s ease-out 0s 1 normal forwards running fadeInSlide'
+              animation: '0.12s ease-out 0s 1 normal forwards running fadeInSlide'
             }}
           >
             <style>{`
@@ -80,7 +82,7 @@ export function Select({
             `}</style>
             
             {searchable && (
-              <div className="px-2 pb-2 pt-1 border-b border-slate-100">
+              <div className="px-1.5 pb-1.5 pt-0.5 border-b border-slate-100">
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
                     <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -91,28 +93,28 @@ export function Select({
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search..." 
-                    className="w-full h-[36px] pl-8 pr-3 bg-white border border-slate-200 hover:border-[#818CF8] rounded-md text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-[#818CF8] focus:ring-2 focus:ring-[#818CF8]/20 transition-all"
+                    className="w-full h-[34px] pl-8 pr-3 bg-white border border-slate-200 hover:border-slate-300 rounded-lg text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 transition-all"
                   />
                 </div>
               </div>
             )}
 
-            <div className={`max-h-60 overflow-y-auto custom-scrollbar space-y-0.5 pr-1 ${searchable ? 'mt-2' : ''}`}>
+            <div className={`max-h-60 overflow-y-auto custom-scrollbar space-y-0.5 pr-0.5 ${searchable ? 'mt-1.5' : ''}`}>
               {filteredOptions.length > 0 ? filteredOptions.map((opt) => (
                 <button
                   key={opt.value}
                   type="button"
                   onClick={() => { onChange(opt.value); setIsOpen(false); }}
-                  className={`w-full flex items-center justify-between px-[14px] h-[40px] rounded-md text-[13px] font-bold transition-colors cursor-pointer ${
+                  className={`w-full flex items-center justify-between px-3 h-[36px] rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
                     String(value) === String(opt.value) 
-                      ? 'bg-[#EEF2FF] text-[#4F46E5]' 
-                      : 'text-slate-700 hover:bg-[#EEF2FF] hover:text-[#4F46E5] focus:bg-[#EEF2FF] focus:text-[#4F46E5] focus:outline-none'
+                      ? 'bg-indigo-50 text-indigo-700 font-bold' 
+                      : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 focus:bg-slate-50 focus:text-slate-900 focus:outline-none'
                   }`}
                 >
-                  {opt.label}
+                  <span>{opt.label}</span>
                   {String(value) === String(opt.value) && (
-                    <svg className="w-4 h-4 text-[#4F46E5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                    <svg className="w-4 h-4 text-indigo-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                     </svg>
                   )}
                 </button>

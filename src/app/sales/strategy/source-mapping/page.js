@@ -152,7 +152,7 @@ export default function SourceMappingPage() {
                   Action Required: {unmappedSummary.total_unmapped_sources} Sub Sources currently Unmapped
                 </h3>
                 <p className="mt-1 text-xs font-semibold text-[#c2410c] leading-relaxed">
-                  Approved/Won quotations from these unmapped sources ({unmappedSummary.total_affected_quotations} affected closed quotations totaling ₹{Number(unmappedSummary.total_affected_revenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}) cannot currently be included in Sales Strategy calculations. Please assign a Main Strategy Category below.
+                  Approved/Won quotations from these unmapped sources ({unmappedSummary.total_affected_quotations} affected closed quotations totaling ₹{Number(unmappedSummary.total_affected_revenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}) without an individual Lead-level Strategy Category cannot currently be included in Sales Strategy calculations. Please assign a Default Strategy Category below or assign categories at the Lead level.
                 </p>
               </div>
             </div>
@@ -260,7 +260,9 @@ export default function SourceMappingPage() {
                 <div className="flex items-center gap-2">
                   <h2 className="text-[32px] font-black text-[#0f172a] tracking-tight leading-none">Lead Source Mapping</h2>
                 </div>
-                <p className="text-base text-slate-500 font-medium mt-2">Assign each lead source to a Strategy Category to ensure accurate goal tracking, achievement calculation, and reporting. This mapping determines where quotation revenue contributes toward monthly and quarterly strategy achievements.</p>
+                <p className="text-base text-slate-500 font-medium mt-2">
+                  Assign a default Strategy Category fallback for each lead source to ensure accurate goal tracking and achievement calculation. Leads with their own individual Sales Strategy Category will always use their Lead-level category.
+                </p>
               </div>
 
               <div className="flex flex-col sm:flex-row items-center gap-3">
@@ -319,83 +321,121 @@ export default function SourceMappingPage() {
               </div>
             ) : (
               <div className="overflow-x-auto w-full shadow-sm rounded-md border-t border-l border-r border-[#e2e8f0]">
-                <table className="min-w-[1000px] w-full divide-y divide-[#e2e8f0] text-left border-collapse">
+                <table className="min-w-[1100px] w-full divide-y divide-[#e2e8f0] text-left border-collapse">
                   <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0] sticky top-0 z-20">
                     <tr>
                       <th className="h-[56px] px-6 align-middle text-[13px] font-[700] text-[#475569] uppercase tracking-[0.06em] text-left sticky left-0 bg-[#F8FAFC] z-30 shadow-[1px_0_0_#e2e8f0]">Lead Source</th>
                       <th className="h-[56px] px-6 align-middle text-[13px] font-[700] text-[#475569] uppercase tracking-[0.06em] text-center">Status</th>
-                      <th className="h-[56px] px-6 align-middle text-[13px] font-[700] text-[#475569] uppercase tracking-[0.06em] text-left">Strategy Category</th>
-                      <th className="h-[56px] px-6 align-middle text-[13px] font-[700] text-[#475569] uppercase tracking-[0.06em] text-center">Used In</th>
-                      <th className="h-[56px] px-6 align-middle text-[13px] font-[700] text-[#475569] uppercase tracking-[0.06em] text-center">Last Won Date</th>
+                      <th className="h-[56px] px-6 align-middle text-[13px] font-[700] text-[#475569] uppercase tracking-[0.06em] text-left">Default Category (Fallback)</th>
+                      <th className="h-[56px] px-6 align-middle text-[13px] font-[700] text-[#475569] uppercase tracking-[0.06em] text-left">Lead-Level Category Distribution</th>
                       <th className="h-[56px] px-6 align-middle text-[13px] font-[700] text-[#475569] uppercase tracking-[0.06em] text-center">Last Updated</th>
-                      <th className="h-[56px] px-6 align-middle text-[13px] font-[700] text-[#475569] uppercase tracking-[0.06em] text-center">Assigned Category</th>
+                      <th className="h-[56px] px-6 align-middle text-[13px] font-[700] text-[#475569] uppercase tracking-[0.06em] text-center">Assign Default Category</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#f1f5f9] bg-white text-xs">
                     {sources.slice((page - 1) * pageSize, page * pageSize).map((src, index) => {
-                      const isUnmapped = src.mapping_status === "Unmapped";
-                      
-                      // Fake UI placeholders for Enterprise columns based on row index for variety
-                      const randomUsage = index % 3 === 0 ? 124 : (index % 2 === 0 ? 42 : 87);
-                      const randomDate = index % 2 === 0 ? "18 Jul 2026" : "15 Jul 2026";
+                      const isUnmapped = !src.is_mapped;
+                      const hasDefault = Boolean(src.has_default_mapping);
+                      const hasLeadCats = Array.isArray(src.lead_categories) && src.lead_categories.length > 0;
                       
                       return (
-                        <tr key={src.source_id} className={`group transition-all duration-200 border-l-[3px] ${isUnmapped ? "border-l-[#f59e0b] hover:bg-[#fffbeb] bg-[#fffcf5]" : "border-l-transparent hover:border-l-[#6366f1] hover:bg-[#f0f3ff]"}`}>
+                        <tr key={`${src.source_id || 'src'}-${src.mapping_id || index}`} className={`group transition-all duration-200 border-l-[3px] ${isUnmapped ? "border-l-[#f59e0b] hover:bg-[#fffbeb] bg-[#fffcf5]" : "border-l-transparent hover:border-l-[#6366f1] hover:bg-[#f0f3ff]"}`}>
                           {/* Column 1: Lead Source */}
-                          <td className={`py-5 px-6 font-bold text-xs text-[#0f172a] whitespace-nowrap sticky left-0 z-10 shadow-[1px_0_0_#e2e8f0] ${isUnmapped ? "bg-[#fffcf5] group-hover:bg-[#fffbeb]" : "bg-white group-hover:bg-[#f0f3ff]"}`}>
+                          <td className={`py-4 px-6 font-bold text-xs text-[#0f172a] whitespace-nowrap sticky left-0 z-10 shadow-[1px_0_0_#e2e8f0] ${isUnmapped ? "bg-[#fffcf5] group-hover:bg-[#fffbeb]" : "bg-white group-hover:bg-[#f0f3ff]"}`}>
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-full bg-[#f0f3ff] text-[#6366f1] flex items-center justify-center flex-shrink-0 font-bold shadow-2xs group-hover:bg-[#e0e7ff] transition-colors">
                                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-col">
                                 <span className="text-[13px] font-black text-[#0f172a]">{src.source_name}</span>
+                                {src.total_leads > 0 && (
+                                  <span className="text-[10px] text-slate-400 font-semibold">
+                                    {src.total_leads} {src.total_leads === 1 ? 'lead' : 'leads'}{src.total_won_revenue > 0 ? ` · ₹${Number(src.total_won_revenue).toLocaleString('en-IN', { maximumFractionDigits: 2 })} won` : ''}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </td>
 
                           {/* Column 2: Status */}
-                          <td className="py-5 px-6 whitespace-nowrap text-center">
-                            {isUnmapped ? (
+                          <td className="py-4 px-6 whitespace-nowrap text-center">
+                            {hasDefault ? (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-bold bg-[#d1fae5] text-[#059669] border border-[#a7f3d0] shadow-sm">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#059669]" />
+                                Default Mapped
+                              </span>
+                            ) : hasLeadCats ? (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-bold bg-[#e0e7ff] text-[#4f46e5] border border-[#c7d2fe] shadow-sm">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#4f46e5]" />
+                                Lead-Categorized
+                              </span>
+                            ) : (
                               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-bold bg-[#fffbeb] text-[#d97706] border border-[#fde68a] shadow-sm">
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.992 3 1.732 3z" />
                                 </svg>
                                 Unmapped
                               </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-bold bg-[#d1fae5] text-[#059669] border border-[#a7f3d0] shadow-sm">
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#059669]" />
-                                Mapped
-                              </span>
                             )}
                           </td>
 
-                          {/* Column 3: Strategy Category */}
-                          <td className="py-5 px-6 whitespace-nowrap">
-                            {!isUnmapped && src.category_name ? (() => {
-                              const cat = categories.find(c => c.id === src.strategy_category_id) || {};
+                          {/* Column 3: Default Strategy Category (Fallback) */}
+                          <td className="py-4 px-6 whitespace-nowrap">
+                            {hasDefault && src.category_name ? (() => {
+                              const cat = categories.find(c => c.id === src.strategy_category_id) || { name: src.category_name, code: src.category_code };
                               return (
-                                <CategoryDisplay cat={cat} size="sm" />
+                                <div className="flex flex-col gap-0.5">
+                                  <CategoryDisplay cat={cat} size="sm" />
+                                  <span className="text-[10px] text-slate-400 font-medium">Default Fallback</span>
+                                </div>
                               );
                             })() : (
                               <span className="text-slate-400 font-medium italic text-[11px]">Not Assigned</span>
                             )}
                           </td>
-                          
-                          {/* Column 4: Placeholder Used In */}
-                          <td className="py-5 px-6 whitespace-nowrap text-center">
-                            <span className="text-[12px] font-bold text-slate-600">{isUnmapped ? "0" : randomUsage} Won Quotations</span>
+
+                          {/* Column 4: Lead-Level Category Distribution */}
+                          <td className="py-4 px-6">
+                            {hasLeadCats ? (
+                              <div className="flex flex-wrap gap-1.5 py-0.5 max-w-[380px]">
+                                {src.lead_categories.map((lc) => {
+                                  const { badgeBg, badgeText } = getCategoryStyles(lc.category_name, lc.category_code, lc.badge_background, lc.badge_text_color);
+                                  return (
+                                    <span
+                                      key={lc.category_id}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold shadow-2xs border"
+                                      style={{
+                                        backgroundColor: badgeBg || '#f1f5f9',
+                                        color: badgeText || '#334155',
+                                        borderColor: badgeText ? `${badgeText}30` : '#cbd5e1'
+                                      }}
+                                      title={`${lc.leads_count} Leads, ${lc.won_quotations_count || 0} Won Quotations, ₹${Number(lc.won_revenue || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })} Won Revenue`}
+                                    >
+                                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: badgeText || '#64748b' }} />
+                                      <span>{lc.category_name}</span>
+                                      <span className="text-[10px] font-semibold opacity-85 ml-0.5">
+                                        ({lc.leads_count} {lc.leads_count === 1 ? 'Lead' : 'Leads'}{lc.won_revenue > 0 ? ` · ₹${Number(lc.won_revenue).toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : ''})
+                                      </span>
+                                    </span>
+                                  );
+                                })}
+                                {src.uncategorized_leads > 0 && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+                                    <span>Uncategorized: {src.uncategorized_leads}</span>
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 font-medium italic text-[11px]">
+                                {src.total_leads > 0 ? `${src.total_leads} leads (using default)` : 'No leads recorded yet'}
+                              </span>
+                            )}
                           </td>
 
-                          {/* Column 5: Placeholder Last Won Date */}
-                          <td className="py-5 px-6 whitespace-nowrap text-center">
-                            <span className="text-[12px] font-bold text-slate-600">{isUnmapped ? "-" : randomDate}</span>
-                          </td>
-
-                          {/* Column 6: Last Updated */}
-                          <td className="py-5 px-6 whitespace-nowrap text-[12px] text-center">
+                          {/* Column 5: Last Updated */}
+                          <td className="py-4 px-6 whitespace-nowrap text-[12px] text-center">
                             {src.updated_by ? (
                               <div>
                                 <span className="block font-bold text-[#334155]">Updated by {src.updated_by}</span>
@@ -408,8 +448,8 @@ export default function SourceMappingPage() {
                             )}
                           </td>
 
-                          {/* Column 7: Action */}
-                          <td className="py-5 px-6 whitespace-nowrap text-center">
+                          {/* Column 6: Action */}
+                          <td className="py-4 px-6 whitespace-nowrap text-center">
                             <div className="flex justify-center items-center gap-2 relative">
                               {updatingId === src.source_id && (
                                 <span className="absolute right-[260px] text-xs text-[#6366f1] animate-pulse font-bold">Saving...</span>
@@ -423,7 +463,7 @@ export default function SourceMappingPage() {
                                     }
                                   }}
                                   options={categories.map(c => ({ value: String(c.id), label: c.name }))}
-                                  placeholder="Assign Category"
+                                  placeholder="Assign Default Fallback"
                                   searchable={false}
                                   disabled={updatingId === src.source_id}
                                 />
@@ -435,7 +475,7 @@ export default function SourceMappingPage() {
                                   <button
                                     type="button"
                                     disabled={updatingId === src.source_id}
-                                    title="Remove Mapping"
+                                    title="Remove Default Mapping"
                                     onClick={() => setRemovingSource({ id: src.source_id, name: src.source_name || src.name })}
                                     className="h-[36px] w-[36px] flex items-center justify-center border-[1.5px] border-red-200 text-red-500 rounded-md hover:bg-red-50 hover:border-red-300 transition-all focus:outline-none focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed"
                                   >
@@ -486,10 +526,9 @@ export default function SourceMappingPage() {
                   </div>
                 </div>
                 
-                <h3 className="text-xl font-black text-slate-900 tracking-tight mb-2">Remove Mapping?</h3>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight mb-2">Remove Default Mapping?</h3>
                 <p className="text-[14px] text-slate-500 font-medium leading-relaxed mb-7">
-                  This source will become <span className="font-bold text-slate-800">Unmapped</span>. 
-                  It will stop contributing to Strategy Goals until reassigned.
+                  Default fallback mapping will be removed for this source. Leads with their own Sales Strategy Category will continue to contribute normally. Leads without a category will become unmapped until reassigned.
                 </p>
                 
                 <div className="flex items-center gap-3 w-full">

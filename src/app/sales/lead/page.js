@@ -40,6 +40,7 @@ import {
   Save,
   Plus,
   Pencil,
+  Target,
 } from "lucide-react";
 export default function Page() {
   const [btnLoading, setBtnLoading] = useState(false);
@@ -103,6 +104,7 @@ const [updateModalClosing, setUpdateModalClosing] = useState(false);
     mobile_no: "",
     reference: "",
     source: "",
+    strategy_category_id: "",
     location: "",
     architecture: "",
     status: "Qualified",
@@ -111,6 +113,13 @@ const [updateModalClosing, setUpdateModalClosing] = useState(false);
     category: "",
     description: "",
   });
+  // sourceCategoryMap: Record<sourceId, { categories: [] }>
+  // populated from GET /api/strategy/source-categories on mount
+  const [sourceCategoryMap, setSourceCategoryMap] = useState({});
+  const [allStrategyCategories, setAllStrategyCategories] = useState([]);
+  // dynamic category options for Add / Edit drawers
+  const [addLeadCategoryOptions, setAddLeadCategoryOptions] = useState([]);
+  const [editLeadCategoryOptions, setEditLeadCategoryOptions] = useState([]);
 // for view model slide-in slide-out animation
 const [isClosing, setIsClosing] = useState(false);
 
@@ -153,6 +162,7 @@ const handleCloseUpdateModal = () => {
     mobile_no: "",
     reference: "",
     source: "",
+    strategy_category_id: "",
     location: "",
     architecture: "",
     status: "",
@@ -231,6 +241,61 @@ const handleCloseUpdateModal = () => {
     fetchLeads(1);
   }, []);
 
+  // Fetch source → categories map for smart category resolution in Lead form
+  useEffect(() => {
+    const fetchSourceCategories = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/api/strategy/source-categories`, {
+          headers: { Authorization: `Bearer ${getToken()}` },
+        });
+        if (res.data?.success && Array.isArray(res.data.data)) {
+          // Build a map: sourceId (string) → { source_id, source_name, categories[] }
+          const map = {};
+          for (const entry of res.data.data) {
+            map[String(entry.source_id)] = entry;
+          }
+          setSourceCategoryMap(map);
+        }
+        if (res.data?.allCategories && Array.isArray(res.data.allCategories)) {
+          setAllStrategyCategories(res.data.allCategories);
+        } else {
+          const catRes = await axios.get(`${API_BASE}/api/strategy/categories`, {
+            headers: { Authorization: `Bearer ${getToken()}` },
+          });
+          if (catRes.data?.success && Array.isArray(catRes.data.data)) {
+            setAllStrategyCategories(catRes.data.data);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch source-categories map:", err);
+      }
+    };
+    fetchSourceCategories();
+  }, []);
+
+  const getStrategyCategoryConfigForSource = (sourceIdOrName) => {
+    const val = String(sourceIdOrName || "").trim();
+    if (!val) return { allowSelection: false, categories: [] };
+
+    const srcObj = leadSource.find((s) => String(s.id) === val || s.name === val);
+    const resolvedId = srcObj ? String(srcObj.id) : val;
+    const entry = sourceCategoryMap[resolvedId] || Object.values(sourceCategoryMap).find((e) => e.source_name === val);
+
+    const allowSelection = Boolean(
+      (entry && entry.allow_category_selection) ||
+      (srcObj && (srcObj.allow_category_selection === 1 || srcObj.allow_category_selection === true))
+    );
+
+    let categories = [];
+    if (entry && Array.isArray(entry.categories) && entry.categories.length > 0) {
+      categories = entry.categories;
+    } else if (allowSelection && allStrategyCategories.length > 0) {
+      categories = allStrategyCategories;
+    }
+
+    return { allowSelection, categories };
+  };
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (exportRef.current && !exportRef.current.contains(e.target)) {
@@ -287,6 +352,34 @@ const handleCloseUpdateModal = () => {
     if (name === "mobile_no") {
       value = value.replace(/[^0-9]/g, "").slice(0, 10);
     }
+    if (name === "source") {
+      const { allowSelection, categories } = getStrategyCategoryConfigForSource(value);
+      setAddLeadCategoryOptions(categories);
+
+      if (allowSelection && categories.length > 0) {
+        setAddLeadForm((prev) => ({
+          ...prev,
+          source: value,
+          strategy_category_id: "",
+        }));
+      } else if (!allowSelection && categories.length === 1) {
+        setAddLeadForm((prev) => ({
+          ...prev,
+          source: value,
+          strategy_category_id: String(categories[0].id),
+        }));
+      } else {
+        setAddLeadForm((prev) => ({
+          ...prev,
+          source: value,
+          strategy_category_id: "",
+        }));
+      }
+
+      if (addLeadErrors.source)
+        setAddLeadErrors((prev) => ({ ...prev, source: "" }));
+      return;
+    }
     setAddLeadForm((prev) => ({ ...prev, [name]: value }));
     if (addLeadErrors[name])
       setAddLeadErrors((prev) => ({ ...prev, [name]: "" }));
@@ -312,17 +405,16 @@ const handleCloseUpdateModal = () => {
       mobile_no: "",
       reference: "",
       source: "",
-
-      location: "", // ✅ ADD
-      architecture: "", // ✅ ADD
-
+      strategy_category_id: "",
+      location: "",
+      architecture: "",
       status: "Qualified",
       priority: "",
       assignee: "",
       category: "",
       description: "",
     });
-
+    setAddLeadCategoryOptions([]);
     setAddLeadErrors({});
   };
 
@@ -351,6 +443,7 @@ const handleCloseUpdateModal = () => {
         mobile_no: addLeadForm.mobile_no || null,
         priority: addLeadForm.priority || null,
         category: addLeadForm.category || null,
+        strategy_category_id: addLeadForm.strategy_category_id ? Number(addLeadForm.strategy_category_id) : null,
       };
 
       const res = await axios.post(`${API_BASE}/api/lead/insert`, payload, {
@@ -386,6 +479,31 @@ const handleCloseUpdateModal = () => {
     if (name === "mobile_no") {
       value = value.replace(/[^0-9]/g, "").slice(0, 10);
     }
+    if (name === "source") {
+      const { allowSelection, categories } = getStrategyCategoryConfigForSource(value);
+      setEditLeadCategoryOptions(categories);
+
+      if (allowSelection && categories.length > 0) {
+        setEditLeadForm((prev) => ({
+          ...prev,
+          source: value,
+          strategy_category_id: "",
+        }));
+      } else if (!allowSelection && categories.length === 1) {
+        setEditLeadForm((prev) => ({
+          ...prev,
+          source: value,
+          strategy_category_id: String(categories[0].id),
+        }));
+      } else {
+        setEditLeadForm((prev) => ({
+          ...prev,
+          source: value,
+          strategy_category_id: "",
+        }));
+      }
+      return;
+    }
     setEditLeadForm((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -409,9 +527,8 @@ const handleCloseUpdateModal = () => {
           mobile_no: editLeadForm.mobile_no || null,
           reference: editLeadForm.reference,
           source: editLeadForm.source,
-
+          strategy_category_id: editLeadForm.strategy_category_id ? Number(editLeadForm.strategy_category_id) : null,
           location: editLeadForm.location,
-
           architecture: editLeadForm.architecture,
           status: editLeadForm.status,
           priority: editLeadForm.priority,
@@ -798,6 +915,17 @@ const handleCloseUpdateModal = () => {
 
       const leadData = res.data.lead;
 
+      // Restore category options for the lead's saved source
+      const { allowSelection, categories } = getStrategyCategoryConfigForSource(leadData.source);
+      setEditLeadCategoryOptions(categories);
+
+      let initialStrategyCat = "";
+      if (leadData.strategy_category_id) {
+        initialStrategyCat = String(leadData.strategy_category_id);
+      } else if (categories.length === 1) {
+        initialStrategyCat = String(categories[0].id);
+      }
+
       setEditLeadForm({
         lead_id: leadData.lead_id || "",
         company_name: leadData.company_name || "",
@@ -805,10 +933,9 @@ const handleCloseUpdateModal = () => {
         mobile_no: leadData.mobile_no || "",
         reference: leadData.reference || "",
         source: leadData.source || "",
-
-        location: leadData.location || "", // ✅
-        architecture: leadData.architecture || "", // ✅
-
+        strategy_category_id: initialStrategyCat,
+        location: leadData.location || "",
+        architecture: leadData.architecture || "",
         status: leadData.status || "",
         priority: leadData.priority || "",
         assignee: leadData.assignee || "",
@@ -1560,6 +1687,9 @@ const handleCloseUpdateModal = () => {
                         Source{" "}
                         <i className="bi bi-arrow-down-up text-slate-400 text-[10px]"></i>
                       </th>
+                      <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
+                        Sales Strategy Category
+                      </th>
 
                       <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
                         Architecture
@@ -1630,6 +1760,22 @@ const handleCloseUpdateModal = () => {
                             >
                               {lead.source}
                             </span>
+                          </td>
+                          <td className="px-3">
+                            {lead.strategy_category_name ? (
+                              <span
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap shadow-2xs border ${
+                                  lead.strategy_category_badge_bg && lead.strategy_category_badge_text
+                                    ? `${lead.strategy_category_badge_bg} ${lead.strategy_category_badge_text} border-transparent`
+                                    : "bg-indigo-50 text-indigo-700 border-indigo-100/70"
+                                }`}
+                              >
+                                <span className="w-1.5 h-1.5 rounded-full bg-current opacity-70"></span>
+                                {lead.strategy_category_name}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 text-xs">—</span>
+                            )}
                           </td>
                           <td>{lead.architecture}</td>
                           <td className="py-2 px-4 text-start font-semibold text-slate-800">
@@ -2005,6 +2151,62 @@ const handleCloseUpdateModal = () => {
                     </p>
                   )}
                 </div>
+
+                {/* Sales Strategy Category */}
+                {(() => {
+                  if (!addLeadForm.source) return null;
+                  const { allowSelection, categories } = getStrategyCategoryConfigForSource(addLeadForm.source);
+                  const cats = categories.length > 0 ? categories : addLeadCategoryOptions;
+                  if (cats.length === 0) return null;
+
+                  // Case 1: Auto-assigned category (Allow Selection is OFF)
+                  if (!allowSelection && cats.length >= 1) {
+                    const catName = cats[0].name;
+                    return (
+                      <div>
+                        <label className="block mb-1 text-sm font-medium text-gray-600">
+                          Sales Strategy Category
+                        </label>
+                        <div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-lg text-sm text-indigo-700 font-medium">
+                          <Target size={14} className="text-indigo-500 shrink-0" />
+                          <span>{catName}</span>
+                          <span className="ml-auto text-[11px] text-indigo-500 font-medium italic">Auto-assigned</span>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // Case 2: Allow Category Selection = ON
+                  if (allowSelection && cats.length > 0) {
+                    return (
+                      <div>
+                        <label className="block mb-1 text-sm font-medium text-gray-600">
+                          Sales Strategy Category
+                        </label>
+                        <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                          <span className="flex items-center justify-center w-10 shrink-0 bg-indigo-50 border-r border-gray-100">
+                            <Target size={16} className="text-indigo-500" />
+                          </span>
+                          <select
+                            name="strategy_category_id"
+                            value={addLeadForm.strategy_category_id || ""}
+                            onChange={handleAddLeadChange}
+                            className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent cursor-pointer"
+                          >
+                            <option value="">-- Select Category --</option>
+                            {cats.map((cat) => (
+                              <option key={cat.id} value={String(cat.id)}>
+                                {cat.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return null;
+                })()}
                 {/* Location */}
                 <div>
                   <label className="block mb-1 text-sm font-medium text-gray-600">
@@ -2358,6 +2560,62 @@ const handleCloseUpdateModal = () => {
                     </select>
                   </div>
                 </div>
+
+                {/* Sales Strategy Category */}
+                {(() => {
+                  if (!editLeadForm.source) return null;
+                  const { allowSelection, categories } = getStrategyCategoryConfigForSource(editLeadForm.source);
+                  const cats = categories.length > 0 ? categories : editLeadCategoryOptions;
+                  if (cats.length === 0) return null;
+
+                  // Case 1: Auto-assigned category (Allow Selection is OFF)
+                  if (!allowSelection && cats.length >= 1) {
+                    const catName = cats[0].name;
+                    return (
+                      <div>
+                        <label className="block mb-1 text-sm font-medium text-gray-600">
+                          Sales Strategy Category
+                        </label>
+                        <div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-lg text-sm text-indigo-700 font-medium">
+                          <Target size={14} className="text-indigo-500 shrink-0" />
+                          <span>{catName}</span>
+                          <span className="ml-auto text-[11px] text-indigo-500 font-medium italic">Auto-assigned</span>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // Case 2: Allow Category Selection = ON
+                  if (allowSelection && cats.length > 0) {
+                    return (
+                      <div>
+                        <label className="block mb-1 text-sm font-medium text-gray-600">
+                          Sales Strategy Category
+                        </label>
+                        <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                          <span className="flex items-center justify-center w-10 shrink-0 bg-indigo-50 border-r border-gray-100">
+                            <Target size={16} className="text-indigo-500" />
+                          </span>
+                          <select
+                            name="strategy_category_id"
+                            value={editLeadForm.strategy_category_id || ""}
+                            onChange={handleEditLeadChange}
+                            className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent cursor-pointer"
+                          >
+                            <option value="">-- Select Category --</option>
+                            {cats.map((cat) => (
+                              <option key={cat.id} value={String(cat.id)}>
+                                {cat.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return null;
+                })()}
                 {/* Location */}
                 <div>
                   <label className="block mb-1 text-sm font-medium text-gray-600">
@@ -3922,6 +4180,13 @@ ${
             value: viewLead.category,
             bg: "bg-purple-50",
             iconColor: "text-purple-500",
+          },
+          {
+            icon: "bi-bullseye",
+            label: "Sales Strategy Category",
+            value: viewLead.strategy_category_name || (viewLead.strategy_category_id ? `Category #${viewLead.strategy_category_id}` : "—"),
+            bg: "bg-indigo-50",
+            iconColor: "text-indigo-500",
           },
           {
             icon: "bi-telephone",

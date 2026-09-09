@@ -12,6 +12,8 @@ import { getCategoryStyles, getCategoryIconHTML } from "@/utils/CategoryThemeHel
 import CategoryDisplay from "@/app/components/CategoryDisplay";
 import { toast } from "react-toastify";
 import { Select } from "../components/Select";
+import MonthCarryAllocationModal from "../components/MonthCarryAllocationModal";
+import CategoryDetailDrawer from "../components/CategoryDetailDrawer";
 
 const QUARTERS_META = [
   { quarterNumber: 1, label: "Q1 (Apr - Jun)", months: ["April", "May", "June"] },
@@ -47,7 +49,7 @@ export default function QuarterStrategyPage() {
   const [loadingAllocation, setLoadingAllocation] = useState(true);
   const [summaryData, setSummaryData] = useState(null);
   const [allocationData, setAllocationData] = useState(null);
-  const [expandedCategories, setExpandedCategories] = useState({});
+  const [drawerCategory, setDrawerCategory] = useState(null);
   const [openDropdown, setOpenDropdown] = useState(null); // categoryId or null
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 }); // pixel position for fixed dropdown
 
@@ -63,6 +65,7 @@ export default function QuarterStrategyPage() {
   const [activeRowId, setActiveRowId] = useState(null);
   const [recentlySaved, setRecentlySaved] = useState(false);
   const [animatingCategoryId, setAnimatingCategoryId] = useState(null);
+  const [selectedMonthModal, setSelectedMonthModal] = useState(null);
 
   // Fetch Quarter Summary Data (Section A)
   const fetchQuarterSummary = async (fy = financialYear, q = quarterNumber) => {
@@ -130,8 +133,29 @@ export default function QuarterStrategyPage() {
     fetchAllocationData(financialYear, quarterNumber);
   }, [financialYear, quarterNumber]);
 
-  const toggleExpand = (catId) => {
-    setExpandedCategories(prev => ({ ...prev, [catId]: !prev[catId] }));
+  const handleOpenCategoryDrawer = (cat) => {
+    setDrawerCategory({
+      categoryId: cat.categoryId,
+      categoryName: cat.categoryName,
+      categoryCode: cat.categoryCode,
+      color: cat.color,
+      badge_text_color: cat.badge_text_color,
+      icon_color: cat.icon_color,
+      baseGoal: Number(cat.quarterBaseGoal || 0),
+      effectiveGoal: Number(cat.quarterEffectiveGoal || 0),
+      achievement: Number(cat.quarterAchievement || 0),
+      variance: Number(cat.quarterAchievement || 0) - Number(cat.quarterEffectiveGoal || 0),
+      closingShortfall: Number(cat.finalClosingShortfall || 0),
+      closingExcess: Number(cat.finalClosingExcess || 0),
+      allocatedOut: Number(cat.allocatedOut || cat.finalAllocatedOut || (cat.monthsSequence && cat.monthsSequence[cat.monthsSequence.length - 1]?.allocatedOut) || 0),
+      allocatedShortfallOut: Number(cat.allocatedShortfallOut || (cat.monthsSequence && cat.monthsSequence[cat.monthsSequence.length - 1]?.allocatedShortfallOut) || 0),
+      allocatedExcessOut: Number(cat.allocatedExcessOut || (cat.monthsSequence && cat.monthsSequence[cat.monthsSequence.length - 1]?.allocatedExcessOut) || 0),
+      effectiveOutgoingShortfall: Number(cat.effectiveOutgoingShortfall || (cat.monthsSequence && cat.monthsSequence[cat.monthsSequence.length - 1]?.effectiveOutgoingShortfall) || 0),
+      effectiveOutgoingExcess: Number(cat.effectiveOutgoingExcess || (cat.monthsSequence && cat.monthsSequence[cat.monthsSequence.length - 1]?.effectiveOutgoingExcess) || 0),
+      effectiveCarryForward: Number(cat.effectiveCarryForward || (cat.monthsSequence && cat.monthsSequence[cat.monthsSequence.length - 1]?.effectiveCarryForward) || 0),
+      performanceStatus: Number(cat.quarterAchievement || 0) >= Number(cat.quarterEffectiveGoal || 0) ? "AHEAD" : "BEHIND",
+      monthsSequence: cat.monthsSequence || [],
+    });
   };
 
   const handleInputChange = (catId, monthNumber, valStr) => {
@@ -140,10 +164,10 @@ export default function QuarterStrategyPage() {
   };
 
   // Quick action: Equal Split for one category
-  const handleEqualSplitCategory = (catId, closingAmt, targetMonths) => {
-    if (closingAmt <= 0 || targetMonths.length === 0) return;
-    const baseShare = Math.floor((closingAmt / targetMonths.length) * 100) / 100;
-    const remainder = Math.round((closingAmt - baseShare * targetMonths.length) * 100) / 100;
+  const handleEqualSplitCategory = (catId, availableAmt, targetMonths) => {
+    if (availableAmt <= 0 || targetMonths.length === 0) return;
+    const baseShare = Math.floor((availableAmt / targetMonths.length) * 100) / 100;
+    const remainder = Math.round((availableAmt - baseShare * targetMonths.length) * 100) / 100;
 
     const newInputs = { ...allocationInputs };
     targetMonths.forEach((m, idx) => {
@@ -157,17 +181,17 @@ export default function QuarterStrategyPage() {
   };
 
   // Quick action: All to Month 1
-  const handleAllToFirstMonth = (catId, closingAmt, targetMonths) => {
-    if (closingAmt <= 0 || targetMonths.length === 0) return;
+  const handleAllToFirstMonth = (catId, availableAmt, targetMonths) => {
+    if (availableAmt <= 0 || targetMonths.length === 0) return;
     const newInputs = { ...allocationInputs };
     targetMonths.forEach((m, idx) => {
       const key = `${catId}_${m.monthNumber}`;
-      newInputs[key] = idx === 0 ? closingAmt : 0;
+      newInputs[key] = idx === 0 ? availableAmt : 0;
     });
     setAllocationInputs(newInputs);
     setAnimatingCategoryId(catId);
     setTimeout(() => setAnimatingCategoryId(null), 400);
-    toast.info(`Allocated ₹${formatSmartCurrency(closingAmt)} to ${targetMonths[0].monthName}`);
+    toast.info(`Allocated ₹${formatSmartCurrency(availableAmt)} to ${targetMonths[0].monthName}`);
   };
 
   // Quick action: Equal Split All Categories
@@ -178,10 +202,10 @@ export default function QuarterStrategyPage() {
 
     const newInputs = { ...allocationInputs };
     allocationData.categories.forEach(cat => {
-      if (cat.closingBalanceType !== "BALANCED" && cat.closingBalanceAmount > 0) {
-        const closingAmt = Number(cat.closingBalanceAmount);
-        const baseShare = Math.floor((closingAmt / targetMonths.length) * 100) / 100;
-        const remainder = Math.round((closingAmt - baseShare * targetMonths.length) * 100) / 100;
+      const availableAmt = cat.availableAmount !== undefined ? Number(cat.availableAmount) : Number(cat.closingBalanceAmount);
+      if (cat.closingBalanceType !== "BALANCED" && availableAmt > 0) {
+        const baseShare = Math.floor((availableAmt / targetMonths.length) * 100) / 100;
+        const remainder = Math.round((availableAmt - baseShare * targetMonths.length) * 100) / 100;
 
         targetMonths.forEach((m, idx) => {
           const key = `${cat.categoryId}_${m.monthNumber}`;
@@ -210,7 +234,7 @@ export default function QuarterStrategyPage() {
 
     const newInputs = { ...allocationInputs };
     allocationData.categories.forEach(cat => {
-      if (cat.closingBalanceType !== "BALANCED" && cat.closingBalanceAmount > 0) {
+      if (cat.closingBalanceType !== "BALANCED" && (cat.availableAmount > 0 || cat.closingBalanceAmount > 0)) {
         targetMonths.forEach(m => {
           const key = `${cat.categoryId}_${m.monthNumber}`;
           newInputs[key] = 0;
@@ -237,10 +261,11 @@ export default function QuarterStrategyPage() {
       });
 
       totalAllocated = Math.round(totalAllocated * 100) / 100;
-      const required = Math.round(cat.closingBalanceAmount * 100) / 100;
+      const availableAmt = cat.availableAmount !== undefined ? Number(cat.availableAmount) : Number(cat.closingBalanceAmount);
+      const maxAllowed = Math.round(availableAmt * 100) / 100;
 
-      if (Math.abs(totalAllocated - required) > 0.01) {
-        toast.error(`Category ${cat.categoryName} must equal its closing balance exactly. Currently off by ₹${formatSmartCurrency(Math.abs(required - totalAllocated))}`);
+      if (totalAllocated > maxAllowed + 0.009) {
+        toast.error(`Category '${cat.categoryName}' allocation (₹${formatSmartCurrency(totalAllocated)}) exceeds available balance (₹${formatSmartCurrency(maxAllowed)}).`);
         return;
       }
     }
@@ -271,10 +296,13 @@ export default function QuarterStrategyPage() {
         totalCatAlloc = Math.round((totalCatAlloc + monthsPayload[m.monthNumber]) * 100) / 100;
       });
 
+      const availableAmt = cat.availableAmount !== undefined ? Number(cat.availableAmount) : Number(cat.closingBalanceAmount);
+      const maxAllowed = Math.round(availableAmt * 100) / 100;
+
       if (cat.closingBalanceType !== "BALANCED") {
-        if (Math.abs(totalCatAlloc - cat.closingBalanceAmount) > 0.009) {
+        if (totalCatAlloc > maxAllowed + 0.009) {
           toast.error(
-            `Mismatch for '${cat.categoryName}': Total allocated (₹${formatSmartCurrency(totalCatAlloc)}) must equal the closing ${cat.closingBalanceType.toLowerCase()} balance (₹${formatSmartCurrency(cat.closingBalanceAmount)}).`
+            `Mismatch for '${cat.categoryName}': Total new allocated (₹${formatSmartCurrency(totalCatAlloc)}) exceeds available balance (₹${formatSmartCurrency(maxAllowed)}).`
           );
           return;
         }
@@ -328,47 +356,47 @@ export default function QuarterStrategyPage() {
         <Header />
         <StrategyNav />
 
-        <main className="max-w-[96rem] mx-auto px-4 sm:px-6 lg:px-8 pt-6 w-full">
+        <main className="max-w-[96rem] mx-auto px-4 sm:px-6 lg:px-8 pt-6 w-full space-y-6">
           {/* Header Controls & Quarter Summary combined in one single card */}
-          <div className="bg-white rounded-md p-7 mb-6 border border-slate-200/80 shadow-sm">
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 pb-6 border-b border-slate-100">
-              <div className="flex items-center gap-4">
-                <div className="w-11 h-11 rounded-md bg-[linear-gradient(135deg,#5B6BFF_0%,#6B5CFF_45%,#7C3AED_100%)] shadow-[0_4px_14px_0_rgba(91,107,255,0.39)] flex items-center justify-center text-white flex-shrink-0">
-                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 flex-shrink-0">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 00-2-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <h2 className="text-[22px] font-bold text-[#0F172A] tracking-tight leading-tight">
+                <div className="flex flex-col gap-0.5">
+                  <h2 className="text-xl font-bold text-slate-900 tracking-tight leading-tight">
                     Quarter Reallocation Matrix
                   </h2>
-                  <p className="text-sm text-slate-500 font-normal leading-relaxed">
+                  <p className="text-xs text-slate-500 font-normal leading-relaxed">
                     Review quarterly performance and allocate closing balances for the next quarter.
                   </p>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 sm:gap-5 shrink-0 w-full sm:w-auto mt-3 sm:mt-0">
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                  <span className="text-sm font-medium text-slate-500 whitespace-nowrap">Financial Year</span>
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
+                <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Financial Year</span>
                   <div className="w-full sm:w-[140px] shrink-0">
                     <Select
                       value={financialYear}
                       onChange={setFinancialYear}
                       options={availableYears.map(fy => ({ value: fy, label: fy }))}
-                      className="w-full h-[40px]"
+                      className="w-full h-[38px] text-xs font-semibold bg-white border border-slate-300 rounded-lg"
                     />
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                  <span className="text-sm font-medium text-slate-500 whitespace-nowrap">Quarter</span>
-                  <div className="w-full sm:w-[140px] shrink-0">
+                <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">Quarter</span>
+                  <div className="w-full sm:w-[150px] shrink-0">
                     <Select
                       value={quarterNumber}
                       onChange={(val) => setQuarterNumber(Number(val))}
                       options={QUARTERS_META.map(q => ({ value: String(q.quarterNumber), label: q.label }))}
-                      className="w-full h-[40px]"
+                      className="w-full h-[38px] text-xs font-semibold bg-white border border-slate-300 rounded-lg"
                     />
                   </div>
                 </div>
@@ -448,15 +476,125 @@ export default function QuarterStrategyPage() {
             )}
           </div>
 
+          {/* COMPACT CARRY SUMMARY STRIP */}
+          {summaryData && (() => {
+            const isShortfall = summaryData.totals?.totalFinalClosingShortfall > 0;
+            const isExcess    = !isShortfall && summaryData.totals?.totalFinalClosingExcess > 0;
+            if (!isShortfall && !isExcess) return null;
+
+            const closingAmt = isShortfall
+              ? summaryData.totals.totalFinalClosingShortfall
+              : summaryData.totals.totalFinalClosingExcess;
+
+            // Derive totalAllocatedOut from each category's final-month allocatedOut
+            const totalAllocatedOut = (summaryData.categories || []).reduce((sum, cat) => {
+              const lastMonth = cat.monthsSequence?.[cat.monthsSequence.length - 1];
+              return sum + Number(lastMonth?.allocatedOut || 0);
+            }, 0);
+
+            const remainingAuto = Math.max(0, closingAmt - totalAllocatedOut);
+            const hasAlloc = totalAllocatedOut > 0;
+
+            // Contributing categories for breakdown
+            const contributingCats = (summaryData.categories || []).filter(c => 
+              isShortfall ? Number(c.finalClosingShortfall || 0) > 0 : Number(c.finalClosingExcess || 0) > 0
+            );
+
+            const colorCls = isShortfall
+              ? { bg: "bg-rose-50/80", border: "border-rose-200/80", icon: "bg-rose-200 text-rose-800", label: "text-rose-900", amt: "text-rose-700", sub: "text-rose-500", div: "border-rose-200/60" }
+              : { bg: "bg-emerald-50/80", border: "border-emerald-200/80", icon: "bg-emerald-200 text-emerald-800", label: "text-emerald-900", amt: "text-emerald-700", sub: "text-emerald-500", div: "border-emerald-200/60" };
+
+            return (
+              <div className={`rounded-xl border ${colorCls.bg} ${colorCls.border} shadow-sm overflow-hidden`}>
+
+                {/* ── Row 1: Primary summary ── */}
+                <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-3.5">
+
+                  {/* Left: icon + title + amount */}
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0 ${colorCls.icon}`}>
+                      {isShortfall ? "!" : "✓"}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-baseline gap-2">
+                        <p className={`text-xs font-bold uppercase tracking-wider ${colorCls.label}`}>
+                          {isShortfall ? "Closing Shortfall" : "Closing Excess"}
+                        </p>
+                        <span className="text-[10px] font-semibold text-slate-500 bg-white/90 border border-slate-200/80 px-2 py-0.5 rounded-md">
+                          Q{quarterNumber} Total • All Categories
+                        </span>
+                      </div>
+                      <p className={`text-base font-black tabular-nums leading-tight ${colorCls.amt} mt-0.5`}>
+                        ₹{formatSmartCurrency(closingAmt)}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Middle: Allocation breakdown — clean key/value pairs with full labels */}
+                  {hasAlloc && (
+                    <div className={`flex items-center gap-6 text-xs border-l pl-5 ${colorCls.div}`}>
+                      <div className="flex flex-col gap-0.5">
+                        <p className={`text-[11px] font-semibold ${colorCls.sub}`}>Allocated to Q{allocationData?.targetQuarterNumber ?? quarterNumber + 1}</p>
+                        <p className="text-sm font-black text-slate-800 tabular-nums">₹{formatSmartCurrency(totalAllocatedOut)}</p>
+                      </div>
+                      <div className="flex flex-col gap-0.5">
+                        <p className={`text-[11px] font-semibold ${colorCls.sub}`}>Remaining Carry</p>
+                        <p className="text-sm font-black text-indigo-700 tabular-nums">₹{formatSmartCurrency(remainingAuto)}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Right: CTA */}
+                  {canEdit && (
+                    <div className="flex-shrink-0 ml-auto">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const element = document.getElementById("quarter-reallocation-matrix");
+                          if (element) element.scrollIntoView({ behavior: "smooth" });
+                        }}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-4 py-2 text-xs font-semibold shadow-sm transition-colors whitespace-nowrap cursor-pointer"
+                      >
+                        Allocate Carry
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* ── Row 2: Per-category breakdown ── */}
+                {contributingCats.length > 0 && (
+                  <div className={`border-t ${colorCls.div} px-5 py-2.5 flex flex-wrap items-center gap-x-6 gap-y-1.5`}>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
+                      Breakdown
+                    </span>
+                    {contributingCats.map((cat) => {
+                      const amt = isShortfall ? cat.finalClosingShortfall : cat.finalClosingExcess;
+                      return (
+                        <div key={cat.categoryId} className="flex items-baseline gap-2">
+                          <span className="text-[11px] font-medium text-slate-500">{cat.categoryName}</span>
+                          <span className="text-[11px] font-bold text-slate-700 tabular-nums">₹{formatSmartCurrency(amt)}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {/* Stale Allocation Banner */}
           {allocationData?.isStale && (
-            <div className="bg-amber-50 border border-amber-200 p-5 mb-8 rounded-md shadow-sm flex items-start justify-between">
-              <div className="flex items-start">
-                <div className="flex-shrink-0 text-amber-500 text-xl font-bold mr-3">⚠️</div>
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl shadow-sm flex items-start justify-between">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 text-amber-500 text-lg font-bold">⚠️</div>
                 <div>
-                  <h3 className="text-sm font-bold text-amber-800">Stale Allocation Plan Detected</h3>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-amber-800">Stale Allocation Plan Detected</h3>
                   <p className="text-xs text-amber-700 mt-1 font-medium leading-relaxed">
+<<<<<<< Updated upstream
                     Historical quotation achievements or base goals have changed since this quarter&apos;s closing balance was last allocated. Please review and re-save the reallocation plan below to update destination quarter adjustments (`is_active=1`).
+=======
+                    Historical quotation achievements or base goals have changed since this quarter&apos;s closing balance was last allocated. Please review and re-save the reallocation plan below to update destination quarter adjustments.
+>>>>>>> Stashed changes
                   </p>
                 </div>
               </div>
@@ -464,11 +602,11 @@ export default function QuarterStrategyPage() {
           )}
 
           {/* SECTION A: QUARTER STRATEGY SUMMARY TABLE */}
-          <div className="bg-white rounded-md shadow-sm border border-slate-200 overflow-hidden mb-6 hover:-translate-y-1 hover:shadow-lg hover:border-slate-300 transition-all duration-300">
-            <div className="px-6 py-5 border-b border-[#E8EEF7] bg-white flex items-center justify-between">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="px-6 py-5 border-b border-slate-100 bg-white flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-bold text-[#0F172A]">Quarter Performance Summary</h3>
-                <p className="text-sm text-slate-500 mt-1 leading-relaxed">Review quarterly goals, achievements, and closing balances across all sales categories.</p>
+                <h3 className="text-base font-bold text-slate-900">Quarter Performance Summary</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Review quarterly goals, achievements, and closing balances across all sales categories.</p>
               </div>
             </div>
 
@@ -501,28 +639,21 @@ export default function QuarterStrategyPage() {
                 <p className="text-sm text-slate-500 max-w-[300px]">There is no summary data available for the selected quarter.</p>
               </div>
             ) : (
-              <div className="overflow-x-auto w-full custom-scrollbar shadow-sm rounded-md border border-[#E0E7FF]">
-                <table className="min-w-[1000px] w-full border-collapse text-sm table-auto">
-                  <thead className="bg-[#EEF2FF] border-b border-[#E0E7FF] sticky top-0 z-20">
+              <div className="overflow-x-auto w-full custom-scrollbar">
+                <table className="min-w-[1000px] w-full border-collapse text-sm">
+                  <thead className="bg-slate-50 border-b border-slate-200">
                     <tr>
-                      <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-left align-middle sticky left-0 bg-[#EEF2FF] z-30 shadow-[1px_0_0_#E0E7FF]">CATEGORY</th>
-                      <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">BASE GOAL</th>
-                      <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">
-                        EFFECTIVE GOAL
-                      </th>
-                      <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">ACHIEVEMENT</th>
-                      <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">
-                        VARIANCE
-                      </th>
-                      <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">
-                        CLOSING BALANCE
-                      </th>
-                      <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">BREAKDOWN</th>
+                      <th className="py-3.5 px-6 text-xs font-semibold uppercase tracking-wider text-slate-500 text-left sticky left-0 bg-slate-50 z-20">CATEGORY</th>
+                      <th className="py-3.5 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500 text-right">BASE GOAL</th>
+                      <th className="py-3.5 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500 text-right">EFFECTIVE GOAL</th>
+                      <th className="py-3.5 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500 text-right">ACHIEVEMENT</th>
+                      <th className="py-3.5 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500 text-right">VARIANCE</th>
+                      <th className="py-3.5 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500 text-left">CLOSING BALANCE</th>
+                      <th className="py-3.5 px-6 text-xs font-semibold uppercase tracking-wider text-slate-500 text-center">ACTION</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E8EEF7] bg-white">
+                  <tbody className="divide-y divide-slate-100 bg-white">
                     {(summaryData.categories || []).map((cat) => {
-                      const isExpanded = expandedCategories[cat.categoryId];
                       const closingAmt = cat.finalClosingShortfall > 0
                         ? cat.finalClosingShortfall
                         : cat.finalClosingExcess > 0
@@ -537,145 +668,122 @@ export default function QuarterStrategyPage() {
                       const varianceVal = Number(cat.quarterAchievement || 0) - Number(cat.quarterEffectiveGoal || 0);
 
                       return (
-                        <React.Fragment key={cat.categoryId}>
-                          <tr className="group hover:bg-[#F8FBFF] relative transition-all duration-200 border-b border-[#E8EEF7] cursor-pointer h-[62px]" onClick={() => toggleExpand(cat.categoryId)}>
-                            <td className="px-6 py-2.5 font-semibold text-[#0F172A] relative bg-white group-hover:bg-[#F8FBFF] sticky left-0 z-10 shadow-[1px_0_0_#E0E7FF] before:absolute before:left-0 before:top-0 before:h-full before:w-[4px] before:bg-[#2563EB] before:opacity-0 group-hover:before:opacity-100 before:transition-opacity before:duration-200">
-                              <div className="flex items-center gap-4">
-                                <CategoryDisplay cat={cat} />
-                              </div>
-                            </td>
-                            <td className="px-4 py-2.5 text-center text-[17px] font-bold leading-[24px] text-slate-700 whitespace-nowrap">
-                              ₹{formatSmartCurrency(cat.quarterBaseGoal || 0)}
-                            </td>
-                            <td className="px-4 py-2.5 text-center text-[17px] font-bold leading-[24px] text-blue-800 whitespace-nowrap">
-                              ₹{formatSmartCurrency(cat.quarterEffectiveGoal || 0)}
-                            </td>
-                            <td className="px-4 py-2.5 text-center text-[17px] font-bold leading-[24px] text-green-700 whitespace-nowrap">
-                              ₹{formatSmartCurrency(cat.quarterAchievement || 0)}
-                            </td>
-                            <td className={`px-4 py-2.5 text-center text-[17px] font-bold leading-[24px] whitespace-nowrap ${
-                              varianceVal >= 0 ? "text-green-600" : "text-red-600"
-                            }`}>
-                              {varianceVal < 0 ? `₹-${formatSmartCurrency(Math.abs(varianceVal))}` : `₹${formatSmartCurrency(varianceVal)}`}
-                            </td>
-                            <td className="px-6 py-2.5 text-center">
-                              {closingType === "SHORTFALL" && (
-                                <span className="inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-red-100 text-red-800 whitespace-nowrap">
-                                  <span className="text-[13px] font-semibold">Shortfall:</span>
-                                  <span className="text-[15px] font-bold">₹{formatSmartCurrency(closingAmt)}</span>
-                                </span>
-                              )}
-                              {closingType === "EXCESS" && (
-                                <span className="inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-green-100 text-green-800 whitespace-nowrap">
-                                  <span className="text-[13px] font-semibold">Excess:</span>
-                                  <span className="text-[15px] font-bold">₹{formatSmartCurrency(closingAmt)}</span>
-                                </span>
-                              )}
-                              {closingType === "BALANCED" && (
-                                <span className="inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-slate-100 text-slate-600 whitespace-nowrap">
-                                  <span className="text-[13px] font-semibold">Balanced</span>
-                                  <span className="text-[15px] font-bold">(₹0)</span>
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-4 py-2.5 text-center">
-                              <Button
-    variant="secondary"
-    onClick={(e) => { e.stopPropagation(); toggleExpand(cat.categoryId); }}
-  >
-    <span>{isExpanded ? "Hide Details" : "View Details"}</span>
-    <svg className={`w-4 h-4 text-current transition-transform duration-200 ${isExpanded ? 'group-hover:-translate-y-0.5' : 'group-hover:translate-x-0.5'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-      {isExpanded ? (
-        <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-      ) : (
-        <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-      )}
-    </svg>
-  </Button>
-                            </td>
-                          </tr>
+                        <tr
+                          key={cat.categoryId}
+                          className="group hover:bg-slate-50/80 transition-colors border-b border-slate-100 cursor-pointer h-16"
+                          onClick={() => handleOpenCategoryDrawer(cat)}
+                        >
+                          <td className="px-6 py-3 font-semibold text-slate-900 bg-white group-hover:bg-slate-50/80 sticky left-0 z-10">
+                            <div className="flex items-center gap-3">
+                              <CategoryDisplay cat={cat} />
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-right text-sm font-semibold text-slate-700 whitespace-nowrap">
+                            ₹{formatSmartCurrency(cat.quarterBaseGoal || 0)}
+                          </td>
+                          <td className="px-4 py-3 text-right text-sm font-semibold text-indigo-700 whitespace-nowrap">
+                            ₹{formatSmartCurrency(cat.quarterEffectiveGoal || 0)}
+                          </td>
+                          <td className="px-4 py-3 text-right text-sm font-semibold text-emerald-700 whitespace-nowrap">
+                            ₹{formatSmartCurrency(cat.quarterAchievement || 0)}
+                          </td>
+                          <td className={`px-4 py-3 text-right text-sm font-semibold whitespace-nowrap ${
+                            varianceVal >= 0 ? "text-emerald-600" : "text-rose-600"
+                          }`}>
+                            {varianceVal < 0 ? `-₹${formatSmartCurrency(Math.abs(varianceVal))}` : `+₹${formatSmartCurrency(varianceVal)}`}
+                          </td>
+                          <td className="px-4 py-3 text-left">
+                            {/* Derive allocation context from allocationData (already in state — no new API call, no hardcoded values)
+                                Formula: Original Closing = Allocated to Q{n} + Remaining Carry
+                                Source:  allocCat.existingAllocatedAmount  (strategy_month_carry_allocations)
+                                         allocCat.availableAmount          (= closingBalanceAmount − existingAllocatedAmount) */}
+                            {(() => {
+                              const allocCat = allocationData?.categories?.find(a => a.categoryId === cat.categoryId);
+                              const allocatedAmt = Number(allocCat?.existingAllocatedAmount || allocCat?.allocatedTotal || cat.allocatedOut || 0);
+                              const remainingCarry = Number(
+                                allocCat?.remainingAmount !== undefined
+                                  ? allocCat.remainingAmount
+                                  : Math.max(0, closingAmt - allocatedAmt)
+                              );
+                              const targetQNum = allocationData?.targetQuarterNumber ?? quarterNumber + 1;
 
-                          {/* Expanded Drawer for Monthly Rolling Sequence */}
-                          {isExpanded && (
-                            <tr className="bg-slate-50/30 border-t border-b border-[#E8EEF7]">
-                              <td colSpan={7} className="px-6 py-5">
-                                <div className="bg-white rounded-md border border-[#E8EEF7] p-5 shadow-sm">
-                                  <h4 className="text-sm font-bold text-slate-700 tracking-wide mb-5">
-                                    {cat.categoryName} · Monthly Breakdown (Q{quarterNumber})
-                                  </h4>
-                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    {(cat.monthsSequence || []).map((m) => (
-                                      <div key={m.monthNumber} className="group border border-[#E8EEF7] rounded-md p-4 text-xs bg-white shadow-sm hover:bg-[#F8FBFF] hover:shadow-[0_4px_12px_-2px_rgba(37,99,235,0.08)] hover:border-[#2563EB]/20 transition-all duration-200 relative overflow-hidden before:absolute before:left-0 before:top-0 before:h-full before:w-[4px] before:bg-[#2563EB] before:opacity-0 group-hover:before:opacity-100 before:transition-opacity before:duration-200">
-                                        <div className="font-bold text-slate-800 border-b border-slate-100 pb-2.5 mb-3 flex justify-between items-center">
-                                          <span className="text-sm font-bold text-[#0F172A]">{m.monthName}</span>
-                                        </div>
-                                        <div className="space-y-2 text-slate-600">
-                                          <div className="flex justify-between items-center px-2 py-1">
-                                            <span className="font-medium text-slate-500">Base Goal</span>
-                                            <span className="font-bold text-slate-800">₹{formatSmartCurrency(m.baseGoal || 0)}</span>
-                                          </div>
-                                          {(m.incomingShortfall > 0 || m.incomingExcessCredit > 0) && (
-                                            <div className="flex justify-between items-center px-2 py-1">
-                                              <span className="font-medium text-slate-500">Carry Forward</span>
-                                              <span className={`font-bold ${m.incomingShortfall > 0 ? 'text-red-600' : m.incomingExcessCredit > 0 ? 'text-emerald-600' : 'text-slate-600'}`}>
-                                                {m.incomingShortfall > 0 ? `+₹${formatSmartCurrency(m.incomingShortfall)}` : `-₹${formatSmartCurrency(m.incomingExcessCredit)}`}
-                                              </span>
-                                            </div>
-                                          )}
-                                          {(m.quarterShortfallAddition > 0 || m.quarterExcessReduction > 0) && (
-                                            <div className="flex justify-between items-center px-2 py-1">
-                                              <span className="font-medium text-slate-500">Carry Forward</span>
-                                              <span className={`font-bold ${m.quarterShortfallAddition > 0 ? 'text-red-600' : m.quarterExcessReduction > 0 ? 'text-emerald-600' : 'text-slate-600'}`}>
-                                                {m.quarterShortfallAddition > 0 ? `+₹${formatSmartCurrency(m.quarterShortfallAddition)}` : `-₹${formatSmartCurrency(m.quarterExcessReduction)}`}
-                                              </span>
-                                            </div>
-                                          )}
-                                          
-                                          <div className="my-2 border-t border-slate-100"></div>
-                                          
-                                          <div className="flex justify-between items-center bg-blue-50/60 rounded-md px-2 py-1.5">
-                                            <span className="font-medium text-blue-800">Effective Goal</span>
-                                            <span className="font-bold text-blue-900">₹{formatSmartCurrency(m.effectiveGoal || 0)}</span>
-                                          </div>
-                                          
-                                          <div className="flex justify-between items-center bg-emerald-50/60 rounded-md px-2 py-1.5">
-                                            <span className="font-medium text-emerald-800">Achievement</span>
-                                            <div className="flex items-center gap-2">
-                                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700 whitespace-nowrap">
-                                                {m.contributionCount} {m.contributionCount === 1 ? 'Quote' : 'Quotes'}
-                                              </span>
-                                              <span className="font-bold text-emerald-900">₹{formatSmartCurrency(m.achievement || 0)}</span>
-                                            </div>
-                                          </div>
-                                          
-                                          <div className="my-2 border-t border-slate-100"></div>
-                                          
-                                          <div className={`flex justify-between items-center rounded-md px-2 py-2 ${
-                                            m.closingShortfall > 0 ? "bg-red-50/60" : m.closingExcess > 0 ? "bg-emerald-50/60" : "bg-slate-50"
-                                          }`}>
-                                            <span className={`font-medium ${m.closingShortfall > 0 ? "text-red-800" : m.closingExcess > 0 ? "text-emerald-800" : "text-slate-700"}`}>Closing Balance</span>
-                                            <div className="flex flex-col items-end gap-1">
-                                              {m.closingShortfall > 0 ? (
-                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-red-100 text-red-700">Shortfall</span>
-                                              ) : m.closingExcess > 0 ? (
-                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-700">Excess</span>
-                                              ) : (
-                                                <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-200 text-slate-700">Balanced</span>
-                                              )}
-                                              <span className={`font-bold ${m.closingShortfall > 0 ? "text-red-900" : m.closingExcess > 0 ? "text-emerald-900" : "text-slate-800"}`}>
-                                                ₹{formatSmartCurrency(m.closingShortfall > 0 ? m.closingShortfall : m.closingExcess > 0 ? m.closingExcess : 0)}
-                                              </span>
-                                            </div>
-                                          </div>
-                                        </div>
+                              return (
+                                <div className="flex flex-col gap-1 min-w-[180px]">
+
+                                  {/* ── Original Q closing badge — unchanged historical value ── */}
+                                  {closingType === "SHORTFALL" && (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold w-fit">
+                                      Shortfall: ₹{formatSmartCurrency(closingAmt)}
+                                    </span>
+                                  )}
+                                  {closingType === "EXCESS" && (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold w-fit">
+                                      Excess: ₹{formatSmartCurrency(closingAmt)}
+                                    </span>
+                                  )}
+                                  {closingType === "BALANCED" && (
+                                    <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200 text-slate-500 text-xs font-semibold w-fit">
+                                      Balanced (₹0)
+                                    </span>
+                                  )}
+
+                                  {/* ── Allocation flow: vertical hierarchy below the original closing badge ──
+                                       Shown only when allocatedAmt > 0. Full labels, no abbreviations.
+                                       Left border line visually connects the three values as a flow. */}
+                                  {closingType !== "BALANCED" && allocatedAmt > 0 && (
+                                    <div className="flex flex-col gap-0 mt-1.5 pl-2.5 border-l-2 border-slate-200">
+                                      <div className="flex items-baseline justify-between gap-6 py-0.5">
+                                        <span className="text-[11px] font-medium text-slate-400 whitespace-nowrap leading-snug">Allocated to Q{targetQNum}</span>
+                                        <span className="text-[11px] font-semibold text-slate-600 tabular-nums">₹{formatSmartCurrency(allocatedAmt)}</span>
                                       </div>
-                                    ))}
-                                  </div>
+                                      <div className="flex items-baseline justify-between gap-6 py-0.5">
+                                        <span className="text-[11px] font-medium text-slate-400 whitespace-nowrap leading-snug">Remaining Carry</span>
+                                        <span className="text-[11px] font-semibold text-indigo-600 tabular-nums">₹{formatSmartCurrency(remainingCarry)}</span>
+                                      </div>
+                                    </div>
+                                  )}
+
                                 </div>
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
+                              );
+                            })()}
+                          </td>
+                          <td className="px-6 py-3 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenCategoryDrawer(cat);
+                                }}
+                                className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors inline-flex items-center gap-1"
+                              >
+                                <span>View Details</span>
+                                <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                </svg>
+                              </button>
+                              {canEdit && closingType !== "BALANCED" && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const closingMonthNumber = quarterNumber === 1 ? 6 : quarterNumber === 2 ? 9 : quarterNumber === 3 ? 12 : 3;
+                                    const closingMonthName = quarterNumber === 1 ? "June" : quarterNumber === 2 ? "September" : quarterNumber === 3 ? "December" : "March";
+                                    setSelectedMonthModal({
+                                      monthNumber: closingMonthNumber,
+                                      monthName: `${closingMonthName} (Q${quarterNumber} Closing)`,
+                                      categoryId: cat.categoryId,
+                                      categoryName: cat.categoryName,
+                                    });
+                                  }}
+                                  className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors whitespace-nowrap"
+                                >
+                                  Allocate Carry
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
                       );
                     })}
                   </tbody>
@@ -685,23 +793,31 @@ export default function QuarterStrategyPage() {
           </div>
 
           {/* SECTION B: MANUAL QUARTER REALLOCATION MATRIX */}
-          <div className="bg-white rounded-md shadow-sm border border-slate-200 overflow-hidden mb-8 hover:-translate-y-1 hover:shadow-lg hover:border-slate-300 transition-all duration-300">
-            <div className="px-6 py-5 border-b border-[#E8EEF7] bg-white flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div id="quarter-reallocation-matrix" className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8">
+            <div className="px-6 py-5 border-b border-slate-100 bg-white flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div>
-                <h3 className="text-lg font-bold text-[#0F172A]">Quarter Reallocation Matrix</h3>
-                <p className="text-sm text-slate-500 mt-1 leading-relaxed">
+                <h3 className="text-base font-bold text-slate-900">Quarter Reallocation Matrix</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
                   Distribute closing balances into the upcoming quarter to adjust effective goals ({allocationData ? `From Q${quarterNumber} into ${allocationData.targetFinancialYear} Q${allocationData.targetQuarterNumber}` : "Next Quarter Target Allocation"}).
                 </p>
               </div>
 
               {canEdit && allocationData && (
-                <div className="flex items-center gap-3">
-                  <Button variant="danger" onClick={handleClearAll}>
-    <span>Clear Allocation</span>
-  </Button>
-                  <Button variant="secondary" onClick={handleEqualSplitAll}>
-    <span>Split Equally</span>
-  </Button>
+                <div className="flex items-center gap-2.5">
+                  <button
+                    type="button"
+                    onClick={handleClearAll}
+                    className="bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
+                  >
+                    Clear Allocation
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleEqualSplitAll}
+                    className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
+                  >
+                    Split Equally
+                  </button>
                 </div>
               )}
             </div>
@@ -727,213 +843,279 @@ export default function QuarterStrategyPage() {
               </div>
             ) : !allocationData ? (
               <div className="py-20 flex flex-col items-center justify-center text-center">
-                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                  <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                <div className="w-14 h-14 bg-slate-50 rounded-full flex items-center justify-center mb-3">
+                  <svg className="w-7 h-7 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                   </svg>
                 </div>
-                <h4 className="text-lg font-semibold text-slate-700 mb-1">No Allocation Required</h4>
-                <p className="text-sm text-slate-500 max-w-[320px]">There are no pending allocations or strategies required for the selected quarter.</p>
+                <h4 className="text-base font-semibold text-slate-700 mb-0.5">No Allocation Required</h4>
+                <p className="text-xs text-slate-500 max-w-[320px]">There are no pending allocations required for the selected quarter.</p>
               </div>
             ) : (
-              <div className="pb-6 w-full">
-                <div className="overflow-x-auto w-full custom-scrollbar shadow-sm rounded-md border border-[#E0E7FF]">
-                  <table className="min-w-[1000px] w-full border-collapse text-sm table-auto">
-                    <thead className="bg-[#EEF2FF] border-b border-[#E0E7FF] sticky top-0 z-20">
+              <div className="w-full">
+                <div className="overflow-x-auto w-full custom-scrollbar">
+                  <table className="min-w-[1000px] w-full border-collapse text-sm">
+                    <thead className="bg-slate-50 border-b border-slate-200">
                       <tr>
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-left align-middle sticky left-0 bg-[#EEF2FF] z-30 shadow-[1px_0_0_#E0E7FF]">CATEGORY</th>
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">CLOSING BALANCE</th>
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">STATUS</th>
+                        <th className="py-3.5 px-6 text-xs font-semibold uppercase tracking-wider text-slate-500 text-left sticky left-0 bg-slate-50 z-20">CATEGORY</th>
+                        <th className="py-3.5 px-4 text-xs font-semibold uppercase tracking-wider text-indigo-600 text-right">AVAILABLE TO ALLOCATE</th>
+                        <th className="py-3.5 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500 text-center">STATUS</th>
                         {(allocationData.targetMonths || []).map(m => (
-                          <th key={m.monthNumber} className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">
-                            {m.monthName.toUpperCase()} ({m.shortName.toUpperCase()})
+                          <th key={m.monthNumber} className="py-3.5 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500 text-center">
+                            {m.monthName.toUpperCase()}
                           </th>
                         ))}
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">TOTAL ALLOCATED</th>
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">REMAINING</th>
-                        {canEdit && <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center align-middle">QUICK SPLIT</th>}
+                        <th className="py-3.5 px-4 text-xs font-semibold uppercase tracking-wider text-slate-400 text-right">EXISTING</th>
+                        <th className="py-3.5 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500 text-right">NEW ALLOCATION</th>
+                        <th className="py-3.5 px-4 text-xs font-semibold uppercase tracking-wider text-slate-500 text-right">REMAINING</th>
+                        {canEdit && <th className="py-3.5 px-6 text-xs font-semibold uppercase tracking-wider text-slate-500 text-center">QUICK SPLIT</th>}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#E8EEF7] bg-white">
+                    <tbody className="divide-y divide-slate-100 bg-white">
                       {(allocationData.categories || []).map((cat) => {
                         const targetMonths = allocationData.targetMonths || [];
-                        let totalAllocated = 0;
+                        const availableAmt = cat.availableAmount !== undefined ? Number(cat.availableAmount) : Number(cat.closingBalanceAmount);
+                        const existingAllocated = Number(cat.existingAllocatedAmount || 0);
+                        const qLabel = `Q${quarterNumber}`;
+
+                        // Sum of new inputs entered by user in this session
+                        let newAllocation = 0;
                         targetMonths.forEach(m => {
                           const key = `${cat.categoryId}_${m.monthNumber}`;
-                          totalAllocated += Number(allocationInputs[key] || 0);
+                          newAllocation += Number(allocationInputs[key] || 0);
                         });
-                        totalAllocated = Math.round(totalAllocated * 100) / 100;
-                        const remaining = Math.round((cat.closingBalanceAmount - totalAllocated) * 100) / 100;
+                        newAllocation = Math.round(newAllocation * 100) / 100;
+                        const remaining = Math.max(0, Math.round((availableAmt - newAllocation) * 100) / 100);
                         const isBalanced = cat.closingBalanceType === "BALANCED";
+                        const isOverAllocated = newAllocation > availableAmt + 0.009;
 
                         const isActiveRow = activeRowId === cat.categoryId;
-                        const isAnimating = animatingCategoryId === cat.categoryId || animatingCategoryId === "ALL";
-                        const baseRowBg = cat.isStale 
-                          ? (isActiveRow ? "bg-amber-100/60" : "bg-amber-50/40 hover:bg-amber-50/60") 
-                          : (isActiveRow ? "bg-[#F0F5FF]" : "hover:bg-[#F8FBFF]");
-                        const rowBg = recentlySaved ? "bg-emerald-50 transition-colors duration-[1500ms]" : baseRowBg;
+                        const baseRowBg = cat.isStale
+                          ? (isActiveRow ? "bg-amber-100/60" : "bg-amber-50/40 hover:bg-amber-50/60")
+                          : (isActiveRow ? "bg-indigo-50/30" : "hover:bg-slate-50/80");
+                        const rowBg = recentlySaved ? "bg-emerald-50 transition-colors duration-1000" : baseRowBg;
 
                         return (
-                          <tr key={cat.categoryId} className={`h-[72px] group relative transition-all duration-200 ${rowBg} hover:shadow-[0_4px_12px_-2px_rgba(37,99,235,0.06)]`}>
-                            <td className={`px-[16px] py-2.5 font-semibold text-[#0F172A] align-middle relative sticky left-0 z-10 shadow-[1px_0_0_#E0E7FF] bg-white group-hover:bg-[#F8FBFF] before:absolute before:left-0 before:top-0 before:h-full before:w-[4px] before:bg-[#2563EB] before:transition-opacity before:duration-200 ${isActiveRow ? 'before:opacity-100' : 'before:opacity-0 group-hover:before:opacity-100'}`}>
-                              <div className="flex items-center gap-2">
-                                <CategoryDisplay cat={cat} size="sm" />
+                          <tr key={cat.categoryId} className={`group transition-colors ${rowBg}`}>
+
+                            {/* CATEGORY — with optional context line: Q closing · already allocated */}
+                            <td className="px-6 py-4 bg-white group-hover:bg-slate-50/80 sticky left-0 z-10">
+                              <div className="flex items-start gap-2.5">
+                                <div className="flex-1 min-w-0">
+                                  <CategoryDisplay cat={cat} size="sm" />
+                                  {!isBalanced && existingAllocated > 0 && (
+                                    <p className="mt-1.5 text-[11px] text-slate-400 leading-snug tabular-nums">
+                                      {qLabel} Closing ₹{formatSmartCurrency(cat.closingBalanceAmount)}
+                                      <span className="mx-1.5 text-slate-300">·</span>
+                                      ₹{formatSmartCurrency(existingAllocated)} already allocated to Q{allocationData?.targetQuarterNumber ?? quarterNumber + 1}
+                                    </p>
+                                  )}
+                                </div>
                               </div>
                             </td>
 
-                            <td className="px-[16px] py-2.5 text-center align-middle">
-                              {cat.closingBalanceType === "SHORTFALL" && (
-                                <div className="flex flex-col items-center gap-[4px]">
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[13px] font-semibold tracking-normal bg-red-50 text-red-700 border border-red-100">
-                                    Shortfall
-                                  </span>
-                                  <span className="text-red-600 font-bold text-[17px] leading-[24px]">₹{formatSmartCurrency(cat.closingBalanceAmount)}</span>
+                            {/* AVAILABLE TO ALLOCATE — primary emphasis column */}
+                            <td className="px-4 py-4 text-right whitespace-nowrap">
+                              {isBalanced ? (
+                                <span className="text-slate-400 text-xs font-medium">—</span>
+                              ) : availableAmt === 0 ? (
+                                <div className="flex flex-col items-end">
+                                  <span className="text-sm font-bold text-emerald-600">₹0</span>
+                                  <span className="text-[10px] font-medium text-emerald-500">Fully pre-allocated</span>
                                 </div>
-                              )}
-                              {cat.closingBalanceType === "EXCESS" && (
-                                <div className="flex flex-col items-center gap-[4px]">
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[13px] font-semibold tracking-normal bg-emerald-50 text-emerald-700 border border-emerald-100">
-                                    Excess
+                              ) : (
+                                <div className="flex flex-col items-end">
+                                  <span className={`text-base font-bold ${
+                                    cat.closingBalanceType === "SHORTFALL" ? "text-rose-700" : "text-emerald-700"
+                                  }`}>
+                                    ₹{formatSmartCurrency(availableAmt)}
                                   </span>
-                                  <span className="text-emerald-600 font-bold text-[17px] leading-[24px]">₹{formatSmartCurrency(cat.closingBalanceAmount)}</span>
-                                </div>
-                              )}
-                              {cat.closingBalanceType === "BALANCED" && (
-                                <div className="flex flex-col items-center gap-[4px]">
-                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[13px] font-semibold tracking-normal bg-slate-100 text-slate-500 border border-slate-200">
-                                    Balanced
-                                  </span>
-                                  <span className="text-slate-400 font-bold text-[17px] leading-[24px]">₹0</span>
+                                  {cat.closingBalanceType === "SHORTFALL" && (
+                                    <span className="inline-flex items-center mt-0.5 px-1.5 py-0 rounded text-[10px] font-semibold bg-rose-50 text-rose-600 border border-rose-100">
+                                      Shortfall
+                                    </span>
+                                  )}
+                                  {cat.closingBalanceType === "EXCESS" && (
+                                    <span className="inline-flex items-center mt-0.5 px-1.5 py-0 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-600 border border-emerald-100">
+                                      Excess
+                                    </span>
+                                  )}
                                 </div>
                               )}
                             </td>
 
-                            <td className="px-[16px] py-2.5 text-center align-middle">
+                            {/* STATUS */}
+                            <td className="px-4 py-4 text-center whitespace-nowrap">
                               {cat.allocationStatus === "CONFIRMED" && (
-                                <span className="inline-flex items-center gap-1.5 px-2 py-[2px] rounded-full text-[13px] font-medium bg-[#ECFDF5] text-[#047857] transition-all duration-200 group-hover:brightness-105">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]"></span>
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                   Confirmed
                                 </span>
                               )}
                               {cat.allocationStatus === "STALE" && (
-                                <span className="inline-flex items-center gap-1.5 px-2 py-[2px] rounded-full text-[13px] font-medium bg-amber-100 text-amber-800 animate-pulse transition-all duration-200 group-hover:brightness-105">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                                   <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
                                   Stale
                                 </span>
                               )}
                               {cat.allocationStatus === "NOT ALLOCATED" && !isBalanced && (
-                                <span className="inline-flex items-center gap-1.5 px-2 py-[2px] rounded-full text-[13px] font-medium bg-yellow-100 text-yellow-800 transition-all duration-200 group-hover:brightness-105">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-yellow-500"></span>
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                                   Pending
                                 </span>
                               )}
                               {cat.allocationStatus === "NOT REQUIRED" && (
-                                <span className="inline-flex items-center gap-1.5 px-2 py-[2px] rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 transition-all duration-200 group-hover:brightness-105">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-500 border border-slate-200">
                                   Not Required
                                 </span>
                               )}
                             </td>
 
-                            {/* Target Month Input Fields */}
+                            {/* TARGET MONTH INPUT FIELDS */}
                             {targetMonths.map(m => {
                               const key = `${cat.categoryId}_${m.monthNumber}`;
                               const val = allocationInputs[key] !== undefined ? allocationInputs[key] : "";
+                              const existingMonthVal = Number(cat.existingMonthAllocations?.[m.monthNumber] || 0);
+
                               return (
-                                <td key={m.monthNumber} className="px-[16px] py-2.5 text-center align-middle">
-                                  <div className="relative w-[135px] mx-auto flex items-center">
-                                    <input
-                                      type="text"
-                                      disabled={!canEdit || isBalanced}
-                                      value={val !== "" ? formatSmartCurrency(val) : ""}
-                                      aria-label={`Allocation amount for ${m.monthName} in ${cat.categoryName}`}
-                                      onFocus={() => setActiveRowId(cat.categoryId)}
-                                      onBlur={() => setActiveRowId(null)}
-                                      onChange={(e) => {
-                                        const cleanVal = e.target.value.replace(/,/g, '');
-                                        if (!isNaN(cleanVal)) {
-                                          handleInputChange(cat.categoryId, m.monthNumber, cleanVal);
-                                        }
-                                      }}
-                                      placeholder="0"
-                                      className={`w-full h-[40px] px-[12px] text-center text-[17px] font-semibold leading-[24px] rounded-md border transition-all duration-200 outline-none ${
-                                        isBalanced
-                                          ? "bg-[#F8FAFC] border-[#E2E8F0] text-[#94A3B8] cursor-not-allowed"
-                                          : "bg-white border-[#818CF8] text-[#0F172A] hover:border-[#6366F1] focus:ring-2 focus:ring-[#818CF8]/20 focus:border-[#818CF8]"
-                                      } ${isAnimating ? 'animate-pulse scale-[1.02] bg-indigo-50' : ''}`}
-                                    />
+                                <td key={m.monthNumber} className="px-4 py-4 text-center">
+                                  <div className="relative w-32 mx-auto flex flex-col items-center">
+                                    <div className="relative w-full flex items-center">
+                                      <span className="absolute left-2.5 text-slate-400 text-xs font-semibold select-none">₹</span>
+                                      <input
+                                        type="text"
+                                        disabled={!canEdit || isBalanced || availableAmt === 0}
+                                        value={val !== "" ? formatSmartCurrency(val) : ""}
+                                        aria-label={`Allocation for ${m.monthName} in ${cat.categoryName}`}
+                                        onFocus={() => setActiveRowId(cat.categoryId)}
+                                        onBlur={() => setActiveRowId(null)}
+                                        onChange={(e) => {
+                                          const cleanVal = e.target.value.replace(/,/g, '');
+                                          if (!isNaN(cleanVal)) handleInputChange(cat.categoryId, m.monthNumber, cleanVal);
+                                        }}
+                                        placeholder="0"
+                                        className={`w-full h-9 pl-6 pr-2.5 text-right text-sm font-semibold rounded-lg border outline-none transition-all ${
+                                          isBalanced || availableAmt === 0
+                                            ? "bg-slate-50 border-slate-200 text-slate-400 cursor-not-allowed"
+                                            : isOverAllocated
+                                              ? "bg-rose-50 border-rose-300 text-rose-800 focus:ring-2 focus:ring-rose-100"
+                                              : "bg-white border-slate-200 text-slate-900 hover:border-indigo-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                                        }`}
+                                      />
+                                    </div>
+                                    {existingMonthVal > 0 && (
+                                      <span className="text-[10px] font-medium text-slate-400 mt-1 whitespace-nowrap">
+                                        pre-alloc ₹{formatSmartCurrency(existingMonthVal)}
+                                      </span>
+                                    )}
                                   </div>
                                 </td>
                               );
                             })}
 
-                            <td className="px-[16px] py-2.5 text-center font-bold text-[#0F172A] text-[17px] leading-[24px] whitespace-nowrap align-middle">
-                              ₹{formatSmartCurrency(totalAllocated)}
+                            {/* EXISTING ALLOCATED */}
+                            <td className="px-4 py-4 text-right whitespace-nowrap">
+                              {existingAllocated > 0 ? (
+                                <span className="text-sm font-semibold text-slate-500">₹{formatSmartCurrency(existingAllocated)}</span>
+                              ) : (
+                                <span className="text-slate-300 text-sm">—</span>
+                              )}
                             </td>
 
-                            <td className={`px-[16px] py-2.5 text-center font-bold text-[17px] leading-[24px] whitespace-nowrap align-middle ${
-                              remaining === 0 ? "text-green-600" : "text-red-600"
-                            }`}>
-                              ₹{formatSmartCurrency(remaining)}
+                            {/* NEW ALLOCATION */}
+                            <td className="px-4 py-4 text-right whitespace-nowrap">
+                              <span className={`text-sm font-semibold ${
+                                isOverAllocated ? "text-rose-600" : newAllocation > 0 ? "text-indigo-700" : "text-slate-400"
+                              }`}>
+                                ₹{formatSmartCurrency(newAllocation)}
+                              </span>
+                              {isOverAllocated && (
+                                <span className="block text-[10px] font-medium text-rose-500">Over limit</span>
+                              )}
                             </td>
 
+                            {/* REMAINING */}
+                            <td className="px-4 py-4 text-right whitespace-nowrap">
+                              {isBalanced ? (
+                                <span className="text-slate-300 text-sm">—</span>
+                              ) : availableAmt === 0 && existingAllocated > 0 ? (
+                                <div className="flex flex-col items-end">
+                                  <span className="text-sm font-bold text-emerald-600">₹0</span>
+                                  <span className="block text-[10px] font-medium text-emerald-500">Complete</span>
+                                </div>
+                              ) : (
+                                <span className={`text-sm font-bold ${
+                                  remaining === 0 ? "text-emerald-600" : "text-rose-600"
+                                }`}>
+                                  ₹{formatSmartCurrency(remaining)}
+                                </span>
+                              )}
+                            </td>
+
+                            {/* QUICK SPLIT */}
                             {canEdit && (
-                              <td className="px-[16px] py-2.5 text-center align-middle">
-                                {!isBalanced && (
-                                  <div className="w-[150px] mx-auto">
+                              <td className="px-6 py-4 text-center whitespace-nowrap">
+                                {!isBalanced && availableAmt > 0 && (
+                                  <div className="w-36 mx-auto">
                                     <Select
                                       value={""}
                                       onChange={(val) => {
                                         if (val === 'split') {
-                                          handleEqualSplitCategory(cat.categoryId, cat.closingBalanceAmount, targetMonths);
+                                          handleEqualSplitCategory(cat.categoryId, availableAmt, targetMonths);
                                         } else {
                                           const month = targetMonths.find(m => String(m.monthNumber) === val);
-                                          if (month) {
-                                            handleAllToFirstMonth(cat.categoryId, cat.closingBalanceAmount, [month]);
-                                          }
+                                          if (month) handleAllToFirstMonth(cat.categoryId, availableAmt, [month]);
                                         }
                                       }}
                                       options={[
                                         { value: 'split', label: 'Split Equally' },
-                                        ...targetMonths.map(m => ({ value: String(m.monthNumber), label: `Move All to ${m.monthName}` }))
+                                        ...targetMonths.map(m => ({ value: String(m.monthNumber), label: `All to ${m.monthName}` }))
                                       ]}
                                       placeholder="Auto Allocate"
+                                      className="text-xs h-8"
                                     />
                                   </div>
                                 )}
                               </td>
                             )}
+
                           </tr>
                         );
                       })}
-                        </tbody>
-                      </table>
-                    </div>
+                    </tbody>
+                  </table>
+                </div>
 
-                    {canEdit ? (
-                      <div className="flex items-center justify-end gap-4 mt-8 pr-8 pb-2">
-                        <Button variant="secondary" onClick={handleResetChanges}>
-                        <span>Reset Changes</span>
-                      </Button>
-                        <Button
-                          variant="secondary"
-                          onClick={handlePreviewAllocation}
-                        >
-                          <span>Preview Allocation</span>
-                          <svg className="w-4 h-4 text-current transition-transform duration-200 group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                          </svg>
-                        </Button>
-                      <Button
-                        variant="primary"
-                        onClick={handleSaveReallocation}
-                        loading={savingAllocation}
-                      >
-                        <span>Save Allocation</span>
-                      </Button>
-                    </div>
+                {canEdit ? (
+                  <div className="flex items-center justify-end gap-3 p-6 border-t border-slate-100 bg-slate-50/50">
+                    <button
+                      type="button"
+                      onClick={handleResetChanges}
+                      className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg px-4 py-2 text-xs font-semibold transition-colors"
+                    >
+                      Reset Changes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handlePreviewAllocation}
+                      className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 rounded-lg px-4 py-2 text-xs font-semibold transition-colors inline-flex items-center gap-1.5"
+                    >
+                      <span>Preview Allocation</span>
+                      <svg className="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveReallocation}
+                      disabled={savingAllocation}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg px-5 py-2 text-xs font-semibold shadow-sm transition-colors disabled:opacity-50 inline-flex items-center gap-1.5"
+                    >
+                      <span>{savingAllocation ? "Saving..." : "Save Allocation"}</span>
+                    </button>
+                  </div>
                 ) : (
-                  <div className="mt-8 p-5 bg-slate-50 border border-[#E8EEF7] rounded-md text-center text-sm text-slate-500 font-medium">
-                    You have view-only access to the Quarter Strategy Reallocation matrix. Contact an Administrator or Sales Manager to confirm changes.
+                  <div className="p-4 bg-slate-50 border-t border-slate-100 text-center text-xs text-slate-500 font-medium">
+                    You have view-only access to the Quarter Strategy Reallocation matrix.
                   </div>
                 )}
               </div>
@@ -941,69 +1123,183 @@ export default function QuarterStrategyPage() {
           </div>
         </main>
 
-        {/* Summary Modal */}
+        {/* Preview Allocation Modal */}
         {showPreviewModal && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-            <div className="bg-white w-full max-w-2xl rounded-md shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200">
-              <div className="px-6 py-[18px] border-b border-[#E8EEF7] flex items-center justify-between bg-white">
-                <h3 className="text-[16px] font-bold text-[#0F172A]">Preview Allocation</h3>
-                <button onClick={() => setShowPreviewModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-[2px]" onClick={() => setShowPreviewModal(false)} />
+            <div className="relative z-10 bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-200 border border-slate-200">
+              <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-white">
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Preview Quarter Allocation Plan</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Reallocating Q{quarterNumber} closing balances into {allocationData?.targetFinancialYear} Q{allocationData?.targetQuarterNumber}
+                  </p>
+                </div>
+                <button onClick={() => setShowPreviewModal(false)} className="text-slate-400 hover:text-slate-600 transition-colors p-1.5 rounded-lg hover:bg-slate-100">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
               
-              <div className="p-6 overflow-y-auto max-h-[60vh] custom-scrollbar bg-white">
-                <div className="bg-[#ECFDF5] text-[#047857] p-4 rounded-md mb-6 text-[14px] flex items-center gap-3 font-medium">
-                  <svg className="w-[18px] h-[18px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+              <div className="p-6 overflow-y-auto max-h-[70vh] custom-scrollbar bg-white space-y-5">
+                <div className="bg-indigo-50 text-indigo-800 p-3.5 rounded-xl text-xs flex items-center gap-2.5 font-medium border border-indigo-200">
+                  <svg className="w-4 h-4 shrink-0 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span>All category reallocations exactly match their closing balances. You are ready to save.</span>
+                  <span>New allocations are within the available balance for each category. Confirm the distribution below before saving.</span>
                 </div>
 
-                <div className="text-[12px] font-semibold text-[#64748B] mb-4 uppercase tracking-[0.05em]">Allocation Summary</div>
-                <div className="border border-[#E8EEF7] rounded-md overflow-x-auto">
-                  <table className="min-w-max w-full text-[14px] text-left">
-                    <thead className="bg-[#EEF2FF] border-b border-[#E0E7FF]">
+                <div className="border border-slate-200 rounded-xl overflow-x-auto shadow-xs">
+                  <table className="min-w-full text-xs text-left">
+                    <thead className="bg-slate-50 border-b border-slate-200">
                       <tr>
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-left">Category</th>
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-right">Closing Balance</th>
-                        <th className="py-3 px-5 text-[13px] font-semibold text-[#4B6485] uppercase tracking-wider text-center">Status</th>
+                        <th className="py-3 px-4 font-semibold text-slate-500 uppercase tracking-wider text-left">Category</th>
+                        <th className="py-3 px-4 font-semibold text-slate-500 uppercase tracking-wider text-center">Type</th>
+                        <th className="py-3 px-4 font-semibold text-indigo-600 uppercase tracking-wider text-right">Available</th>
+                        {(allocationData?.targetMonths || []).map(m => (
+                          <th key={m.monthNumber} className="py-3 px-4 font-semibold text-slate-500 uppercase tracking-wider text-right">
+                            {m.monthName}
+                          </th>
+                        ))}
+                        <th className="py-3 px-4 font-semibold text-slate-500 uppercase tracking-wider text-right">New Allocation</th>
+                        <th className="py-3 px-4 font-semibold text-slate-500 uppercase tracking-wider text-center">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#E8EEF7] bg-white">
-                      {(allocationData?.categories || []).filter(c => c.closingBalanceType !== "BALANCED").map(cat => (
-                        <tr key={cat.categoryId}>
-                          <td className="px-5 py-[14px] font-semibold text-[#334155]">
-                            {cat.categoryName}
-                          </td>
-                          <td className="px-5 py-[14px] text-right font-bold text-[#0F172A]">₹{formatSmartCurrency(cat.closingBalanceAmount)}</td>
-                          <td className="px-5 py-[14px] text-center">
-                            <span className="inline-flex items-center px-2.5 py-[3px] rounded-full text-[11px] font-bold bg-[#ECFDF5] text-[#047857]">
-                              Matched
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
+                    <tbody className="divide-y divide-slate-100 bg-white">
+                      {(allocationData?.categories || []).map(cat => {
+                        const targetMonths = allocationData?.targetMonths || [];
+                        let catTotal = 0;
+                        targetMonths.forEach(m => {
+                          const key = `${cat.categoryId}_${m.monthNumber}`;
+                          catTotal += Number(allocationInputs[key] || 0);
+                        });
+                        catTotal = Math.round(catTotal * 100) / 100;
+                        const isBalanced = cat.closingBalanceType === "BALANCED";
+
+                        return (
+                          <tr key={cat.categoryId} className="hover:bg-slate-50/70">
+                            <td className="px-4 py-3 font-semibold text-[#1E293B]">
+                              <CategoryDisplay cat={cat} size="sm" />
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              {cat.closingBalanceType === "SHORTFALL" && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-red-50 text-red-700 border border-red-200">
+                                  Shortfall
+                                </span>
+                              )}
+                              {cat.closingBalanceType === "EXCESS" && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  Excess
+                                </span>
+                              )}
+                              {cat.closingBalanceType === "BALANCED" && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                                  Balanced
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="font-bold text-[#0F172A]">₹{formatSmartCurrency(
+                                cat.availableAmount !== undefined ? cat.availableAmount : cat.closingBalanceAmount
+                              )}</div>
+                              {Number(cat.existingAllocatedAmount || 0) > 0 && (
+                                <div className="text-[10px] text-slate-400 font-medium">
+                                  Orig. ₹{formatSmartCurrency(cat.closingBalanceAmount)} · ₹{formatSmartCurrency(cat.existingAllocatedAmount)} pre-alloc
+                                </div>
+                              )}
+                            </td>
+                            {targetMonths.map(m => {
+                              const key = `${cat.categoryId}_${m.monthNumber}`;
+                              const val = Number(allocationInputs[key] || 0);
+                              return (
+                                <td key={m.monthNumber} className="px-4 py-3 text-right font-semibold text-slate-700">
+                                  {val > 0 ? `₹${formatSmartCurrency(val)}` : <span className="text-slate-400">₹0</span>}
+                                </td>
+                              );
+                            })}
+                            <td className="px-4 py-3 text-right font-bold text-indigo-900">
+                              {catTotal > 0 ? `₹${formatSmartCurrency(catTotal)}` : <span className="text-slate-400">₹0</span>}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              {isBalanced ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">
+                                  N/A
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#ECFDF5] text-[#047857]">
+                                  Valid ✓
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Reason / Note (Optional Audit Trail Log)
+                  </label>
+                  <input
+                    type="text"
+                    value={allocationReason}
+                    onChange={(e) => setAllocationReason(e.target.value)}
+                    placeholder={`e.g. Approved strategy carry from Q${quarterNumber} closing balance`}
+                    className="w-full h-[40px] px-3 text-sm text-slate-800 bg-white border border-slate-300 rounded-md focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none"
+                  />
                 </div>
               </div>
 
               <div className="px-6 py-[18px] bg-[#F8FAFC] border-t border-[#E8EEF7] flex items-center justify-end gap-3">
                 <Button variant="secondary" onClick={() => setShowPreviewModal(false)}>
-                  <span>Cancel</span>
+                  <span>Back to Edit</span>
                 </Button>
                 <Button variant="primary" onClick={() => {
                   setShowPreviewModal(false);
                   handleSaveReallocation();
-                }} disabled={savingAllocation}>
-                  <span>{savingAllocation ? "Saving..." : "Confirm & Save"}</span>
+                }} disabled={savingAllocation} loading={savingAllocation}>
+                  <span>Confirm & Save Allocation</span>
                 </Button>
               </div>
             </div>
           </div>
+        )}
+
+        {/* Month Carry Allocation Modal */}
+        {selectedMonthModal && (
+          <MonthCarryAllocationModal
+            isOpen={!!selectedMonthModal}
+            onClose={() => setSelectedMonthModal(null)}
+            onSave={() => {
+              setSelectedMonthModal(null);
+              toast.success("Month carry allocation updated successfully.");
+              fetchQuarterSummary(financialYear, quarterNumber);
+              fetchAllocationData(financialYear, quarterNumber);
+            }}
+            sourceMonth={selectedMonthModal.monthNumber}
+            sourceMonthName={selectedMonthModal.monthName}
+            financialYear={financialYear}
+            categoryId={selectedMonthModal.categoryId}
+            categoryName={selectedMonthModal.categoryName}
+          />
+        )}
+        {/* Category Detail Drawer */}
+        {drawerCategory && (
+          <CategoryDetailDrawer
+            category={drawerCategory}
+            financialYear={financialYear}
+            mode="QUARTER"
+            period={quarterNumber}
+            apiBase={API_BASE}
+            onClose={() => setDrawerCategory(null)}
+            onRefresh={() => {
+              fetchQuarterSummary(financialYear, quarterNumber);
+              fetchAllocationData(financialYear, quarterNumber);
+            }}
+          />
         )}
       </div>
     </CheckPermission>
