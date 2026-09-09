@@ -3752,13 +3752,6 @@ const closeUpdateDrawer = () => {
               <i className="bi bi-receipt text-lg text-white"></i>
             </div>
             <div>
-<<<<<<< Updated upstream
-              <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
-                {selectedLead?.company_name} {selectedLead?.mobile_no ? `(${selectedLead.mobile_no})` : ""}
-              </h2>
-              <p className="text-xs text-gray-500 font-medium">
-                Quotation Management {selectedLead?.customer_name ? `• ${selectedLead.customer_name}` : ""}
-=======
               <div className="flex items-center gap-2">
                 <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
                   {selectedLead?.company_name || selectedLead?.customer_name || "Quotation"}
@@ -3784,7 +3777,6 @@ const closeUpdateDrawer = () => {
                     <span className="text-gray-600">Source: {selectedLead.source}</span>
                   </>
                 )}
->>>>>>> Stashed changes
               </p>
             </div>
           </div>

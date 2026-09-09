@@ -590,11 +590,7 @@ export default function QuarterStrategyPage() {
                 <div>
                   <h3 className="text-xs font-bold uppercase tracking-wider text-amber-800">Stale Allocation Plan Detected</h3>
                   <p className="text-xs text-amber-700 mt-1 font-medium leading-relaxed">
-<<<<<<< Updated upstream
-                    Historical quotation achievements or base goals have changed since this quarter&apos;s closing balance was last allocated. Please review and re-save the reallocation plan below to update destination quarter adjustments (`is_active=1`).
-=======
                     Historical quotation achievements or base goals have changed since this quarter&apos;s closing balance was last allocated. Please review and re-save the reallocation plan below to update destination quarter adjustments.
->>>>>>> Stashed changes
                   </p>
                 </div>
               </div>
