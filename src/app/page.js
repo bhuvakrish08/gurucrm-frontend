@@ -352,10 +352,10 @@ export default function Page() {
               {/* Logo */}
               <div className="mb-4 flex flex-col items-center">
                 <Image
-                  src="/venster_logo.png"
+                  src="/guru_logo.png"
                   alt="Company Logo"
-                  width={80}
-                  height={80}
+                  width={160}
+                  height={160}
                   className="object-contain"
                 />
               </div>
