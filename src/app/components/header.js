@@ -261,10 +261,10 @@ export default function Header() {
         {/* Logo */}
         <div className="flex items-center space-x-2">
           <Image
-            src="/venster_logo.png"
+            src="/guru_logo.png"
             alt="Company Logo"
-            width={70}
-            height={70}
+            width={120}
+            height={90}
             className="object-contain"
           />
         </div>
