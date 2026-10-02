@@ -48,7 +48,7 @@ export default function CommonMasterPage({
   const fetchData = useCallback(
     async (parentDesignation = "", name = "", status = "") => {
       try {
-        const params = {};
+        const params = { _t: Date.now() };
         if (parentDesignation) params.search = parentDesignation;
         if (name) params.search2 = name;
         if (status) params.status = status;
@@ -127,7 +127,13 @@ export default function CommonMasterPage({
       fetchData();
     } catch (err) {
       console.error("Error saving:", err);
-      toast.error("Error saving data");
+      const msg =
+        err?.data?.message ||
+        err?.response?.data?.message ||
+        err?.data?.error ||
+        err?.message ||
+        "Error saving data";
+      toast.error(msg);
     } finally {
       setIsSubmitting(false); // ✅ STOP
     }

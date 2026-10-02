@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import axios from "redaxios";
 import { getCache, setCache, fetchWithRetry } from "@/utils/slowNetworkHelper";
 import Link from "next/link";
@@ -12,6 +12,7 @@ import { parseExcelDate } from "@/utils/excelUtils";
 import { Sparkles } from "lucide-react";
 import { Trash2} from "lucide-react";
 import SkeletonTable from "@/app/components/SkeletonTable";
+
 
 import {
   RefreshCw,
@@ -41,7 +42,28 @@ import {
   Plus,
   Pencil,
   Target,
+  Package,
+  ArrowLeftRight,
 } from "lucide-react";
+
+const parseProducts = (val) => {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  if (typeof val === "string") {
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) return parsed;
+      if (parsed) return [parsed];
+    } catch {
+      if (val.includes(",")) {
+        return val.split(",").map((s) => s.trim()).filter(Boolean);
+      }
+      return [val.trim()];
+    }
+  }
+  return [];
+};
+
 export default function Page() {
   const [btnLoading, setBtnLoading] = useState(false);
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -106,11 +128,8 @@ const [updateModalClosing, setUpdateModalClosing] = useState(false);
     source: "",
     strategy_category_id: "",
     location: "",
-    architecture: "",
-    status: "Qualified",
-    priority: "",
-    assignee: "",
     category: "",
+    products: [],
     description: "",
   });
   // sourceCategoryMap: Record<sourceId, { categories: [] }>
@@ -164,11 +183,8 @@ const handleCloseUpdateModal = () => {
     source: "",
     strategy_category_id: "",
     location: "",
-    architecture: "",
-    status: "",
-    priority: "",
-    assignee: "",
     category: "",
+    products: [],
     description: "",
   });
 
@@ -275,25 +291,18 @@ const handleCloseUpdateModal = () => {
 
   const getStrategyCategoryConfigForSource = (sourceIdOrName) => {
     const val = String(sourceIdOrName || "").trim();
-    if (!val) return { allowSelection: false, categories: [] };
+    if (!val) return { allowSelection: true, categories: allStrategyCategories };
 
     const srcObj = leadSource.find((s) => String(s.id) === val || s.name === val);
     const resolvedId = srcObj ? String(srcObj.id) : val;
     const entry = sourceCategoryMap[resolvedId] || Object.values(sourceCategoryMap).find((e) => e.source_name === val);
 
-    const allowSelection = Boolean(
-      (entry && entry.allow_category_selection) ||
-      (srcObj && (srcObj.allow_category_selection === 1 || srcObj.allow_category_selection === true))
-    );
-
-    let categories = [];
     if (entry && Array.isArray(entry.categories) && entry.categories.length > 0) {
-      categories = entry.categories;
-    } else if (allowSelection && allStrategyCategories.length > 0) {
-      categories = allStrategyCategories;
+      const allowSelection = Boolean(entry.allow_category_selection);
+      return { allowSelection, categories: entry.categories };
     }
 
-    return { allowSelection, categories };
+    return { allowSelection: true, categories: allStrategyCategories };
   };
 
   useEffect(() => {
@@ -389,8 +398,6 @@ const handleCloseUpdateModal = () => {
     const newErrors = {};
     if (!addLeadForm.customer_name.trim())
       newErrors.customer_name = "Customer Name is required";
-    if (!addLeadForm.reference.trim())
-      newErrors.reference = "Lead Title is required";
     if (!addLeadForm.source) newErrors.source = "Source is required";
     if (addLeadForm.mobile_no && addLeadForm.mobile_no.length !== 10) {
       newErrors.mobile_no = "Mobile number must be exactly 10 digits";
@@ -407,11 +414,8 @@ const handleCloseUpdateModal = () => {
       source: "",
       strategy_category_id: "",
       location: "",
-      architecture: "",
-      status: "Qualified",
-      priority: "",
-      assignee: "",
       category: "",
+      products: [],
       description: "",
     });
     setAddLeadCategoryOptions([]);
@@ -439,11 +443,12 @@ const handleCloseUpdateModal = () => {
 
       const payload = {
         ...addLeadForm,
+        reference: addLeadForm.reference || null,
         source: addLeadForm.source || null,
         mobile_no: addLeadForm.mobile_no || null,
-        priority: addLeadForm.priority || null,
         category: addLeadForm.category || null,
         strategy_category_id: addLeadForm.strategy_category_id ? Number(addLeadForm.strategy_category_id) : null,
+        products: addLeadForm.products || [],
       };
 
       const res = await axios.post(`${API_BASE}/api/lead/insert`, payload, {
@@ -525,15 +530,12 @@ const handleCloseUpdateModal = () => {
           company_name: editLeadForm.company_name,
           customer_name: editLeadForm.customer_name,
           mobile_no: editLeadForm.mobile_no || null,
-          reference: editLeadForm.reference,
+          reference: editLeadForm.reference || "",
           source: editLeadForm.source,
           strategy_category_id: editLeadForm.strategy_category_id ? Number(editLeadForm.strategy_category_id) : null,
           location: editLeadForm.location,
-          architecture: editLeadForm.architecture,
-          status: editLeadForm.status,
-          priority: editLeadForm.priority,
-          assignee: editLeadForm.assignee,
           category: editLeadForm.category,
+          products: editLeadForm.products || [],
           description: editLeadForm.description,
         },
         {
@@ -567,7 +569,8 @@ const handleCloseUpdateModal = () => {
         "No.": index + 1,
         "Company Name": lead.company_name || "",
         "Customer Name": lead.customer_name || "",
-        "Lead Title": lead.reference || "",
+        Reference: lead.reference || "",
+        "Sales Strategy Category": lead.strategy_category_name || "",
         Source: lead.source || "",
         Assignee: lead.assignee || "",
         "Next Follow Up": parseExcelDate(lead.next_follow_up_date),
@@ -630,8 +633,8 @@ const handleCloseUpdateModal = () => {
         lead.company_name || "",
         lead.customer_name || "",
         lead.reference || "",
+        lead.import_export || "",
         lead.source || "",
-        lead.assignee || "",
         lead.next_follow_up_date
           ? new Date(lead.next_follow_up_date).toLocaleDateString()
           : "",
@@ -646,10 +649,9 @@ const handleCloseUpdateModal = () => {
             "#",
             "Company",
             "Customer",
-            "Lead Title",
-            "Product Cat.",
+            "Reference",
+            "Import/Export",
             "Source",
-            "Assignee",
             "Next Follow Up",
             "Created",
             "Status",
@@ -926,20 +928,43 @@ const handleCloseUpdateModal = () => {
         initialStrategyCat = String(categories[0].id);
       }
 
+      // Match source and category IDs if saved as name or ID
+      const matchedSource = leadSource.find(
+        (s) => String(s.id) === String(leadData.source) || s.name === leadData.source
+      );
+      const resolvedSourceVal = matchedSource ? String(matchedSource.id) : (leadData.source ? String(leadData.source) : "");
+
+      const matchedCategory = leadCategory.find(
+        (c) => String(c.id) === String(leadData.category) || c.name === leadData.category
+      );
+      const resolvedCategoryVal = matchedCategory ? String(matchedCategory.id) : (leadData.category ? String(leadData.category) : "");
+
+      const parsedProds = parseProducts(leadData.products);
+      const enrichedProds = parsedProds.map((p) => {
+        if (typeof p === "object" && p !== null) return p;
+        const found = productsList.find((item) => String(item.id) === String(p));
+        return found
+          ? {
+              id: found.id,
+              product_name: found.product_name,
+              product_code: found.product_code,
+              sales_price: found.sales_price,
+              category_name: found.category_name,
+            }
+          : { id: p, product_name: `Product #${p}` };
+      });
+
       setEditLeadForm({
         lead_id: leadData.lead_id || "",
         company_name: leadData.company_name || "",
         customer_name: leadData.customer_name || "",
         mobile_no: leadData.mobile_no || "",
         reference: leadData.reference || "",
-        source: leadData.source || "",
+        source: resolvedSourceVal,
         strategy_category_id: initialStrategyCat,
         location: leadData.location || "",
-        architecture: leadData.architecture || "",
-        status: leadData.status || "",
-        priority: leadData.priority || "",
-        assignee: leadData.assignee || "",
-        category: leadData.category || "",
+        category: resolvedCategoryVal,
+        products: enrichedProds,
         description: leadData.description || "",
       });
 
@@ -1011,6 +1036,7 @@ const handleCloseUpdateModal = () => {
 
       setShowPopup(false);
       toast.success("Status Updated");
+      fetchLeads();
     } catch (err) {
       console.log(err);
       toast.error("Failed to update status");
@@ -1047,6 +1073,7 @@ const handleCloseUpdateModal = () => {
       setLostReason("");
       setLostReasonError("");
       toast.success("Lead marked as Lost");
+      fetchLeads();
     } catch (err) {
       console.log(err);
       toast.error("Failed to update status");
@@ -1070,6 +1097,7 @@ const handleCloseUpdateModal = () => {
     company_name: "",
     customer_name: "",
     reference: "",
+    strategy_category_id: "",
     source: "",
     mobile_no: "",
     status: "",
@@ -1133,6 +1161,7 @@ const handleCloseUpdateModal = () => {
       company_name: "",
       customer_name: "",
       reference: "",
+      strategy_category_id: "",
       source: "",
       mobile_no: "",
       status: "",
@@ -1252,67 +1281,116 @@ const handleCloseUpdateModal = () => {
   const [leadSource, setLeadSource] = useState([]);
   const [leadCategory, setLeadCategory] = useState([]);
   const [category, setCategory] = useState([]);
+  const [activityTypes, setActivityTypes] = useState([]);
+  const [productsList, setProductsList] = useState([]);
+
+  const fetchProductsList = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/product-master/read`, {
+        params: { status: 1, _t: Date.now() },
+      });
+      const list = Array.isArray(res.data) ? res.data : (res.data?.data || res.data?.result || []);
+      setProductsList(list);
+    } catch (err) {
+      console.error("Failed to fetch products:", err);
+    }
+  }, [API_BASE]);
+
+  const fetchAssignee = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/manage-user/asignee`, {
+        params: { status: 1, _t: Date.now() },
+      });
+      const cleanedData = (res.data?.data || res.data || []).map((item) => ({
+        ...item,
+        name: item.name ? item.name.split(" ")[0] : "",
+      }));
+      setAssignee(cleanedData);
+    } catch (err) {
+      console.error("Failed to fetch names:", err);
+      setAssignee([]);
+    }
+  }, [API_BASE]);
+
+  const fetchSource = useCallback(async () => {
+    try {
+      const res = await axios.get(
+        `${API_BASE}/api/inquiry-lead-source/read`,
+        {
+          params: { status: 1, _t: Date.now() },
+        },
+      );
+      const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      setLeadSource(list);
+    } catch (err) {
+      console.error("Failed to fetch lead sources:", err);
+    }
+  }, [API_BASE]);
+
+  const fetchCategory = useCallback(async () => {
+    try {
+      const res = await axios.get(
+        `${API_BASE}/api/inquiry-lead-category/read`,
+        {
+          params: { status: 1, _t: Date.now() },
+        },
+      );
+      const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      setLeadCategory(list);
+    } catch (err) {
+      console.error("Failed to fetch lead categories:", err);
+    }
+  }, [API_BASE]);
+
+  const fetchActivityTypes = useCallback(async () => {
+    try {
+      const res = await axios.get(
+        `${API_BASE}/api/inquiry-lead-activity/read`,
+        {
+          params: { status: 1, _t: Date.now() },
+        },
+      );
+      const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+      setActivityTypes(list);
+    } catch (err) {
+      console.error("Failed to fetch activity types:", err);
+    }
+  }, [API_BASE]);
+
+  const fetchProductCategory = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/product-category/read`, {
+        params: { status: 1, _t: Date.now() },
+      });
+      setCategory(Array.isArray(res.data) ? res.data : (res.data?.data || []));
+    } catch (err) {
+      console.error("Failed to fetch product category:", err);
+    }
+  }, [API_BASE]);
 
   useEffect(() => {
-    const fetchAssignee = async () => {
-      try {
-        const res = await axios.get(`${API_BASE}/api/manage-user/asignee`, {
-          params: { status: 1 },
-        });
-        const cleanedData = (res.data?.data || res.data || []).map((item) => ({
-          ...item,
-          name: item.name ? item.name.split(" ")[0] : "",
-        }));
-        setAssignee(cleanedData);
-      } catch (err) {
-        console.error("Failed to fetch names:", err);
-        setAssignee([]);
-      }
-    };
     fetchAssignee();
-  }, []);
-
-  useEffect(() => {
-    const fetchSource = async () => {
-      try {
-        const res = await axios.get(
-          `${API_BASE}/api/inquiry-lead-source/read`,
-          {
-            params: { status: 1 },
-          },
-        );
-        setLeadSource(res.data);
-      } catch {}
-    };
     fetchSource();
-  }, []);
-
-  useEffect(() => {
-    const fetchCategory = async () => {
-      try {
-        const res = await axios.get(
-          `${API_BASE}/api/inquiry-lead-category/read`,
-          {
-            params: { status: 1 },
-          },
-        );
-        setLeadCategory(res.data);
-      } catch {}
-    };
     fetchCategory();
-  }, []);
+    fetchActivityTypes();
+    fetchProductCategory();
+    fetchProductsList();
+  }, [fetchAssignee, fetchSource, fetchCategory, fetchActivityTypes, fetchProductCategory, fetchProductsList]);
+
+  // Refresh dynamic master options whenever modals open
+  useEffect(() => {
+    if (showAddLeadModal || showEditLeadModal) {
+      fetchSource();
+      fetchCategory();
+      fetchProductsList();
+    }
+  }, [showAddLeadModal, showEditLeadModal, fetchSource, fetchCategory, fetchProductsList]);
 
   useEffect(() => {
-    const fetchProductCategory = async () => {
-      try {
-        const res = await axios.get(`${API_BASE}/api/product-category/read`, {
-          params: { status: 1 },
-        });
-        setCategory(res.data);
-      } catch {}
-    };
-    fetchProductCategory();
-  }, []);
+    if (showModal || showUpdateModal) {
+      fetchActivityTypes();
+    }
+  }, [showModal, showUpdateModal, fetchActivityTypes]);
 
   const isAdmin = checkRole(["Admin"]);
 
@@ -1444,7 +1522,7 @@ const handleCloseUpdateModal = () => {
           </div>
 
           <div className="flex items-center gap-2 border bg-white border-indigo-400 rounded-sm px-2 py-2 w-full md:w-45">
-                      <Bookmark size={16} className="text-amber-500" />
+            <Bookmark size={16} className="text-amber-500" />
             <input
               name="reference"
               value={filters.reference}
@@ -1452,6 +1530,23 @@ const handleCloseUpdateModal = () => {
               placeholder="Enter Reference"
               className="w-full text-gray-600 text-sm outline-none bg-transparent"
             />
+          </div>
+
+          <div className="flex items-center gap-2 border bg-white border-indigo-400 rounded-sm px-2 py-2 w-full md:w-48">
+            <Target size={16} className="text-indigo-500" />
+            <select
+              name="strategy_category_id"
+              value={filters.strategy_category_id || ""}
+              onChange={handleFilterChange}
+              className="w-full text-gray-600 text-sm outline-none bg-transparent cursor-pointer"
+            >
+              <option value="">Strategy Category</option>
+              {allStrategyCategories.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* <select
@@ -1659,10 +1754,11 @@ const handleCloseUpdateModal = () => {
 
           <div className="p-4">
             {loading ? (
-              <SkeletonTable rows={8} columns={9} />
+              <SkeletonTable rows={8} columns={11} />
             ) : (
-              <div
-                className="overflow-x-auto overflow-y-scroll max-h-[600px] custom-scroll"
+              <>
+                <div
+                  className="overflow-x-auto overflow-y-scroll max-h-[600px] custom-scroll"
                 style={{ overflowX: "scroll" }}
               >
                 <table className="w-full text-sm">
@@ -1689,10 +1785,6 @@ const handleCloseUpdateModal = () => {
                       </th>
                       <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
                         Sales Strategy Category
-                      </th>
-
-                      <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
-                        Architecture
                       </th>
                       <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
                         Mobile No{" "}
@@ -1735,11 +1827,26 @@ const handleCloseUpdateModal = () => {
                           </td>
 
                           <td className="text-blue-500 font-medium cursor-pointer px-3">
-                            {lead.customer_name}
+                            <div>{lead.customer_name}</div>
+                            {(() => {
+                              const prods = parseProducts(lead.products);
+                              if (!prods || prods.length === 0) return null;
+                              const prodTitle = prods
+                                .map((p) => p.product_name || p.name || (typeof p === "string" ? p : `Product #${p.id || p}`))
+                                .join(", ");
+                              return (
+                                <div className="mt-0.5" title={prodTitle}>
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/60">
+                                    <Package size={11} className="text-amber-500" />
+                                    <span>{prods.length} {prods.length === 1 ? "product" : "products"}</span>
+                                  </span>
+                                </div>
+                              );
+                            })()}
                           </td>
 
-                          <td className="py-3 px-2 w-46 max-w-46 truncate font-semibold text-slate-700">
-                            {lead.reference}
+                          <td className="py-3 px-2 w-46 max-w-46 font-semibold text-slate-700">
+                            <div className="truncate">{lead.reference || "—"}</div>
                           </td>
 
                           <td className="px-3">
@@ -1777,7 +1884,6 @@ const handleCloseUpdateModal = () => {
                               <span className="text-gray-400 text-xs">—</span>
                             )}
                           </td>
-                          <td>{lead.architecture}</td>
                           <td className="py-2 px-4 text-start font-semibold text-slate-800">
                             {lead.mobile_no}
                           </td>
@@ -1825,27 +1931,20 @@ const handleCloseUpdateModal = () => {
                             {new Date(lead.created_at).toLocaleDateString()}
                           </td>
 
-                          <td>
+                          {/* Status Dropdown */}
+                          <td className="px-3">
                             <select
-                              value={lead.status}
-                              onMouseDown={(e) => {
-                                if (
-                                  !isAdmin &&
-                                  (lead.status === "Won" ||
-                                    lead.status === "Lost")
-                                ) {
-                                  e.preventDefault();
-                                  toast.error("Only Admin can change Status");
-                                }
-                              }}
+                              value={lead.status || "Pending"}
                               onChange={(e) =>
                                 handleStatusChange(lead.lead_id, e.target.value)
                               }
-                              className={`border rounded-md px-3 py-1.5 text-xs font-semibold outline-none cursor-pointer
-                                ${lead.status === "Pending" ? "border-indigo-200 bg-indigo-50 text-indigo-600" : ""}
-                                ${lead.status === "Won" ? "border-green-200 bg-green-50 text-green-600" : ""}
-                                ${lead.status === "Lost" ? "border-red-200 bg-red-50 text-red-600" : ""}
-                              `}
+                              className={`border rounded-lg px-2.5 py-1 text-xs font-semibold outline-none cursor-pointer transition-all ${
+                                lead.status === "Won"
+                                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300"
+                                  : lead.status === "Lost"
+                                    ? "border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-300"
+                                    : "border-blue-200 bg-blue-50 text-blue-600 hover:border-blue-300"
+                              }`}
                             >
                               <option value="Pending">Pending</option>
                               <option value="Won">Won</option>
@@ -1860,7 +1959,7 @@ const handleCloseUpdateModal = () => {
                                   <button
                                     onClick={() => handleView(lead)}
                                     className="w-8 h-8 flex items-center justify-center rounded-md text-blue-500 hover:bg-blue-50 cursor-pointer transition-colors"
-                                    title="View"
+                                    title="View Lead Details"
                                   >
                                     <i className="bi bi-eye text-lg"></i>
                                   </button>
@@ -1868,7 +1967,7 @@ const handleCloseUpdateModal = () => {
                                   <button
                                     onClick={() => handleEdit(lead)}
                                     className="w-8 h-8 flex items-center justify-center rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 cursor-pointer transition-colors"
-                                    title="Edit"
+                                    title="Edit Lead"
                                   >
                                     <i className="bi bi-pencil-square text-sm"></i>
                                   </button>
@@ -1876,19 +1975,44 @@ const handleCloseUpdateModal = () => {
                                   <button
                                     onClick={() => openDeleteModal(lead)}
                                     className="w-8 h-8 flex items-center justify-center rounded-md text-red-500 hover:bg-red-50 cursor-pointer transition-colors"
-                                    title="Delete"
+                                    title="Delete Lead"
+                                  >
+                                    <i className="bi bi-trash3 text-sm"></i>
+                                  </button>
+                                </>
+                              ) : lead.status === "Won" ? (
+                                <>
+                                  <button
+                                    onClick={() => handleView(lead)}
+                                    className="w-8 h-8 flex items-center justify-center rounded-md text-blue-500 hover:bg-blue-50 cursor-pointer transition-colors"
+                                    title="View Lead Details"
+                                  >
+                                    <i className="bi bi-eye text-lg"></i>
+                                  </button>
+
+                                  <Link
+                                    href="/sales/quotation"
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors"
+                                    title="Open Quotation for this Won lead"
+                                  >
+                                    <i className="bi bi-file-earmark-text text-xs"></i>
+                                    <span>Quotation</span>
+                                  </Link>
+
+                                  <button
+                                    onClick={() => openDeleteModal(lead)}
+                                    className="w-8 h-8 flex items-center justify-center rounded-md text-red-500 hover:bg-red-50 cursor-pointer transition-colors"
+                                    title="Delete Lead"
                                   >
                                     <i className="bi bi-trash3 text-sm"></i>
                                   </button>
                                 </>
                               ) : lead.status === "Lost" ? (
-                                // ✅ NEW: View Reason button for Lost leads
-
                                 <>
                                   <button
                                     onClick={() => handleView(lead)}
                                     className="w-8 h-8 flex items-center justify-center rounded-md text-blue-500 hover:bg-blue-50 cursor-pointer transition-colors"
-                                    title="View"
+                                    title="View Lead Details"
                                   >
                                     <i className="bi bi-eye text-lg"></i>
                                   </button>
@@ -1900,11 +2024,23 @@ const handleCloseUpdateModal = () => {
                                   >
                                     <i className="bi bi-info-circle text-lg"></i>
                                   </button>
+
+                                  <button
+                                    onClick={() => openDeleteModal(lead)}
+                                    className="w-8 h-8 flex items-center justify-center rounded-md text-red-500 hover:bg-red-50 cursor-pointer transition-colors"
+                                    title="Delete Lead"
+                                  >
+                                    <i className="bi bi-trash3 text-sm"></i>
+                                  </button>
                                 </>
                               ) : (
-                                <span className="w-8 h-8 flex items-center justify-center text-gray-300 cursor-not-allowed">
-                                  <i className="bi bi-lock text-lg"></i>
-                                </span>
+                                <button
+                                  onClick={() => handleView(lead)}
+                                  className="w-8 h-8 flex items-center justify-center rounded-md text-blue-500 hover:bg-blue-50 cursor-pointer transition-colors"
+                                  title="View"
+                                >
+                                  <i className="bi bi-eye text-lg"></i>
+                                </button>
                               )}
                             </div>
                           </td>
@@ -1913,7 +2049,7 @@ const handleCloseUpdateModal = () => {
                     ) : (
                       <tr>
                         <td
-                          colSpan="10"
+                          colSpan="11"
                           className="text-center py-10 text-gray-400"
                         >
                           No Data Found
@@ -1922,88 +2058,89 @@ const handleCloseUpdateModal = () => {
                     )}
                   </tbody>
                 </table>
+              </div>
 
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white">
-                  {/* Left side: Showing X to Y of Z entries */}
-                  <div className="text-sm text-slate-600 font-semibold">
-                    Showing{" "}
-                    {filteredLeads.length === 0
-                      ? 0
-                      : (currentPage - 1) * itemsPerPage + 1}{" "}
-                    to{" "}
-                    {Math.min(currentPage * itemsPerPage, filteredLeads.length)}{" "}
-                    of {filteredLeads.length} entries
-                  </div>
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white rounded-b-lg">
+                {/* Left side: Showing X to Y of Z entries */}
+                <div className="text-sm text-slate-600 font-semibold whitespace-nowrap">
+                  Showing{" "}
+                  {filteredLeads.length === 0
+                    ? 0
+                    : (currentPage - 1) * itemsPerPage + 1}{" "}
+                  to{" "}
+                  {Math.min(currentPage * itemsPerPage, filteredLeads.length)}{" "}
+                  of {filteredLeads.length} entries
+                </div>
 
-                  {/* Center: Navigation buttons (only if totalPages > 1) */}
-                  {totalPages > 1 && (
-                    <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
-                      {/* Previous Button */}
-                      <button
-                        onClick={() =>
-                          setCurrentPage((prev) => Math.max(prev - 1, 1))
-                        }
-                        disabled={currentPage === 1}
-                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        <i className="bi bi-chevron-left text-sm"></i>
-                      </button>
-
-                      {/* Page Buttons */}
-                      <div className="flex items-center gap-1.5">
-                        {getSlidingPages().map((page) => (
-                          <button
-                            key={page}
-                            onClick={() => setCurrentPage(page)}
-                            className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${
-                              currentPage === page
-                                ? "bg-indigo-600 text-white shadow-md shadow-indigo-200"
-                                : "border border-slate-200 text-slate-600 hover:bg-slate-50"
-                            }`}
-                          >
-                            {page}
-                          </button>
-                        ))}
-                      </div>
-
-                      {/* Next Button */}
-                      <button
-                        onClick={() =>
-                          setCurrentPage((prev) =>
-                            Math.min(prev + 1, totalPages),
-                          )
-                        }
-                        disabled={currentPage === totalPages}
-                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        <i className="bi bi-chevron-right text-sm"></i>
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Right side: Rows per page selector */}
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-slate-500 font-medium">
-                      Rows per page:
-                    </span>
-                    <select
-                      value={itemsPerPage}
-                      onChange={(e) => {
-                        setItemsPerPage(Number(e.target.value));
-                        setCurrentPage(1);
-                      }}
-                      className="border border-indigo-200 rounded-lg px-3 py-1.5 text-sm text-indigo-600 font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+                {/* Center: Navigation buttons (only if totalPages > 1) */}
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 sm:pb-0">
+                    {/* Previous Button */}
+                    <button
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
+                      disabled={currentPage === 1}
+                      className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                     >
-                      {[10, 20, 100, 200].map((size) => (
-                        <option key={size} value={size}>
-                          {size}
-                        </option>
+                      <i className="bi bi-chevron-left text-sm"></i>
+                    </button>
+
+                    {/* Page Buttons */}
+                    <div className="flex items-center gap-1.5">
+                      {getSlidingPages().map((page) => (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${
+                            currentPage === page
+                              ? "bg-indigo-600 text-white shadow-md shadow-indigo-200"
+                              : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >
+                          {page}
+                        </button>
                       ))}
-                    </select>
+                    </div>
+
+                    {/* Next Button */}
+                    <button
+                      onClick={() =>
+                        setCurrentPage((prev) =>
+                          Math.min(prev + 1, totalPages),
+                        )
+                      }
+                      disabled={currentPage === totalPages}
+                      className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <i className="bi bi-chevron-right text-sm"></i>
+                    </button>
                   </div>
+                )}
+
+                {/* Right side: Rows per page selector */}
+                <div className="flex items-center gap-2.5 whitespace-nowrap">
+                  <span className="text-sm text-slate-500 font-medium">
+                    Rows per page:
+                  </span>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="border border-indigo-200 rounded-lg px-3 py-1.5 text-sm text-indigo-600 font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+                  >
+                    {[10, 20, 50, 100, 200].map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
-            )}
+            </>
+          )}
           </div>
         </div>
       </div>
@@ -2153,60 +2290,33 @@ const handleCloseUpdateModal = () => {
                 </div>
 
                 {/* Sales Strategy Category */}
-                {(() => {
-                  if (!addLeadForm.source) return null;
-                  const { allowSelection, categories } = getStrategyCategoryConfigForSource(addLeadForm.source);
-                  const cats = categories.length > 0 ? categories : addLeadCategoryOptions;
-                  if (cats.length === 0) return null;
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-600">
+                    Sales Strategy Category
+                  </label>
+                  <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                    <span className="flex items-center justify-center w-10 shrink-0 bg-indigo-50 border-r border-gray-100">
+                      <Target size={16} className="text-indigo-500" />
+                    </span>
+                    <select
+                      name="strategy_category_id"
+                      value={addLeadForm.strategy_category_id || ""}
+                      onChange={handleAddLeadChange}
+                      className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent cursor-pointer"
+                    >
+                      <option value="">-- Select Strategy Category --</option>
+                      {(addLeadCategoryOptions.length > 0
+                        ? addLeadCategoryOptions
+                        : allStrategyCategories
+                      ).map((cat) => (
+                        <option key={cat.id} value={String(cat.id)}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
 
-                  // Case 1: Auto-assigned category (Allow Selection is OFF)
-                  if (!allowSelection && cats.length >= 1) {
-                    const catName = cats[0].name;
-                    return (
-                      <div>
-                        <label className="block mb-1 text-sm font-medium text-gray-600">
-                          Sales Strategy Category
-                        </label>
-                        <div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-lg text-sm text-indigo-700 font-medium">
-                          <Target size={14} className="text-indigo-500 shrink-0" />
-                          <span>{catName}</span>
-                          <span className="ml-auto text-[11px] text-indigo-500 font-medium italic">Auto-assigned</span>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  // Case 2: Allow Category Selection = ON
-                  if (allowSelection && cats.length > 0) {
-                    return (
-                      <div>
-                        <label className="block mb-1 text-sm font-medium text-gray-600">
-                          Sales Strategy Category
-                        </label>
-                        <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
-                          <span className="flex items-center justify-center w-10 shrink-0 bg-indigo-50 border-r border-gray-100">
-                            <Target size={16} className="text-indigo-500" />
-                          </span>
-                          <select
-                            name="strategy_category_id"
-                            value={addLeadForm.strategy_category_id || ""}
-                            onChange={handleAddLeadChange}
-                            className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent cursor-pointer"
-                          >
-                            <option value="">-- Select Category --</option>
-                            {cats.map((cat) => (
-                              <option key={cat.id} value={String(cat.id)}>
-                                {cat.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  return null;
-                })()}
                 {/* Location */}
                 <div>
                   <label className="block mb-1 text-sm font-medium text-gray-600">
@@ -2229,28 +2339,6 @@ const handleCloseUpdateModal = () => {
                   </div>
                 </div>
 
-                {/* Architecture */}
-                <div>
-                  <label className="block mb-1 text-sm font-medium text-gray-600">
-                    Architecture
-                  </label>
-
-                  <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
-                    <span className="flex items-center justify-center w-10 shrink-0 bg-orange-50 border-r border-gray-100">
-                      <i className="bi bi-diagram-3 text-orange-500 text-sm"></i>
-                    </span>
-
-                    <input
-                      type="text"
-                      name="architecture"
-                      value={addLeadForm.architecture}
-                      onChange={handleAddLeadChange}
-                      placeholder="Enter Architecture"
-                      className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
-                    />
-                  </div>
-                </div>
-
                 {/* Reference */}
                 <div>
                   <label className="block mb-1 text-sm font-medium text-gray-600">
@@ -2268,75 +2356,6 @@ const handleCloseUpdateModal = () => {
                       onChange={handleAddLeadChange}
                       className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
                     />
-                  </div>
-                  {addLeadErrors.reference && (
-                    <p className="text-red-500 text-xs mt-1">
-                      {addLeadErrors.reference}
-                    </p>
-                  )}
-                </div>
-
-                {/* Status */}
-                <div>
-                  <label className="block mb-1 text-sm font-medium text-gray-600">
-                    Status
-                  </label>
-                  <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-                    <span className="flex items-center justify-center w-10 shrink-0 bg-green-50 border-r border-gray-100">
-                      <ShieldCheck size={16} className="text-green-500" />
-                    </span>
-                    <select
-                      name="status"
-                      value={addLeadForm.status}
-                      disabled
-                      className="w-full px-3 py-2 text-sm bg-transparent text-gray-400 cursor-not-allowed focus:outline-none"
-                    >
-                      <option>Qualified</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Priority */}
-                <div>
-                  <label className="block mb-1 text-sm font-medium text-gray-600">
-                    Priority
-                  </label>
-                  <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
-                    <span
-                      className={`flex items-center justify-center w-10 shrink-0 border-r border-gray-100 transition-colors duration-300 ${
-                        addLeadForm.priority === "High"
-                          ? "bg-red-50"
-                          : addLeadForm.priority === "Medium"
-                            ? "bg-amber-50"
-                            : addLeadForm.priority === "Low"
-                              ? "bg-green-50"
-                              : "bg-rose-50"
-                      }`}
-                    >
-                      <Star
-                        size={16}
-                        className={`transition-colors duration-300 ${
-                          addLeadForm.priority === "High"
-                            ? "text-red-500"
-                            : addLeadForm.priority === "Medium"
-                              ? "text-amber-500"
-                              : addLeadForm.priority === "Low"
-                                ? "text-green-500"
-                                : "text-rose-500"
-                        }`}
-                      />
-                    </span>
-                    <select
-                      name="priority"
-                      value={addLeadForm.priority}
-                      onChange={handleAddLeadChange}
-                      className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent cursor-pointer"
-                    >
-                      <option value="">-- Select --</option>
-                      <option>High</option>
-                      <option>Medium</option>
-                      <option>Low</option>
-                    </select>
                   </div>
                 </div>
 
@@ -2364,6 +2383,109 @@ const handleCloseUpdateModal = () => {
                     </select>
                   </div>
                 </div>
+              </div>
+
+              {/* Products (Inquired) */}
+              <div className="mt-3">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-sm font-medium text-gray-600 flex items-center gap-1.5">
+                    <span>Products (Inquired)</span>
+                    {(addLeadForm.products?.length || 0) > 0 && (
+                      <span className="px-1.5 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-700">
+                        {addLeadForm.products.length}
+                      </span>
+                    )}
+                  </label>
+                  {(addLeadForm.products?.length || 0) > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setAddLeadForm((prev) => ({ ...prev, products: [] }))}
+                      className="text-xs text-rose-500 hover:text-rose-700 font-medium"
+                    >
+                      Clear all
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                  <span className="flex items-center justify-center w-10 shrink-0 bg-amber-50 border-r border-gray-100">
+                    <Package size={16} className="text-amber-500" />
+                  </span>
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      const prodId = e.target.value;
+                      if (!prodId) return;
+                      const selected = productsList.find((p) => String(p.id) === String(prodId));
+                      if (selected) {
+                        const exists = (addLeadForm.products || []).some(
+                          (p) => String(p.id || p) === String(selected.id)
+                        );
+                        if (!exists) {
+                          setAddLeadForm((prev) => ({
+                            ...prev,
+                            products: [
+                              ...(prev.products || []),
+                              {
+                                id: selected.id,
+                                product_name: selected.product_name,
+                                product_code: selected.product_code,
+                                sales_price: selected.sales_price,
+                                category_name: selected.category_name,
+                              },
+                            ],
+                          }));
+                        }
+                      }
+                    }}
+                    className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent cursor-pointer"
+                  >
+                    <option value="">+ Select product to add...</option>
+                    {productsList.map((item) => {
+                      const isSelected = (addLeadForm.products || []).some(
+                        (p) => String(p.id || p) === String(item.id)
+                      );
+                      return (
+                        <option key={item.id} value={item.id} disabled={isSelected}>
+                          {item.product_name} {item.product_code ? `(${item.product_code})` : ""} {isSelected ? "✓ (Added)" : ""}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                {/* Selected Products Chips */}
+                {(addLeadForm.products?.length || 0) > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2 p-2.5 bg-gray-50/80 rounded-lg border border-dashed border-gray-200">
+                    {addLeadForm.products.map((prod, idx) => {
+                      const prodName = prod.product_name || prod.name || (typeof prod === "string" ? prod : `Product #${prod.id}`);
+                      const prodCode = prod.product_code ? ` (${prod.product_code})` : "";
+                      return (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-900 border border-amber-200/80 shadow-2xs group hover:bg-amber-100/70 transition-colors"
+                        >
+                          <Package size={13} className="text-amber-600 shrink-0" />
+                          <span className="max-w-[200px] truncate">
+                            {prodName}{prodCode}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAddLeadForm((prev) => ({
+                                ...prev,
+                                products: (prev.products || []).filter((_, i) => i !== idx),
+                              }));
+                            }}
+                            className="text-amber-500 hover:text-red-600 ml-0.5 rounded p-0.5 transition-colors"
+                            title="Remove product"
+                          >
+                            <X size={13} />
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Description */}
@@ -2562,60 +2684,33 @@ const handleCloseUpdateModal = () => {
                 </div>
 
                 {/* Sales Strategy Category */}
-                {(() => {
-                  if (!editLeadForm.source) return null;
-                  const { allowSelection, categories } = getStrategyCategoryConfigForSource(editLeadForm.source);
-                  const cats = categories.length > 0 ? categories : editLeadCategoryOptions;
-                  if (cats.length === 0) return null;
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-gray-600">
+                    Sales Strategy Category
+                  </label>
+                  <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                    <span className="flex items-center justify-center w-10 shrink-0 bg-indigo-50 border-r border-gray-100">
+                      <Target size={16} className="text-indigo-500" />
+                    </span>
+                    <select
+                      name="strategy_category_id"
+                      value={editLeadForm.strategy_category_id || ""}
+                      onChange={handleEditLeadChange}
+                      className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent cursor-pointer"
+                    >
+                      <option value="">-- Select Strategy Category --</option>
+                      {(editLeadCategoryOptions.length > 0
+                        ? editLeadCategoryOptions
+                        : allStrategyCategories
+                      ).map((cat) => (
+                        <option key={cat.id} value={String(cat.id)}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
 
-                  // Case 1: Auto-assigned category (Allow Selection is OFF)
-                  if (!allowSelection && cats.length >= 1) {
-                    const catName = cats[0].name;
-                    return (
-                      <div>
-                        <label className="block mb-1 text-sm font-medium text-gray-600">
-                          Sales Strategy Category
-                        </label>
-                        <div className="flex items-center gap-2 px-3 py-2 bg-indigo-50 border border-indigo-100 rounded-lg text-sm text-indigo-700 font-medium">
-                          <Target size={14} className="text-indigo-500 shrink-0" />
-                          <span>{catName}</span>
-                          <span className="ml-auto text-[11px] text-indigo-500 font-medium italic">Auto-assigned</span>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  // Case 2: Allow Category Selection = ON
-                  if (allowSelection && cats.length > 0) {
-                    return (
-                      <div>
-                        <label className="block mb-1 text-sm font-medium text-gray-600">
-                          Sales Strategy Category
-                        </label>
-                        <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
-                          <span className="flex items-center justify-center w-10 shrink-0 bg-indigo-50 border-r border-gray-100">
-                            <Target size={16} className="text-indigo-500" />
-                          </span>
-                          <select
-                            name="strategy_category_id"
-                            value={editLeadForm.strategy_category_id || ""}
-                            onChange={handleEditLeadChange}
-                            className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent cursor-pointer"
-                          >
-                            <option value="">-- Select Category --</option>
-                            {cats.map((cat) => (
-                              <option key={cat.id} value={String(cat.id)}>
-                                {cat.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  return null;
-                })()}
                 {/* Location */}
                 <div>
                   <label className="block mb-1 text-sm font-medium text-gray-600">
@@ -2637,27 +2732,6 @@ const handleCloseUpdateModal = () => {
                     />
                   </div>
                 </div>
-                {/* Architecture */}
-                <div>
-                  <label className="block mb-1 text-sm font-medium text-gray-600">
-                    Architecture
-                  </label>
-
-                  <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
-                    <span className="flex items-center justify-center w-10 shrink-0 bg-orange-50 border-r border-gray-100">
-                      <i className="bi bi-diagram-3 text-orange-500 text-sm"></i>
-                    </span>
-
-                    <input
-                      type="text"
-                      name="architecture"
-                      value={editLeadForm.architecture || ""}
-                      placeholder="Enter Architecture"
-                      onChange={handleEditLeadChange}
-                      className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
-                    />
-                  </div>
-                </div>
 
                 {/* Reference */}
                 <div>
@@ -2671,111 +2745,11 @@ const handleCloseUpdateModal = () => {
                     <input
                       type="text"
                       name="reference"
-                      value={editLeadForm.reference}
+                      value={editLeadForm.reference || ""}
                       placeholder="Reference"
                       onChange={handleEditLeadChange}
                       className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
                     />
-                  </div>
-                </div>
-
-                {/* Status */}
-                <div>
-                  <label className="block mb-1 text-sm font-medium text-gray-600">
-                    Status
-                  </label>
-                  <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
-                    <span
-                      className={`flex items-center justify-center w-10 shrink-0 border-r border-gray-100 transition-colors duration-300 ${
-                        editLeadForm.status === "Lost"
-                          ? "bg-red-50"
-                          : editLeadForm.status === "Pending"
-                            ? "bg-amber-50"
-                            : editLeadForm.status === "Quotation Send"
-                              ? "bg-blue-50"
-                              : editLeadForm.status === "Technical Discussion"
-                                ? "bg-violet-50"
-                                : editLeadForm.status === "Call Initiated"
-                                  ? "bg-cyan-50"
-                                  : "bg-green-50"
-                      }`}
-                    >
-                      <ShieldCheck
-                        size={16}
-                        className={`transition-colors duration-300 ${
-                          editLeadForm.status === "Lost"
-                            ? "text-red-500"
-                            : editLeadForm.status === "Pending"
-                              ? "text-amber-500"
-                              : editLeadForm.status === "Quotation Send"
-                                ? "text-blue-500"
-                                : editLeadForm.status === "Technical Discussion"
-                                  ? "text-violet-500"
-                                  : editLeadForm.status === "Call Initiated"
-                                    ? "text-cyan-500"
-                                    : "text-green-500"
-                        }`}
-                      />
-                    </span>
-                    <select
-                      name="status"
-                      value={editLeadForm.status}
-                      onChange={handleEditLeadChange}
-                      className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent cursor-pointer"
-                    >
-                      <option value="">-- Select --</option>
-                      <option>Qualified</option>
-                      <option>Pending</option>
-                      <option>Won</option>
-                      <option>Lost</option>
-                      <option>Quotation Send</option>
-                      <option>Technical Discussion</option>
-                      <option>Call Initiated</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Priority */}
-                <div>
-                  <label className="block mb-1 text-sm font-medium text-gray-600">
-                    Priority <span className="text-red-500">*</span>
-                  </label>
-                  <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
-                    <span
-                      className={`flex items-center justify-center w-10 shrink-0 border-r border-gray-100 transition-colors duration-300 ${
-                        editLeadForm.priority === "High"
-                          ? "bg-red-50"
-                          : editLeadForm.priority === "Medium"
-                            ? "bg-amber-50"
-                            : editLeadForm.priority === "Low"
-                              ? "bg-green-50"
-                              : "bg-rose-50"
-                      }`}
-                    >
-                      <Star
-                        size={16}
-                        className={`transition-colors duration-300 ${
-                          editLeadForm.priority === "High"
-                            ? "text-red-500"
-                            : editLeadForm.priority === "Medium"
-                              ? "text-amber-500"
-                              : editLeadForm.priority === "Low"
-                                ? "text-green-500"
-                                : "text-rose-500"
-                        }`}
-                      />
-                    </span>
-                    <select
-                      name="priority"
-                      value={editLeadForm.priority}
-                      onChange={handleEditLeadChange}
-                      className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent cursor-pointer"
-                    >
-                      <option value="">-- Select --</option>
-                      <option>High</option>
-                      <option>Medium</option>
-                      <option>Low</option>
-                    </select>
                   </div>
                 </div>
 
@@ -2803,6 +2777,109 @@ const handleCloseUpdateModal = () => {
                     </select>
                   </div>
                 </div>
+              </div>
+
+              {/* Products (Inquired) */}
+              <div className="mt-3">
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-sm font-medium text-gray-600 flex items-center gap-1.5">
+                    <span>Products (Inquired)</span>
+                    {(editLeadForm.products?.length || 0) > 0 && (
+                      <span className="px-1.5 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-700">
+                        {editLeadForm.products.length}
+                      </span>
+                    )}
+                  </label>
+                  {(editLeadForm.products?.length || 0) > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setEditLeadForm((prev) => ({ ...prev, products: [] }))}
+                      className="text-xs text-rose-500 hover:text-rose-700 font-medium"
+                    >
+                      Clear all
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
+                  <span className="flex items-center justify-center w-10 shrink-0 bg-amber-50 border-r border-gray-100">
+                    <Package size={16} className="text-amber-500" />
+                  </span>
+                  <select
+                    value=""
+                    onChange={(e) => {
+                      const prodId = e.target.value;
+                      if (!prodId) return;
+                      const selected = productsList.find((p) => String(p.id) === String(prodId));
+                      if (selected) {
+                        const exists = (editLeadForm.products || []).some(
+                          (p) => String(p.id || p) === String(selected.id)
+                        );
+                        if (!exists) {
+                          setEditLeadForm((prev) => ({
+                            ...prev,
+                            products: [
+                              ...(prev.products || []),
+                              {
+                                id: selected.id,
+                                product_name: selected.product_name,
+                                product_code: selected.product_code,
+                                sales_price: selected.sales_price,
+                                category_name: selected.category_name,
+                              },
+                            ],
+                          }));
+                        }
+                      }
+                    }}
+                    className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent cursor-pointer"
+                  >
+                    <option value="">+ Select product to add...</option>
+                    {productsList.map((item) => {
+                      const isSelected = (editLeadForm.products || []).some(
+                        (p) => String(p.id || p) === String(item.id)
+                      );
+                      return (
+                        <option key={item.id} value={item.id} disabled={isSelected}>
+                          {item.product_name} {item.product_code ? `(${item.product_code})` : ""} {isSelected ? "✓ (Added)" : ""}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+
+                {/* Selected Products Chips */}
+                {(editLeadForm.products?.length || 0) > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2 p-2.5 bg-gray-50/80 rounded-lg border border-dashed border-gray-200">
+                    {editLeadForm.products.map((prod, idx) => {
+                      const prodName = prod.product_name || prod.name || (typeof prod === "string" ? prod : `Product #${prod.id}`);
+                      const prodCode = prod.product_code ? ` (${prod.product_code})` : "";
+                      return (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-900 border border-amber-200/80 shadow-2xs group hover:bg-amber-100/70 transition-colors"
+                        >
+                          <Package size={13} className="text-amber-600 shrink-0" />
+                          <span className="max-w-[200px] truncate">
+                            {prodName}{prodCode}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditLeadForm((prev) => ({
+                                ...prev,
+                                products: (prev.products || []).filter((_, i) => i !== idx),
+                              }));
+                            }}
+                            className="text-amber-500 hover:text-red-600 ml-0.5 rounded p-0.5 transition-colors"
+                            title="Remove product"
+                          >
+                            <X size={13} />
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Description */}
@@ -3074,9 +3151,21 @@ const handleCloseUpdateModal = () => {
             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 outline-none bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
           >
             <option value="">-- Select Activity Type --</option>
-            <option>Call</option>
-            <option>Meeting</option>
-            <option>Email</option>
+            {activityTypes.length > 0 ? (
+              activityTypes.map((item) => (
+                <option key={item.id} value={item.name}>
+                  {item.name}
+                </option>
+              ))
+            ) : (
+              <>
+                <option value="Call">Call</option>
+                <option value="Meeting">Meeting</option>
+                <option value="Email">Email</option>
+                <option value="Site Visit">Site Visit</option>
+                <option value="WhatsApp">WhatsApp</option>
+              </>
+            )}
           </select>
         </div>
 
@@ -3346,9 +3435,21 @@ ${
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none bg-gray-50 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
               >
                 <option value="">-- Select --</option>
-                <option>Call</option>
-                <option>Meeting</option>
-                <option>Email</option>
+                {activityTypes.length > 0 ? (
+                  activityTypes.map((item) => (
+                    <option key={item.id} value={item.name}>
+                      {item.name}
+                    </option>
+                  ))
+                ) : (
+                  <>
+                    <option value="Call">Call</option>
+                    <option value="Meeting">Meeting</option>
+                    <option value="Email">Email</option>
+                    <option value="Site Visit">Site Visit</option>
+                    <option value="WhatsApp">WhatsApp</option>
+                  </>
+                )}
               </select>
             </div>
 
@@ -3645,7 +3746,7 @@ ${
     `}</style>
 
     <div
-      className="bg-white rounded-2xl shadow-2xl w-80 border border-gray-100 overflow-hidden"
+      className="bg-white rounded-2xl shadow-2xl w-84 border border-gray-100 overflow-hidden"
       style={{ animation: "stcPopIn 0.25s cubic-bezier(0.22, 1, 0.36, 1)" }}
     >
       {/* Header */}
@@ -3654,25 +3755,39 @@ ${
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md flex-shrink-0"
             style={{
-              background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              background:
+                selectedStatus === "Won"
+                  ? "linear-gradient(135deg, #10b981, #059669)"
+                  : "linear-gradient(135deg, #6366f1, #8b5cf6)",
             }}
           >
-            <i className="bi bi-arrow-repeat text-white text-lg"></i>
+            <i
+              className={`bi ${
+                selectedStatus === "Won" ? "bi-trophy" : "bi-arrow-repeat"
+              } text-white text-lg`}
+            ></i>
           </div>
           <div>
             <h2 className="text-sm font-bold text-gray-800 tracking-wide">
-              Confirm Status Change
+              {selectedStatus === "Won"
+                ? "Mark Lead as Won"
+                : "Confirm Status Change"}
             </h2>
             <p className="text-[10px] text-gray-500 font-medium">
-              This will update the record status
+              {selectedStatus === "Won"
+                ? "Convert lead and send to Quotations"
+                : "This will update the lead status"}
             </p>
           </div>
         </div>
         <div className="h-1 w-full bg-gray-100">
           <div
-            className="h-full w-1/3 rounded-r-full"
+            className="h-full w-full rounded-r-full"
             style={{
-              background: "linear-gradient(to right, #6366f1, #8b5cf6)",
+              background:
+                selectedStatus === "Won"
+                  ? "linear-gradient(to right, #10b981, #059669)"
+                  : "linear-gradient(to right, #6366f1, #8b5cf6)",
             }}
           ></div>
         </div>
@@ -3681,7 +3796,16 @@ ${
       {/* Body */}
       <div className="px-5 py-4">
         <p className="text-sm text-gray-600">
-          Are you sure you want to change status?
+          {selectedStatus === "Won" ? (
+            <>
+              Are you sure you want to mark this lead as{" "}
+              <strong className="text-emerald-600 font-bold">Won</strong>? It
+              will move to the <strong>Won</strong> tab and will be available to
+              generate Quotations.
+            </>
+          ) : (
+            `Are you sure you want to change status to "${selectedStatus}"?`
+          )}
         </p>
       </div>
 
@@ -3689,18 +3813,21 @@ ${
       <div className="flex justify-end gap-3 px-5 py-4 bg-gray-50 border-t border-gray-100">
         <button
           onClick={() => setShowPopup(false)}
-          className="px-4 py-2 rounded-xl text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all flex items-center gap-1.5"
+          className="px-4 py-2 rounded-xl text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all flex items-center gap-1.5 cursor-pointer"
         >
           <i className="bi bi-x-lg text-xs"></i>
           Cancel
         </button>
         <button
           onClick={confirmStatusChange}
-          className="text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-md hover:shadow-lg hover:shadow-violet-200 flex bg-gradient-to-br from-indigo-500 to-violet-600 items-center gap-1.5"
-          
+          className={`text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all shadow-md cursor-pointer flex items-center gap-1.5 ${
+            selectedStatus === "Won"
+              ? "bg-gradient-to-br from-emerald-500 to-teal-600 hover:shadow-emerald-200"
+              : "bg-gradient-to-br from-indigo-500 to-violet-600 hover:shadow-violet-200"
+          }`}
         >
           <i className="bi bi-check-circle text-sm"></i>
-          Yes, Change
+          {selectedStatus === "Won" ? "Yes, Mark as Won" : "Yes, Change"}
         </button>
       </div>
     </div>
@@ -4168,13 +4295,6 @@ ${
             iconColor: "text-teal-500",
           },
           {
-            icon: "bi-diagram-3",
-            label: "Architecture",
-            value: viewLead.architecture,
-            bg: "bg-orange-50",
-            iconColor: "text-orange-500",
-          },
-          {
             icon: "bi-tag",
             label: "Category",
             value: viewLead.category,
@@ -4194,13 +4314,6 @@ ${
             value: viewLead.mobile_no,
             bg: "bg-emerald-50",
             iconColor: "text-emerald-500",
-          },
-          {
-            icon: "bi-person-check",
-            label: "Assignee",
-            value: viewLead.assignee,
-            bg: "bg-indigo-50",
-            iconColor: "text-indigo-500",
           },
           {
             icon: "bi-calendar3",
@@ -4232,13 +4345,66 @@ ${
           </div>
         ))}
 
+        {/* Inquired Products */}
+        {(() => {
+          const prods = parseProducts(viewLead.products);
+          if (!prods || prods.length === 0) return null;
+          return (
+            <div className="col-span-2 bg-gradient-to-r from-amber-50/70 to-orange-50/50 rounded-md p-4 border border-amber-200/70">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                    <Package size={17} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-amber-900 uppercase tracking-wider">
+                      Inquired Products ({prods.length})
+                    </p>
+                    <p className="text-[11px] text-amber-700/80">
+                      Products linked to this lead from Product Master
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-2.5">
+                {prods.map((prod, idx) => {
+                  let name = prod.product_name || prod.name;
+                  let code = prod.product_code;
+                  if (!name) {
+                    const found = productsList.find((p) => String(p.id) === String(prod.id || prod));
+                    if (found) {
+                      name = found.product_name;
+                      code = found.product_code;
+                    } else {
+                      name = typeof prod === "string" ? prod : `Product #${prod.id || prod}`;
+                    }
+                  }
+                  return (
+                    <div
+                      key={idx}
+                      className="inline-flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-amber-200/90 shadow-2xs"
+                    >
+                      <Package size={14} className="text-amber-500 shrink-0" />
+                      <div className="text-xs">
+                        <span className="font-semibold text-slate-800">{name}</span>
+                        {code && <span className="text-slate-500 ml-1">({code})</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
+
         <div className="bg-gray-50 rounded-sm px-4 py-3 flex items-start gap-3">
           <div className="w-9 h-9 rounded-md flex items-center justify-center shrink-0 bg-amber-50">
-            <i className="bi bi-pencil text-amber-500 text-base"></i>
+            <Bookmark size={16} className="text-amber-500" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
-              Lead Title
+              Reference
             </p>
             <p className="text-sm font-semibold text-gray-700 break-words whitespace-normal">
               {viewLead.reference || "—"}
@@ -4294,10 +4460,51 @@ ${
       </div>
 
       {/* Footer */}
-      <div className="flex justify-end px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
+      <div className="flex justify-between items-center px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
+        <div>
+          {viewLead.status === "Pending" ? (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  handleCloseModal();
+                  handleStatusChange(viewLead.lead_id, "Won");
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm transition-all cursor-pointer"
+              >
+                <i className="bi bi-trophy"></i> Mark as Won
+              </button>
+              <button
+                onClick={() => {
+                  handleCloseModal();
+                  handleStatusChange(viewLead.lead_id, "Lost");
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 transition-all cursor-pointer"
+              >
+                <i className="bi bi-x-circle"></i> Mark as Lost
+              </button>
+            </div>
+          ) : viewLead.status === "Won" ? (
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-700">
+                <i className="bi bi-trophy-fill"></i> Won Lead
+              </span>
+              <Link
+                href="/sales/quotation"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 text-white hover:bg-emerald-700 transition-all"
+              >
+                <i className="bi bi-file-earmark-text"></i> Open Quotation
+              </Link>
+            </div>
+          ) : viewLead.status === "Lost" ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-rose-100 text-rose-700">
+              <i className="bi bi-x-circle-fill"></i> Lost Lead
+            </span>
+          ) : null}
+        </div>
+
         <button
           onClick={handleCloseModal}
-          className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium border border-gray-200 rounded-xl text-gray-600 bg-white hover:bg-gray-100 transition-all"
+          className="flex items-center gap-2 px-5 py-2 text-sm font-medium border border-gray-200 rounded-xl text-gray-600 bg-white hover:bg-gray-100 transition-all cursor-pointer"
         >
           <i className="bi bi-x-lg text-xs"></i>
           Close

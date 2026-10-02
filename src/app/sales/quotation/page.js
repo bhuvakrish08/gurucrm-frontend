@@ -195,7 +195,8 @@ const closeUpdateDrawer = () => {
     amount: "",
     discount: "",
     discount_rs: "",
-    tax: "0",
+    tax: "18",
+    gst_percent: "18%",
     grand_total: "",
     description: "",
     amount_9: "",
@@ -377,16 +378,17 @@ const closeUpdateDrawer = () => {
 
       const data = (res.data?.result || []).map((item) => {
         const finalStatus =
-          item.quotation_status === "Approved"
+          item.quotation_status === "Won"
             ? "Won"
-            : item.quotation_status === "Declined"
-              ? "Pending"
-              : item.quotation_status || "Pending";
+            : item.quotation_status === "Lost"
+              ? "Lost"
+              : "Pending";
         return {
           ...item,
           displayStatus: finalStatus,
           wasApprovedOnce:
             item.has_approved ||
+            item.quotation_status === "Approved" ||
             item.quotation_status === "Won" ||
             item.quotation_status === "Lost",
           pi_exists:
@@ -394,77 +396,8 @@ const closeUpdateDrawer = () => {
         };
       });
 
-      const userRole = localStorage.getItem("role") || "";
-      const userFirstName = (localStorage.getItem("username") || "")
-        .split(" ")[0]
-        .toLowerCase();
-      let filteredData = data;
-      if (userRole.toLowerCase() === "sales") {
-        filteredData = data.filter((q) => {
-          const qAssignees = q.assignee
-            ? q.assignee.split(",").map((name) => name.trim().toLowerCase())
-            : [];
-          const lAssignees = q.lead_assignee
-            ? q.lead_assignee
-                .split(",")
-                .map((name) => name.trim().toLowerCase())
-            : [];
-          if (q.displayStatus === "Pending" && qAssignees.length > 0) {
-            const isAssignedToMe = qAssignees.some((name) =>
-              name.includes(userFirstName),
-            );
-            if (!isAssignedToMe) {
-              return false;
-            }
-          }
-
-          const hasBeenAssigned =
-            qAssignees.some((name) => name.includes(userFirstName)) ||
-            lAssignees.some((name) => name.includes(userFirstName));
-
-          let inLog = false;
-          if (q.assignee_log) {
-            try {
-              const logs = JSON.parse(q.assignee_log);
-              inLog = logs.some(
-                (log) =>
-                  (log.previous_assignee &&
-                    log.previous_assignee
-                      .toLowerCase()
-                      .includes(userFirstName)) ||
-                  (log.new_assignee &&
-                    log.new_assignee.toLowerCase().includes(userFirstName)),
-              );
-            } catch {}
-          }
-          return hasBeenAssigned || inLog;
-        });
-      } else if (userRole.toLowerCase() === "estimation") {
-        filteredData = data.filter((q) => {
-          const qAssignees = q.assignee
-            ? q.assignee.split(",").map((name) => name.trim().toLowerCase())
-            : [];
-          const lAssignees = q.lead_assignee
-            ? q.lead_assignee
-                .split(",")
-                .map((name) => name.trim().toLowerCase())
-            : [];
-
-          const matchesQuotation = qAssignees.some((name) =>
-            name.includes(userFirstName),
-          );
-          const matchesLead = lAssignees.some((name) =>
-            name.includes(userFirstName),
-          );
-
-          if (qAssignees.length === 0) {
-            return matchesLead;
-          }
-          return matchesQuotation;
-        });
-      }
-      setQuotations(filteredData);
-      setCache("quotations_list_cached", filteredData);
+      setQuotations(data);
+      setCache("quotations_list_cached", data);
     } catch (err) {
       console.log("[Quotations Fetch Error]", err);
     } finally {
@@ -677,93 +610,25 @@ const closeUpdateDrawer = () => {
       });
       const data = (res.data?.data || []).map((item) => {
         const finalStatus =
-          item.quotation_status === "Approved"
+          item.quotation_status === "Won"
             ? "Won"
-            : item.quotation_status === "Declined"
-              ? "Pending"
-              : item.quotation_status || "Pending";
+            : item.quotation_status === "Lost"
+              ? "Lost"
+              : "Pending";
         return {
           ...item,
           displayStatus: finalStatus,
           wasApprovedOnce:
             item.has_approved ||
             item.quotation_status === "Approved" ||
+            item.quotation_status === "Won" ||
             item.quotation_status === "Lost",
           pi_exists:
             item.proforma_percentage && Number(item.proforma_percentage) > 0,
         };
       });
 
-      const userRole = localStorage.getItem("role") || "";
-      const userFirstName = (localStorage.getItem("username") || "")
-        .split(" ")[0]
-        .toLowerCase();
-      let filteredData = data;
-      if (userRole.toLowerCase() === "sales") {
-        filteredData = data.filter((q) => {
-          const qAssignees = q.assignee
-            ? q.assignee.split(",").map((name) => name.trim().toLowerCase())
-            : [];
-          const lAssignees = q.lead_assignee
-            ? q.lead_assignee
-                .split(",")
-                .map((name) => name.trim().toLowerCase())
-            : [];
-          if (q.displayStatus === "Pending" && qAssignees.length > 0) {
-            const isAssignedToMe = qAssignees.some((name) =>
-              name.includes(userFirstName),
-            );
-            if (!isAssignedToMe) {
-              return false;
-            }
-          }
-
-          const hasBeenAssigned =
-            qAssignees.some((name) => name.includes(userFirstName)) ||
-            lAssignees.some((name) => name.includes(userFirstName));
-
-          let inLog = false;
-          if (q.assignee_log) {
-            try {
-              const logs = JSON.parse(q.assignee_log);
-              inLog = logs.some(
-                (log) =>
-                  (log.previous_assignee &&
-                    log.previous_assignee
-                      .toLowerCase()
-                      .includes(userFirstName)) ||
-                  (log.new_assignee &&
-                    log.new_assignee.toLowerCase().includes(userFirstName)),
-              );
-            } catch {}
-          }
-          return hasBeenAssigned || inLog;
-        });
-      } else if (userRole.toLowerCase() === "estimation") {
-        filteredData = data.filter((q) => {
-          const qAssignees = q.assignee
-            ? q.assignee.split(",").map((name) => name.trim().toLowerCase())
-            : [];
-          const lAssignees = q.lead_assignee
-            ? q.lead_assignee
-                .split(",")
-                .map((name) => name.trim().toLowerCase())
-            : [];
-
-          const matchesQuotation = qAssignees.some((name) =>
-            name.includes(userFirstName),
-          );
-          const matchesLead = lAssignees.some((name) =>
-            name.includes(userFirstName),
-          );
-
-          if (qAssignees.length === 0) {
-            return matchesLead;
-          }
-          return matchesQuotation;
-        });
-      }
-      setQuotations(filteredData);
+      setQuotations(data);
     } catch (err) {
       console.log(err);
     }
@@ -829,8 +694,18 @@ const closeUpdateDrawer = () => {
   };
 
   // ===== NEW: wrapper that intercepts "Lost" selection to open reason modal =====
-  const handleStatusSelectChange = (id, newStatus) => {
-    if (newStatus === "Lost") {
+  const handleStatusSelectChange = (id, newStatus, row = null) => {
+    if (newStatus === "Won") {
+      const isApproved =
+        row?.has_approved ||
+        row?.quotation_status === "Approved" ||
+        row?.wasApprovedOnce;
+      if (!isApproved) {
+        toast.error("Please approve a quotation in Quotation History before marking as Won!");
+        return;
+      }
+      handleTableStatusChange(id, "Won");
+    } else if (newStatus === "Lost") {
       setLostReasonTargetId(id);
       setLostReasonText("");
       setShowLostReasonModal(true);
@@ -869,11 +744,11 @@ const closeUpdateDrawer = () => {
       quotation_no: "",
       quotation_date: new Date().toISOString().split("T")[0],
       activity_type: "",
-      quotation_status:
-        lead.displayStatus === "Revision" ? "Revision" : "Pending",
+      quotation_status: "Pending",
       assignee: lead.assignee || "",
       discount: "",
-      tax: "",
+      tax: "18",
+      gst_percent: "18%",
       amount: "",
       grand_total: "",
       description: "",
@@ -886,18 +761,25 @@ const closeUpdateDrawer = () => {
       const res = await axios.get(
         `${API_BASE}/api/quotation/history/${lead.lead_id}`,
       );
-      const historyData = res.data?.result || [];
+      const rawHistory = res.data?.result || [];
+      const historyData = rawHistory.filter(
+        (h) => h.quotation_no && h.quotation_no.trim() !== ""
+      );
       if (historyData.length > 0) {
+        const leadQuotNo = historyData[0].quotation_no || lead.quotation_no || "";
         setSelectedLead((prev) => ({
           ...prev,
           latest_quotation_id: historyData[0].id,
+          quotation_no: leadQuotNo,
         }));
-      }
-
-      if (historyData.length > 0 && !lead.latest_quotation_id) {
-        setSelectedLead((prev) => ({
+        setForm((prev) => ({
           ...prev,
-          latest_quotation_id: historyData[0].id,
+          quotation_no: leadQuotNo,
+        }));
+      } else if (lead.quotation_no) {
+        setForm((prev) => ({
+          ...prev,
+          quotation_no: lead.quotation_no,
         }));
       }
 
@@ -910,76 +792,8 @@ const closeUpdateDrawer = () => {
         }),
       );
       setFollowUpHistory(historyWithFiles);
-      if (historyData.length > 0) {
-        const isAllowedToEditFull = checkRole([
-          "Admin",
-          "Super Admin",
-          "Sales",
-        ]);
-        if (isAllowedToEditFull) {
-          const latest = historyData[0];
-          setForm((prev) => ({
-            ...prev,
-            quotation_no: latest.quotation_no || prev.quotation_no,
-            quotation_date: latest.quotation_date
-              ? new Date(latest.quotation_date).toISOString().split("T")[0]
-              : prev.quotation_date,
-            activity_type: latest.activity_type || prev.activity_type,
-            quotation_status: latest.quotation_status || prev.quotation_status,
-            assignee: latest.assignee || prev.assignee,
-            amount:
-              latest.amount !== null && latest.amount !== undefined
-                ? latest.amount.toString()
-                : "",
-            grand_total:
-              latest.grand_total !== null && latest.grand_total !== undefined
-                ? latest.grand_total.toString()
-                : "",
-            description: latest.description || "",
-            discount:
-              latest.discount !== null && latest.discount !== undefined
-                ? latest.discount.toString()
-                : "",
-            tax:
-              latest.tax !== null && latest.tax !== undefined
-                ? latest.tax.toString()
-                : "",
-            amount_9:
-              latest.amount_9 !== null && latest.amount_9 !== undefined
-                ? latest.amount_9.toString()
-                : "",
-            amount_18:
-              latest.amount_18 !== null && latest.amount_18 !== undefined
-                ? latest.amount_18.toString()
-                : "",
-            tax_percent_9:
-              latest.tax_percent_9 !== null &&
-              latest.tax_percent_9 !== undefined
-                ? latest.tax_percent_9.toString()
-                : "",
-            tax_percent_18:
-              latest.tax_percent_18 !== null &&
-              latest.tax_percent_18 !== undefined
-                ? latest.tax_percent_18.toString()
-                : "",
-            tax_9:
-              latest.tax_9 !== null && latest.tax_9 !== undefined
-                ? latest.tax_9.toString()
-                : "",
-            tax_18:
-              latest.tax_18 !== null && latest.tax_18 !== undefined
-                ? latest.tax_18.toString()
-                : "",
-          }));
-          setEditingId(latest.id);
-        } else {
-          setForm((prev) => ({
-            ...prev,
-            quotation_no: historyData[0].quotation_no || prev.quotation_no,
-            assignee: historyData[0].assignee || prev.assignee,
-          }));
-        }
-      }
+      // Keep in Create Quotation mode by default so user can record a fresh quotation
+      setEditingId(null);
     } catch (err) {
       console.log(err);
     }
@@ -1052,6 +866,7 @@ const closeUpdateDrawer = () => {
       return;
     }
     setEditingId(item.id);
+    const itemTax = item.tax !== null && item.tax !== undefined ? item.tax.toString() : "18";
     setForm({
       quotation_no: item.quotation_no || "",
       quotation_date: item.quotation_date
@@ -1060,30 +875,31 @@ const closeUpdateDrawer = () => {
       activity_type: item.activity_type || "",
       quotation_status: item.quotation_status || "Pending",
       assignee: item.assignee || "",
-      amount: item.amount || "",
-      discount: item.discount || "",
-      tax: item.tax || "0",
-      grand_total: item.grand_total || "",
+      amount: item.amount !== null && item.amount !== undefined ? item.amount.toString() : "",
+      discount: item.discount !== null && item.discount !== undefined ? item.discount.toString() : "",
+      tax: itemTax,
+      gst_percent: `${parseFloat(itemTax) || 0}%`,
+      grand_total: item.grand_total !== null && item.grand_total !== undefined ? item.grand_total.toString() : "",
       description: item.description || "",
       amount_9:
         item.amount_9 !== null && item.amount_9 !== undefined
-          ? item.amount_9
+          ? item.amount_9.toString()
           : "",
       amount_18:
         item.amount_18 !== null && item.amount_18 !== undefined
-          ? item.amount_18
+          ? item.amount_18.toString()
           : "",
       tax_percent_9:
         item.tax_percent_9 !== null && item.tax_percent_9 !== undefined
-          ? item.tax_percent_9
+          ? item.tax_percent_9.toString()
           : "",
       tax_percent_18:
         item.tax_percent_18 !== null && item.tax_percent_18 !== undefined
-          ? item.tax_percent_18
+          ? item.tax_percent_18.toString()
           : "",
-      tax_9: item.tax_9 !== null && item.tax_9 !== undefined ? item.tax_9 : "",
+      tax_9: item.tax_9 !== null && item.tax_9 !== undefined ? item.tax_9.toString() : "",
       tax_18:
-        item.tax_18 !== null && item.tax_18 !== undefined ? item.tax_18 : "",
+        item.tax_18 !== null && item.tax_18 !== undefined ? item.tax_18.toString() : "",
     });
   };
 
@@ -1117,18 +933,35 @@ const closeUpdateDrawer = () => {
     let discount_rs =
       name === "discount_rs" ? getNum(value) : getNum(newForm.discount_rs);
     let tax = name === "tax" ? getNum(value) : getNum(newForm.tax);
-    if (name === "amount") {
+    if (name === "gst_percent") {
+      newForm.gst_percent = value;
+      const gstRate = parseFloat(String(value).replace(/[^0-9.]/g, "")) || 0;
+      newForm.tax = gstRate.toString();
+      newForm.tax_percent_18 = gstRate.toFixed(2);
+      if (amount > 0) {
+        newForm.tax_18 = ((amount * gstRate) / 100).toFixed(2);
+        newForm.grand_total = (amount + parseFloat(newForm.tax_18)).toFixed(2);
+      } else {
+        newForm.tax_18 = "0.00";
+        newForm.grand_total = newForm.amount === "" ? "" : "0.00";
+      }
+    } else if (name === "amount") {
       discount_rs = (amount * discount) / 100;
       newForm.discount_rs = discount_rs > 0 ? discount_rs.toFixed(2) : "";
-      // Initialize default participation values:
       newForm.amount_9 = 0;
       newForm.amount_18 = amount;
       newForm.tax_percent_9 = newForm.tax_percent_9 || "9.00";
-      newForm.tax_percent_18 = newForm.tax_percent_18 || "18.00";
+      const gstRate = parseFloat(String(newForm.gst_percent !== undefined ? newForm.gst_percent : "18").replace(/[^0-9.]/g, "")) || 0;
+      newForm.tax_percent_18 = gstRate.toFixed(2);
       newForm.tax_9 = "0.00";
-      const pct18 = parseFloat(newForm.tax_percent_18) || 18;
-      newForm.tax_18 = ((amount * pct18) / 100).toFixed(2);
-      newForm.grand_total = (amount + parseFloat(newForm.tax_18)).toFixed(2);
+      newForm.tax = gstRate.toString();
+      if (value !== "" && amount >= 0) {
+        newForm.tax_18 = ((amount * gstRate) / 100).toFixed(2);
+        newForm.grand_total = (amount + parseFloat(newForm.tax_18)).toFixed(2);
+      } else {
+        newForm.tax_18 = "0.00";
+        newForm.grand_total = "";
+      }
     } else if (name === "discount") {
       discount_rs = (amount * discount) / 100;
       newForm.discount_rs = discount_rs > 0 ? discount_rs.toFixed(2) : "";
@@ -1136,7 +969,7 @@ const closeUpdateDrawer = () => {
       discount = amount > 0 ? (discount_rs / amount) * 100 : 0;
       newForm.discount = discount > 0 ? discount.toFixed(2) : "";
     }
-    if (name !== "amount") {
+    if (name !== "amount" && name !== "gst_percent") {
       const hasSplits = newForm.amount_9 !== "" || newForm.amount_18 !== "";
       if (hasSplits) {
         const amtVal = parseFloat(newForm.amount) || 0;
@@ -1406,7 +1239,8 @@ const closeUpdateDrawer = () => {
       const res = await axios.get(
         `${API_BASE}/api/quotation/history/${selectedLead.lead_id}`,
       );
-      const historyData = res.data?.result || [];
+      const rawHistory = res.data?.result || [];
+      const historyData = rawHistory.filter((h) => h.quotation_no && h.quotation_no.trim() !== "");
       const historyWithFiles = await Promise.all(
         historyData.map(async (hist) => {
           const hf = await axios.get(
@@ -1418,9 +1252,9 @@ const closeUpdateDrawer = () => {
       setFollowUpHistory(historyWithFiles);
 
       if (status === "Approved") {
-        setActiveTab("Won");
+        toast.success("Quotation approved! You can now mark this lead as Won in the table.");
       } else if (status === "Declined") {
-        setActiveTab("Pending");
+        toast.info("Quotation declined");
       }
 
       await fetchQuotations();
@@ -1434,23 +1268,6 @@ const closeUpdateDrawer = () => {
 
   const handleApproveDecline = async (histId, newStatus) => {
     try {
-      if (newStatus === "Approved") {
-        const usersRes = await axios.get(`${API_BASE}/api/manage-user/read`, {
-          params: { search5: "Proforma invoices", search8: "1" },
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        });
-        const piUsersList = usersRes.data || [];
-        if (piUsersList.length > 1) {
-          setApproveTargetHistId(histId);
-          setAvailablePiUsers(piUsersList);
-          setSelectedPiUserForApproval("");
-          setShowPiUserSelectModal(true);
-          return;
-        } else if (piUsersList.length === 1) {
-          await proceedStatusUpdate(histId, "Approved", piUsersList[0].name);
-          return;
-        }
-      }
       await proceedStatusUpdate(histId, newStatus);
     } catch (err) {
       console.log(err);
@@ -1777,7 +1594,15 @@ const closeUpdateDrawer = () => {
 
     try {
       setIsSubmitting(true);
-      if (!form.activity_type || !form.quotation_no) {
+      const effectiveQuotationNo =
+        form.quotation_no ||
+        followUpHistory.find(
+          (item) => item.quotation_no && String(item.quotation_no).trim() !== "",
+        )?.quotation_no ||
+        selectedLead?.quotation_no ||
+        "";
+
+      if (!form.activity_type || !effectiveQuotationNo) {
         toast.error("Activity Type and Quotation No are required!");
         setIsSubmitting(false);
         return;
@@ -1804,6 +1629,12 @@ const closeUpdateDrawer = () => {
         formData.append("company_name", selectedLead.company_name);
         formData.append("customer_name", selectedLead.customer_name);
         formData.append("reference", selectedLead.reference);
+        if (selectedLead.location) {
+          formData.append("location", selectedLead.location);
+        }
+        if (selectedLead.mobile_no) {
+          formData.append("mobile_no", selectedLead.mobile_no);
+        }
         if (selectedLead.strategy_category_id) {
           formData.append("strategy_category_id", selectedLead.strategy_category_id);
         }
@@ -1811,6 +1642,7 @@ const closeUpdateDrawer = () => {
         if (selectedFiles.length > 0) {
           selectedFiles.forEach((file) => formData.append("files", file));
         }
+        formData.set("quotation_no", effectiveQuotationNo);
         await axios.post(`${API_BASE}/api/quotation/insert`, formData, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
@@ -1831,84 +1663,28 @@ const closeUpdateDrawer = () => {
       setFollowUpHistory(historyWithFiles);
       setSelectedFiles([]);
 
-      const isAllowedToEditFull = checkRole(["Admin", "Super Admin", "Sales"]);
-      if (historyData.length > 0 && isAllowedToEditFull) {
-        const latest = historyData[0];
-        setForm({
-          quotation_no: latest.quotation_no || "",
-          quotation_date: latest.quotation_date
-            ? new Date(latest.quotation_date).toISOString().split("T")[0]
-            : new Date().toISOString().split("T")[0],
-          activity_type: latest.activity_type || "",
-          quotation_status: latest.quotation_status || "Pending",
-          assignee: latest.assignee || "",
-          amount:
-            latest.amount !== null && latest.amount !== undefined
-              ? latest.amount.toString()
-              : "",
-          grand_total:
-            latest.grand_total !== null && latest.grand_total !== undefined
-              ? latest.grand_total.toString()
-              : "",
-          description: latest.description || "",
-          discount:
-            latest.discount !== null && latest.discount !== undefined
-              ? latest.discount.toString()
-              : "",
-          tax:
-            latest.tax !== null && latest.tax !== undefined
-              ? latest.tax.toString()
-              : "",
-          amount_9:
-            latest.amount_9 !== null && latest.amount_9 !== undefined
-              ? latest.amount_9.toString()
-              : "",
-          amount_18:
-            latest.amount_18 !== null && latest.amount_18 !== undefined
-              ? latest.amount_18.toString()
-              : "",
-          tax_percent_9:
-            latest.tax_percent_9 !== null && latest.tax_percent_9 !== undefined
-              ? latest.tax_percent_9.toString()
-              : "",
-          tax_percent_18:
-            latest.tax_percent_18 !== null &&
-            latest.tax_percent_18 !== undefined
-              ? latest.tax_percent_18.toString()
-              : "",
-          tax_9:
-            latest.tax_9 !== null && latest.tax_9 !== undefined
-              ? latest.tax_9.toString()
-              : "",
-          tax_18:
-            latest.tax_18 !== null && latest.tax_18 !== undefined
-              ? latest.tax_18.toString()
-              : "",
-        });
-        setEditingId(latest.id);
-      } else {
-        setForm({
-          quotation_no: "",
-          quotation_date: new Date().toISOString().split("T")[0],
-          activity_type: "",
-          quotation_status:
-            selectedLead.displayStatus === "Revision" ? "Revision" : "Pending",
-          assignee: selectedLead.assignee || "",
-          amount: "",
-          discount: "",
-          discount_rs: "",
-          tax: "0",
-          grand_total: "",
-          description: "",
-          amount_9: "",
-          amount_18: "",
-          tax_percent_9: "",
-          tax_percent_18: "",
-          tax_9: "",
-          tax_18: "",
-        });
-        setEditingId(null);
-      }
+      // Reset form back to fresh Create Quotation mode
+      setEditingId(null);
+      setForm({
+        quotation_no: effectiveQuotationNo,
+        quotation_date: new Date().toISOString().split("T")[0],
+        activity_type: "",
+        quotation_status: "Pending",
+        assignee: selectedLead?.assignee || "",
+        amount: "",
+        discount: "",
+        discount_rs: "",
+        tax: "18",
+        gst_percent: "18%",
+        grand_total: "",
+        description: "",
+        amount_9: "",
+        amount_18: "",
+        tax_percent_9: "",
+        tax_percent_18: "",
+        tax_9: "",
+        tax_18: "",
+      });
       fetchQuotations();
     } catch (err) {
       const errMsg =
@@ -2262,20 +2038,6 @@ const closeUpdateDrawer = () => {
           </div>
 
           <select
-            name="assignee"
-            value={filters.assignee}
-            onChange={handleFilterChange}
-            className="p-2 w-full md:w-36 bg-white border border-indigo-400 md:border rounded-sm focus:outline-none text-gray-400 text-sm"
-          >
-            <option value="">Assignee</option>
-            {asignee.map((a, index) => (
-              <option key={index} value={a.value}>
-                {a.label}
-              </option>
-            ))}
-          </select>
-
-          <select
             name="quotation_status"
             value={filters.quotation_status}
             onChange={handleFilterChange}
@@ -2285,8 +2047,6 @@ const closeUpdateDrawer = () => {
             <option value="Pending">Pending</option>
             <option value="Won">Won</option>
             <option value="Lost">Lost</option>
-            <option value="Sent">Sent</option>
-            <option value="Revision">Revision</option>
           </select>
 
           <div className="flex p-1 items-center px-2 border bg-white border-indigo-400 rounded-sm w-full md:w-58 outline-none text-gray-400 text-sm col-span-2 md:col-span-1">
@@ -2352,72 +2112,36 @@ const closeUpdateDrawer = () => {
                 <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 rounded-full"></div>
               )}
             </button>
-            {!isEstimation && (
-              <button
-                onClick={() => setActiveTab("Sent")}
-                className={`pb-3 px-1 sm:px-0 text-sm font-semibold relative transition-all whitespace-nowrap  ${activeTab === "Sent" ? "text-sky-600" : "text-gray-400 hover:text-gray-600"}`}
-              >
-                <span className="inline-flex items-center gap-1.5">
-                  <i className="bi bi-send"></i>
-                  <span className="text-xs sm:text-sm">Sent </span>
-                  <span className="ml-0 sm:ml-1 bg-sky-100 text-sky-600 text-xs px-2 py-0.5 rounded-full font-bold">
-                    {sentCount}
-                  </span>
-                </span>
-                {activeTab === "Sent" && (
-                  <div className="absolute bottom-0 left-0 w-full h-0.5 bg-sky-600 rounded-full"></div>
-                )}
-              </button>
-            )}
             <button
-              onClick={() => setActiveTab("Revision")}
-              className={`pb-3 px-1 sm:px-0 text-sm font-semibold relative transition-all whitespace-nowrap ${activeTab === "Revision" ? "text-purple-600" : "text-gray-400 hover:text-gray-600"}`}
+              onClick={() => setActiveTab("Won")}
+              className={`pb-3 px-1 sm:px-0 text-sm font-semibold relative transition-all whitespace-nowrap ${activeTab === "Won" ? "text-green-600" : "text-gray-400 hover:text-gray-600"}`}
             >
               <span className="inline-flex items-center gap-1.5">
-                <i className="bi bi-arrow-repeat"></i>
-                <span className="text-xs sm:text-sm">Revision </span>
-                <span className="ml-0 sm:ml-1 bg-purple-100 text-purple-600 text-xs px-2 py-0.5 rounded-full font-bold">
-                  {revisionCount}
+                <i className="bi bi-trophy"></i>
+                <span className="text-xs sm:text-sm">Won </span>
+                <span className="ml-0 sm:ml-1 bg-green-100 text-green-600 text-xs px-2 py-0.5 rounded-full font-bold">
+                  {wonCount}
                 </span>
               </span>
-              {activeTab === "Revision" && (
-                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-purple-600 rounded-full"></div>
+              {activeTab === "Won" && (
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 rounded-full"></div>
               )}
             </button>
-            {!isEstimation && (
-              <>
-                <button
-                  onClick={() => setActiveTab("Won")}
-                  className={`pb-3 px-1 sm:px-0 text-sm font-semibold relative transition-all whitespace-nowrap ${activeTab === "Won" ? "text-green-600" : "text-gray-400 hover:text-gray-600"}`}
-                >
-                  <span className="inline-flex items-center gap-1.5">
-                    <i className="bi bi-trophy"></i>
-                    <span className="text-xs sm:text-sm">Won </span>
-                    <span className="ml-0 sm:ml-1 bg-green-100 text-green-600 text-xs px-2 py-0.5 rounded-full font-bold">
-                      {wonCount}
-                    </span>
-                  </span>
-                  {activeTab === "Won" && (
-                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-green-600 rounded-full"></div>
-                  )}
-                </button>
-                <button
-                  onClick={() => setActiveTab("Lost")}
-                  className={`pb-3 px-1 sm:px-0 text-sm font-semibold relative transition-all whitespace-nowrap ${activeTab === "Lost" ? "text-red-600" : "text-gray-400 hover:text-gray-600"}`}
-                >
-                  <span className="inline-flex items-center gap-1.5">
-                    <i className="bi bi-person-x"></i>
-                    <span className="text-xs sm:text-sm">Lost </span>
-                    <span className="ml-0 sm:ml-1 bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full font-bold">
-                      {lostCount}
-                    </span>
-                  </span>
-                  {activeTab === "Lost" && (
-                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-red-600 rounded-full"></div>
-                  )}
-                </button>
-              </>
-            )}
+            <button
+              onClick={() => setActiveTab("Lost")}
+              className={`pb-3 px-1 sm:px-0 text-sm font-semibold relative transition-all whitespace-nowrap ${activeTab === "Lost" ? "text-red-600" : "text-gray-400 hover:text-gray-600"}`}
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <i className="bi bi-person-x"></i>
+                <span className="text-xs sm:text-sm">Lost </span>
+                <span className="ml-0 sm:ml-1 bg-red-100 text-red-600 text-xs px-2 py-0.5 rounded-full font-bold">
+                  {lostCount}
+                </span>
+              </span>
+              {activeTab === "Lost" && (
+                <div className="absolute bottom-0 left-0 w-full h-0.5 bg-red-600 rounded-full"></div>
+              )}
+            </button>
 
             {/* 🚦 Traffic Light Legend */}
             <div className="ml-auto flex items-center gap-4 pb-3 text-xs text-gray-500">
@@ -2464,8 +2188,9 @@ const closeUpdateDrawer = () => {
             {loading ? (
               <div className="text-center py-10 text-gray-400">Loading...</div>
             ) : (
-              <div
-                className="overflow-x-auto overflow-y-scroll max-h-[500px] custom-scroll"
+              <>
+                <div
+                  className="overflow-x-auto overflow-y-scroll max-h-[500px] custom-scroll"
                 style={{ overflowX: "scroll" }}
               >
                 <table className="w-full text-sm whitespace-nowrap">
@@ -2490,9 +2215,6 @@ const closeUpdateDrawer = () => {
                         Location
                       </th>
                       <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
-                        Architecture
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
                         Source
                       </th>
                       <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
@@ -2512,9 +2234,6 @@ const closeUpdateDrawer = () => {
                       <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
                         Grand Total{" "}
                         <i className="bi bi-arrow-down-up text-slate-400 text-[10px]"></i>
-                      </th>
-                      <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
-                        Assignee
                       </th>
                       <th className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider">
                         Follow-up
@@ -2598,7 +2317,6 @@ const closeUpdateDrawer = () => {
                             </td>
 
                             <td className="px-3">{q.location || "-"}</td>
-                            <td className="px-3">{q.architecture || "-"}</td>
                             <td className="px-3">
                               <span className="inline-block px-2.5 py-1 bg-gray-100 text-gray-700 rounded-md text-xs font-medium whitespace-nowrap">
                                 {q.source || "-"}
@@ -2659,61 +2377,6 @@ const closeUpdateDrawer = () => {
                               {q.grand_total
                                 ? `₹ ${Number(q.grand_total).toLocaleString()}`
                                 : "-"}
-                            </td>
-
-                            {/* ASSIGNEE CELL */}
-                            <td className="px-3">
-                              {q.displayStatus !== "Won" &&
-                              q.displayStatus !== "Lost" ? (
-                                <button
-                                  onClick={(e) => openAssigneePopover(e, q)}
-                                  className="flex gap-1 items-center group cursor-pointer hover:opacity-80 transition-all"
-                                  title="Click to change assignee"
-                                >
-                                  {q.assignee ? (
-                                    <>
-                                      {String(q.assignee)
-                                        .split(",")
-                                        .map((name, i) => (
-                                          <div
-                                            key={i}
-                                            title={name.trim()}
-                                            className="px-3 py-1.5 bg-blue-800 text-white rounded-full font-semibold text-xs flex justify-center items-center min-w-[28px] select-none"
-                                          >
-                                            {name
-                                              .trim()
-                                              .charAt(0)
-                                              .toUpperCase()}
-                                          </div>
-                                        ))}
-                                      <i className="bi bi-pencil-fill text-[9px] text-gray-300 group-hover:text-blue-500 ml-1 transition-colors"></i>
-                                    </>
-                                  ) : (
-                                    <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 border border-dashed border-gray-400 rounded-full text-gray-500 text-xs font-medium hover:bg-orange-50 hover:border-orange-400 hover:text-orange-600 transition-all">
-                                      <i className="bi bi-person-plus text-xs"></i>
-                                      <span>Assign</span>
-                                    </div>
-                                  )}
-                                </button>
-                              ) : (
-                                <div className="flex gap-1 items-center">
-                                  {q.assignee ? (
-                                    String(q.assignee)
-                                      .split(",")
-                                      .map((name, i) => (
-                                        <div
-                                          key={i}
-                                          title={name.trim()}
-                                          className="px-3 py-1.5 bg-blue-800 text-white rounded-full font-semibold text-xs flex justify-center items-center min-w-[28px] select-none"
-                                        >
-                                          {name.trim().charAt(0).toUpperCase()}
-                                        </div>
-                                      ))
-                                  ) : (
-                                    <span className="text-gray-300">—</span>
-                                  )}
-                                </div>
-                              )}
                             </td>
 
                             {/* follow-up */}
@@ -2881,78 +2544,46 @@ const closeUpdateDrawer = () => {
 
                             <td className="px-3">
                               <div className="flex items-center gap-1.5">
-                                {q.displayStatus === "Pending" ? (
-                                  isKhushaliEstimation ? (
-                                    <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-xs font-bold">
-                                      Pending
-                                    </span>
-                                  ) : (
-                                    <select
-                                      value="Pending"
-                                      onChange={(e) =>
-                                        handleStatusSelectChange(
-                                          q.latest_quotation_id,
-                                          e.target.value,
-                                        )
-                                      }
-                                      className="border rounded-md px-2 py-1.5 text-xs font-semibold outline-none bg-blue-50 text-blue-700 border-blue-200 cursor-pointer"
-                                    >
-                                      <option value="Pending">Pending</option>
-                                      <option value="Sent">Sent</option>
-                                      <option value="Lost">Lost</option>
-                                    </select>
-                                  )
-                                ) : q.displayStatus === "Sent" ? (
-                                  isKhushaliEstimation ? (
-                                    <span className="bg-sky-100 text-sky-700 px-2 py-1 rounded-md text-xs font-bold">
-                                      Sent
-                                    </span>
-                                  ) : (
-                                    <select
-                                      value="Sent"
-                                      onChange={(e) =>
-                                        handleStatusSelectChange(
-                                          q.latest_quotation_id,
-                                          e.target.value,
-                                        )
-                                      }
-                                      className="border rounded-md px-2 py-1.5 text-xs font-semibold outline-none bg-sky-50 text-sky-700 border-sky-200 cursor-pointer"
-                                    >
-                                      <option value="Sent">Sent</option>
-                                      <option value="Revision">Revision</option>
-                                      <option value="Lost">Lost</option>
-                                    </select>
-                                  )
-                                ) : q.displayStatus === "Revision" ? (
-                                  isKhushaliEstimation ? (
-                                    <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-md text-xs font-bold">
-                                      Revision
-                                    </span>
-                                  ) : (
-                                    <select
-                                      value="Revision"
-                                      onChange={(e) =>
-                                        handleStatusSelectChange(
-                                          q.latest_quotation_id,
-                                          e.target.value,
-                                        )
-                                      }
-                                      className="border rounded-md px-2 py-1.5 text-xs font-semibold outline-none bg-purple-50 text-purple-700 border-purple-200 cursor-pointer"
-                                    >
-                                      <option value="Revision">Revision</option>
-                                      <option value="Sent">Sent</option>
-                                      <option value="Lost">Lost</option>
-                                    </select>
-                                  )
-                                ) : q.displayStatus === "Won" ? (
-                                  <span className="bg-green-100 text-green-700 px-2 py-1 rounded-md text-xs font-bold">
+                                {q.displayStatus === "Won" ? (
+                                  <span className="border border-emerald-200 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg text-xs font-semibold inline-flex items-center gap-1">
+                                    <i className="bi bi-trophy-fill text-[10px]"></i>
                                     Won
                                   </span>
                                 ) : q.displayStatus === "Lost" ? (
-                                  <span className="bg-red-100 text-red-700 px-2 py-1 rounded-md text-xs font-bold">
+                                  <span className="border border-rose-200 bg-rose-50 text-rose-700 px-2.5 py-1 rounded-lg text-xs font-semibold inline-flex items-center gap-1">
+                                    <i className="bi bi-x-circle-fill text-[10px]"></i>
                                     Lost
                                   </span>
-                                ) : null}
+                                ) : (
+                                  <select
+                                    value={q.displayStatus || "Pending"}
+                                    onChange={(e) =>
+                                      handleStatusSelectChange(
+                                        q.latest_quotation_id,
+                                        e.target.value,
+                                        q,
+                                      )
+                                    }
+                                    className={`border rounded-lg px-2.5 py-1 text-xs font-semibold outline-none cursor-pointer transition-all w-auto ${
+                                      q.displayStatus === "Won"
+                                        ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300"
+                                        : q.displayStatus === "Lost"
+                                          ? "border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-300"
+                                          : "border-blue-200 bg-blue-50 text-blue-600 hover:border-blue-300"
+                                    }`}
+                                  >
+                                    <option value="Pending">Pending</option>
+                                    <option
+                                      value="Won"
+                                      disabled={!q.has_approved && q.quotation_status !== "Approved"}
+                                    >
+                                      {q.has_approved || q.quotation_status === "Approved"
+                                        ? "Won"
+                                        : "Won (Approve first)"}
+                                    </option>
+                                    <option value="Lost">Lost</option>
+                                  </select>
+                                )}
                               </div>
                             </td>
 
@@ -3021,7 +2652,7 @@ const closeUpdateDrawer = () => {
                     ) : (
                       <tr>
                         <td
-                          colSpan="14"
+                          colSpan="13"
                           className="text-center py-10 text-gray-400"
                         >
                           No Quotations Found
@@ -3030,86 +2661,87 @@ const closeUpdateDrawer = () => {
                     )}
                   </tbody>
                 </table>
+              </div>
 
-                {/* PAGINATION */}
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white rounded-b-lg">
-                  {/* Left side: Showing X to Y of Z entries */}
-                  <div className="text-sm text-slate-600 font-semibold">
-                    Showing{" "}
-                    {filteredQuotations.length === 0
-                      ? 0
-                      : (currentPage - 1) * itemsPerPage + 1}{" "}
-                    to{" "}
-                    {Math.min(
-                      currentPage * itemsPerPage,
-                      filteredQuotations.length,
-                    )}{" "}
-                    of {filteredQuotations.length} entries
-                  </div>
+              {/* PAGINATION */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white rounded-b-lg">
+                {/* Left side: Showing X to Y of Z entries */}
+                <div className="text-sm text-slate-600 font-semibold whitespace-nowrap">
+                  Showing{" "}
+                  {filteredQuotations.length === 0
+                    ? 0
+                    : (currentPage - 1) * itemsPerPage + 1}{" "}
+                  to{" "}
+                  {Math.min(
+                    currentPage * itemsPerPage,
+                    filteredQuotations.length,
+                  )}{" "}
+                  of {filteredQuotations.length} entries
+                </div>
 
-                  {/* Center: Navigation buttons */}
-                  {totalPages > 1 && (
-                    <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 md:pb-0">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setCurrentPage((prev) => Math.max(prev - 1, 1))
-                        }
-                        disabled={currentPage === 1}
-                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        <i className="bi bi-chevron-left text-sm"></i>
-                      </button>
-                      <div className="flex items-center gap-1.5">
-                        {getSlidingPages().map((page) => (
-                          <button
-                            type="button"
-                            key={page}
-                            onClick={() => setCurrentPage(page)}
-                            className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${currentPage === page ? "bg-indigo-600 text-white shadow-md shadow-indigo-200" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}
-                          >
-                            {page}
-                          </button>
-                        ))}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setCurrentPage((prev) =>
-                            Math.min(prev + 1, totalPages),
-                          )
-                        }
-                        disabled={currentPage === totalPages}
-                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        <i className="bi bi-chevron-right text-sm"></i>
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Right side: Rows per page selector */}
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-slate-500 font-medium">
-                      Rows per page:
-                    </span>
-                    <select
-                      value={itemsPerPage}
-                      onChange={(e) => {
-                        setItemsPerPage(Number(e.target.value));
-                        setCurrentPage(1);
-                      }}
-                      className="border border-indigo-200 rounded-lg px-3 py-1.5 text-sm text-indigo-600 font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+                {/* Center: Navigation buttons */}
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-2 sm:pb-0">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
+                      disabled={currentPage === 1}
+                      className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                     >
-                      {[10, 20, 100, 200].map((size) => (
-                        <option key={size} value={size}>
-                          {size}
-                        </option>
+                      <i className="bi bi-chevron-left text-sm"></i>
+                    </button>
+                    <div className="flex items-center gap-1.5">
+                      {getSlidingPages().map((page) => (
+                        <button
+                          type="button"
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${currentPage === page ? "bg-indigo-600 text-white shadow-md shadow-indigo-200" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                        >
+                          {page}
+                        </button>
                       ))}
-                    </select>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setCurrentPage((prev) =>
+                          Math.min(prev + 1, totalPages),
+                        )
+                      }
+                      disabled={currentPage === totalPages}
+                      className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      <i className="bi bi-chevron-right text-sm"></i>
+                    </button>
                   </div>
+                )}
+
+                {/* Right side: Rows per page selector */}
+                <div className="flex items-center gap-2.5 whitespace-nowrap">
+                  <span className="text-sm text-slate-500 font-medium">
+                    Rows per page:
+                  </span>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="border border-indigo-200 rounded-lg px-3 py-1.5 text-sm text-indigo-600 font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+                  >
+                    {[10, 20, 50, 100, 200].map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
-            )}
+            </>
+          )}
           </div>
         </div>
       </div>
@@ -3861,13 +3493,13 @@ const closeUpdateDrawer = () => {
               </div>
             </div>
           )}
- 
+
           <div
-            className={`p-3 sm:p-6 flex flex-col gap-3 sm:gap-4 ${isModalLocked ? "opacity-50 pointer-events-none select-none" : ""}`}
+            className={`p-3 sm:p-4 flex flex-col gap-2.5 sm:gap-3 ${isModalLocked ? "opacity-50 pointer-events-none select-none" : ""}`}
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
                   Quotation Date <span className="text-red-400">*</span>
                 </label>
                 <input
@@ -3875,18 +3507,18 @@ const closeUpdateDrawer = () => {
                   name="quotation_date"
                   value={form.quotation_date}
                   onChange={handleChange}
-                  className="w-full mt-1 border border-indigo-200 focus:border-violet-400 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50 transition-colors"
+                  className="w-full mt-1 border border-indigo-200 focus:border-violet-400 rounded-lg px-2.5 py-1.5 text-xs outline-none bg-gray-50 transition-colors"
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
                   Activity Type <span className="text-red-400">*</span>
                 </label>
                 <select
                   name="activity_type"
                   value={form.activity_type}
                   onChange={handleChange}
-                  className="w-full mt-1 border border-indigo-200 focus:border-violet-400 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50 transition-colors"
+                  className="w-full mt-1 border border-indigo-200 focus:border-violet-400 rounded-lg px-2.5 py-1.5 text-xs outline-none bg-gray-50 transition-colors cursor-pointer"
                 >
                   <option value="">-- Select --</option>
                   <option>New</option>
@@ -3894,61 +3526,69 @@ const closeUpdateDrawer = () => {
                 </select>
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
                   Quotation No <span className="text-red-400">*</span>
                 </label>
                 <input
                   name="quotation_no"
-                  value={form.quotation_no}
+                  value={
+                    form.quotation_no ||
+                    followUpHistory.find((item) => item.quotation_no)?.quotation_no ||
+                    selectedLead?.quotation_no ||
+                    ""
+                  }
                   onChange={handleChange}
                   disabled={isQuotationNoLocked}
-                  className={`w-full mt-1 border border-indigo-200 focus:border-violet-400 rounded-lg px-3 py-2 text-sm outline-none bg-gray-50 transition-colors ${
+                  placeholder="Enter Quotation No"
+                  className={`w-full mt-1 border border-indigo-200 focus:border-violet-400 rounded-lg px-2.5 py-1.5 text-xs outline-none bg-gray-50 transition-colors ${
                     isQuotationNoLocked ? "opacity-75 cursor-not-allowed" : ""
                   }`}
                 />
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
                   Amount (₹)
                 </label>
                 <div className="relative flex items-center mt-1">
                   <input
-                    type="text"
+                    type="number"
+                    step="any"
                     name="amount"
                     value={form.amount || ""}
                     onChange={handleChange}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        if (
-                          (isAdmin || isSales) &&
-                          ["Sent", "Approved", "Won"].includes(form.quotation_status)
-                        ) {
-                          openSplitModal(false);
-                        }
-                      }
-                    }}
-                    className="w-full border border-indigo-200 focus:border-violet-400 rounded-lg pl-2 pr-10 sm:pl-3 sm:pr-10 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-50 transition-colors"
+                    placeholder="0.00"
+                    className="w-full border border-indigo-200 focus:border-violet-400 rounded-lg px-2.5 py-1.5 text-xs outline-none bg-gray-50 transition-colors font-medium text-gray-800"
                   />
-                  {(isAdmin || isSales) &&
-                    ["Sent", "Approved", "Won"].includes(form.quotation_status) && (
-                      <button
-                        type="button"
-                        onClick={() => openSplitModal(false)}
-                        className="absolute right-2 text-violet-500 hover:text-violet-700 font-bold p-1 rounded transition-colors flex items-center justify-center border-0 bg-transparent cursor-pointer"
-                        title="Configure Participation"
-                      >
-                        <i className="bi bi-plus-circle-fill text-lg"></i>
-                      </button>
-                    )}
                 </div>
               </div>
               <div>
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+                  GST (%)
+                </label>
+                <select
+                  name="gst_percent"
+                  value={
+                    form.gst_percent !== undefined && form.gst_percent !== ""
+                      ? String(form.gst_percent).includes("%")
+                        ? form.gst_percent
+                        : `${form.gst_percent}%`
+                      : "18%"
+                  }
+                  onChange={handleChange}
+                  className="w-full mt-1 border border-indigo-200 focus:border-violet-400 rounded-lg px-2.5 py-1.5 text-xs outline-none bg-gray-50 transition-colors font-semibold text-gray-700 cursor-pointer"
+                >
+                  <option value="0%">0%</option>
+                  <option value="5%">5%</option>
+                  <option value="12%">12%</option>
+                  <option value="18%">18%</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
                   Grand Total (₹)
                 </label>
                 <input
@@ -3957,7 +3597,8 @@ const closeUpdateDrawer = () => {
                   value={form.grand_total || ""}
                   readOnly
                   disabled
-                  className="w-full mt-1 border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm outline-none bg-gray-100 cursor-not-allowed font-semibold text-gray-700"
+                  placeholder="0.00"
+                  className="w-full mt-1 border border-emerald-200 rounded-lg px-2.5 py-1.5 text-xs outline-none bg-emerald-50/60 cursor-not-allowed font-bold text-emerald-700"
                 />
               </div>
             </div>
@@ -3970,7 +3611,7 @@ const closeUpdateDrawer = () => {
               <input type="hidden" name="tax" value={form.tax || "0"} />
             </div>
             <div>
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              <label className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
                 Description
               </label>
               <textarea
@@ -3978,32 +3619,32 @@ const closeUpdateDrawer = () => {
                 value={form.description}
                 onChange={handleChange}
                 rows="2"
-                className="w-full mt-1 border border-indigo-200 focus:border-violet-400 rounded-lg px-3 py-2 text-sm outline-none bg-gray-50 resize-none transition-colors"
+                placeholder="Enter description..."
+                className="w-full mt-1 border border-indigo-200 focus:border-violet-400 rounded-lg px-2.5 py-1.5 text-xs outline-none bg-gray-50 resize-none transition-colors"
               ></textarea>
             </div>
-            <div className="border border-dashed border-violet-300 rounded-xl p-4 bg-violet-50/40 text-center">
+            <div className="border border-dashed border-violet-200 rounded-lg p-2.5 bg-violet-50/30 text-center">
               {!editingId ? (
                 <>
                   <button
                     onClick={() => setShowFileModal(true)}
-                    className="text-white px-5 py-2 text-xs font-semibold rounded-lg flex items-center gap-2 mx-auto transition-all hover:shadow-lg hover:shadow-violet-200"
+                    className="text-white px-3.5 py-1.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 mx-auto transition-all hover:shadow-md hover:shadow-violet-200"
                     style={{
                       background: "linear-gradient(to right, #6366f1, #8b5cf6)",
                     }}
                   >
-                    <i className="bi bi-cloud-upload text-sm"></i> Upload
-                    Files
+                    <i className="bi bi-cloud-upload text-xs"></i> Upload Files
                   </button>
                   {selectedFiles.length > 0 && (
-                    <div className="mt-3 space-y-1.5 text-left">
+                    <div className="mt-2 space-y-1 text-left">
                       {selectedFiles.map((file, idx) => (
                         <div
                           key={idx}
-                          className="flex justify-between items-center bg-white px-3 py-1.5 text-xs rounded-lg border border-gray-100 shadow-sm"
+                          className="flex justify-between items-center bg-white px-2.5 py-1 text-xs rounded-md border border-gray-100 shadow-xs"
                         >
-                          <div className="flex items-center gap-2.5 overflow-hidden">
-                            <i className="bi bi-file-earmark-text text-violet-500 text-sm"></i>
-                            <span className="text-gray-600 font-medium truncate">
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <i className="bi bi-file-earmark-text text-violet-500 text-xs"></i>
+                            <span className="text-gray-600 font-medium truncate text-xs">
                               {file.name}
                             </span>
                           </div>
@@ -4015,7 +3656,7 @@ const closeUpdateDrawer = () => {
                             }
                             className="text-gray-300 hover:text-red-500 transition-colors ml-2"
                           >
-                            <i className="bi bi-x-circle text-sm"></i>
+                            <i className="bi bi-x-circle text-xs"></i>
                           </button>
                         </div>
                       ))}
@@ -4023,18 +3664,18 @@ const closeUpdateDrawer = () => {
                   )}
                 </>
               ) : (
-                <p className="text-xs text-gray-500 italic">
+                <p className="text-[11px] text-gray-400 italic">
                   File editing is unavailable during updates. Create a new
                   quotation to attach new files.
                 </p>
               )}
             </div>
           </div>
- 
-          <div className="p-4 border-t border-gray-100 bg-gray-50 mt-auto flex gap-3">
+
+          <div className="p-3 border-t border-gray-100 bg-gray-50 mt-auto flex gap-2.5">
             {isModalLocked ? (
-              <div className="flex-1 flex items-center justify-center gap-2 bg-gray-100 border border-gray-200 rounded-xl py-3 text-sm font-semibold text-gray-400 cursor-not-allowed select-none">
-                <i className="bi bi-lock-fill text-gray-400"></i>
+              <div className="flex-1 flex items-center justify-center gap-2 bg-gray-100 border border-gray-200 rounded-lg py-2 text-xs font-semibold text-gray-400 cursor-not-allowed select-none">
+                <i className="bi bi-lock-fill text-gray-400 text-xs"></i>
                 {isWonOrLostLocked
                   ? `Locked — Lead ${selectedLead?.displayStatus}`
                   : "Locked — Quotation Approved"}
@@ -4044,15 +3685,12 @@ const closeUpdateDrawer = () => {
                 <button
                   onClick={handleQuotationSubmit}
                   disabled={isSubmitting}
-                  className={`flex-1 bg-gradient-to-br from-indigo-500 to-violet-600 text-white rounded-xl py-3 text-sm font-semibold transition-all flex justify-center items-center gap-2 hover:shadow-lg hover:shadow-violet-200 ${isSubmitting ? "opacity-70 cursor-not-allowed" : ""}`}
-                  // style={{
-                  //   background: "linear-gradient(to right, #6366f1, #8b5cf6)",s
-                  // }}
+                  className={`flex-1 bg-gradient-to-br from-indigo-500 to-violet-600 text-white rounded-lg py-2 text-xs font-semibold transition-all flex justify-center items-center gap-2 hover:shadow-md hover:shadow-violet-200 ${isSubmitting ? "opacity-70 cursor-not-allowed" : ""}`}
                 >
                   {isSubmitting ? (
                     <>
                       <svg
-                        className="animate-spin h-4 w-4"
+                        className="animate-spin h-3.5 w-3.5"
                         viewBox="0 0 24 24"
                         fill="none"
                       >
@@ -4073,19 +3711,20 @@ const closeUpdateDrawer = () => {
                     </>
                   ) : (
                     <>
-                      <i className="bi bi-floppy2-fill"></i>
+                      <i className="bi bi-floppy2-fill text-xs"></i>
                       {editingId
                         ? "Update Quotation"
-                        : "Save Quotation Activity"}
+                        : "Create Quotation"}
                     </>
                   )}
                 </button>
                 {editingId && (
                   <button
+                    type="button"
                     onClick={() => {
                       setEditingId(null);
                       setForm({
-                        quotation_no: form.quotation_no,
+                        quotation_no: "",
                         quotation_date: new Date()
                           .toISOString()
                           .split("T")[0],
@@ -4094,10 +3733,11 @@ const closeUpdateDrawer = () => {
                           selectedLead.displayStatus === "Revision"
                             ? "Revision"
                             : "Pending",
-                        assignee: form.assignee,
+                        assignee: selectedLead?.assignee || form.assignee || "",
                         amount: "",
                         discount: "",
-                        tax: "0",
+                        tax: "18",
+                        gst_percent: "18%",
                         grand_total: "",
                         description: "",
                         amount_9: "",
@@ -4106,7 +3746,7 @@ const closeUpdateDrawer = () => {
                         tax_18: "",
                       });
                     }}
-                    className="flex-none bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl px-4 py-3 text-sm font-semibold transition-all"
+                    className="px-3.5 py-2 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors"
                   >
                     Cancel
                   </button>
@@ -4166,13 +3806,13 @@ const closeUpdateDrawer = () => {
                               : "bg-violet-100 text-violet-600"
                           }`}
                         >
-                          {item.assignee ? item.assignee.charAt(0) : "U"}
+                          {(item.updated_by || item.assignee || "U").charAt(0).toUpperCase()}
                         </div>
                         <div>
                           <p className="text-xs text-gray-500 font-medium">
                             Recorded by{" "}
                             <span className="text-gray-800 font-bold">
-                              {item.assignee || "User"}
+                              {item.updated_by || item.assignee || "User"}
                             </span>
                           </p>
                           <p className="text-[10px] text-gray-400 font-medium tracking-wide">
@@ -5864,16 +5504,10 @@ const closeUpdateDrawer = () => {
             color: "bg-amber-50 text-amber-500",
           },
           {
-            icon: "bi-file-text",
-            label: "location",
-            value: viewQuotation.location,
+            icon: "bi-geo-alt",
+            label: "Location",
+            value: viewQuotation.location || "—",
             color: "bg-green-50 text-green-500",
-          },
-          {
-            icon: "bi-file-text",
-            label: "architecture",
-            value: viewQuotation.architecture,
-            color: "bg-teal-50 text-teal-500",
           },
           {
             icon: "bi-receipt",

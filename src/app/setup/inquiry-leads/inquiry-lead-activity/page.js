@@ -15,10 +15,10 @@ export default function Page() {
         <>
             <Header />
             <CommonMasterPage
-                title="Industries"
-                listApi={`${API_BASE}/api/Industries/read`} // add your list API
-                saveApi={`${API_BASE}/api/Industries`}      // add your insert API without any endpoints
-                breadcrumbs={["Industries"]}
+                title="Inquiry / Lead Activity"
+                listApi={`${API_BASE}/api/inquiry-lead-activity/read`}
+                saveApi={`${API_BASE}/api/inquiry-lead-activity`}
+                breadcrumbs={["Inquiry / Lead", "Inquiry / Lead Activity"]}
                 showRadio={false}
                 showCheckboxColumn={false}
             />
