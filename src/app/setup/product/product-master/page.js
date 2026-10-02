@@ -70,8 +70,6 @@ export default function Page() {
           search3: filters.product_code,
           search4: filters.unit,
           search5: filters.code,
-          search6: filters.purchase_price,
-          search7: filters.current_stocks,
           search8: filters.product_type,
         },
       });
@@ -421,29 +419,6 @@ export default function Page() {
             />
           </div>
 
-          <div className="flex items-center gap-2 border bg-white border-indigo-400 rounded-sm px-2 py-2 w-full md:w-45">
-              <IndianRupee size={15} className="text-emerald-500" />
-            <input
-              type="text"
-              name="purchase_price"
-              placeholder="Purchase Price"
-              className="w-full text-gray-600 text-sm outline-none bg-transparent"
-              value={filters.purchase_price}
-              onChange={handleFilterChange}
-            />
-          </div>
-
-          <div className="flex items-center gap-2 border bg-white border-indigo-400 rounded-sm px-2 py-2 w-full md:w-45">
-              <Boxes size={15} className="text-indigo-500" />
-            <input
-              type="text"
-              name="current_stocks"
-              placeholder="Current Stocks"
-              className="w-full text-gray-600 text-sm outline-none bg-transparent"
-              value={filters.current_stocks}
-              onChange={handleFilterChange}
-            />
-          </div>
 
           
             <select
@@ -504,14 +479,6 @@ export default function Page() {
                   <th className="py-3 px-4 text-center">Product Code</th>
                   <th className="py-3 px-4 text-center">Unit</th>
                   <th className="py-3 px-4 text-center">Code</th>
-                  <th className="py-3 px-4 text-center">
-                    Purchase Price{" "}
-                    <i className="bi bi-arrow-down-up text-slate-400 text-[10px]"></i>
-                  </th>
-                  <th className="py-3 px-4 text-center">
-                    Current Stocks{" "}
-                    <i className="bi bi-arrow-down-up text-slate-400 text-[10px]"></i>
-                  </th>
                   <th className="py-3 px-4 text-center">Product Type</th>
                   <th className="py-3 px-4 text-center">Action</th>
                 </tr>
@@ -547,12 +514,6 @@ export default function Page() {
                       </td>
                       <td className="py-2 px-4 text-center text-gray-600">
                         {item.code}
-                      </td>
-                      <td className="py-2 px-4 text-center text-gray-600">
-                        {item.purchase_price}
-                      </td>
-                      <td className="py-2 px-4 text-center font-semibold text-slate-800">
-                        {item.current_stocks}
                       </td>
                       <td className="py-2 px-4 text-center">
                         <span
@@ -834,62 +795,6 @@ export default function Page() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block mb-1 text-sm font-medium text-gray-600">
-                      Purchase Price <span className="text-red-500">*</span>
-                    </label>
-                    <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
-                      <span className="flex items-center justify-center w-10 shrink-0 bg-emerald-50 border-r border-gray-100">
-                        <IndianRupee size={16} className="text-emerald-500" />
-                      </span>
-                      <input
-                        type="text"
-                        name="purchase_price"
-                        value={formdata.purchase_price}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block mb-1 text-sm font-medium text-gray-600">
-                      Sales Price <span className="text-red-500">*</span>
-                    </label>
-                    <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
-                      <span className="flex items-center justify-center w-10 shrink-0 bg-green-50 border-r border-gray-100">
-                        <TrendingUp size={16} className="text-green-500" />
-                      </span>
-                      <input
-                        type="text"
-                        name="sales_price"
-                        value={formdata.sales_price}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block mb-1 text-sm font-medium text-gray-600">
-                      Current Stocks <span className="text-red-500">*</span>
-                    </label>
-                    <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
-                      <span className="flex items-center justify-center w-10 shrink-0 bg-indigo-50 border-r border-gray-100">
-                        <Boxes size={16} className="text-indigo-500" />
-                      </span>
-                      <input
-                        type="text"
-                        name="current_stocks"
-                        value={formdata.current_stocks}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent"
-                        required
-                      />
-                    </div>
-                  </div>
 
                   {/* Product Code Type + Code — same row, sub-grid (jem juna code ma hatu) */}
                   <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1111,56 +1016,6 @@ export default function Page() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block mb-1 text-sm font-medium text-gray-600">
-                      Purchase Price
-                    </label>
-                    <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-                      <span className="flex items-center justify-center w-10 shrink-0 bg-emerald-50 border-r border-gray-100">
-                        <IndianRupee size={16} className="text-emerald-500" />
-                      </span>
-                      <input
-                        type="text"
-                        value={viewProduct.purchase_price || ""}
-                        disabled
-                        className="w-full px-3 py-2 text-sm text-gray-700 bg-transparent cursor-not-allowed"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block mb-1 text-sm font-medium text-gray-600">
-                      Sales Price
-                    </label>
-                    <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-                      <span className="flex items-center justify-center w-10 shrink-0 bg-green-50 border-r border-gray-100">
-                        <TrendingUp size={16} className="text-green-500" />
-                      </span>
-                      <input
-                        type="text"
-                        value={viewProduct.sales_price || ""}
-                        disabled
-                        className="w-full px-3 py-2 text-sm text-gray-700 bg-transparent cursor-not-allowed"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block mb-1 text-sm font-medium text-gray-600">
-                      Current Stocks
-                    </label>
-                    <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-                      <span className="flex items-center justify-center w-10 shrink-0 bg-indigo-50 border-r border-gray-100">
-                        <Boxes size={16} className="text-indigo-500" />
-                      </span>
-                      <input
-                        type="text"
-                        value={viewProduct.current_stocks || ""}
-                        disabled
-                        className="w-full px-3 py-2 text-sm text-gray-700 bg-transparent cursor-not-allowed"
-                      />
-                    </div>
-                  </div>
 
                   {/* Product Code Type + Code — same row, sub-grid (jem Add form ma hatu) */}
                   <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">

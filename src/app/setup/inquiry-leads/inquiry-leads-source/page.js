@@ -51,16 +51,18 @@ export default function Page() {
   const fetchData = useCallback(
     async (search = "", status = "") => {
       try {
-        const params = {};
+        const params = { _t: Date.now() };
         if (search) params.search2 = search;
         if (status) params.status = status;
         const res = await axios.get(`${API_BASE}/api/inquiry-lead-source/read`, {
           params,
           headers: getHeaders(),
         });
-        setData(res.data);
+        const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+        setData(list);
       } catch (err) {
         console.error("Fetch error:", err);
+        setData([]);
       }
     },
     [API_BASE, getHeaders]
@@ -121,7 +123,13 @@ export default function Page() {
       fetchData(name, statusFilter);
     } catch (err) {
       console.error("Save error:", err);
-      toast.error("Error saving data");
+      const msg =
+        err?.data?.message ||
+        err?.response?.data?.message ||
+        err?.data?.error ||
+        err?.message ||
+        "Error saving data";
+      toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }

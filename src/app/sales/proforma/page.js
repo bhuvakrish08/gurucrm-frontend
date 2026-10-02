@@ -26,7 +26,92 @@ import {
   Save,
   Plus,
   Pencil,
+  Package,
+  Trash2,
 } from "lucide-react";
+
+// Helper to retrieve PI items (from saved pi.items or lead_products)
+const getPIItemsList = (pi) => {
+  if (!pi) return [];
+
+  // 1. Saved items in pi.items
+  if (pi.items) {
+    try {
+      const parsed = typeof pi.items === "string" ? JSON.parse(pi.items) : pi.items;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map((it) => {
+          const qty = Number(it.qty) || 1;
+          const rate = Number(it.rate) || 0;
+          const amount = it.amount !== undefined ? Number(it.amount) : qty * rate;
+          const gst = Number(it.gst !== undefined ? it.gst : (it.gst_percent !== undefined ? it.gst_percent : 18));
+          const gst_amount = it.gst_amount !== undefined ? Number(it.gst_amount) : (amount * gst) / 100;
+          const total_amount = it.total_amount !== undefined ? Number(it.total_amount) : amount + gst_amount;
+          return {
+            product_name: it.product_name || it.name || "",
+            hsn_code: it.hsn_code || it.product_code || "",
+            qty,
+            rate,
+            amount,
+            gst,
+            gst_amount,
+            total_amount,
+          };
+        });
+      }
+    } catch (e) {
+      console.error("Error parsing pi.items", e);
+    }
+  }
+
+  // 2. From lead_products
+  if (pi.lead_products) {
+    try {
+      const prods = typeof pi.lead_products === "string" ? JSON.parse(pi.lead_products) : pi.lead_products;
+      if (Array.isArray(prods) && prods.length > 0) {
+        return prods.map((p) => {
+          const name = p.product_name || p.name || (typeof p === "string" ? p : "Product");
+          const hsn = p.product_code || p.hsn_code || "";
+          const rate = Number(p.sales_price) || 0;
+          const qty = 1;
+          const amount = qty * rate;
+          const gst = 18;
+          const gst_amount = (amount * gst) / 100;
+          const total_amount = amount + gst_amount;
+          return {
+            product_name: name,
+            hsn_code: hsn,
+            qty,
+            rate,
+            amount,
+            gst,
+            gst_amount,
+            total_amount,
+          };
+        });
+      }
+    } catch (e) {
+      console.error("Error parsing pi.lead_products", e);
+    }
+  }
+
+  // 3. Fallback
+  const defaultTotal = Number(pi.total) || 5000;
+  const defaultTaxable = Math.round((defaultTotal / 1.18) * 100) / 100;
+  const defaultTax = Math.round((defaultTotal - defaultTaxable) * 100) / 100;
+  return [
+    {
+      product_name: pi.description || "Supply & Installation of Aluminium Architectural Products",
+      hsn_code: "7610",
+      qty: 1,
+      rate: defaultTaxable,
+      amount: defaultTaxable,
+      gst: 18,
+      gst_amount: defaultTax,
+      total_amount: defaultTotal,
+    },
+  ];
+};
+
 export default function ProformaPage() {
   const [piData, setPiData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,6 +121,12 @@ export default function ProformaPage() {
   const [editing, setEditing] = useState(null);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [updateLoading, setUpdateLoading] = useState(false);
+
+  // Manage Products / Items State
+  const [showItemsModal, setShowItemsModal] = useState(false);
+  const [selectedPIForItems, setSelectedPIForItems] = useState(null);
+  const [editableItems, setEditableItems] = useState([]);
+  const [savingItems, setSavingItems] = useState(false);
 
   const [quotationFiles, setQuotationFiles] = useState([]);
   const [selectedQuotationNo, setSelectedQuotationNo] = useState("");
@@ -85,6 +176,11 @@ export default function ProformaPage() {
   const [amtInput18, setAmtInput18] = useState("");
   const [amtInput9, setAmtInput9] = useState("");
   const [activeTab, setActiveTab] = useState("pending");
+
+  // Manual PI Number editing
+  const [editingPiNoId, setEditingPiNoId] = useState(null);
+  const [editingPiNoValue, setEditingPiNoValue] = useState("");
+  const [savingPiNo, setSavingPiNo] = useState(false);
 
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [filters, setFilters] = useState({
@@ -253,6 +349,128 @@ export default function ProformaPage() {
       fetchPI();
     } catch (err) {
       toast.error("Stage update failed");
+    }
+  };
+
+  const handleSavePiNo = async (pi_id) => {
+    try {
+      setSavingPiNo(true);
+      const trimmed = editingPiNoValue.trim();
+      await axios.put(`${API}/api/pi/update-pi-no/${pi_id}`, {
+        pi_no: trimmed,
+      });
+      setPiData((prev) =>
+        prev.map((item) =>
+          item.pi_id === pi_id ? { ...item, pi_no: trimmed } : item
+        )
+      );
+      toast.success("PI Number updated successfully");
+      setEditingPiNoId(null);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update PI number");
+    } finally {
+      setSavingPiNo(false);
+    }
+  };
+
+  const handleOpenItemsModal = (item) => {
+    setSelectedPIForItems(item);
+    const items = getPIItemsList(item);
+    setEditableItems(items);
+    setShowItemsModal(true);
+  };
+
+  const handleItemFieldChange = (index, field, value) => {
+    setEditableItems((prev) => {
+      const updated = [...prev];
+      const cur = { ...updated[index] };
+
+      if (field === "product_name") {
+        cur.product_name = value;
+      } else if (field === "hsn_code") {
+        cur.hsn_code = value;
+      } else if (field === "qty") {
+        const qty = Math.max(0, Number(value) || 0);
+        cur.qty = qty;
+        cur.amount = qty * (Number(cur.rate) || 0);
+        cur.gst_amount = (cur.amount * (Number(cur.gst) || 0)) / 100;
+        cur.total_amount = cur.amount + cur.gst_amount;
+      } else if (field === "rate") {
+        const rate = Math.max(0, Number(value) || 0);
+        cur.rate = rate;
+        cur.amount = (Number(cur.qty) || 0) * rate;
+        cur.gst_amount = (cur.amount * (Number(cur.gst) || 0)) / 100;
+        cur.total_amount = cur.amount + cur.gst_amount;
+      } else if (field === "gst") {
+        const gst = Math.max(0, Number(value) || 0);
+        cur.gst = gst;
+        cur.gst_amount = ((Number(cur.amount) || 0) * gst) / 100;
+        cur.total_amount = (Number(cur.amount) || 0) + cur.gst_amount;
+      }
+
+      updated[index] = cur;
+      return updated;
+    });
+  };
+
+  const handleAddItemRow = () => {
+    setEditableItems((prev) => [
+      ...prev,
+      {
+        product_name: "",
+        hsn_code: "",
+        qty: 1,
+        rate: 0,
+        amount: 0,
+        gst: 18,
+        gst_amount: 0,
+        total_amount: 0,
+      },
+    ]);
+  };
+
+  const handleRemoveItemRow = (index) => {
+    if (editableItems.length <= 1) {
+      toast.warning("At least one product item is required");
+      return;
+    }
+    setEditableItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSaveItems = async () => {
+    if (!selectedPIForItems) return;
+    try {
+      setSavingItems(true);
+      const res = await axios.put(
+        `${API}/api/pi/update-items/${selectedPIForItems.pi_id}`,
+        { items: editableItems },
+      );
+      if (res.data.success) {
+        toast.success("Products & amounts updated successfully!");
+        setPiData((prev) =>
+          prev.map((p) =>
+            p.pi_id === selectedPIForItems.pi_id
+              ? {
+                  ...p,
+                  items: JSON.stringify(editableItems),
+                  total: res.data.total,
+                }
+              : p,
+          ),
+        );
+        if (selectedPI && selectedPI.pi_id === selectedPIForItems.pi_id) {
+          setSelectedPI((prev) => ({
+            ...prev,
+            items: JSON.stringify(editableItems),
+            total: res.data.total,
+          }));
+        }
+        setShowItemsModal(false);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to update items");
+    } finally {
+      setSavingItems(false);
     }
   };
 
@@ -571,10 +789,11 @@ export default function ProformaPage() {
     try {
       const XLSX = await import("xlsx");
       const exportData = piData.map((item, index) => ({
-        "No.": index + 1,
-        "PI No": formatPINumber(index),
-        "PI Date": parseExcelDate(item.pi_date),
+        ID: index + 1,
+        "Company Name": item.company_name || "",
         "Customer Name": item.customer_name || "",
+        "PI No": item.pi_no || "",
+        "PI Date": parseExcelDate(item.pi_date),
         "Quotation No": item.quotation_no || "",
         Assignee: item.assignee || "",
         Total: parseExcelNumber(item.total, 0),
@@ -627,9 +846,10 @@ export default function ProformaPage() {
       );
       const tableData = piData.map((item, index) => [
         index + 1,
-        formatPINumber(index),
-        item.pi_date ? new Date(item.pi_date).toLocaleDateString() : "",
+        item.company_name || "",
         item.customer_name || "",
+        item.pi_no || "",
+        item.pi_date ? new Date(item.pi_date).toLocaleDateString() : "",
         item.quotation_no || "",
         item.assignee || "",
         item.total ? `Rs.${Number(item.total).toLocaleString()}` : "",
@@ -642,10 +862,11 @@ export default function ProformaPage() {
         startY: 27,
         head: [
           [
-            "#",
+            "ID",
+            "Company Name",
+            "Customer Name",
             "PI No",
             "PI Date",
-            "Customer",
             "Quotation",
             "Assignee",
             "Total",
@@ -683,294 +904,383 @@ export default function ProformaPage() {
       const { default: jsPDF } = await import("jspdf");
       const { default: autoTable } = await import("jspdf-autotable");
 
-      const followUps = item.follow_ups || [];
-      const sortedFollowUps = [...followUps].sort(
-        (a, b) => new Date(b.created_at) - new Date(a.created_at),
-      );
-
-      const grandTotal = getGrandTotal(item);
-      const totalPaid = getPIPaidTotal(item);
-      const totalPaidPct = grandTotal > 0 ? (totalPaid / grandTotal) * 100 : Number(item.proforma_percentage || 0);
-
-      const piNumber = item.pi_number || formatPINumber(index ?? 0);
+      const piNumber = item.pi_no || item.pi_number || "-";
       const piDate = item.pi_date ? new Date(item.pi_date) : new Date();
-      const statusLabel =
-        item.status === "paid"
-          ? "WON / PAID"
-          : item.status === "partial"
-            ? "PENDING"
-            : item.status === "sent"
-              ? "SENT"
-              : item.status === "cancelled"
-                ? "CANCELLED"
-                : "DRAFT";
+      const piDateStr = piDate.toLocaleDateString("en-GB");
 
-      const doc = new jsPDF({ orientation: "portrait" });
-      const pageWidth = doc.internal.pageSize.getWidth();
+      const piItems = getPIItemsList(item);
 
-      doc.setFontSize(20);
-      doc.setTextColor(234, 88, 12);
-      doc.setFont(undefined, "bold");
-      doc.text("VENSTER", 14, 18);
-      doc.setFontSize(8);
-      doc.setTextColor(120, 120, 120);
-      doc.setFont(undefined, "normal");
-      doc.text("ALUMINIUM", 14, 23);
-
-      doc.setFontSize(18);
-      doc.setTextColor(234, 88, 12);
-      doc.setFont(undefined, "bold");
-      doc.text("PROFORMA INVOICE", pageWidth - 14, 18, { align: "right" });
-      doc.setFontSize(9);
-      doc.setTextColor(120, 120, 120);
-      doc.setFont(undefined, "normal");
-      doc.text(
-        `Date: ${piDate.toLocaleDateString("en-GB")}`,
-        pageWidth - 14,
-        24,
-        { align: "right" },
-      );
-
-      doc.setDrawColor(40, 40, 40);
-      doc.setLineWidth(0.6);
-      doc.line(14, 28, pageWidth - 14, 28);
-
-      doc.setFontSize(11);
-      doc.setTextColor(40, 40, 40);
-      doc.setFont(undefined, "bold");
-      doc.text(`PI No: ${piNumber}`, 14, 37);
-
-      doc.setFillColor(
-        statusLabel === "WON / PAID"
-          ? 22
-          : statusLabel === "PENDING"
-            ? 234
-            : 100,
-        statusLabel === "WON / PAID"
-          ? 163
-          : statusLabel === "PENDING"
-            ? 88
-            : 100,
-        statusLabel === "WON / PAID"
-          ? 74
-          : statusLabel === "PENDING"
-            ? 12
-            : 100,
-      );
-      const badgeWidth = doc.getTextWidth(statusLabel) + 10;
-      doc.roundedRect(
-        pageWidth - 14 - badgeWidth,
-        32,
-        badgeWidth,
-        7,
-        1.5,
-        1.5,
-        "F",
-      );
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(8.5);
-      doc.text(statusLabel, pageWidth - 14 - badgeWidth / 2, 36.5, {
-        align: "center",
-      });
-
-      const boxTop = 42;
-      const boxHeight = 32;
-      const colGap = 4;
-      const colWidth = (pageWidth - 28 - colGap) / 2;
-
-      doc.setDrawColor(230, 230, 230);
-      doc.setFillColor(252, 252, 252);
-      doc.roundedRect(14, boxTop, colWidth, boxHeight, 2, 2, "FD");
-      doc.roundedRect(
-        14 + colWidth + colGap,
-        boxTop,
-        colWidth,
-        boxHeight,
-        2,
-        2,
-        "FD",
-      );
-
-      doc.setFontSize(8);
-      doc.setTextColor(234, 88, 12);
-      doc.setFont(undefined, "bold");
-      doc.text("BILL TO / COMPANY INFO", 18, boxTop + 6);
-      doc.text("ORDER DETAILS", 18 + colWidth + colGap, boxTop + 6);
-
-      doc.setFontSize(8.5);
-      doc.setFont(undefined, "normal");
-      doc.setTextColor(60, 60, 60);
-
-      const leftRows = [
-        ["Customer:", item.customer_name || "-"],
-        ["Assignee:", item.assignee || "-"],
-        ["Quotation No:", item.quotation_no || "-"],
-        [
-          "Created:",
-          item.created_at
-            ? new Date(item.created_at).toLocaleDateString("en-GB")
-            : "-",
-        ],
-      ];
-      const isSplit = isTwoSplitPI(item);
-      const base18 = getSplitBase18(item);
-      const base9  = getSplitBase9(item);
-      const paid18 = getPIPaid18(item);
-      const paid9  = getPIPaid9(item);
-      const rem18  = Math.max(0, base18 - paid18);
-      const rem9   = Math.max(0, base9 - paid9);
-
-      const rightRows = isSplit
-        ? [
-            ["PI Number:", piNumber],
-            ["PI Date:", piDate.toLocaleDateString("en-GB")],
-            ["Part 1 (18%):", `Rs. ${base18.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
-            ["Part 2 (9%):", `Rs. ${base9.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
-          ]
-        : [
-            ["PI Number:", piNumber],
-            ["PI Date:", piDate.toLocaleDateString("en-GB")],
-            ["Grand Total:", `Rs. ${grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
-            ["Total Paid %:", `${totalPaidPct.toFixed(2)}%`],
-          ];
-
-      leftRows.forEach(([label, value], i) => {
-        const y = boxTop + 12 + i * 5.5;
-        doc.setFont(undefined, "normal");
-        doc.setTextColor(130, 130, 130);
-        doc.text(label, 18, y);
-        doc.setFont(undefined, "bold");
-        doc.setTextColor(40, 40, 40);
-        doc.text(String(value), 45, y);
-      });
-
-      rightRows.forEach(([label, value], i) => {
-        const y = boxTop + 12 + i * 5.5;
-        const x = 18 + colWidth + colGap;
-        doc.setFont(undefined, "normal");
-        doc.setTextColor(130, 130, 130);
-        doc.text(label, x, y);
-        doc.setFont(undefined, "bold");
-        doc.setTextColor(40, 40, 40);
-        doc.text(String(value), x + 28, y);
-      });
-
-      let cursorY = boxTop + boxHeight + 10;
-
-      doc.setFontSize(10);
-      doc.setTextColor(234, 88, 12);
-      doc.setFont(undefined, "bold");
-      doc.text("PAYMENT HISTORY", 14, cursorY);
-      cursorY += 2;
-
-      let tableHead = [["#", "Date", "Description", "Paid %", "Amount", "Status"]];
-      let historyRows = [];
-
-      if (isSplit) {
-        tableHead = [["#", "Date", "Description", "Part 1 Paid (18%)", "Part 2 Paid (9%)", "Total Paid", "Status"]];
-        historyRows = sortedFollowUps.map((h, i) => {
-          const amt18 = Number(h.total_18 || 0);
-          const amt9  = Number(h.total_9 || 0);
-          const totalAmt = amt18 + amt9 || Number(h.total || 0);
-          return [
-            i + 1,
-            h.created_at ? new Date(h.created_at).toLocaleDateString("en-GB") : "-",
-            i === 0 ? "Latest Follow-Up" : `Follow-Up #${sortedFollowUps.length - i}`,
-            `Rs. ${amt18.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-            `Rs. ${amt9.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-            `Rs. ${totalAmt.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-            i === 0 ? "Latest" : "Received",
-          ];
+      const formatNum = (num) =>
+        Number(num || 0).toLocaleString("en-IN", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
         });
+
+      // Prepare items and totals
+      let itemRows = [];
+      let totalQty = 0;
+      let totalTaxable = 0;
+      let totalTax = 0;
+      let calculatedGrandTotal = 0;
+
+      if (piItems && piItems.length > 0) {
+        totalQty = piItems.reduce((acc, it) => acc + (Number(it.qty) || 0), 0);
+        totalTaxable = piItems.reduce((acc, it) => acc + (Number(it.amount) || 0), 0);
+        totalTax = piItems.reduce((acc, it) => acc + (Number(it.gst_amount) || 0), 0);
+        calculatedGrandTotal = piItems.reduce((acc, it) => acc + (Number(it.total_amount) || 0), 0);
+
+        itemRows = piItems.map((it, idx) => [
+          String(idx + 1),
+          it.product_name || "Item",
+          it.hsn_code || "-",
+          String(it.qty || 1),
+          formatNum(it.rate),
+          formatNum(it.amount),
+          `${it.gst !== undefined ? it.gst : (it.gst_percent !== undefined ? it.gst_percent : 18)}%`,
+          formatNum(it.gst_amount),
+          formatNum(it.total_amount),
+        ]);
       } else {
-        historyRows = sortedFollowUps.map((h, i) => {
-          const amt = Number(h.total || 0) || (Number(h.total_18 || 0) + Number(h.total_9 || 0));
-          const pct = grandTotal > 0 ? (amt / grandTotal) * 100 : (Number(h.proforma_percentage || 0) || (Number(h.proforma_percentage_18 || 0) + Number(h.proforma_percentage_9 || 0)));
-          return [
-            i + 1,
-            h.created_at ? new Date(h.created_at).toLocaleDateString("en-GB") : "-",
-            i === 0 ? "Latest Follow-Up" : `Follow-Up #${sortedFollowUps.length - i}`,
-            `${pct.toFixed(2)}%`,
-            `Rs. ${amt.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-            i === 0 ? "Latest" : "Received",
-          ];
-        });
+        totalQty = 1;
+        totalTaxable = Number(item.total || 0) / 1.18;
+        totalTax = Number(item.total || 0) - totalTaxable;
+        calculatedGrandTotal = Number(item.total || 0);
+
+        itemRows = [
+          [
+            "1",
+            item.description || "Supply & Installation of Aluminium Architectural Products",
+            "7610",
+            "1",
+            formatNum(totalTaxable),
+            formatNum(totalTaxable),
+            "18%",
+            formatNum(totalTax),
+            formatNum(calculatedGrandTotal),
+          ],
+        ];
       }
 
-      autoTable(doc, {
-        startY: cursorY + 2,
-        head: tableHead,
-        body:
-          historyRows.length > 0
-            ? historyRows
-            : [isSplit ? ["-", "-", "No follow-up recorded", "-", "-", "-", "-"] : ["-", "-", "No follow-up recorded", "-", "-", "-"]],
-        theme: "grid",
-        styles: { fontSize: 8.5, cellPadding: 2.5, textColor: [40, 40, 40] },
-        headStyles: {
-          fillColor: [234, 88, 12],
-          textColor: [255, 255, 255],
-          fontStyle: "bold",
-          fontSize: 8.5,
-        },
-        alternateRowStyles: { fillColor: [255, 247, 237] },
-        columnStyles: isSplit
-          ? { 0: { cellWidth: 8 }, 3: { cellWidth: 32 }, 4: { cellWidth: 32 }, 5: { cellWidth: 32 }, 6: { cellWidth: 20 } }
-          : { 0: { cellWidth: 10 }, 3: { cellWidth: 22 }, 5: { cellWidth: 24 } },
-        margin: { left: 14, right: 14 },
-      });
+      const effectiveGrandTotal = calculatedGrandTotal > 0 ? calculatedGrandTotal : getGrandTotal(item);
+      const totalPaid = getPIPaidTotal(item);
+      const totalPaidPct = effectiveGrandTotal > 0 ? (totalPaid / effectiveGrandTotal) * 100 : Number(item.proforma_percentage || 0);
 
-      cursorY = doc.lastAutoTable.finalY + 12;
-      if (cursorY > 250) {
-        doc.addPage();
-        cursorY = 20;
+      // Load logo if available
+      let logoBase64 = null;
+      try {
+        const response = await fetch("/guru_logo.png");
+        if (response.ok) {
+          const blob = await response.blob();
+          logoBase64 = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(blob);
+          });
+        }
+      } catch (err) {
+        console.warn("Logo load error:", err);
       }
 
-      doc.setFontSize(10);
-      doc.setTextColor(40, 40, 40);
+      // Load signature image from public/signature.png
+      let signatureBase64 = null;
+      try {
+        const sigResponse = await fetch("/signature.png");
+        if (sigResponse.ok) {
+          const sigBlob = await sigResponse.blob();
+          signatureBase64 = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(sigBlob);
+          });
+        }
+      } catch (err) {
+        console.warn("Signature load error:", err);
+      }
+
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+      const headerFill = [184, 204, 228]; // Light Blue header color from template
+      const black = [0, 0, 0];
+
+      // ── 1. Top Banner ──
+      doc.setFillColor(...headerFill);
+      doc.setDrawColor(...black);
+      doc.setLineWidth(0.35);
+      doc.rect(10, 10, 190, 8, "FD");
+
+      doc.setTextColor(...black);
       doc.setFont(undefined, "bold");
-      doc.text("Thank you for your business!", 14, cursorY);
+      doc.setFontSize(11);
+      doc.text("PROFORMA INVOICE", 105, 15.5, { align: "center" });
+
+      // ── 2. Seller Box (Left) ──
+      doc.setFillColor(...headerFill);
+      doc.rect(10, 18, 115, 6, "FD");
       doc.setFontSize(8);
-      doc.setTextColor(130, 130, 130);
-      doc.setFont(undefined, "normal");
-      doc.text("This is a system-generated document.", 14, cursorY + 6);
-      doc.text("No signature is required.", 14, cursorY + 11);
+      doc.setFont(undefined, "bold");
+      doc.text("SELLER", 12, 22.3);
 
-      const summaryX = pageWidth - 14 - 85;
-      const summaryRows = isSplit
-        ? [
-            ["Part 1 Total (18%)", `Rs. ${base18.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
-            ["Part 1 Paid", `Rs. ${paid18.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
-            ["Part 2 Total (9%)", `Rs. ${base9.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
-            ["Part 2 Paid", `Rs. ${paid9.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
-            ["Grand Total", `Rs. ${grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
-            ["Total Paid", `Rs. ${totalPaid.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
-          ]
-        : [
-            ["Grand Total", `Rs. ${grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
-            ["Total Paid", `Rs. ${totalPaid.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`],
-            ["Follow-ups", `${followUps.length} record(s)`],
-          ];
-      summaryRows.forEach(([label, value], i) => {
-        const y = cursorY - 4 + i * 6.5;
-        doc.setFontSize(8);
-        doc.setTextColor(130, 130, 130);
-        doc.setFont(undefined, "normal");
-        doc.text(label, summaryX, y);
+      doc.rect(10, 24, 115, 48, "S");
+      doc.setFont(undefined, "bold");
+      doc.setFontSize(9);
+      doc.text("Guru Export & Import Co", 12, 29);
+
+      doc.setFont(undefined, "normal");
+      doc.setFontSize(7.2);
+      doc.text("124, Uma Nagar, Mirzapar Highway", 12, 33.5);
+      doc.text("Bhuj, Kutch - 370001, India", 12, 37.5);
+      doc.text("Contact Details - +919426498496", 12, 41.5);
+      doc.text("info@guruexim.com", 12, 45.5);
+      doc.text("www.guruexim.com", 12, 49.5);
+      doc.text("IEC: COMPP9924E", 12, 53.5);
+      doc.setFont(undefined, "bold");
+      doc.text("GST NO.: 24COMPP9924E2ZJ", 12, 57.5);
+
+      // Logo in Seller Box
+      if (logoBase64) {
+        try {
+          doc.addImage(logoBase64, "PNG", 72, 28, 50, 30);
+        } catch {
+          // fallback
+        }
+      } else {
+        doc.setTextColor(220, 38, 38);
+        doc.setFontSize(10);
         doc.setFont(undefined, "bold");
-        doc.setTextColor(40, 40, 40);
-        doc.text(String(value), summaryX + 85, y, { align: "right" });
+        doc.text("GURU", 88, 38);
+        doc.setTextColor(30, 64, 175);
+        doc.text("EXPORT &", 88, 44);
+        doc.text("IMPORT Co.", 88, 50);
+      }
+
+      // ── 3. Right Box (Invoice No, Date, Buyer) ──
+      // Invoice No Header & Cell
+      doc.setFillColor(...headerFill);
+      doc.setTextColor(...black);
+      doc.rect(125, 18, 38, 6, "FD");
+      doc.setFontSize(7.5);
+      doc.setFont(undefined, "bold");
+      doc.text("INVOICE NO.", 144, 22.3, { align: "center" });
+
+      doc.rect(125, 24, 38, 8, "S");
+      doc.setFontSize(8);
+      doc.text(String(piNumber), 144, 29.5, { align: "center" });
+
+      // Date Header & Cell
+      doc.setFillColor(...headerFill);
+      doc.rect(163, 18, 37, 6, "FD");
+      doc.setFontSize(7.5);
+      doc.setFont(undefined, "bold");
+      doc.text("DATE", 181.5, 22.3, { align: "center" });
+
+      doc.rect(163, 24, 37, 8, "S");
+      doc.setFontSize(8);
+      doc.setFont(undefined, "normal");
+      doc.text(piDateStr, 181.5, 29.5, { align: "center" });
+
+      // Buyer Header & Cell
+      doc.setFillColor(...headerFill);
+      doc.rect(125, 32, 75, 6, "FD");
+      doc.setFontSize(8);
+      doc.setFont(undefined, "bold");
+      doc.text("BUYER", 127, 36.3);
+
+      doc.rect(125, 38, 75, 34, "S");
+      doc.setFont(undefined, "bold");
+      doc.setFontSize(8.5);
+      doc.text(String(item.customer_name || "-"), 127, 43.5);
+
+      if (item.company_name) {
+        doc.setFont(undefined, "bold");
+        doc.setFontSize(8);
+        doc.text(String(item.company_name), 127, 48.5);
+      }
+
+      doc.setFont(undefined, "normal");
+      doc.setFontSize(7);
+      let buyerY = item.company_name ? 53.5 : 48.5;
+      if (item.reference) {
+        doc.text(`Ref: ${item.reference}`, 127, buyerY);
+        buyerY += 4.5;
+      }
+      if (item.quotation_no) {
+        doc.text(`Quotation No: ${item.quotation_no}`, 127, buyerY);
+        buyerY += 4.5;
+      }
+
+      // ── 4. Items Table ──
+      autoTable(doc, {
+        startY: 72,
+        head: [
+          [
+            { content: "SR no.", rowSpan: 2, styles: { halign: "center", valign: "middle" } },
+            { content: "Item & Description", rowSpan: 2, styles: { halign: "left", valign: "middle" } },
+            { content: "HSN Code", rowSpan: 2, styles: { halign: "center", valign: "middle" } },
+            { content: "Qty", rowSpan: 2, styles: { halign: "center", valign: "middle" } },
+            { content: "Rate/ PC", rowSpan: 2, styles: { halign: "right", valign: "middle" } },
+            { content: "Total Amount\nin INR", rowSpan: 2, styles: { halign: "right", valign: "middle" } },
+            { content: "GST", colSpan: 2, styles: { halign: "center", valign: "middle" } },
+            { content: "Total Amount\nin INR", rowSpan: 2, styles: { halign: "right", valign: "middle" } },
+          ],
+          [
+            { content: "%", styles: { halign: "center", valign: "middle" } },
+            { content: "Amt", styles: { halign: "right", valign: "middle" } },
+          ],
+        ],
+        body: [
+          ...itemRows,
+          [
+            { content: "", colSpan: 3, styles: { fillColor: headerFill } },
+            { content: String(totalQty), styles: { halign: "center", fontStyle: "bold", fillColor: headerFill } },
+            { content: "", styles: { fillColor: headerFill } },
+            { content: formatNum(totalTaxable), styles: { halign: "right", fontStyle: "bold", fillColor: headerFill } },
+            { content: "", styles: { fillColor: headerFill } },
+            { content: formatNum(totalTax), styles: { halign: "right", fontStyle: "bold", fillColor: headerFill } },
+            { content: formatNum(effectiveGrandTotal), styles: { halign: "right", fontStyle: "bold", fillColor: headerFill } },
+          ],
+        ],
+        theme: "plain",
+        styles: {
+          lineColor: black,
+          lineWidth: 0.3,
+          textColor: black,
+          fontSize: 7.8,
+          cellPadding: 2.2,
+        },
+        headStyles: {
+          fillColor: headerFill,
+          textColor: black,
+          fontStyle: "bold",
+          fontSize: 7.5,
+          lineColor: black,
+          lineWidth: 0.3,
+        },
+        columnStyles: {
+          0: { cellWidth: 14, halign: "center" },
+          1: { cellWidth: 52, halign: "left" },
+          2: { cellWidth: 18, halign: "center" },
+          3: { cellWidth: 12, halign: "center" },
+          4: { cellWidth: 20, halign: "right" },
+          5: { cellWidth: 22, halign: "right" },
+          6: { cellWidth: 14, halign: "center" },
+          7: { cellWidth: 18, halign: "right" },
+          8: { cellWidth: 20, halign: "right" },
+        },
+        margin: { left: 10, right: 10 },
       });
 
-      const finalBoxY = cursorY - 4 + summaryRows.length * 6.5 + 3;
-      const finalBoxColor =
-        statusLabel === "WON / PAID" ? [22, 163, 74] : [234, 88, 12];
-      doc.setFillColor(...finalBoxColor);
-      doc.roundedRect(summaryX, finalBoxY, 85, 8, 1.5, 1.5, "F");
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(8.5);
+      const cursorY = doc.lastAutoTable.finalY;
+
+      // ── 5. Bottom Section ──
+      const bottomBoxHeight1 = 36;
+      const bottomBoxHeight2 = 30;
+
+      // 5A. Left - Bank Details Box
+      doc.setDrawColor(...black);
+      doc.setLineWidth(0.3);
+      doc.rect(10, cursorY, 120, bottomBoxHeight1, "S");
+
       doc.setFont(undefined, "bold");
-      doc.text("Final Status", summaryX + 3, finalBoxY + 5.5);
-      doc.text(statusLabel, summaryX + 82, finalBoxY + 5.5, { align: "right" });
+      doc.setFontSize(7.8);
+      doc.text("NAME & ADDRESS OF OUR BANK:", 13, cursorY + 5.5);
+      doc.text("BANK NAME - IDFC FIRST BANK", 13, cursorY + 10);
+
+      doc.setFont(undefined, "normal");
+      doc.setFontSize(7.2);
+      doc.text("JODHPUR ROAD-SATELLITE BRANCH ,", 13, cursorY + 14.5);
+      doc.text("GRND FLR, PLOT NO. 15/1, SHOP NO.1,2,3,4, AHMEDABAD -380015", 13, cursorY + 19);
+
+      doc.setFont(undefined, "bold");
+      doc.setFontSize(7.5);
+      doc.text("A/C No.: 59426498493", 13, cursorY + 23.5);
+      doc.text("IFSC : IDFB0040316", 13, cursorY + 28);
+      doc.text("Swift Code: IDFBINBBMUM", 13, cursorY + 32.5);
+
+      // 5B. Left - Payment Terms Box
+      const termsY = cursorY + bottomBoxHeight1;
+      doc.rect(10, termsY, 120, bottomBoxHeight2, "S");
+
+      doc.setFont(undefined, "bold");
+      doc.setFontSize(7.8);
+      doc.text("Payment Terms :", 13, termsY + 5.5);
+
+      doc.setFont(undefined, "normal");
+      doc.setFontSize(7.2);
+      doc.text("Payment by 60% TT Advance and 40% remaining before shipment", 13, termsY + 10.5);
+      doc.text("We Declare that this Invoice Shows the actual price of the Goods Described", 13, termsY + 15.5);
+      doc.text("and that all the particular True and Correct", 13, termsY + 20);
+
+      doc.setFont(undefined, "bold");
+      doc.setFontSize(7.5);
+      doc.text('"SUBJECT TO JURISDICTION COURT OF AHMEDABAD"', 13, termsY + 25.5);
+
+      // 5C. Right - Sub Total Box
+      doc.rect(130, cursorY, 70, bottomBoxHeight1, "S");
+
+      doc.setFont(undefined, "bold");
+      doc.setFontSize(8.5);
+      doc.text("Sub Total", 135, cursorY + 10);
+      doc.text(formatNum(totalTaxable), 195, cursorY + 10, { align: "right" });
+
+      doc.setFontSize(8);
+      doc.text("GST Amount", 135, cursorY + 18);
+      doc.text(formatNum(totalTax), 195, cursorY + 18, { align: "right" });
+
+      doc.setFontSize(9);
+      doc.text("Total Amount", 135, cursorY + 27);
+      doc.text(formatNum(effectiveGrandTotal), 195, cursorY + 27, { align: "right" });
+
+      // 5D. Right - Stamp & Signature Box
+      doc.rect(130, termsY, 70, bottomBoxHeight2, "S");
+
+      doc.setFont(undefined, "bold");
+      doc.setFontSize(7.5);
+      // doc.text("STAMP & SIGNATURE", 165, termsY + 4.5, { align: "center" });
+
+      doc.setFontSize(8);
+      // doc.text("Guru Export & Import Co.", 165, termsY + 8.5, { align: "center" });
+
+      // Visual Stamp Box border
+      doc.setDrawColor(22, 163, 74);
+      doc.setLineWidth(0.35);
+      doc.roundedRect(143, termsY + 10, 44, 14.5, 1, 1, "S");
+
+      // Stamp & Signature Image from public/signature.png
+      if (signatureBase64) {
+        try {
+          doc.addImage(signatureBase64, "PNG", 145, termsY + 10.6, 40, 13.3);
+        } catch {
+          doc.setTextColor(22, 163, 74);
+          doc.setFontSize(6.8);
+          doc.setFont(undefined, "bold");
+          doc.text("Guru Export & Import Co.", 165, termsY + 14, { align: "center" });
+          doc.setFont(undefined, "italic");
+          doc.setFontSize(7.5);
+          doc.text("Prakash Patel", 165, termsY + 18, { align: "center" });
+          doc.setFont(undefined, "normal");
+          doc.setFontSize(6);
+          doc.text("Proprietor", 182, termsY + 21, { align: "right" });
+        }
+      } else {
+        doc.setTextColor(22, 163, 74);
+        doc.setFontSize(6.8);
+        doc.setFont(undefined, "bold");
+        doc.text("Guru Export & Import Co.", 165, termsY + 14, { align: "center" });
+        doc.setFont(undefined, "italic");
+        doc.setFontSize(7.5);
+        doc.text("Prakash Patel", 165, termsY + 18, { align: "center" });
+        doc.setFont(undefined, "normal");
+        doc.setFontSize(6);
+        doc.text("Proprietor", 182, termsY + 21, { align: "right" });
+      }
+
+      // Signatory label
+      doc.setTextColor(...black);
+      doc.setFont(undefined, "bold");
+      doc.setFontSize(7.5);
+      // doc.text("AUTHORISED SIGNATORY", 165, termsY + 27.5, { align: "center" });
 
       const safeName = (item.customer_name || "Customer").replace(
         /[^a-zA-Z0-9]/g,
@@ -1128,7 +1438,7 @@ export default function ProformaPage() {
               name="customer_name"
               value={filters.customer_name}
               onChange={handleFilterChange}
-              placeholder="Customer"
+              placeholder="Customer / Company"
               className="p-2 w-full focus:outline-none text-gray-600 text-sm bg-transparent"
             />
           </div>
@@ -1143,20 +1453,6 @@ export default function ProformaPage() {
               className="p-2 w-full focus:outline-none text-gray-600 text-sm bg-transparent"
             />
           </div>
-
-          <select
-            name="assignee"
-            value={filters.assignee}
-            onChange={handleFilterChange}
-            className="p-2 w-full md:w-45 bg-white border border-indigo-400 md:border rounded-sm focus:outline-none text-gray-400 text-sm"
-          >
-            <option value="">Assignee</option>
-            {assigneeList.map((item) => (
-              <option key={item.id} value={item.name}>
-                {item.name}
-              </option>
-            ))}
-          </select>
 
           <select
             name="status"
@@ -1307,22 +1603,24 @@ export default function ProformaPage() {
             {loading ? (
               <div className="text-center py-10 text-gray-400">Loading...</div>
             ) : (
-              <div
-                className="overflow-x-auto overflow-y-scroll max-h-[500px] custom-scroll"
-                style={{ overflowX: "scroll" }}
-              >
+              <>
+                <div
+                  className="overflow-x-auto overflow-y-scroll max-h-[500px] custom-scroll"
+                  style={{ overflowX: "scroll" }}
+                >
                 <table className="w-full text-sm whitespace-nowrap">
                   <thead>
                     <tr className="bg-indigo-50 border-b border-gray-100">
                       {[
-                        "#",
+                        "ID",
+                        "Company Name",
+                        "Customer Name",
                         "PI No",
                         "PI Date",
-                        "Customer Name",
                         "Quotation No",
                         "Source",
                         "Reference",
-                        "Assignee",
+                        "Items",
                         "Total",
                         "PI %",
                         "Status",
@@ -1337,9 +1635,10 @@ export default function ProformaPage() {
                         >
                           {h}
                           {[
+                            "Company Name",
+                            "Customer Name",
                             "PI No",
                             "PI Date",
-                            "Customer Name",
                             "Quotation No",
                             "Source",
                             "Total",
@@ -1367,7 +1666,70 @@ export default function ProformaPage() {
                           >
                             <td className="py-3 px-3">{globalIndex + 1}</td>
                             <td className="py-3 px-3 font-semibold text-slate-800">
-                              {formatPINumber(globalIndex)}
+                              {item.company_name || "-"}
+                            </td>
+                            <td className="py-3 px-3 text-blue-500 font-medium">
+                              {item.customer_name || "-"}
+                            </td>
+                            <td className="py-3 px-3 font-semibold text-slate-800">
+                              {editingPiNoId === item.pi_id ? (
+                                <div
+                                  className="flex items-center gap-1 min-w-[150px]"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <input
+                                    type="text"
+                                    value={editingPiNoValue}
+                                    onChange={(e) =>
+                                      setEditingPiNoValue(e.target.value)
+                                    }
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter")
+                                        handleSavePiNo(item.pi_id);
+                                      if (e.key === "Escape")
+                                        setEditingPiNoId(null);
+                                    }}
+                                    autoFocus
+                                    placeholder="Enter PI No"
+                                    className="px-2 py-1 text-xs border border-indigo-400 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 w-28 bg-white text-slate-800 font-medium shadow-xs"
+                                  />
+                                  <button
+                                    onClick={() => handleSavePiNo(item.pi_id)}
+                                    disabled={savingPiNo}
+                                    className="p-1 rounded bg-green-500 text-white hover:bg-green-600 transition-colors cursor-pointer shadow-xs"
+                                    title="Save"
+                                  >
+                                    <i className="bi bi-check-lg text-xs"></i>
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingPiNoId(null)}
+                                    className="p-1 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors cursor-pointer"
+                                    title="Cancel"
+                                  >
+                                    <i className="bi bi-x text-xs"></i>
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1.5 group">
+                                  <span>
+                                    {item.pi_no || (
+                                      <span className="text-gray-400 italic text-xs font-normal">
+                                        —
+                                      </span>
+                                    )}
+                                  </span>
+                                  <button
+                                    onClick={() => {
+                                      setEditingPiNoId(item.pi_id);
+                                      setEditingPiNoValue(item.pi_no || "");
+                                    }}
+                                    className="opacity-70 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-indigo-600 transition-colors cursor-pointer"
+                                    title="Edit PI Number"
+                                  >
+                                    <i className="bi bi-pencil text-[11px]"></i>
+                                  </button>
+                                </div>
+                              )}
                             </td>
                             <td className="py-3 px-3 text-gray-500">
                               {item.pi_date
@@ -1375,9 +1737,6 @@ export default function ProformaPage() {
                                     "en-IN",
                                   )
                                 : "-"}
-                            </td>
-                            <td className="py-3 px-3 text-blue-500 font-medium">
-                              {item.customer_name || "-"}
                             </td>
                             <td className="py-3 px-3 font-semibold text-slate-700">
                               {item.quotation_no || "-"}
@@ -1409,23 +1768,21 @@ export default function ProformaPage() {
                               {item.reference || "-"}
                             </td>
                             <td className="py-3 px-3">
-                              {item.assignee ? (
-                                <div className="flex gap-1 items-center">
-                                  {String(item.assignee)
-                                    .split(",")
-                                    .map((name, i) => (
-                                      <div
-                                        key={i}
-                                        title={name.trim()}
-                                        className="px-3 py-1.5 bg-blue-800 text-white rounded-full font-semibold text-sm flex justify-center items-center min-w-[28px] text-center select-none"
-                                      >
-                                        {name.trim().charAt(0).toUpperCase()}
-                                      </div>
-                                    ))}
-                                </div>
-                              ) : (
-                                "-"
-                              )}
+                              {(() => {
+                                const items = getPIItemsList(item);
+                                const count = items.length;
+                                return (
+                                  <button
+                                    onClick={() => handleOpenItemsModal(item)}
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold transition-all shadow-2xs group cursor-pointer"
+                                    title="Click to view & edit items, quantities, rates and GST"
+                                  >
+                                    <Package size={13} className="text-amber-600 group-hover:scale-110 transition-transform shrink-0" />
+                                    <span>{count} {count === 1 ? "Product" : "Products"}</span>
+                                    <Pencil size={11} className="text-amber-500 opacity-60 group-hover:opacity-100 ml-0.5 shrink-0" />
+                                  </button>
+                                );
+                              })()}
                             </td>
                             <td className="py-3 px-3 font-semibold text-slate-800">
                               Rs.{Number(item.total || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -1520,7 +1877,7 @@ export default function ProformaPage() {
                     ) : (
                       <tr>
                         <td
-                          colSpan="15"
+                          colSpan="16"
                           className="text-center py-10 text-gray-400"
                         >
                           No Data Found
@@ -1529,73 +1886,75 @@ export default function ProformaPage() {
                     )}
                   </tbody>
                 </table>
+              </div>
 
-                {/* PAGINATION */}
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white">
-                  {/* Left side: Showing X to Y of Z entries */}
-                  <div className="text-sm text-slate-600 font-semibold">
-                    Showing {paginatedData.length === 0 ? 0 : indexOfFirstItem + 1}{" "}
-                    to {indexOfFirstItem + paginatedData.length} entries
-                  </div>
+              {/* PAGINATION */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white rounded-b-sm">
+                {/* Left side: Showing X to Y of Z entries */}
+                <div className="text-sm text-slate-600 font-semibold whitespace-nowrap">
+                  Showing {tabFilteredData.length === 0 ? 0 : indexOfFirstItem + 1}{" "}
+                  to {Math.min(indexOfFirstItem + itemsPerPage, tabFilteredData.length)}{" "}
+                  of {tabFilteredData.length} entries
+                </div>
 
-                  {/* Center: Navigation buttons */}
-                  {totalPages > 1 && (
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() =>
-                          setCurrentPage((prev) => Math.max(prev - 1, 1))
-                        }
-                        disabled={currentPage === 1}
-                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        <i className="bi bi-chevron-left text-sm"></i>
-                      </button>
-                      {getSlidingPages().map((page) => (
-                        <button
-                          key={page}
-                          onClick={() => setCurrentPage(page)}
-                          className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all ${currentPage === page ? "bg-indigo-600 text-white shadow-md shadow-indigo-200" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}
-                        >
-                          {page}
-                        </button>
-                      ))}
-                      <button
-                        onClick={() =>
-                          setCurrentPage((prev) =>
-                            Math.min(prev + 1, totalPages),
-                          )
-                        }
-                        disabled={currentPage === totalPages}
-                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        <i className="bi bi-chevron-right text-sm"></i>
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Right side: Rows per page selector */}
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-slate-500 font-medium">
-                      Rows per page:
-                    </span>
-                    <select
-                      value={itemsPerPage}
-                      onChange={(e) => {
-                        setItemsPerPage(Number(e.target.value));
-                        setCurrentPage(1);
-                      }}
-                      className="border border-indigo-200 rounded-lg px-3 py-1.5 text-sm text-indigo-600 font-semibold bg-white focus:outline-none cursor-pointer"
+                {/* Center: Navigation buttons */}
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
+                      disabled={currentPage === 1}
+                      className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                     >
-                      {[10, 20, 100, 200].map((size) => (
-                        <option key={size} value={size}>
-                          {size}
-                        </option>
-                      ))}
-                    </select>
+                      <i className="bi bi-chevron-left text-sm"></i>
+                    </button>
+                    {getSlidingPages().map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all cursor-pointer ${currentPage === page ? "bg-indigo-600 text-white shadow-md shadow-indigo-200" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() =>
+                        setCurrentPage((prev) =>
+                          Math.min(prev + 1, totalPages),
+                        )
+                      }
+                      disabled={currentPage === totalPages}
+                      className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      <i className="bi bi-chevron-right text-sm"></i>
+                    </button>
                   </div>
+                )}
+
+                {/* Right side: Rows per page selector */}
+                <div className="flex items-center gap-2.5 whitespace-nowrap">
+                  <span className="text-sm text-slate-500 font-medium">
+                    Rows per page:
+                  </span>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    className="border border-indigo-200 rounded-lg px-3 py-1.5 text-sm text-indigo-600 font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+                  >
+                    {[10, 20, 50, 100, 200].map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
-            )}
+            </>
+          )}
           </div>
         </div>
       </div>
@@ -1762,7 +2121,52 @@ export default function ProformaPage() {
             </span>
           </div>
         </div>
- 
+
+        {/* Linked Inquired Products Card */}
+        {(() => {
+          const items = getPIItemsList(selectedPI);
+          return (
+            <div className="mb-4 bg-gradient-to-r from-amber-50/70 to-orange-50/50 rounded-xl p-3 border border-amber-200/80">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                    <Package size={15} />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-amber-900 uppercase tracking-wider">
+                      Linked Products ({items.length})
+                    </p>
+                    <p className="text-[10px] text-amber-700/80">
+                      Products with Qty, Rate & GST
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleOpenItemsModal(selectedPI)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                >
+                  <Pencil size={11} />
+                  <span>Edit Products</span>
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {items.map((prod, idx) => (
+                  <div
+                    key={idx}
+                    className="inline-flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-amber-200 text-xs shadow-2xs"
+                  >
+                    <span className="font-bold text-slate-800">{prod.product_name}</span>
+                    {prod.hsn_code && <span className="text-slate-400 text-[11px]">({prod.hsn_code})</span>}
+                    <span className="text-[11px] font-semibold text-amber-800 bg-amber-100/70 px-1.5 py-0.5 rounded">
+                      Qty: {prod.qty} × Rs.{Number(prod.rate || 0).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Overall progress bar */}
         <div className="mb-5 bg-gray-50 rounded-xl border border-gray-100 p-3">
           <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
@@ -2283,6 +2687,248 @@ export default function ProformaPage() {
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MANAGE PI PRODUCTS & ITEMS MODAL ── */}
+      {showItemsModal && selectedPIForItems && (
+        <div
+          id="itemsModalOverlay"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto"
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl border border-gray-100 w-full max-w-5xl overflow-hidden my-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-400/30 flex items-center justify-center text-amber-400 shrink-0">
+                  <Package size={20} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-white tracking-wide">
+                      Manage PI Products & Items
+                    </h3>
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30">
+                      {selectedPIForItems.pi_no || "PI Draft"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 mt-0.5">
+                    Customer: <span className="font-semibold text-white">{selectedPIForItems.customer_name}</span>
+                    {selectedPIForItems.company_name && ` (${selectedPIForItems.company_name})`}
+                    {" • "}Enter Qty, Rate & GST % to automatically calculate amounts
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowItemsModal(false)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Body Table */}
+            <div className="p-6 max-h-[60vh] overflow-y-auto custom-scroll">
+              <div className="overflow-x-auto rounded-xl border border-slate-200">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200">
+                    <tr>
+                      <th className="py-3 px-3 text-center w-10">#</th>
+                      <th className="py-3 px-3 min-w-[200px]">Item & Description</th>
+                      <th className="py-3 px-3 w-28 text-center">HSN Code</th>
+                      <th className="py-3 px-3 w-20 text-center">Qty</th>
+                      <th className="py-3 px-3 w-32 text-right">Rate / PC (Rs.)</th>
+                      <th className="py-3 px-3 w-32 text-right">Taxable Total (Rs.)</th>
+                      <th className="py-3 px-3 w-24 text-center">GST %</th>
+                      <th className="py-3 px-3 w-28 text-right">GST Amt (Rs.)</th>
+                      <th className="py-3 px-3 w-32 text-right">Final Total (Rs.)</th>
+                      <th className="py-3 px-3 w-12 text-center"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {editableItems.map((item, idx) => {
+                      const qty = Number(item.qty) || 0;
+                      const rate = Number(item.rate) || 0;
+                      const taxable = item.amount !== undefined ? Number(item.amount) : qty * rate;
+                      const gst = Number(item.gst !== undefined ? item.gst : 18);
+                      const gstAmt = item.gst_amount !== undefined ? Number(item.gst_amount) : (taxable * gst) / 100;
+                      const finalTotal = item.total_amount !== undefined ? Number(item.total_amount) : taxable + gstAmt;
+
+                      return (
+                        <tr key={idx} className="hover:bg-slate-50/70 transition-colors">
+                          <td className="py-2.5 px-3 text-center font-bold text-slate-400">
+                            {idx + 1}
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <input
+                              type="text"
+                              value={item.product_name || ""}
+                              onChange={(e) => handleItemFieldChange(idx, "product_name", e.target.value)}
+                              placeholder="Product name"
+                              className="w-full px-2.5 py-1.5 text-xs font-semibold text-slate-800 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            />
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <input
+                              type="text"
+                              value={item.hsn_code || ""}
+                              onChange={(e) => handleItemFieldChange(idx, "hsn_code", e.target.value)}
+                              placeholder="HSN code"
+                              className="w-full text-center px-2 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            />
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <input
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={item.qty ?? 1}
+                              onChange={(e) => handleItemFieldChange(idx, "qty", e.target.value)}
+                              className="w-full text-center px-2 py-1.5 text-xs font-bold text-slate-800 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            />
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              value={item.rate ?? 0}
+                              onChange={(e) => handleItemFieldChange(idx, "rate", e.target.value)}
+                              className="w-full text-right px-2.5 py-1.5 text-xs font-bold text-slate-800 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            />
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-bold text-slate-700 whitespace-nowrap">
+                            {taxable.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <div className="relative">
+                              <input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="any"
+                                value={item.gst ?? 18}
+                                onChange={(e) => handleItemFieldChange(idx, "gst", e.target.value)}
+                                className="w-full text-center pr-5 py-1.5 text-xs font-bold text-slate-800 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                              />
+                              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs pointer-events-none">
+                                %
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-semibold text-slate-600 whitespace-nowrap">
+                            {gstAmt.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-extrabold text-indigo-700 whitespace-nowrap">
+                            {finalTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveItemRow(idx)}
+                              disabled={editableItems.length <= 1}
+                              title="Remove product"
+                              className="p-1.5 rounded-md text-red-400 hover:text-red-600 hover:bg-red-50 disabled:opacity-30 disabled:hover:bg-transparent cursor-pointer transition-colors"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Add Row Button */}
+              <div className="mt-3 flex justify-between items-center">
+                <button
+                  type="button"
+                  onClick={handleAddItemRow}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-indigo-300 bg-indigo-50/60 hover:bg-indigo-100 text-indigo-700 text-xs font-bold transition-colors cursor-pointer"
+                >
+                  <Plus size={14} />
+                  <span>Add Another Product</span>
+                </button>
+              </div>
+
+              {/* Live Calculation Summary Cards */}
+              <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5">
+                  <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                    Sub Total (Taxable)
+                  </span>
+                  <span className="text-base font-bold text-slate-800 mt-1 block">
+                    Rs. {editableItems.reduce((sum, it) => sum + (Number(it.amount !== undefined ? it.amount : (Number(it.qty || 0) * Number(it.rate || 0)))), 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+
+                <div className="bg-amber-50/60 border border-amber-200 rounded-xl p-3.5">
+                  <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wider block">
+                    Total GST Amount
+                  </span>
+                  <span className="text-base font-bold text-amber-900 mt-1 block">
+                    Rs. {editableItems.reduce((sum, it) => {
+                      const taxable = it.amount !== undefined ? Number(it.amount) : (Number(it.qty || 0) * Number(it.rate || 0));
+                      const gst = Number(it.gst !== undefined ? it.gst : 18);
+                      return sum + (it.gst_amount !== undefined ? Number(it.gst_amount) : (taxable * gst) / 100);
+                    }, 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+
+                <div className="bg-gradient-to-br from-indigo-50 to-violet-50 border border-indigo-200 rounded-xl p-3.5">
+                  <span className="text-[11px] font-bold text-indigo-700 uppercase tracking-wider block">
+                    Final Total Amount
+                  </span>
+                  <span className="text-base font-extrabold text-indigo-900 mt-1 block">
+                    Rs. {editableItems.reduce((sum, it) => {
+                      const taxable = it.amount !== undefined ? Number(it.amount) : (Number(it.qty || 0) * Number(it.rate || 0));
+                      const gst = Number(it.gst !== undefined ? it.gst : 18);
+                      const gstAmt = it.gst_amount !== undefined ? Number(it.gst_amount) : (taxable * gst) / 100;
+                      return sum + (it.total_amount !== undefined ? Number(it.total_amount) : taxable + gstAmt);
+                    }, 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-slate-50 border-t border-slate-200 px-6 py-4 flex items-center justify-between">
+              <div className="text-xs text-slate-500">
+                Total Products: <strong className="text-slate-700">{editableItems.length}</strong>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowItemsModal(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 text-xs font-bold transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveItems}
+                  disabled={savingItems}
+                  className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-all shadow-md cursor-pointer disabled:opacity-60"
+                >
+                  {savingItems ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save size={14} />
+                      <span>Save Products & Update PI</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

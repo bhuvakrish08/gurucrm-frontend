@@ -265,6 +265,8 @@ export default function Header() {
             alt="Company Logo"
             width={120}
             height={90}
+            priority
+            style={{ width: "auto", height: "auto" }}
             className="object-contain"
           />
         </div>
