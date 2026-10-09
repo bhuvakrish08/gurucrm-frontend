@@ -46,9 +46,23 @@ const getPIItemsList = (pi) => {
           const gst = Number(it.gst !== undefined ? it.gst : (it.gst_percent !== undefined ? it.gst_percent : 18));
           const gst_amount = it.gst_amount !== undefined ? Number(it.gst_amount) : (amount * gst) / 100;
           const total_amount = it.total_amount !== undefined ? Number(it.total_amount) : amount + gst_amount;
+
+          let pCode = it.product_code || "";
+          let hCode = it.hsn_code || it.code || "";
+
+          // Legacy cleanup: if hCode has letters/dashes/parentheses (model string like JH-210...)
+          if (!pCode && hCode && /[a-zA-Z]/.test(hCode)) {
+            pCode = hCode;
+            hCode = "";
+          } else if (pCode && hCode === pCode) {
+            hCode = "";
+          }
+
           return {
+            id: it.id,
             product_name: it.product_name || it.name || "",
-            hsn_code: it.hsn_code || it.product_code || "",
+            product_code: pCode,
+            hsn_code: hCode,
             qty,
             rate,
             amount,
@@ -70,7 +84,8 @@ const getPIItemsList = (pi) => {
       if (Array.isArray(prods) && prods.length > 0) {
         return prods.map((p) => {
           const name = p.product_name || p.name || (typeof p === "string" ? p : "Product");
-          const hsn = p.product_code || p.hsn_code || "";
+          const pCode = p.product_code || "";
+          const hCode = p.hsn_code || p.code || "";
           const rate = Number(p.sales_price) || 0;
           const qty = 1;
           const amount = qty * rate;
@@ -78,8 +93,10 @@ const getPIItemsList = (pi) => {
           const gst_amount = (amount * gst) / 100;
           const total_amount = amount + gst_amount;
           return {
+            id: p.id,
             product_name: name,
-            hsn_code: hsn,
+            product_code: pCode,
+            hsn_code: hCode,
             qty,
             rate,
             amount,
@@ -101,6 +118,7 @@ const getPIItemsList = (pi) => {
   return [
     {
       product_name: pi.description || "Supply & Installation of Aluminium Architectural Products",
+      product_code: "",
       hsn_code: "7610",
       qty: 1,
       rate: defaultTaxable,
@@ -199,13 +217,13 @@ export default function ProformaPage() {
 
   // slide-in slide-out animation 
   const closeProformaDrawer = () => {
-  const panel = document.getElementById("proformaDrawerPanel");
-  const overlay = document.getElementById("proformaDrawerOverlay");
-  if (panel)
-    panel.style.animation = "prfSlideOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards";
-  if (overlay) overlay.style.animation = "prfFadeOut 0.3s ease-in forwards";
-  setTimeout(() => resetModal(), 280);
-};
+    const panel = document.getElementById("proformaDrawerPanel");
+    const overlay = document.getElementById("proformaDrawerOverlay");
+    if (panel)
+      panel.style.animation = "prfSlideOut 0.3s cubic-bezier(0.4, 0, 1, 1) forwards";
+    if (overlay) overlay.style.animation = "prfFadeOut 0.3s ease-in forwards";
+    setTimeout(() => resetModal(), 280);
+  };
 
   const hasActiveFilters = Object.values(filters).some(
     (v) => v !== "" && v !== null && v !== undefined,
@@ -387,6 +405,8 @@ export default function ProformaPage() {
 
       if (field === "product_name") {
         cur.product_name = value;
+      } else if (field === "product_code") {
+        cur.product_code = value;
       } else if (field === "hsn_code") {
         cur.hsn_code = value;
       } else if (field === "qty") {
@@ -418,6 +438,7 @@ export default function ProformaPage() {
       ...prev,
       {
         product_name: "",
+        product_code: "",
         hsn_code: "",
         qty: 1,
         rate: 0,
@@ -451,10 +472,10 @@ export default function ProformaPage() {
           prev.map((p) =>
             p.pi_id === selectedPIForItems.pi_id
               ? {
-                  ...p,
-                  items: JSON.stringify(editableItems),
-                  total: res.data.total,
-                }
+                ...p,
+                items: JSON.stringify(editableItems),
+                total: res.data.total,
+              }
               : p,
           ),
         );
@@ -588,7 +609,7 @@ export default function ProformaPage() {
   const handleSubmitFollowUp = async () => {
     if (isTwoSplitPI(selectedPI)) {
       const entered18 = Number(amtInput18 || 0);
-      const entered9  = Number(amtInput9 || 0);
+      const entered9 = Number(amtInput9 || 0);
       const totalEntered = entered18 + entered9;
 
       if (totalEntered <= 0) {
@@ -597,9 +618,9 @@ export default function ProformaPage() {
       }
 
       const base18 = getSplitBase18(selectedPI);
-      const base9  = getSplitBase9(selectedPI);
+      const base9 = getSplitBase9(selectedPI);
       const used18 = getPIPaid18(selectedPI);
-      const used9  = getPIPaid9(selectedPI);
+      const used9 = getPIPaid9(selectedPI);
 
       if (entered18 > 0 && used18 + entered18 > base18 + 0.5) {
         const rem18 = Math.max(0, base18 - used18);
@@ -682,7 +703,7 @@ export default function ProformaPage() {
   const handleUpdate = async () => {
     if (isTwoSplitPI(selectedPI)) {
       const entered18 = Number(amtInput18 || 0);
-      const entered9  = Number(amtInput9 || 0);
+      const entered9 = Number(amtInput9 || 0);
       const totalEntered = entered18 + entered9;
 
       if (totalEntered <= 0) {
@@ -691,9 +712,9 @@ export default function ProformaPage() {
       }
 
       const base18 = getSplitBase18(selectedPI);
-      const base9  = getSplitBase9(selectedPI);
+      const base9 = getSplitBase9(selectedPI);
       const usedOther18 = getPIPaid18(selectedPI, editing?.id);
-      const usedOther9  = getPIPaid9(selectedPI, editing?.id);
+      const usedOther9 = getPIPaid9(selectedPI, editing?.id);
 
       if (entered18 > 0 && usedOther18 + entered18 > base18 + 0.5) {
         const rem18 = Math.max(0, base18 - usedOther18);
@@ -929,17 +950,23 @@ export default function ProformaPage() {
         totalTax = piItems.reduce((acc, it) => acc + (Number(it.gst_amount) || 0), 0);
         calculatedGrandTotal = piItems.reduce((acc, it) => acc + (Number(it.total_amount) || 0), 0);
 
-        itemRows = piItems.map((it, idx) => [
-          String(idx + 1),
-          it.product_name || "Item",
-          it.hsn_code || "-",
-          String(it.qty || 1),
-          formatNum(it.rate),
-          formatNum(it.amount),
-          `${it.gst !== undefined ? it.gst : (it.gst_percent !== undefined ? it.gst_percent : 18)}%`,
-          formatNum(it.gst_amount),
-          formatNum(it.total_amount),
-        ]);
+        itemRows = piItems.map((it, idx) => {
+          const name = it.product_name || "Item";
+          const pcode = it.product_code || "";
+          const itemDesc = pcode ? `${name}\n${pcode}` : name;
+
+          return [
+            String(idx + 1),
+            itemDesc,
+            it.hsn_code || "-",
+            String(it.qty || 1),
+            formatNum(it.rate),
+            formatNum(it.amount),
+            `${it.gst !== undefined ? it.gst : (it.gst_percent !== undefined ? it.gst_percent : 18)}%`,
+            formatNum(it.gst_amount),
+            formatNum(it.total_amount),
+          ];
+        });
       } else {
         totalQty = 1;
         totalTaxable = Number(item.total || 0) / 1.18;
@@ -1099,15 +1126,17 @@ export default function ProformaPage() {
       }
 
       doc.setFont(undefined, "normal");
-      doc.setFontSize(7);
+      doc.setFontSize(7.2);
       let buyerY = item.company_name ? 53.5 : 48.5;
-      if (item.reference) {
-        doc.text(`Ref: ${item.reference}`, 127, buyerY);
-        buyerY += 4.5;
-      }
-      if (item.quotation_no) {
-        doc.text(`Quotation No: ${item.quotation_no}`, 127, buyerY);
-        buyerY += 4.5;
+      const buyerAddress = item.customer_address || item.address || item.location || "";
+      if (buyerAddress) {
+        const splitAddr = doc.splitTextToSize(String(buyerAddress).trim(), 70);
+        splitAddr.forEach((line) => {
+          if (buyerY <= 70) {
+            doc.text(line, 127, buyerY);
+            buyerY += 4;
+          }
+        });
       }
 
       // ── 4. Items Table ──
@@ -1216,21 +1245,39 @@ export default function ProformaPage() {
       doc.setFontSize(7.5);
       doc.text('"SUBJECT TO JURISDICTION COURT OF AHMEDABAD"', 13, termsY + 25.5);
 
-      // 5C. Right - Sub Total Box
-      doc.rect(130, cursorY, 70, bottomBoxHeight1, "S");
+      // 5C. Right - Sub Total Box (Tabular Format)
+      const totalBoxX = 130;
+      const totalBoxW = 70;
+      const colSplitX = 166;
+      const rowH = 12;
 
+      doc.setDrawColor(...black);
+      doc.setLineWidth(0.3);
+
+      // Row 1: Sub Total
+      doc.rect(totalBoxX, cursorY, totalBoxW, rowH, "S");
+      doc.line(colSplitX, cursorY, colSplitX, cursorY + rowH);
       doc.setFont(undefined, "bold");
       doc.setFontSize(8.5);
-      doc.text("Sub Total", 135, cursorY + 10);
-      doc.text(formatNum(totalTaxable), 195, cursorY + 10, { align: "right" });
+      doc.text("Sub Total", totalBoxX + 4, cursorY + 7.5);
+      doc.text(formatNum(totalTaxable), totalBoxX + totalBoxW - 4, cursorY + 7.5, { align: "right" });
 
-      doc.setFontSize(8);
-      doc.text("GST Amount", 135, cursorY + 18);
-      doc.text(formatNum(totalTax), 195, cursorY + 18, { align: "right" });
+      // Row 2: GST Amount
+      doc.rect(totalBoxX, cursorY + rowH, totalBoxW, rowH, "S");
+      doc.line(colSplitX, cursorY + rowH, colSplitX, cursorY + rowH * 2);
+      doc.setFont(undefined, "bold");
+      doc.setFontSize(8.5);
+      doc.text("GST Amount", totalBoxX + 4, cursorY + rowH + 7.5);
+      doc.text(formatNum(totalTax), totalBoxX + totalBoxW - 4, cursorY + rowH + 7.5, { align: "right" });
 
+      // Row 3: Total Amount (Tabular summary with header fill)
+      doc.setFillColor(...headerFill);
+      doc.rect(totalBoxX, cursorY + rowH * 2, totalBoxW, rowH, "FD");
+      doc.line(colSplitX, cursorY + rowH * 2, colSplitX, cursorY + rowH * 3);
+      doc.setFont(undefined, "bold");
       doc.setFontSize(9);
-      doc.text("Total Amount", 135, cursorY + 27);
-      doc.text(formatNum(effectiveGrandTotal), 195, cursorY + 27, { align: "right" });
+      doc.text("Total Amount", totalBoxX + 4, cursorY + rowH * 2 + 7.5);
+      doc.text(formatNum(effectiveGrandTotal), totalBoxX + totalBoxW - 4, cursorY + rowH * 2 + 7.5, { align: "right" });
 
       // 5D. Right - Stamp & Signature Box
       doc.rect(130, termsY, 70, bottomBoxHeight2, "S");
@@ -1415,7 +1462,7 @@ export default function ProformaPage() {
         </div>
 
         {/* FILTER SECTION */}
-      <div className="mx-6 md:hidden mt-3 relative z-40">
+        <div className="mx-6 md:hidden mt-3 relative z-40">
           <button
             onClick={() => setShowMobileFilters(!showMobileFilters)}
             className="w-full flex items-center justify-between text-orange-500 font-semibold bg-orange-50 px-4 py-2 rounded-sm border border-orange-200 shadow-sm"
@@ -1433,7 +1480,7 @@ export default function ProformaPage() {
           className={`${showMobileFilters ? "absolute left-6 right-6 top-[170px] bg-white p-5 shadow-2xl rounded-lg grid grid-cols-2 gap-3 mt-1 z-[999] ring-2 ring-orange-300" : "hidden"} md:mx-6 md:flex md:flex-wrap md:items-center md:gap-x-3 md:gap-y-2 md:mt-3 md:mb-5 md:relative md:bg-transparent md:p-0 md:shadow-none md:ring-0`}
         >
           <div className="flex items-center gap-2 px-2 w-full md:w-45 bg-white border border-indigo-400 md:border rounded-sm text-sm">
-                      <User size={16} className="text-violet-600" />
+            <User size={16} className="text-violet-600" />
             <input
               name="customer_name"
               value={filters.customer_name}
@@ -1444,7 +1491,7 @@ export default function ProformaPage() {
           </div>
 
           <div className="flex items-center gap-2 px-2 w-full md:w-45 bg-white border border-indigo-400 md:border rounded-sm text-sm">
-                    <FileText size={16} className="text-blue-500" />
+            <FileText size={16} className="text-blue-500" />
             <input
               name="quotation_no"
               value={filters.quotation_no}
@@ -1560,7 +1607,7 @@ export default function ProformaPage() {
         </div>
 
         {/* TABS */}
-      <div className="mx-7 mt-2 mb-0 flex items-center gap-0 border-b border-gray-200 bg-white px-2 pt-2 rounded-t-sm">
+        <div className="mx-7 mt-2 mb-0 flex items-center gap-0 border-b border-gray-200 bg-white px-2 pt-2 rounded-t-sm">
           <button
             onClick={() => {
               setActiveTab("pending");
@@ -1608,353 +1655,351 @@ export default function ProformaPage() {
                   className="overflow-x-auto overflow-y-scroll max-h-[500px] custom-scroll"
                   style={{ overflowX: "scroll" }}
                 >
-                <table className="w-full text-sm whitespace-nowrap">
-                  <thead>
-                    <tr className="bg-indigo-50 border-b border-gray-100">
-                      {[
-                        "ID",
-                        "Company Name",
-                        "Customer Name",
-                        "PI No",
-                        "PI Date",
-                        "Quotation No",
-                        "Source",
-                        "Reference",
-                        "Items",
-                        "Total",
-                        "PI %",
-                        "Status",
-                        "Stage",
-                        "Follow-Up",
-                        "Quotation",
-                        "Download",
-                      ].map((h) => (
-                        <th
-                          key={h}
-                          className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider"
-                        >
-                          {h}
-                          {[
-                            "Company Name",
-                            "Customer Name",
-                            "PI No",
-                            "PI Date",
-                            "Quotation No",
-                            "Source",
-                            "Total",
-                            "PI %",
-                            "Status",
-                          ].includes(h) && (
-                            <>
-                              {" "}
-                              <i className="bi bi-arrow-down-up text-slate-400 text-[10px]"></i>
-                            </>
-                          )}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedData.length > 0 ? (
-                      paginatedData.map((item, index) => {
-                        const globalIndex = indexOfFirstItem + index;
-                        const currentStage = item.stage || "pending";
-                        return (
-                          <tr
-                            key={item.pi_id}
-                            className="border-b border-gray-50 hover:bg-indigo-50/30 transition-colors"
+                  <table className="w-full text-sm whitespace-nowrap">
+                    <thead>
+                      <tr className="bg-indigo-50 border-b border-gray-100">
+                        {[
+                          "ID",
+                          "Company Name",
+                          "Customer Name",
+                          "PI No",
+                          "PI Date",
+                          "Quotation No",
+                          "Source",
+                          "Reference",
+                          "Items",
+                          "Total",
+                          "PI %",
+                          "Status",
+                          "Stage",
+                          "Follow-Up",
+                          "Quotation",
+                          "Download",
+                        ].map((h) => (
+                          <th
+                            key={h}
+                            className="py-3 px-3 text-left text-xs font-bold text-slate-700 tracking-wider"
                           >
-                            <td className="py-3 px-3">{globalIndex + 1}</td>
-                            <td className="py-3 px-3 font-semibold text-slate-800">
-                              {item.company_name || "-"}
-                            </td>
-                            <td className="py-3 px-3 text-blue-500 font-medium">
-                              {item.customer_name || "-"}
-                            </td>
-                            <td className="py-3 px-3 font-semibold text-slate-800">
-                              {editingPiNoId === item.pi_id ? (
-                                <div
-                                  className="flex items-center gap-1 min-w-[150px]"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <input
-                                    type="text"
-                                    value={editingPiNoValue}
-                                    onChange={(e) =>
-                                      setEditingPiNoValue(e.target.value)
-                                    }
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter")
-                                        handleSavePiNo(item.pi_id);
-                                      if (e.key === "Escape")
-                                        setEditingPiNoId(null);
-                                    }}
-                                    autoFocus
-                                    placeholder="Enter PI No"
-                                    className="px-2 py-1 text-xs border border-indigo-400 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 w-28 bg-white text-slate-800 font-medium shadow-xs"
-                                  />
-                                  <button
-                                    onClick={() => handleSavePiNo(item.pi_id)}
-                                    disabled={savingPiNo}
-                                    className="p-1 rounded bg-green-500 text-white hover:bg-green-600 transition-colors cursor-pointer shadow-xs"
-                                    title="Save"
-                                  >
-                                    <i className="bi bi-check-lg text-xs"></i>
-                                  </button>
-                                  <button
-                                    onClick={() => setEditingPiNoId(null)}
-                                    className="p-1 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors cursor-pointer"
-                                    title="Cancel"
-                                  >
-                                    <i className="bi bi-x text-xs"></i>
-                                  </button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1.5 group">
-                                  <span>
-                                    {item.pi_no || (
-                                      <span className="text-gray-400 italic text-xs font-normal">
-                                        —
-                                      </span>
-                                    )}
-                                  </span>
-                                  <button
-                                    onClick={() => {
-                                      setEditingPiNoId(item.pi_id);
-                                      setEditingPiNoValue(item.pi_no || "");
-                                    }}
-                                    className="opacity-70 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-indigo-600 transition-colors cursor-pointer"
-                                    title="Edit PI Number"
-                                  >
-                                    <i className="bi bi-pencil text-[11px]"></i>
-                                  </button>
-                                </div>
+                            {h}
+                            {[
+                              "Company Name",
+                              "Customer Name",
+                              "PI No",
+                              "PI Date",
+                              "Quotation No",
+                              "Source",
+                              "Total",
+                              "PI %",
+                              "Status",
+                            ].includes(h) && (
+                                <>
+                                  {" "}
+                                  <i className="bi bi-arrow-down-up text-slate-400 text-[10px]"></i>
+                                </>
                               )}
-                            </td>
-                            <td className="py-3 px-3 text-gray-500">
-                              {item.pi_date
-                                ? new Date(item.pi_date).toLocaleDateString(
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedData.length > 0 ? (
+                        paginatedData.map((item, index) => {
+                          const globalIndex = indexOfFirstItem + index;
+                          const currentStage = item.stage || "pending";
+                          return (
+                            <tr
+                              key={item.pi_id}
+                              className="border-b border-gray-50 hover:bg-indigo-50/30 transition-colors"
+                            >
+                              <td className="py-3 px-3">{globalIndex + 1}</td>
+                              <td className="py-3 px-3 font-semibold text-slate-800">
+                                {item.company_name || "-"}
+                              </td>
+                              <td className="py-3 px-3 text-blue-500 font-medium">
+                                {item.customer_name || "-"}
+                              </td>
+                              <td className="py-3 px-3 font-semibold text-slate-800">
+                                {editingPiNoId === item.pi_id ? (
+                                  <div
+                                    className="flex items-center gap-1 min-w-[150px]"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <input
+                                      type="text"
+                                      value={editingPiNoValue}
+                                      onChange={(e) =>
+                                        setEditingPiNoValue(e.target.value)
+                                      }
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter")
+                                          handleSavePiNo(item.pi_id);
+                                        if (e.key === "Escape")
+                                          setEditingPiNoId(null);
+                                      }}
+                                      autoFocus
+                                      placeholder="Enter PI No"
+                                      className="px-2 py-1 text-xs border border-indigo-400 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 w-28 bg-white text-slate-800 font-medium shadow-xs"
+                                    />
+                                    <button
+                                      onClick={() => handleSavePiNo(item.pi_id)}
+                                      disabled={savingPiNo}
+                                      className="p-1 rounded bg-green-500 text-white hover:bg-green-600 transition-colors cursor-pointer shadow-xs"
+                                      title="Save"
+                                    >
+                                      <i className="bi bi-check-lg text-xs"></i>
+                                    </button>
+                                    <button
+                                      onClick={() => setEditingPiNoId(null)}
+                                      className="p-1 rounded bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors cursor-pointer"
+                                      title="Cancel"
+                                    >
+                                      <i className="bi bi-x text-xs"></i>
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1.5 group">
+                                    <span>
+                                      {item.pi_no || (
+                                        <span className="text-gray-400 italic text-xs font-normal">
+                                          —
+                                        </span>
+                                      )}
+                                    </span>
+                                    <button
+                                      onClick={() => {
+                                        setEditingPiNoId(item.pi_id);
+                                        setEditingPiNoValue(item.pi_no || "");
+                                      }}
+                                      className="opacity-70 group-hover:opacity-100 p-0.5 text-gray-400 hover:text-indigo-600 transition-colors cursor-pointer"
+                                      title="Edit PI Number"
+                                    >
+                                      <i className="bi bi-pencil text-[11px]"></i>
+                                    </button>
+                                  </div>
+                                )}
+                              </td>
+                              <td className="py-3 px-3 text-gray-500">
+                                {item.pi_date
+                                  ? new Date(item.pi_date).toLocaleDateString(
                                     "en-IN",
                                   )
-                                : "-"}
-                            </td>
-                            <td className="py-3 px-3 font-semibold text-slate-700">
-                              {item.quotation_no || "-"}
-                            </td>
-                            <td className="py-3 px-3">
-                              {item.source ? (
-                                <span
-                                  className={`inline-block px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap ${
-                                    item.source === "Walk In"
-                                      ? "bg-yellow-50 text-yellow-600"
-                                      : item.source === "Website"
-                                        ? "bg-fuchsia-50 text-fuchsia-600"
-                                        : item.source === "Reference"
-                                          ? "bg-purple-50 text-purple-600"
-                                          : item.source === "Instagram"
-                                            ? "bg-cyan-50 text-cyan-600"
-                                            : item.source === "Facebook"
-                                              ? "bg-blue-50 text-blue-600"
-                                              : "bg-pink-50 text-pink-600"
-                                  }`}
-                                >
-                                  {item.source}
-                                </span>
-                              ) : (
-                                "-"
-                              )}
-                            </td>
-                            <td className="py-3 px-3 font-semibold text-slate-700">
-                              {item.reference || "-"}
-                            </td>
-                            <td className="py-3 px-3">
-                              {(() => {
-                                const items = getPIItemsList(item);
-                                const count = items.length;
-                                return (
-                                  <button
-                                    onClick={() => handleOpenItemsModal(item)}
-                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold transition-all shadow-2xs group cursor-pointer"
-                                    title="Click to view & edit items, quantities, rates and GST"
+                                  : "-"}
+                              </td>
+                              <td className="py-3 px-3 font-semibold text-slate-700">
+                                {item.quotation_no || "-"}
+                              </td>
+                              <td className="py-3 px-3">
+                                {item.source ? (
+                                  <span
+                                    className={`inline-block px-3 py-1 rounded-md text-xs font-medium whitespace-nowrap ${item.source === "Walk In"
+                                        ? "bg-yellow-50 text-yellow-600"
+                                        : item.source === "Website"
+                                          ? "bg-fuchsia-50 text-fuchsia-600"
+                                          : item.source === "Reference"
+                                            ? "bg-purple-50 text-purple-600"
+                                            : item.source === "Instagram"
+                                              ? "bg-cyan-50 text-cyan-600"
+                                              : item.source === "Facebook"
+                                                ? "bg-blue-50 text-blue-600"
+                                                : "bg-pink-50 text-pink-600"
+                                      }`}
                                   >
-                                    <Package size={13} className="text-amber-600 group-hover:scale-110 transition-transform shrink-0" />
-                                    <span>{count} {count === 1 ? "Product" : "Products"}</span>
-                                    <Pencil size={11} className="text-amber-500 opacity-60 group-hover:opacity-100 ml-0.5 shrink-0" />
-                                  </button>
-                                );
-                              })()}
-                            </td>
-                            <td className="py-3 px-3 font-semibold text-slate-800">
-                              Rs.{Number(item.total || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </td>
-                            <td className="py-3 px-3">
-                              <div className="flex items-center gap-2">
-                                <div className="w-16 bg-gray-100 rounded-full h-1.5">
-                                  <div
-                                    className={`h-1.5 rounded-full transition-all ${
-                                      Number(item.proforma_percentage) >= 100
-                                        ? "bg-green-500"
-                                        : Number(item.proforma_percentage) >= 50
-                                          ? "bg-orange-400"
-                                          : "bg-blue-400"
-                                    }`}
-                                    style={{
-                                      width: `${Math.min(Number(item.proforma_percentage || 0), 100)}%`,
-                                    }}
-                                  ></div>
+                                    {item.source}
+                                  </span>
+                                ) : (
+                                  "-"
+                                )}
+                              </td>
+                              <td className="py-3 px-3 font-semibold text-slate-700">
+                                {item.reference || "-"}
+                              </td>
+                              <td className="py-3 px-3">
+                                {(() => {
+                                  const items = getPIItemsList(item);
+                                  const count = items.length;
+                                  return (
+                                    <button
+                                      onClick={() => handleOpenItemsModal(item)}
+                                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold transition-all shadow-2xs group cursor-pointer"
+                                      title="Click to view & edit items, quantities, rates and GST"
+                                    >
+                                      <Package size={13} className="text-amber-600 group-hover:scale-110 transition-transform shrink-0" />
+                                      <span>{count} {count === 1 ? "Product" : "Products"}</span>
+                                      <Pencil size={11} className="text-amber-500 opacity-60 group-hover:opacity-100 ml-0.5 shrink-0" />
+                                    </button>
+                                  );
+                                })()}
+                              </td>
+                              <td className="py-3 px-3 font-semibold text-slate-800">
+                                Rs.{Number(item.total || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </td>
+                              <td className="py-3 px-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-16 bg-gray-100 rounded-full h-1.5">
+                                    <div
+                                      className={`h-1.5 rounded-full transition-all ${Number(item.proforma_percentage) >= 100
+                                          ? "bg-green-500"
+                                          : Number(item.proforma_percentage) >= 50
+                                            ? "bg-orange-400"
+                                            : "bg-blue-400"
+                                        }`}
+                                      style={{
+                                        width: `${Math.min(Number(item.proforma_percentage || 0), 100)}%`,
+                                      }}
+                                    ></div>
+                                  </div>
+                                  <span className="font-semibold text-slate-800 text-xs">
+                                    {Number(item.proforma_percentage || 0).toFixed(2)}%
+                                  </span>
                                 </div>
-                                <span className="font-semibold text-slate-800 text-xs">
-                                  {Number(item.proforma_percentage || 0).toFixed(2)}%
+                              </td>
+                              <td className="py-3 px-3">
+                                <span
+                                  className={`border rounded-md px-3 py-1 text-xs font-semibold ${item.status === "paid" ? "border-green-200 bg-green-50 text-green-600" : ""} ${item.status === "partial" ? "border-orange-200 bg-orange-50 text-orange-600" : ""} ${item.status === "draft" ? "border-gray-200 bg-gray-50 text-gray-600" : ""} ${item.status === "sent" ? "border-blue-200 bg-blue-50 text-blue-600" : ""} ${item.status === "cancelled" ? "border-red-200 bg-red-50 text-red-600" : ""}`}
+                                >
+                                  {item.status === "paid"
+                                    ? "Won"
+                                    : item.status === "partial"
+                                      ? "Pending"
+                                      : item.status === "sent"
+                                        ? "Sent"
+                                        : item.status === "cancelled"
+                                          ? "Cancelled"
+                                          : "Draft"}
                                 </span>
-                              </div>
-                            </td>
-                            <td className="py-3 px-3">
-                              <span
-                                className={`border rounded-md px-3 py-1 text-xs font-semibold ${item.status === "paid" ? "border-green-200 bg-green-50 text-green-600" : ""} ${item.status === "partial" ? "border-orange-200 bg-orange-50 text-orange-600" : ""} ${item.status === "draft" ? "border-gray-200 bg-gray-50 text-gray-600" : ""} ${item.status === "sent" ? "border-blue-200 bg-blue-50 text-blue-600" : ""} ${item.status === "cancelled" ? "border-red-200 bg-red-50 text-red-600" : ""}`}
-                              >
-                                {item.status === "paid"
-                                  ? "Won"
-                                  : item.status === "partial"
-                                    ? "Pending"
-                                    : item.status === "sent"
-                                      ? "Sent"
-                                      : item.status === "cancelled"
-                                        ? "Cancelled"
-                                        : "Draft"}
-                              </span>
-                            </td>
-                            <td className="py-3 px-3">
-                              <select
-                                value={currentStage}
-                                onChange={(e) =>
-                                  updateStage(item.pi_id, e.target.value)
-                                }
-                                className={`text-xs font-semibold px-2 py-1.5 rounded-md border cursor-pointer outline-none transition-all ${currentStage === "completed" ? "bg-green-50 border-green-200 text-green-600 hover:bg-green-100" : "bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100"}`}
-                              >
-                                <option value="pending">Pending</option>
-                                <option value="completed">Completed</option>
-                              </select>
-                            </td>
-                            <td className="py-3 px-3 text-center">
-                              <button
-                                onClick={() => {
-                                  setSelectedPI(item);
-                                  setEditing(null);
-                                  setAmtInput("");
-                                  setActiveIndex(null);
-                                  setShowModal(true);
-                                }}
-                                className="w-9 h-9 rounded-full border border-blue-300 text-blue-500 flex items-center justify-center mx-auto hover:bg-blue-50 cursor-pointer transition-all"
-                              >
-                                <i className="bi bi-plus text-lg"></i>
-                              </button>
-                            </td>
-                            <td className="py-3 px-3 text-center">
-                              <button
-                                onClick={() =>
-                                  handleQuotationView(item.quotation_id, item.quotation_no)
-                                }
-                                title="View Quotation Files"
-                                className="group relative w-9 h-9 rounded-full border border-blue-200 bg-blue-50 flex items-center justify-center mx-auto hover:bg-blue-500 hover:border-blue-500 transition-all cursor-pointer"
-                              >
-                                <i className="bi bi-eye text-blue-600 group-hover:text-white text-base transition-all"></i>
-                              </button>
-                            </td>
-                            <td className="py-3 px-3 text-center">
-                              <button
-                                title="Download PI PDF"
-                                onClick={() =>
-                                  downloadInvoicePDF(item, globalIndex)
-                                }
-                                className="group relative w-9 h-9 rounded-full border border-green-200 bg-green-50 flex items-center justify-center mx-auto hover:bg-green-500 hover:border-green-500 transition-all cursor-pointer"
-                              >
-                                <i className="bi bi-file-earmark-pdf text-green-600 group-hover:text-white text-base transition-all"></i>
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    ) : (
-                      <tr>
-                        <td
-                          colSpan="16"
-                          className="text-center py-10 text-gray-400"
-                        >
-                          No Data Found
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* PAGINATION */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white rounded-b-sm">
-                {/* Left side: Showing X to Y of Z entries */}
-                <div className="text-sm text-slate-600 font-semibold whitespace-nowrap">
-                  Showing {tabFilteredData.length === 0 ? 0 : indexOfFirstItem + 1}{" "}
-                  to {Math.min(indexOfFirstItem + itemsPerPage, tabFilteredData.length)}{" "}
-                  of {tabFilteredData.length} entries
+                              </td>
+                              <td className="py-3 px-3">
+                                <select
+                                  value={currentStage}
+                                  onChange={(e) =>
+                                    updateStage(item.pi_id, e.target.value)
+                                  }
+                                  className={`text-xs font-semibold px-2 py-1.5 rounded-md border cursor-pointer outline-none transition-all ${currentStage === "completed" ? "bg-green-50 border-green-200 text-green-600 hover:bg-green-100" : "bg-indigo-50 border-indigo-200 text-indigo-600 hover:bg-indigo-100"}`}
+                                >
+                                  <option value="pending">Pending</option>
+                                  <option value="completed">Completed</option>
+                                </select>
+                              </td>
+                              <td className="py-3 px-3 text-center">
+                                <button
+                                  onClick={() => {
+                                    setSelectedPI(item);
+                                    setEditing(null);
+                                    setAmtInput("");
+                                    setActiveIndex(null);
+                                    setShowModal(true);
+                                  }}
+                                  className="w-9 h-9 rounded-full border border-blue-300 text-blue-500 flex items-center justify-center mx-auto hover:bg-blue-50 cursor-pointer transition-all"
+                                >
+                                  <i className="bi bi-plus text-lg"></i>
+                                </button>
+                              </td>
+                              <td className="py-3 px-3 text-center">
+                                <button
+                                  onClick={() =>
+                                    handleQuotationView(item.quotation_id, item.quotation_no)
+                                  }
+                                  title="View Quotation Files"
+                                  className="group relative w-9 h-9 rounded-full border border-blue-200 bg-blue-50 flex items-center justify-center mx-auto hover:bg-blue-500 hover:border-blue-500 transition-all cursor-pointer"
+                                >
+                                  <i className="bi bi-eye text-blue-600 group-hover:text-white text-base transition-all"></i>
+                                </button>
+                              </td>
+                              <td className="py-3 px-3 text-center">
+                                <button
+                                  title="Download PI PDF"
+                                  onClick={() =>
+                                    downloadInvoicePDF(item, globalIndex)
+                                  }
+                                  className="group relative w-9 h-9 rounded-full border border-green-200 bg-green-50 flex items-center justify-center mx-auto hover:bg-green-500 hover:border-green-500 transition-all cursor-pointer"
+                                >
+                                  <i className="bi bi-file-earmark-pdf text-green-600 group-hover:text-white text-base transition-all"></i>
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan="16"
+                            className="text-center py-10 text-gray-400"
+                          >
+                            No Data Found
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
 
-                {/* Center: Navigation buttons */}
-                {totalPages > 1 && (
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() =>
-                        setCurrentPage((prev) => Math.max(prev - 1, 1))
-                      }
-                      disabled={currentPage === 1}
-                      className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                    >
-                      <i className="bi bi-chevron-left text-sm"></i>
-                    </button>
-                    {getSlidingPages().map((page) => (
-                      <button
-                        key={page}
-                        onClick={() => setCurrentPage(page)}
-                        className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all cursor-pointer ${currentPage === page ? "bg-indigo-600 text-white shadow-md shadow-indigo-200" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}
-                      >
-                        {page}
-                      </button>
-                    ))}
-                    <button
-                      onClick={() =>
-                        setCurrentPage((prev) =>
-                          Math.min(prev + 1, totalPages),
-                        )
-                      }
-                      disabled={currentPage === totalPages}
-                      className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                    >
-                      <i className="bi bi-chevron-right text-sm"></i>
-                    </button>
+                {/* PAGINATION */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-slate-200 bg-white rounded-b-sm">
+                  {/* Left side: Showing X to Y of Z entries */}
+                  <div className="text-sm text-slate-600 font-semibold whitespace-nowrap">
+                    Showing {tabFilteredData.length === 0 ? 0 : indexOfFirstItem + 1}{" "}
+                    to {Math.min(indexOfFirstItem + itemsPerPage, tabFilteredData.length)}{" "}
+                    of {tabFilteredData.length} entries
                   </div>
-                )}
 
-                {/* Right side: Rows per page selector */}
-                <div className="flex items-center gap-2.5 whitespace-nowrap">
-                  <span className="text-sm text-slate-500 font-medium">
-                    Rows per page:
-                  </span>
-                  <select
-                    value={itemsPerPage}
-                    onChange={(e) => {
-                      setItemsPerPage(Number(e.target.value));
-                      setCurrentPage(1);
-                    }}
-                    className="border border-indigo-200 rounded-lg px-3 py-1.5 text-sm text-indigo-600 font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
-                  >
-                    {[10, 20, 50, 100, 200].map((size) => (
-                      <option key={size} value={size}>
-                        {size}
-                      </option>
-                    ))}
-                  </select>
+                  {/* Center: Navigation buttons */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() =>
+                          setCurrentPage((prev) => Math.max(prev - 1, 1))
+                        }
+                        disabled={currentPage === 1}
+                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        <i className="bi bi-chevron-left text-sm"></i>
+                      </button>
+                      {getSlidingPages().map((page) => (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-semibold transition-all cursor-pointer ${currentPage === page ? "bg-indigo-600 text-white shadow-md shadow-indigo-200" : "border border-slate-200 text-slate-600 hover:bg-slate-50"}`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() =>
+                          setCurrentPage((prev) =>
+                            Math.min(prev + 1, totalPages),
+                          )
+                        }
+                        disabled={currentPage === totalPages}
+                        className="w-9 h-9 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-all disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                      >
+                        <i className="bi bi-chevron-right text-sm"></i>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Right side: Rows per page selector */}
+                  <div className="flex items-center gap-2.5 whitespace-nowrap">
+                    <span className="text-sm text-slate-500 font-medium">
+                      Rows per page:
+                    </span>
+                    <select
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="border border-indigo-200 rounded-lg px-3 py-1.5 text-sm text-indigo-600 font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-indigo-100 transition-all cursor-pointer"
+                    >
+                      {[10, 20, 50, 100, 200].map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              </div>
-            </>
-          )}
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -1967,13 +2012,13 @@ export default function ProformaPage() {
           const hasTwoSplits = isTwoSplitPI(selectedPI);
 
           const base18 = getSplitBase18(selectedPI);
-          const base9  = getSplitBase9(selectedPI);
+          const base9 = getSplitBase9(selectedPI);
 
           const used18 = getPIPaid18(selectedPI, editing?.id);
-          const used9  = getPIPaid9(selectedPI, editing?.id);
+          const used9 = getPIPaid9(selectedPI, editing?.id);
 
           const rem18 = Math.max(0, base18 - used18);
-          const rem9  = Math.max(0, base9 - used9);
+          const rem9 = Math.max(0, base9 - used9);
 
           const usedAmt = getPIPaidTotal(selectedPI, editing?.id);
           const usedPct = grandTotal > 0 ? (usedAmt / grandTotal) * 100 : 0;
@@ -1998,10 +2043,10 @@ export default function ProformaPage() {
             enteredAmt = enteredAmt18 + enteredAmt9;
 
             afterAmt18 = rem18 - enteredAmt18;
-            afterAmt9  = rem9 - enteredAmt9;
+            afterAmt9 = rem9 - enteredAmt9;
 
             isOver18 = base18 > 0 && afterAmt18 < -0.5 && enteredAmt18 > 0;
-            isOver9  = base9 > 0 && afterAmt9 < -0.5 && enteredAmt9 > 0;
+            isOver9 = base9 > 0 && afterAmt9 < -0.5 && enteredAmt9 > 0;
             const isOverCombined = grandTotal > 0 && (usedAmt + enteredAmt > grandTotal + 0.5) && enteredAmt > 0;
 
             isOver = isOver18 || isOver9 || isOverCombined;
@@ -2020,12 +2065,12 @@ export default function ProformaPage() {
           const allFollowUps = selectedPI.follow_ups || [];
 
           return (
-<div
-  id="proformaDrawerOverlay"
-  className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm"
-  style={{ animation: "prfFadeIn 0.3s ease-out" }}
->
-  <style>{`
+            <div
+              id="proformaDrawerOverlay"
+              className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-sm"
+              style={{ animation: "prfFadeIn 0.3s ease-out" }}
+            >
+              <style>{`
     @keyframes prfSlideIn {
       from { transform: translateX(100%); opacity: 0.6; }
       to { transform: translateX(0); opacity: 1; }
@@ -2043,406 +2088,425 @@ export default function ProformaPage() {
       to { opacity: 0; }
     }
   `}</style>
- 
-  <div
-    id="proformaDrawerPanel"
-    className="bg-white w-full max-w-[980px] h-full shadow-2xl border-l border-gray-100 overflow-hidden flex flex-col"
-    style={{ animation: "prfSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1)" }}
-  >
-    {/* ── Header ── */}
-    <div className="bg-white flex-shrink-0 z-10">
-      <div className="flex justify-between items-center px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md flex-shrink-0"
-            style={{
-              background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-            }}
-          >
-            <i className="bi bi-arrow-repeat text-white text-lg"></i>
-          </div>
-          <div>
-            <h2 className="text-sm font-bold text-gray-800 tracking-wide">
-              Update Proforma Activities
-            </h2>
-            <p className="text-[10px] text-gray-500 font-medium">
-              Track proforma progress {hasTwoSplits ? "(Two-Split Payment)" : "(Single Payment)"}
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={closeProformaDrawer}
-          className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-violet-600 hover:bg-violet-50 transition-all"
-        >
-          ✕
-        </button>
-      </div>
-      <div className="h-1 w-full bg-gray-100">
-        <div
-          className="h-full w-1/3 rounded-r-full"
-          style={{
-            background: "linear-gradient(to right, #6366f1, #8b5cf6)",
-          }}
-        ></div>
-      </div>
-    </div>
- 
-    {/* Body — scrollable */}
-    <div className="flex flex-col md:flex-row flex-1 overflow-y-auto">
-      {/* ── LEFT PANEL ── */}
-      <div className="w-full md:w-1/2 px-6 py-5 border-b md:border-b-0 md:border-r border-gray-100">
 
-        {/* Summary */}
-        <div className="space-y-1 text-sm mb-4">
-          <div className="flex justify-between py-1.5 border-b border-gray-50">
-            <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">
-              Customer
-            </span>
-            <span className="font-medium text-gray-700">
-              {selectedPI.customer_name}
-            </span>
-          </div>
-          <div className="flex justify-between py-1.5 border-b border-gray-50">
-            <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">
-              Quotation No
-            </span>
-            <span className="font-medium text-gray-700">
-              {selectedPI.quotation_no ||
-                selectedPI.quotation_id ||
-                "-"}
-            </span>
-          </div>
-          <div className="flex justify-between py-1.5">
-            <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">
-              PI Base Amount (incl. tax)
-            </span>
-            <span className="font-semibold text-indigo-600">
-              Rs. {grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </span>
-          </div>
-        </div>
-
-        {/* Linked Inquired Products Card */}
-        {(() => {
-          const items = getPIItemsList(selectedPI);
-          return (
-            <div className="mb-4 bg-gradient-to-r from-amber-50/70 to-orange-50/50 rounded-xl p-3 border border-amber-200/80">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-                    <Package size={15} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-amber-900 uppercase tracking-wider">
-                      Linked Products ({items.length})
-                    </p>
-                    <p className="text-[10px] text-amber-700/80">
-                      Products with Qty, Rate & GST
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleOpenItemsModal(selectedPI)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 text-xs font-bold transition-all shadow-2xs cursor-pointer"
-                >
-                  <Pencil size={11} />
-                  <span>Edit Products</span>
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {items.map((prod, idx) => (
-                  <div
-                    key={idx}
-                    className="inline-flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-lg border border-amber-200 text-xs shadow-2xs"
-                  >
-                    <span className="font-bold text-slate-800">{prod.product_name}</span>
-                    {prod.hsn_code && <span className="text-slate-400 text-[11px]">({prod.hsn_code})</span>}
-                    <span className="text-[11px] font-semibold text-amber-800 bg-amber-100/70 px-1.5 py-0.5 rounded">
-                      Qty: {prod.qty} × Rs.{Number(prod.rate || 0).toLocaleString("en-IN")}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* Overall progress bar */}
-        <div className="mb-5 bg-gray-50 rounded-xl border border-gray-100 p-3">
-          <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
-            Overall Progress
-          </p>
-          <div className="w-full bg-white rounded-full h-2 border border-gray-200 overflow-hidden">
-            <div
-              className={`h-2 rounded-full transition-all duration-300 ${barOver ? "bg-red-500" : barFill >= 100 ? "bg-green-500" : "bg-gradient-to-r from-indigo-500 to-violet-500"}`}
-              style={{ width: `${barFill}%` }}
-            ></div>
-          </div>
-          <div className="flex justify-between mt-1">
-            <span className="text-xs text-gray-400">
-              Used: {usedPct.toFixed(2)}%
-              {enteredPct > 0 && ` + ${enteredPct.toFixed(2)}% new`}
-            </span>
-            <span className="text-xs text-gray-400">100.00%</span>
-          </div>
-        </div>
- 
-        {/* Form Inputs */}
-        {hasTwoSplits ? (
-          <div className="space-y-4">
-            {/* Part 1: Project Value (18% Split) */}
-            <div className={`rounded-xl border p-4 ${isOver18 ? "border-red-200 bg-red-50" : "border-blue-100 bg-blue-50/20"}`}>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-bold text-blue-700 uppercase tracking-widest">
-                  Part 1: Project Value (18% Tax)
-                </p>
-                <span className="text-[11px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">
-                  Total: Rs. {base18.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs text-gray-500 mb-2">
-                <span>Paid: Rs. {used18.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                <span className="font-semibold text-blue-600">Rem: Rs. {rem18.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              </div>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">
-                  Rs.
-                </span>
-                <input
-                  type="number"
-                  min="0"
-                  step="any"
-                  value={amtInput18}
-                  onChange={(e) => setAmtInput18(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-sm font-semibold focus:ring-1 focus:ring-blue-400 focus:border-blue-400 outline-none bg-white text-gray-800"
-                  placeholder="Enter Part 1 Amount"
-                />
-              </div>
-              {enteredAmt18 > 0 && (
-                <div className={`mt-2 text-xs font-semibold px-3 py-1.5 rounded-lg flex justify-between ${isOver18 ? "bg-red-100 text-red-600" : "bg-white text-gray-600 border border-gray-100"}`}>
-                  <span>After entry:</span>
-                  <span>{isOver18 ? `Over limit by Rs. ${Math.abs(afterAmt18).toFixed(2)}` : `Rem: Rs. ${afterAmt18.toFixed(2)}`}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Part 2: Other Charges (9% Split) */}
-            <div className={`rounded-xl border p-4 ${isOver9 ? "border-red-200 bg-red-50" : "border-orange-100 bg-orange-50/20"}`}>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-bold text-orange-700 uppercase tracking-widest">
-                  Part 2: Other Charges (9% Tax)
-                </p>
-                <span className="text-[11px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">
-                  Total: Rs. {base9.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs text-gray-500 mb-2">
-                <span>Paid: Rs. {used9.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                <span className="font-semibold text-orange-600">Rem: Rs. {rem9.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              </div>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">
-                  Rs.
-                </span>
-                <input
-                  type="number"
-                  min="0"
-                  step="any"
-                  value={amtInput9}
-                  onChange={(e) => setAmtInput9(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-sm font-semibold focus:ring-1 focus:ring-orange-400 focus:border-orange-400 outline-none bg-white text-gray-800"
-                  placeholder="Enter Part 2 Amount"
-                />
-              </div>
-              {enteredAmt9 > 0 && (
-                <div className={`mt-2 text-xs font-semibold px-3 py-1.5 rounded-lg flex justify-between ${isOver9 ? "bg-red-100 text-red-600" : "bg-white text-gray-600 border border-gray-100"}`}>
-                  <span>After entry:</span>
-                  <span>{isOver9 ? `Over limit by Rs. ${Math.abs(afterAmt9).toFixed(2)}` : `Rem: Rs. ${afterAmt9.toFixed(2)}`}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Total Entered Summary */}
-            <div className="bg-indigo-50/50 p-3 rounded-xl border border-indigo-100 flex justify-between items-center text-xs font-bold text-indigo-900">
-              <span>Total Entered Amount:</span>
-              <span className="text-sm text-indigo-700">
-                Rs. {enteredAmt.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <div
-            className={`rounded-xl border p-4 ${isOver ? "border-red-200 bg-red-50" : "border-indigo-100 bg-indigo-50/20"}`}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-bold text-indigo-600 uppercase tracking-widest">
-                Proforma Invoice
-              </p>
-              <span className="text-xs bg-indigo-100 text-indigo-600 px-2.5 py-1 rounded-full font-bold">
-                Used: {usedPct.toFixed(2)}% | Rem: {remainingPct.toFixed(2)}%
-              </span>
-            </div>
-            <div className="mb-3">
-              <div className="flex justify-between items-center mb-1">
-                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Amount
-                </label>
-                <span className="text-xs font-bold text-violet-600">
-                  Percentage: {enteredPct.toFixed(2)}%
-                </span>
-              </div>
-              <div className="relative mt-1">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">
-                  Rs.
-                </span>
-                <input
-                  type="number"
-                  min="0"
-                  step="any"
-                  value={amtInput}
-                  onChange={(e) => setAmtInput(e.target.value)}
-                  className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-sm font-semibold focus:ring-1 focus:ring-indigo-300 focus:border-indigo-300 outline-none bg-white text-gray-800"
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-            {enteredAmt > 0 && (
               <div
-                className={`flex justify-between text-xs font-semibold px-3 py-2 rounded-lg ${isOver ? "bg-red-100 text-red-600" : (remainingAmt - enteredAmt) === 0 ? "bg-green-100 text-green-600" : "bg-white text-gray-600 border border-gray-100 shadow-sm"}`}
+                id="proformaDrawerPanel"
+                className="bg-white w-full max-w-[980px] h-full shadow-2xl border-l border-gray-100 overflow-hidden flex flex-col"
+                style={{ animation: "prfSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1)" }}
               >
-                <span>Remaining after entry:</span>
-                <span>
-                  {isOver
-                    ? `Over by Rs. ${Math.abs(remainingAmt - enteredAmt).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                    : `${(remainingPct - enteredPct).toFixed(2)}% | Rs. ${(remainingAmt - enteredAmt).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
- 
-      {/* ── RIGHT PANEL — History ── */}
-      <div className="w-full md:w-1/2 px-6 py-5 bg-slate-50/50">
-        <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
-          PROFORMA PAYMENT HISTORY
-        </p>
-        <div className="space-y-2 overflow-y-auto max-h-[500px]">
-          {allFollowUps.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-gray-300">
-              <i className="bi bi-clock-history text-3xl mb-2"></i>
-              <p className="text-sm">No history found</p>
-            </div>
-          ) : (
-            allFollowUps.map((h, index) => {
-              const isLatest = index === 0;
-              const amt18 = Number(h.total_18 || 0);
-              const amt9 = Number(h.total_9 || 0);
-              const amt = Number(h.total || 0) || (amt18 + amt9);
-              const pct = grandTotal > 0 ? (amt / grandTotal) * 100 : (Number(h.proforma_percentage || 0) || (Number(h.proforma_percentage_18 || 0) + Number(h.proforma_percentage_9 || 0)));
- 
-              return (
-                <div key={h.id}>
-                  <div
-                    onClick={() =>
-                      setActiveIndex(
-                        index === activeIndex ? null : index,
-                      )
-                    }
-                    className={`border rounded-xl p-3 cursor-pointer transition-all select-none bg-white ${
-                      isLatest
-                        ? "border-indigo-400 bg-indigo-50 shadow-sm"
-                        : "hover:bg-violet-50/40 hover:border-violet-200 border-gray-200"
-                    }`}
-                  >
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        {isLatest && (
-                          <span
-                            className="text-xs px-2 py-0.5 rounded-full font-semibold bg-indigo-100 text-indigo-600"
-                          >
-                            Latest
-                          </span>
-                        )}
-                        <p className="font-semibold text-sm text-gray-700">
-                          {pct.toFixed(2)}% → Rs. {amt.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {/* ── Header ── */}
+                <div className="bg-white flex-shrink-0 z-10">
+                  <div className="flex justify-between items-center px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md flex-shrink-0"
+                        style={{
+                          background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                        }}
+                      >
+                        <i className="bi bi-arrow-repeat text-white text-lg"></i>
+                      </div>
+                      <div>
+                        <h2 className="text-sm font-bold text-gray-800 tracking-wide">
+                          Update Proforma Activities
+                        </h2>
+                        <p className="text-[10px] text-gray-500 font-medium">
+                          Track proforma progress {hasTwoSplits ? "(Two-Split Payment)" : "(Single Payment)"}
                         </p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-400">
-                          {new Date(
-                            h.created_at,
-                          ).toLocaleDateString("en-IN")}
+                    </div>
+                    <button
+                      onClick={closeProformaDrawer}
+                      className="w-8 h-8 flex items-center justify-center rounded-full text-gray-400 hover:text-violet-600 hover:bg-violet-50 transition-all"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <div className="h-1 w-full bg-gray-100">
+                    <div
+                      className="h-full w-1/3 rounded-r-full"
+                      style={{
+                        background: "linear-gradient(to right, #6366f1, #8b5cf6)",
+                      }}
+                    ></div>
+                  </div>
+                </div>
+
+                {/* Body — scrollable */}
+                <div className="flex flex-col md:flex-row flex-1 overflow-y-auto">
+                  {/* ── LEFT PANEL ── */}
+                  <div className="w-full md:w-1/2 px-6 py-5 border-b md:border-b-0 md:border-r border-gray-100">
+
+                    {/* Summary */}
+                    <div className="space-y-1 text-sm mb-4">
+                      <div className="flex justify-between py-1.5 border-b border-gray-50">
+                        <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">
+                          Customer
                         </span>
-                        {isLatest && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEdit(h);
-                            }}
-                            className="text-gray-400 hover:text-violet-600 transition-all"
-                          >
-                            <i className="bi bi-pencil-square text-xs"></i>
-                          </button>
-                        )}
-                        <i
-                          className={`bi ${activeIndex === index ? "bi-chevron-up" : "bi-chevron-down"} text-gray-400 text-xs`}
-                        ></i>
+                        <span className="font-medium text-gray-700">
+                          {selectedPI.customer_name}
+                        </span>
+                      </div>
+                      <div className="flex justify-between py-1.5 border-b border-gray-50">
+                        <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">
+                          Quotation No
+                        </span>
+                        <span className="font-medium text-gray-700">
+                          {selectedPI.quotation_no ||
+                            selectedPI.quotation_id ||
+                            "-"}
+                        </span>
+                      </div>
+                      {(selectedPI.customer_address || selectedPI.location) && (
+                        <div className="flex justify-between py-1.5 border-b border-gray-50">
+                          <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">
+                            Address
+                          </span>
+                          <span className="font-medium text-gray-700 text-right max-w-[200px]">
+                            {selectedPI.customer_address || selectedPI.location}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between py-1.5">
+                        <span className="text-gray-400 text-xs font-semibold uppercase tracking-wide">
+                          PI Base Amount (incl. tax)
+                        </span>
+                        <span className="font-semibold text-indigo-600">
+                          Rs. {grandTotal.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
                       </div>
                     </div>
-                    {hasTwoSplits && (amt18 > 0 || amt9 > 0) && (
-                      <div className="mt-2 pt-2 border-t border-gray-100 flex gap-4 text-xs text-gray-500">
-                        <span>Part 1: <strong className="text-blue-600">Rs. {amt18.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
-                        <span>Part 2: <strong className="text-orange-600">Rs. {amt9.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+
+                    {/* Linked Inquired Products Card */}
+                    {(() => {
+                      const items = getPIItemsList(selectedPI);
+                      return (
+                        <div className="mb-4 bg-gradient-to-r from-amber-50/70 to-orange-50/50 rounded-xl p-3 border border-amber-200/80">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                                <Package size={15} />
+                              </div>
+                              <div>
+                                <p className="text-xs font-bold text-amber-900 uppercase tracking-wider">
+                                  Linked Products ({items.length})
+                                </p>
+                                <p className="text-[10px] text-amber-700/80">
+                                  Products with Qty, Rate & GST
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleOpenItemsModal(selectedPI)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                            >
+                              <Pencil size={11} />
+                              <span>Edit Products</span>
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {items.map((prod, idx) => (
+                              <div
+                                key={idx}
+                                className="inline-flex flex-col gap-1 bg-white p-2.5 rounded-lg border border-amber-200 text-xs shadow-2xs min-w-[170px]"
+                              >
+                                <div className="flex items-center justify-between gap-1.5">
+                                  <span className="font-bold text-slate-800">{prod.product_name}</span>
+                                  {prod.hsn_code && (
+                                    <span className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded font-mono border border-amber-200/60 font-semibold">
+                                      HSN: {prod.hsn_code}
+                                    </span>
+                                  )}
+                                </div>
+                                {prod.product_code && (
+                                  <span className="text-[11px] text-slate-500 font-medium">
+                                    {prod.product_code}
+                                  </span>
+                                )}
+                                <span className="text-[11px] font-semibold text-amber-800 bg-amber-100/70 px-1.5 py-0.5 rounded w-fit">
+                                  Qty: {prod.qty} × Rs.{Number(prod.rate || 0).toLocaleString("en-IN")}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Overall progress bar */}
+                    <div className="mb-5 bg-gray-50 rounded-xl border border-gray-100 p-3">
+                      <p className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">
+                        Overall Progress
+                      </p>
+                      <div className="w-full bg-white rounded-full h-2 border border-gray-200 overflow-hidden">
+                        <div
+                          className={`h-2 rounded-full transition-all duration-300 ${barOver ? "bg-red-500" : barFill >= 100 ? "bg-green-500" : "bg-gradient-to-r from-indigo-500 to-violet-500"}`}
+                          style={{ width: `${barFill}%` }}
+                        ></div>
+                      </div>
+                      <div className="flex justify-between mt-1">
+                        <span className="text-xs text-gray-400">
+                          Used: {usedPct.toFixed(2)}%
+                          {enteredPct > 0 && ` + ${enteredPct.toFixed(2)}% new`}
+                        </span>
+                        <span className="text-xs text-gray-400">100.00%</span>
+                      </div>
+                    </div>
+
+                    {/* Form Inputs */}
+                    {hasTwoSplits ? (
+                      <div className="space-y-4">
+                        {/* Part 1: Project Value (18% Split) */}
+                        <div className={`rounded-xl border p-4 ${isOver18 ? "border-red-200 bg-red-50" : "border-blue-100 bg-blue-50/20"}`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs font-bold text-blue-700 uppercase tracking-widest">
+                              Part 1: Project Value (18% Tax)
+                            </p>
+                            <span className="text-[11px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">
+                              Total: Rs. {base18.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500 mb-2">
+                            <span>Paid: Rs. {used18.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <span className="font-semibold text-blue-600">Rem: Rs. {rem18.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </div>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">
+                              Rs.
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              value={amtInput18}
+                              onChange={(e) => setAmtInput18(e.target.value)}
+                              className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-sm font-semibold focus:ring-1 focus:ring-blue-400 focus:border-blue-400 outline-none bg-white text-gray-800"
+                              placeholder="Enter Part 1 Amount"
+                            />
+                          </div>
+                          {enteredAmt18 > 0 && (
+                            <div className={`mt-2 text-xs font-semibold px-3 py-1.5 rounded-lg flex justify-between ${isOver18 ? "bg-red-100 text-red-600" : "bg-white text-gray-600 border border-gray-100"}`}>
+                              <span>After entry:</span>
+                              <span>{isOver18 ? `Over limit by Rs. ${Math.abs(afterAmt18).toFixed(2)}` : `Rem: Rs. ${afterAmt18.toFixed(2)}`}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Part 2: Other Charges (9% Split) */}
+                        <div className={`rounded-xl border p-4 ${isOver9 ? "border-red-200 bg-red-50" : "border-orange-100 bg-orange-50/20"}`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs font-bold text-orange-700 uppercase tracking-widest">
+                              Part 2: Other Charges (9% Tax)
+                            </p>
+                            <span className="text-[11px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">
+                              Total: Rs. {base9.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500 mb-2">
+                            <span>Paid: Rs. {used9.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                            <span className="font-semibold text-orange-600">Rem: Rs. {rem9.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                          </div>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">
+                              Rs.
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              value={amtInput9}
+                              onChange={(e) => setAmtInput9(e.target.value)}
+                              className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-sm font-semibold focus:ring-1 focus:ring-orange-400 focus:border-orange-400 outline-none bg-white text-gray-800"
+                              placeholder="Enter Part 2 Amount"
+                            />
+                          </div>
+                          {enteredAmt9 > 0 && (
+                            <div className={`mt-2 text-xs font-semibold px-3 py-1.5 rounded-lg flex justify-between ${isOver9 ? "bg-red-100 text-red-600" : "bg-white text-gray-600 border border-gray-100"}`}>
+                              <span>After entry:</span>
+                              <span>{isOver9 ? `Over limit by Rs. ${Math.abs(afterAmt9).toFixed(2)}` : `Rem: Rs. ${afterAmt9.toFixed(2)}`}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Total Entered Summary */}
+                        <div className="bg-indigo-50/50 p-3 rounded-xl border border-indigo-100 flex justify-between items-center text-xs font-bold text-indigo-900">
+                          <span>Total Entered Amount:</span>
+                          <span className="text-sm text-indigo-700">
+                            Rs. {enteredAmt.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        className={`rounded-xl border p-4 ${isOver ? "border-red-200 bg-red-50" : "border-indigo-100 bg-indigo-50/20"}`}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-xs font-bold text-indigo-600 uppercase tracking-widest">
+                            Proforma Invoice
+                          </p>
+                          <span className="text-xs bg-indigo-100 text-indigo-600 px-2.5 py-1 rounded-full font-bold">
+                            Used: {usedPct.toFixed(2)}% | Rem: {remainingPct.toFixed(2)}%
+                          </span>
+                        </div>
+                        <div className="mb-3">
+                          <div className="flex justify-between items-center mb-1">
+                            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                              Amount
+                            </label>
+                            <span className="text-xs font-bold text-violet-600">
+                              Percentage: {enteredPct.toFixed(2)}%
+                            </span>
+                          </div>
+                          <div className="relative mt-1">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-bold">
+                              Rs.
+                            </span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="any"
+                              value={amtInput}
+                              onChange={(e) => setAmtInput(e.target.value)}
+                              className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-sm font-semibold focus:ring-1 focus:ring-indigo-300 focus:border-indigo-300 outline-none bg-white text-gray-800"
+                              placeholder="0.00"
+                            />
+                          </div>
+                        </div>
+                        {enteredAmt > 0 && (
+                          <div
+                            className={`flex justify-between text-xs font-semibold px-3 py-2 rounded-lg ${isOver ? "bg-red-100 text-red-600" : (remainingAmt - enteredAmt) === 0 ? "bg-green-100 text-green-600" : "bg-white text-gray-600 border border-gray-100 shadow-sm"}`}
+                          >
+                            <span>Remaining after entry:</span>
+                            <span>
+                              {isOver
+                                ? `Over by Rs. ${Math.abs(remainingAmt - enteredAmt).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                : `${(remainingPct - enteredPct).toFixed(2)}% | Rs. ${(remainingAmt - enteredAmt).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
+
+                  {/* ── RIGHT PANEL — History ── */}
+                  <div className="w-full md:w-1/2 px-6 py-5 bg-slate-50/50">
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">
+                      PROFORMA PAYMENT HISTORY
+                    </p>
+                    <div className="space-y-2 overflow-y-auto max-h-[500px]">
+                      {allFollowUps.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-8 text-gray-300">
+                          <i className="bi bi-clock-history text-3xl mb-2"></i>
+                          <p className="text-sm">No history found</p>
+                        </div>
+                      ) : (
+                        allFollowUps.map((h, index) => {
+                          const isLatest = index === 0;
+                          const amt18 = Number(h.total_18 || 0);
+                          const amt9 = Number(h.total_9 || 0);
+                          const amt = Number(h.total || 0) || (amt18 + amt9);
+                          const pct = grandTotal > 0 ? (amt / grandTotal) * 100 : (Number(h.proforma_percentage || 0) || (Number(h.proforma_percentage_18 || 0) + Number(h.proforma_percentage_9 || 0)));
+
+                          return (
+                            <div key={h.id}>
+                              <div
+                                onClick={() =>
+                                  setActiveIndex(
+                                    index === activeIndex ? null : index,
+                                  )
+                                }
+                                className={`border rounded-xl p-3 cursor-pointer transition-all select-none bg-white ${isLatest
+                                    ? "border-indigo-400 bg-indigo-50 shadow-sm"
+                                    : "hover:bg-violet-50/40 hover:border-violet-200 border-gray-200"
+                                  }`}
+                              >
+                                <div className="flex justify-between items-center">
+                                  <div className="flex items-center gap-2">
+                                    {isLatest && (
+                                      <span
+                                        className="text-xs px-2 py-0.5 rounded-full font-semibold bg-indigo-100 text-indigo-600"
+                                      >
+                                        Latest
+                                      </span>
+                                    )}
+                                    <p className="font-semibold text-sm text-gray-700">
+                                      {pct.toFixed(2)}% → Rs. {amt.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-gray-400">
+                                      {new Date(
+                                        h.created_at,
+                                      ).toLocaleDateString("en-IN")}
+                                    </span>
+                                    {isLatest && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleEdit(h);
+                                        }}
+                                        className="text-gray-400 hover:text-violet-600 transition-all"
+                                      >
+                                        <i className="bi bi-pencil-square text-xs"></i>
+                                      </button>
+                                    )}
+                                    <i
+                                      className={`bi ${activeIndex === index ? "bi-chevron-up" : "bi-chevron-down"} text-gray-400 text-xs`}
+                                    ></i>
+                                  </div>
+                                </div>
+                                {hasTwoSplits && (amt18 > 0 || amt9 > 0) && (
+                                  <div className="mt-2 pt-2 border-t border-gray-100 flex gap-4 text-xs text-gray-500">
+                                    <span>Part 1: <strong className="text-blue-600">Rs. {amt18.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+                                    <span>Part 2: <strong className="text-orange-600">Rs. {amt9.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong></span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
                 </div>
-              );
-            })
-          )}
-        </div>
-      </div>
-    </div>
- 
-    {/* Footer */}
-    <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 flex-shrink-0 mt-auto">
-      <button
-        onClick={closeProformaDrawer}
-        className="px-5 py-2 rounded-xl text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all flex items-center gap-1.5"
-      >
-        <i className="bi bi-x-lg text-xs"></i>
-        Cancel
-      </button>
-      <button
-        onClick={editing ? handleUpdate : handleSubmitFollowUp}
-        disabled={isDisabled}
-        className={`px-6 py-2 rounded-xl text-sm font-semibold text-white transition-all shadow-md flex items-center justify-center gap-2 bg-gradient-to-br from-indigo-500 to-violet-600 ${
-          isDisabled
-            ? "bg-gray-300 cursor-not-allowed shadow-none"
-            : "hover:shadow-lg hover:shadow-violet-200"
-        }`}
-      >
-        {submitLoading || updateLoading ? (
-          <>
-            <i className="bi bi-arrow-repeat animate-spin"></i>{" "}
-            Processing...
-          </>
-        ) : editing ? (
-          <>
-            <i className="bi bi-check-circle text-sm"></i>
-            Update Follow-Up
-          </>
-        ) : (
-          <>
-            <i className="bi bi-check-circle text-sm"></i>
-            Add Follow-Up
-          </>
-        )}
-      </button>
-    </div>
-  </div>
-</div>  
+
+                {/* Footer */}
+                <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 bg-gray-50 flex-shrink-0 mt-auto">
+                  <button
+                    onClick={closeProformaDrawer}
+                    className="px-5 py-2 rounded-xl text-sm font-semibold border border-gray-200 text-gray-600 hover:bg-gray-100 transition-all flex items-center gap-1.5"
+                  >
+                    <i className="bi bi-x-lg text-xs"></i>
+                    Cancel
+                  </button>
+                  <button
+                    onClick={editing ? handleUpdate : handleSubmitFollowUp}
+                    disabled={isDisabled}
+                    className={`px-6 py-2 rounded-xl text-sm font-semibold text-white transition-all shadow-md flex items-center justify-center gap-2 bg-gradient-to-br from-indigo-500 to-violet-600 ${isDisabled
+                        ? "bg-gray-300 cursor-not-allowed shadow-none"
+                        : "hover:shadow-lg hover:shadow-violet-200"
+                      }`}
+                  >
+                    {submitLoading || updateLoading ? (
+                      <>
+                        <i className="bi bi-arrow-repeat animate-spin"></i>{" "}
+                        Processing...
+                      </>
+                    ) : editing ? (
+                      <>
+                        <i className="bi bi-check-circle text-sm"></i>
+                        Update Follow-Up
+                      </>
+                    ) : (
+                      <>
+                        <i className="bi bi-check-circle text-sm"></i>
+                        Add Follow-Up
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
           );
         })()}
 
@@ -2739,7 +2803,7 @@ export default function ProformaPage() {
                   <thead className="bg-slate-100 text-slate-700 font-bold uppercase text-[11px] tracking-wider border-b border-slate-200">
                     <tr>
                       <th className="py-3 px-3 text-center w-10">#</th>
-                      <th className="py-3 px-3 min-w-[200px]">Item & Description</th>
+                      <th className="py-3 px-3 min-w-[220px]">Item & Description</th>
                       <th className="py-3 px-3 w-28 text-center">HSN Code</th>
                       <th className="py-3 px-3 w-20 text-center">Qty</th>
                       <th className="py-3 px-3 w-32 text-right">Rate / PC (Rs.)</th>
@@ -2765,13 +2829,25 @@ export default function ProformaPage() {
                             {idx + 1}
                           </td>
                           <td className="py-2.5 px-3">
-                            <input
-                              type="text"
-                              value={item.product_name || ""}
-                              onChange={(e) => handleItemFieldChange(idx, "product_name", e.target.value)}
-                              placeholder="Product name"
-                              className="w-full px-2.5 py-1.5 text-xs font-semibold text-slate-800 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                            />
+                            <div className="space-y-1.5">
+                              <input
+                                type="text"
+                                value={item.product_name || ""}
+                                onChange={(e) => handleItemFieldChange(idx, "product_name", e.target.value)}
+                                placeholder="Product name"
+                                className="w-full px-2.5 py-1.5 text-xs font-semibold text-slate-800 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs"
+                              />
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] text-slate-500 font-bold shrink-0">Code:</span>
+                                <input
+                                  type="text"
+                                  value={item.product_code || ""}
+                                  onChange={(e) => handleItemFieldChange(idx, "product_code", e.target.value)}
+                                  placeholder="Product code / Model"
+                                  className="w-full px-2 py-1 text-[11px] font-medium text-slate-600 bg-slate-50 border border-slate-200 rounded-md focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                                />
+                              </div>
+                            </div>
                           </td>
                           <td className="py-2.5 px-3">
                             <input
@@ -2779,7 +2855,7 @@ export default function ProformaPage() {
                               value={item.hsn_code || ""}
                               onChange={(e) => handleItemFieldChange(idx, "hsn_code", e.target.value)}
                               placeholder="HSN code"
-                              className="w-full text-center px-2 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                              className="w-full text-center px-2 py-1.5 text-xs font-mono font-medium text-slate-700 bg-white border border-slate-200 rounded-lg focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs"
                             />
                           </td>
                           <td className="py-2.5 px-3">

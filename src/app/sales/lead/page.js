@@ -139,6 +139,14 @@ const [updateModalClosing, setUpdateModalClosing] = useState(false);
   // dynamic category options for Add / Edit drawers
   const [addLeadCategoryOptions, setAddLeadCategoryOptions] = useState([]);
   const [editLeadCategoryOptions, setEditLeadCategoryOptions] = useState([]);
+
+  // Product Selection Modal states (Image 5 style)
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [productModalTarget, setProductModalTarget] = useState("add"); // "add" | "edit"
+  const [tempSelectedProducts, setTempSelectedProducts] = useState([]);
+  const [prodSearchName, setProdSearchName] = useState("");
+  const [prodSearchCategory, setProdSearchCategory] = useState("");
+  const [prodSearchHsn, setProdSearchHsn] = useState("");
 // for view model slide-in slide-out animation
 const [isClosing, setIsClosing] = useState(false);
 
@@ -941,7 +949,17 @@ const handleCloseUpdateModal = () => {
 
       const parsedProds = parseProducts(leadData.products);
       const enrichedProds = parsedProds.map((p) => {
-        if (typeof p === "object" && p !== null) return p;
+        if (typeof p === "object" && p !== null) {
+          const found = productsList.find(
+            (item) => String(item.id) === String(p.id) || item.product_name === p.product_name
+          );
+          return {
+            ...p,
+            product_code: p.product_code || (found ? found.product_code : ""),
+            code: p.code || p.hsn_code || (found ? found.code : ""),
+            hsn_code: p.hsn_code || p.code || (found ? found.code : ""),
+          };
+        }
         const found = productsList.find((item) => String(item.id) === String(p));
         return found
           ? {
@@ -950,6 +968,8 @@ const handleCloseUpdateModal = () => {
               product_code: found.product_code,
               sales_price: found.sales_price,
               category_name: found.category_name,
+              code: found.code || "",
+              hsn_code: found.code || "",
             }
           : { id: p, product_name: `Product #${p}` };
       });
@@ -1391,6 +1411,136 @@ const handleCloseUpdateModal = () => {
       fetchActivityTypes();
     }
   }, [showModal, showUpdateModal, fetchActivityTypes]);
+
+  // Product Selection Modal handlers & helpers (Image 5 style)
+  const openProductModal = (target = "add") => {
+    setProductModalTarget(target);
+    const existing =
+      target === "add"
+        ? (addLeadForm.products || [])
+        : (editLeadForm.products || []);
+    setTempSelectedProducts([...existing]);
+    setProdSearchName("");
+    setProdSearchCategory("");
+    setProdSearchHsn("");
+    setShowProductModal(true);
+  };
+
+  const closeProductModal = () => {
+    setShowProductModal(false);
+  };
+
+  const isProductChecked = (item) => {
+    return tempSelectedProducts.some(
+      (p) => String(p.id || p) === String(item.id)
+    );
+  };
+
+  const toggleProductSelection = (item) => {
+    setTempSelectedProducts((prev) => {
+      const exists = prev.some((p) => String(p.id || p) === String(item.id));
+      if (exists) {
+        return prev.filter((p) => String(p.id || p) !== String(item.id));
+      } else {
+        const catName =
+          item.category_name ||
+          category.find((c) => String(c.id) === String(item.product_category))?.name ||
+          "";
+        return [
+          ...prev,
+          {
+            id: item.id,
+            product_name: item.product_name,
+            product_code: item.product_code,
+            sales_price: item.sales_price,
+            category_name: catName,
+            code: item.code || "",
+            hsn_code: item.code || "",
+          },
+        ];
+      }
+    });
+  };
+
+  const availableProductCategories = Array.from(
+    new Set([
+      ...category.map((c) => c.name).filter(Boolean),
+      ...productsList.map((p) => p.category_name).filter(Boolean),
+    ])
+  ).sort();
+
+  const filteredModalProducts = productsList.filter((item) => {
+    if (prodSearchName.trim()) {
+      const q = prodSearchName.toLowerCase().trim();
+      const nameMatch = (item.product_name || "").toLowerCase().includes(q);
+      const codeMatch = (item.product_code || "").toLowerCase().includes(q);
+      if (!nameMatch && !codeMatch) return false;
+    }
+    if (prodSearchCategory.trim()) {
+      const targetCat = prodSearchCategory.toLowerCase().trim();
+      const itemCatName = (
+        item.category_name ||
+        category.find((c) => String(c.id) === String(item.product_category))?.name ||
+        ""
+      ).toLowerCase().trim();
+      if (itemCatName !== targetCat && String(item.product_category) !== prodSearchCategory) {
+        return false;
+      }
+    }
+    if (prodSearchHsn.trim()) {
+      const q = prodSearchHsn.toLowerCase().trim();
+      const hsnMatch = (item.code || "").toLowerCase().includes(q);
+      if (!hsnMatch) return false;
+    }
+    return true;
+  });
+
+  const isAllFilteredSelected =
+    filteredModalProducts.length > 0 &&
+    filteredModalProducts.every((item) => isProductChecked(item));
+
+  const toggleSelectAllFiltered = () => {
+    if (isAllFilteredSelected) {
+      const filteredIds = new Set(filteredModalProducts.map((p) => String(p.id)));
+      setTempSelectedProducts((prev) =>
+        prev.filter((p) => !filteredIds.has(String(p.id || p)))
+      );
+    } else {
+      const existingIds = new Set(
+        tempSelectedProducts.map((p) => String(p.id || p))
+      );
+      const toAdd = filteredModalProducts
+        .filter((item) => !existingIds.has(String(item.id)))
+        .map((item) => ({
+          id: item.id,
+          product_name: item.product_name,
+          product_code: item.product_code,
+          sales_price: item.sales_price,
+          category_name:
+            item.category_name ||
+            category.find((c) => String(c.id) === String(item.product_category))?.name ||
+            "",
+          code: item.code || "",
+          hsn_code: item.code || "",
+        }));
+      setTempSelectedProducts((prev) => [...prev, ...toAdd]);
+    }
+  };
+
+  const handleSaveModalProducts = () => {
+    if (productModalTarget === "add") {
+      setAddLeadForm((prev) => ({
+        ...prev,
+        products: tempSelectedProducts,
+      }));
+    } else {
+      setEditLeadForm((prev) => ({
+        ...prev,
+        products: tempSelectedProducts,
+      }));
+    }
+    setShowProductModal(false);
+  };
 
   const isAdmin = checkRole(["Admin"]);
 
@@ -2406,51 +2556,23 @@ const handleCloseUpdateModal = () => {
                     </button>
                   )}
                 </div>
-                <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
-                  <span className="flex items-center justify-center w-10 shrink-0 bg-amber-50 border-r border-gray-100">
+                <div
+                  onClick={() => openProductModal("add")}
+                  className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white hover:border-orange-300 hover:ring-2 hover:ring-orange-100 transition-all cursor-pointer group"
+                >
+                  <span className="flex items-center justify-center w-10 shrink-0 bg-amber-50 border-r border-gray-100 group-hover:bg-amber-100/60 transition-colors">
                     <Package size={16} className="text-amber-500" />
                   </span>
-                  <select
-                    value=""
-                    onChange={(e) => {
-                      const prodId = e.target.value;
-                      if (!prodId) return;
-                      const selected = productsList.find((p) => String(p.id) === String(prodId));
-                      if (selected) {
-                        const exists = (addLeadForm.products || []).some(
-                          (p) => String(p.id || p) === String(selected.id)
-                        );
-                        if (!exists) {
-                          setAddLeadForm((prev) => ({
-                            ...prev,
-                            products: [
-                              ...(prev.products || []),
-                              {
-                                id: selected.id,
-                                product_name: selected.product_name,
-                                product_code: selected.product_code,
-                                sales_price: selected.sales_price,
-                                category_name: selected.category_name,
-                              },
-                            ],
-                          }));
-                        }
-                      }
-                    }}
-                    className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent cursor-pointer"
-                  >
-                    <option value="">+ Select product to add...</option>
-                    {productsList.map((item) => {
-                      const isSelected = (addLeadForm.products || []).some(
-                        (p) => String(p.id || p) === String(item.id)
-                      );
-                      return (
-                        <option key={item.id} value={item.id} disabled={isSelected}>
-                          {item.product_name} {item.product_code ? `(${item.product_code})` : ""} {isSelected ? "✓ (Added)" : ""}
-                        </option>
-                      );
-                    })}
-                  </select>
+                  <div className="flex-1 flex items-center justify-between px-3 py-2 text-sm text-gray-700 bg-transparent">
+                    <span className={addLeadForm.products?.length > 0 ? "text-slate-800 font-medium" : "text-gray-500"}>
+                      {addLeadForm.products?.length > 0
+                        ? `Click to select / manage products (${addLeadForm.products.length} selected)`
+                        : "+ Select product to add..."}
+                    </span>
+                    <span className="flex items-center gap-1 text-xs font-semibold text-orange-600 bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-md group-hover:bg-orange-100 transition-colors">
+                      <Plus size={13} /> Select Products
+                    </span>
+                  </div>
                 </div>
 
                 {/* Selected Products Chips */}
@@ -2800,51 +2922,23 @@ const handleCloseUpdateModal = () => {
                     </button>
                   )}
                 </div>
-                <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
-                  <span className="flex items-center justify-center w-10 shrink-0 bg-amber-50 border-r border-gray-100">
+                <div
+                  onClick={() => openProductModal("edit")}
+                  className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white hover:border-orange-300 hover:ring-2 hover:ring-orange-100 transition-all cursor-pointer group"
+                >
+                  <span className="flex items-center justify-center w-10 shrink-0 bg-amber-50 border-r border-gray-100 group-hover:bg-amber-100/60 transition-colors">
                     <Package size={16} className="text-amber-500" />
                   </span>
-                  <select
-                    value=""
-                    onChange={(e) => {
-                      const prodId = e.target.value;
-                      if (!prodId) return;
-                      const selected = productsList.find((p) => String(p.id) === String(prodId));
-                      if (selected) {
-                        const exists = (editLeadForm.products || []).some(
-                          (p) => String(p.id || p) === String(selected.id)
-                        );
-                        if (!exists) {
-                          setEditLeadForm((prev) => ({
-                            ...prev,
-                            products: [
-                              ...(prev.products || []),
-                              {
-                                id: selected.id,
-                                product_name: selected.product_name,
-                                product_code: selected.product_code,
-                                sales_price: selected.sales_price,
-                                category_name: selected.category_name,
-                              },
-                            ],
-                          }));
-                        }
-                      }
-                    }}
-                    className="w-full px-3 py-2 text-sm text-gray-700 focus:outline-none bg-transparent cursor-pointer"
-                  >
-                    <option value="">+ Select product to add...</option>
-                    {productsList.map((item) => {
-                      const isSelected = (editLeadForm.products || []).some(
-                        (p) => String(p.id || p) === String(item.id)
-                      );
-                      return (
-                        <option key={item.id} value={item.id} disabled={isSelected}>
-                          {item.product_name} {item.product_code ? `(${item.product_code})` : ""} {isSelected ? "✓ (Added)" : ""}
-                        </option>
-                      );
-                    })}
-                  </select>
+                  <div className="flex-1 flex items-center justify-between px-3 py-2 text-sm text-gray-700 bg-transparent">
+                    <span className={editLeadForm.products?.length > 0 ? "text-slate-800 font-medium" : "text-gray-500"}>
+                      {editLeadForm.products?.length > 0
+                        ? `Click to select / manage products (${editLeadForm.products.length} selected)`
+                        : "+ Select product to add..."}
+                    </span>
+                    <span className="flex items-center gap-1 text-xs font-semibold text-orange-600 bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-md group-hover:bg-orange-100 transition-colors">
+                      <Plus size={13} /> Select Products
+                    </span>
+                  </div>
                 </div>
 
                 {/* Selected Products Chips */}
@@ -2944,6 +3038,267 @@ const handleCloseUpdateModal = () => {
                   </>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================================================
+          ✅ NEW: PRODUCT SELECTION POPUP MODAL (Image 5 Style)
+          Filter by Product Name, Category & HSN Code
+          Multi-select with checkboxes, save to lead form
+      =================================================== */}
+      {showProductModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200">
+            {/* Header - Image 5 Orange Gradient */}
+            <div className="bg-gradient-to-r from-orange-500 to-amber-500 px-6 py-5 text-white relative">
+              <h2 className="text-xl font-bold tracking-tight flex items-center gap-2">
+                <Package className="w-5 h-5 text-white" />
+                Select Inquired Products
+              </h2>
+              <p className="text-xs text-orange-50/90 font-medium mt-1">
+                Search with Product Name, Category & HSN Code, then select multiple products using checkboxes
+              </p>
+              <button
+                type="button"
+                onClick={closeProductModal}
+                className="absolute right-4 top-4 text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-5">
+              {/* Financial/Count Stats Summary Bar - Image 5 style */}
+              <div className="grid grid-cols-3 divide-x divide-slate-100 border border-slate-100 rounded-2xl bg-slate-50/50 p-3 shadow-inner">
+                <div className="text-center p-1">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                    Total Products
+                  </span>
+                  <p className="text-base font-bold text-slate-800 mt-0.5">
+                    {productsList.length}
+                  </p>
+                </div>
+                <div className="text-center p-1">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                    Matching Filter
+                  </span>
+                  <p className="text-base font-bold text-slate-700 mt-0.5">
+                    {filteredModalProducts.length}
+                  </p>
+                </div>
+                <div className="text-center p-1">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400">
+                    Selected
+                  </span>
+                  <p className="text-base font-bold text-orange-600 mt-0.5">
+                    {tempSelectedProducts.length}
+                  </p>
+                </div>
+              </div>
+
+              {/* Filter / Search Card - Image 5 "ADD NEW EXPENSE ITEM" card style */}
+              <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <i className="bi bi-search text-orange-500"></i> Search & Filter Products
+                  </h3>
+                  {(prodSearchName || prodSearchCategory || prodSearchHsn) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProdSearchName("");
+                        setProdSearchCategory("");
+                        setProdSearchHsn("");
+                      }}
+                      className="text-xs text-orange-600 hover:text-orange-700 font-semibold flex items-center gap-1 cursor-pointer"
+                    >
+                      <RefreshCw className="w-3 h-3" /> Reset Filters
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {/* 1. Product Name */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                      Product Name
+                    </label>
+                    <input
+                      type="text"
+                      value={prodSearchName}
+                      onChange={(e) => setProdSearchName(e.target.value)}
+                      placeholder="Search by product name..."
+                      className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-800"
+                    />
+                  </div>
+
+                  {/* 2. Category */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                      Category
+                    </label>
+                    <select
+                      value={prodSearchCategory}
+                      onChange={(e) => setProdSearchCategory(e.target.value)}
+                      className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-700 cursor-pointer"
+                    >
+                      <option value="">-- All Categories --</option>
+                      {availableProductCategories.map((catName) => (
+                        <option key={catName} value={catName}>
+                          {catName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 3. HSN Code */}
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-500 mb-1">
+                      HSN Code
+                    </label>
+                    <input
+                      type="text"
+                      value={prodSearchHsn}
+                      onChange={(e) => setProdSearchHsn(e.target.value)}
+                      placeholder="Search by HSN code..."
+                      className="w-full p-2 border border-slate-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-slate-800"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Products Table Section - Image 5 style */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <i className="bi bi-boxes text-orange-500"></i> Available Products ({filteredModalProducts.length})
+                  </h3>
+                  {filteredModalProducts.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={toggleSelectAllFiltered}
+                      className="text-xs text-orange-600 hover:text-orange-700 font-bold cursor-pointer"
+                    >
+                      {isAllFilteredSelected ? "Deselect All Filtered" : "Select All Filtered"}
+                    </button>
+                  )}
+                </div>
+
+                {filteredModalProducts.length === 0 ? (
+                  <div className="text-center py-10 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
+                    <Package className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                    <p className="text-xs text-slate-400 font-medium">
+                      No products found matching your filter criteria.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="border border-slate-100 rounded-xl overflow-hidden shadow-sm max-h-[320px] overflow-y-auto">
+                    <table className="w-full text-sm text-left text-slate-600">
+                      <thead className="bg-slate-50 text-[11px] uppercase tracking-wider font-semibold text-slate-500 border-b border-slate-100 sticky top-0 z-10 shadow-2xs">
+                        <tr>
+                          <th className="py-2.5 px-3 w-10 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isAllFilteredSelected}
+                              onChange={toggleSelectAllFiltered}
+                              className="w-4 h-4 text-orange-500 rounded border-slate-300 focus:ring-orange-400 cursor-pointer accent-orange-500"
+                            />
+                          </th>
+                          <th className="py-2.5 px-4">Product Name</th>
+                          <th className="py-2.5 px-4">Category</th>
+                          <th className="py-2.5 px-4 text-center">HSN Code</th>
+                          <th className="py-2.5 px-4 text-right">Price / Unit</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 bg-white">
+                        {filteredModalProducts.map((item) => {
+                          const checked = isProductChecked(item);
+                          const catName =
+                            item.category_name ||
+                            category.find((c) => String(c.id) === String(item.product_category))?.name ||
+                            "-";
+                          return (
+                            <tr
+                              key={item.id}
+                              onClick={() => toggleProductSelection(item)}
+                              className={`cursor-pointer transition-colors duration-150 ${
+                                checked
+                                  ? "bg-orange-50/60 hover:bg-orange-50/80"
+                                  : "hover:bg-slate-50/80"
+                              }`}
+                            >
+                              <td
+                                className="py-2.5 px-3 text-center"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => toggleProductSelection(item)}
+                                  className="w-4 h-4 text-orange-500 rounded border-slate-300 focus:ring-orange-400 cursor-pointer accent-orange-500"
+                                />
+                              </td>
+                              <td className="py-2.5 px-4">
+                                <span className="font-semibold text-slate-800 block">
+                                  {item.product_name}
+                                </span>
+                                {item.product_code && (
+                                  <span className="text-xs text-slate-400 block font-normal">
+                                    Code: {item.product_code}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-4">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-violet-50 text-violet-700 text-xs font-semibold">
+                                  {catName}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-4 text-center font-mono text-xs text-slate-600 font-medium">
+                                {item.code || "-"}
+                              </td>
+                              <td className="py-2.5 px-4 text-right font-medium text-slate-700">
+                                {item.sales_price
+                                  ? `₹${Number(item.sales_price).toLocaleString("en-IN")}`
+                                  : "-"}
+                                {item.unit ? ` / ${item.unit}` : ""}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer - Image 5 style */}
+            <div className="border-t border-slate-100 px-6 py-4 bg-slate-50 flex items-center justify-between">
+              <div className="text-xs font-semibold text-slate-600">
+                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-100 text-orange-600 text-[11px] font-bold mr-1.5">
+                  {tempSelectedProducts.length}
+                </span>
+                product{tempSelectedProducts.length === 1 ? "" : "s"} selected
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={closeProductModal}
+                  className="px-4 py-2 border border-slate-200 rounded-xl text-slate-700 text-xs font-bold hover:bg-white hover:border-slate-300 transition-all shadow-sm cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveModalProducts}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold shadow-md shadow-orange-500/10 hover:shadow-orange-500/20 transition-all cursor-pointer"
+                >
+                  Save Selected Products
+                </button>
+              </div>
             </div>
           </div>
         </div>
