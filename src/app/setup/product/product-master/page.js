@@ -412,7 +412,7 @@ export default function Page() {
             <input
               type="text"
               name="code"
-              placeholder="Code"
+              placeholder="HSN Code"
               className="w-full text-gray-600 text-sm outline-none bg-transparent"
               value={filters.code}
               onChange={handleFilterChange}
@@ -478,7 +478,7 @@ export default function Page() {
                   <th className="py-3 px-4 text-center">Product Category</th>
                   <th className="py-3 px-4 text-center">Product Code</th>
                   <th className="py-3 px-4 text-center">Unit</th>
-                  <th className="py-3 px-4 text-center">Code</th>
+                  <th className="py-3 px-4 text-center">HSN Code</th>
                   <th className="py-3 px-4 text-center">Product Type</th>
                   <th className="py-3 px-4 text-center">Action</th>
                 </tr>
@@ -821,7 +821,7 @@ export default function Page() {
 
                     <div>
                       <label className="block mb-1 text-sm font-medium text-gray-600">
-                        Code <span className="text-red-500">*</span>
+                        HSN Code <span className="text-red-500">*</span>
                       </label>
                       <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-white focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all">
                         <span className="flex items-center justify-center w-10 shrink-0 bg-amber-50 border-r border-gray-100">
@@ -1038,7 +1038,7 @@ export default function Page() {
 
                     <div>
                       <label className="block mb-1 text-sm font-medium text-gray-600">
-                        Code
+                        HSN Code
                       </label>
                       <div className="flex items-stretch border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
                         <span className="flex items-center justify-center w-10 shrink-0 bg-amber-50 border-r border-gray-100">
